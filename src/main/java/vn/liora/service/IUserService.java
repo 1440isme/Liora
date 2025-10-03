@@ -4,6 +4,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import vn.liora.dto.request.UserCreationRequest;
+import vn.liora.dto.request.UserUpdateRequest;
 import vn.liora.dto.response.UserResponse;
 import vn.liora.entity.User;
 
@@ -16,13 +17,14 @@ public interface IUserService {
     void delete(User user);
     void deleteById(Long id);
     long count();
-    public User createUser(UserCreationRequest request);
+     UserResponse createUser(UserCreationRequest request);
+    UserResponse updateUser(Long userId, UserUpdateRequest request);
     UserResponse findById(Long id);
     Optional<User> findByIdOptional(Long id);
     List<User> findAllById(Iterable<Long> ids);
     List<User> findAll(Sort sort);
     Page<User> findAll(Pageable pageable);
-    List<User> findAll();
+    List<UserResponse> findAll();
     <S extends User> S save(S entity);
     List<User> findByUsernameContaining(String username);
     Page<User> findByUsernameContaining(String username, Pageable pageable);

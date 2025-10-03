@@ -1,28 +1,28 @@
 package vn.liora.dto.response;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDate;
+import java.util.Set;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class UserResponse {
-    private Long userId;
-    private String username;
-    private String password;
-    private String email;
-    private String phone;
-    private String firstname;
-    private String lastname;
-    private LocalDate dob;
-    private Boolean gender;
-    private String avatar;
-    private Boolean active;
-    private LocalDate createdDate;
+    Long userId;
+    String username;
+    String email;
+    String phone;
+    String firstname;
+    String lastname;
+    LocalDate dob;
+    Boolean gender;
+    String avatar;
+    Boolean active;
+    LocalDate createdDate;
+    Set<String> roles;
 }
 

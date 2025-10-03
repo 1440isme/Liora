@@ -14,6 +14,7 @@ import java.time.LocalDate;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+
 public class UserCreationRequest {
     @Size(min = 3, message = "USERNAME_INVALID")
     @Column(unique = true)

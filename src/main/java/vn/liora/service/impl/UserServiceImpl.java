@@ -1,34 +1,39 @@
 package vn.liora.service.impl;
 
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.experimental.FieldDefaults;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import vn.liora.dto.request.UserCreationRequest;
 import vn.liora.dto.request.UserUpdateRequest;
 import vn.liora.dto.response.UserResponse;
 import vn.liora.entity.User;
+import vn.liora.enums.Role;
 import vn.liora.exception.AppException;
 import vn.liora.exception.ErrorCode;
 import vn.liora.mapper.UserMapper;
 import vn.liora.repository.UserRepository;
 import vn.liora.service.IUserService;
 
+import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class UserServiceImpl implements IUserService {
-    @Autowired
-    private UserRepository userRepository;
-    @Autowired
-    private UserMapper userMapper;
 
-    public UserServiceImpl(UserRepository userRepository) {this.userRepository = userRepository;}
+     UserRepository userRepository;
+     UserMapper userMapper;
+     PasswordEncoder passwordEncoder;
+
     @Override
     public void deleteAll() {
         userRepository.deleteAll();
@@ -50,18 +55,26 @@ public class UserServiceImpl implements IUserService {
     }
 
     @Override
-    public User createUser(UserCreationRequest request) {
+    public UserResponse createUser(UserCreationRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new AppException(ErrorCode.USER_EXISTED);
         }
         User user = userMapper.toUser(request);
-        return save(user);
-    }
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
 
+        HashSet<String> roles = new HashSet<>();
+        roles.add(Role.USER.name());
+        user.setRoles(roles);
+
+        return userMapper.toUserResponse(save(user));
+    }
+    @Override
     public UserResponse updateUser(Long userId, UserUpdateRequest request){
         User user = userRepository.findById(userId)
                 .orElseThrow(()-> new AppException(ErrorCode.USER_NOT_FOUND));
         userMapper.updateUser(user, request);
+        PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
         return userMapper.toUserResponse(save(user));
     }
 
