@@ -6,6 +6,8 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -18,6 +20,7 @@ import vn.liora.enums.Role;
 import vn.liora.exception.AppException;
 import vn.liora.exception.ErrorCode;
 import vn.liora.mapper.UserMapper;
+import vn.liora.repository.RoleRepository;
 import vn.liora.repository.UserRepository;
 import vn.liora.service.IUserService;
 
@@ -31,6 +34,7 @@ import java.util.Optional;
 public class UserServiceImpl implements IUserService {
 
      UserRepository userRepository;
+     RoleRepository roleRepository;
      UserMapper userMapper;
      PasswordEncoder passwordEncoder;
 
@@ -44,6 +48,7 @@ public class UserServiceImpl implements IUserService {
         userRepository.delete(user);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @Override
     public void deleteById(Long id) {
         userRepository.deleteById(id);
@@ -63,8 +68,8 @@ public class UserServiceImpl implements IUserService {
         user.setPassword(passwordEncoder.encode(request.getPassword()));
 
         HashSet<String> roles = new HashSet<>();
-        roles.add(Role.USER.name());
-        user.setRoles(roles);
+        roles.add("ROLE_" + Role.USER.name());
+        //user.setRoles(roles);
 
         return userMapper.toUserResponse(save(user));
     }
@@ -73,16 +78,28 @@ public class UserServiceImpl implements IUserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(()-> new AppException(ErrorCode.USER_NOT_FOUND));
         userMapper.updateUser(user, request);
-        PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
+        var roles =  roleRepository.findAllById(request.getRoles());
+        user.setRoles(new HashSet<>(roles));
         return userMapper.toUserResponse(save(user));
     }
 
-
+    @PreAuthorize("hasRole('ADMIN')")
     @Override
     public UserResponse findById(Long id) {
         return userMapper.toUserResponse(userRepository.findById(id)
                 .orElseThrow(()-> new AppException(ErrorCode.USER_NOT_FOUND)));
+    }
+
+    @Override
+    public UserResponse getMyInfo() {
+         var context = SecurityContextHolder.getContext();
+         String name = context.getAuthentication().getName();
+
+         User user = userRepository.findByUsername(name)
+                 .orElseThrow(()-> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+         return userMapper.toUserResponse(user);
     }
 
     @Override
@@ -105,9 +122,10 @@ public class UserServiceImpl implements IUserService {
         return userRepository.findAll(pageable);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @Override
-    public List<User> findAll() {
-        return userRepository.findAll();
+    public List<UserResponse> findAll() {
+        return userRepository.findAll().stream().map(userMapper::toUserResponse).toList();
     }
 
     @Override
@@ -139,3 +157,4 @@ public class UserServiceImpl implements IUserService {
         return userRepository.findByUsername(username);
     }
 }
+

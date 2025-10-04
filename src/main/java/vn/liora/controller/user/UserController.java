@@ -48,6 +48,13 @@ public class UserController {
                 .result(userService.findById(userId))
                 .build();
     }
+    @GetMapping("/myInfo")
+    ApiResponse<UserResponse> getMyInfo() {
+        return ApiResponse.<UserResponse>builder()
+                .result(userService.getMyInfo())
+                .build();
+    }
+
 
     @DeleteMapping("/{userId}")
     ApiResponse<String> deleteUser(@PathVariable Long userId) {

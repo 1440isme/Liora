@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import javax.naming.Name;
 import java.time.LocalDate;
 import java.util.Set;
 
@@ -17,7 +18,7 @@ import java.util.Set;
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "IdUsers")
+    @Column(name = "IdUser")
      Long userId;
     @Column(name = "UserName", nullable = false, unique = true)
      String username;
@@ -41,5 +42,8 @@ public class User {
      Boolean active;
     @Column(name = "CreatedDate")
      LocalDate createdDate;
-    Set<String> roles;
+
+    @ManyToMany
+    @JoinTable(name = "User_Role")
+    Set<Role> roles;
 }

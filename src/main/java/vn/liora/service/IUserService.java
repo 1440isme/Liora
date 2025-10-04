@@ -20,6 +20,7 @@ public interface IUserService {
      UserResponse createUser(UserCreationRequest request);
     UserResponse updateUser(Long userId, UserUpdateRequest request);
     UserResponse findById(Long id);
+    UserResponse getMyInfo();
     Optional<User> findByIdOptional(Long id);
     List<User> findAllById(Iterable<Long> ids);
     List<User> findAll(Sort sort);

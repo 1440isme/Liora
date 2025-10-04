@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Data
 @Builder
@@ -22,4 +23,5 @@ public class UserUpdateRequest {
     private String avatar;
     private Boolean active;
     private LocalDate createdDate;
+    List<String> roles;
 }

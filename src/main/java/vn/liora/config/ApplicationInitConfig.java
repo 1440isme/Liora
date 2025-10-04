@@ -27,7 +27,7 @@ public class ApplicationInitConfig {
         return args -> {
             if (userRepository.findByUsername("admin").isEmpty()) {
                 var roles = new HashSet<String>();
-                roles.add(Role.ADMIN.name());
+                roles.add("ROLE_" + Role.ADMIN.name());
                 User user = User.builder()
                         .username("admin")
                         .password(passwordEncoder.encode("admin"))
@@ -35,7 +35,7 @@ public class ApplicationInitConfig {
                         .firstname("Admin")
                         .lastname("User")
                         .active(true)
-                        .roles(roles)
+                        //.roles(roles)
                         .build();
                 userRepository.save(user);
                 log.warn("Create admin with password default: admin, please change it");

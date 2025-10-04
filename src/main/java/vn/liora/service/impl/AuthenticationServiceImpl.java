@@ -9,10 +9,10 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cglib.core.CollectionUtils;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 import vn.liora.dto.request.AuthenticationRequest;
 import vn.liora.dto.request.IntrospectRequest;
 import vn.liora.dto.response.AuthenticationResponse;
@@ -61,10 +61,11 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         if (!authenticated) {
             throw new AppException(ErrorCode.UNAUTHENTICATED);
         }
-        String token = "";
+        String token;
         try {
             token = generateToken(user);
         } catch (JOSEException e) {
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
         }
         return AuthenticationResponse.builder()
                 .token(token)
@@ -73,7 +74,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     }
 
 
-    private  String generateToken(User user) throws JOSEException {
+    private String generateToken(User user) throws JOSEException {
         JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
         JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
                 .subject(user.getUsername())
@@ -88,16 +89,21 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         Payload payload = new Payload(jwtClaimsSet.toJSONObject());
 
         JWSObject jwsObject = new JWSObject(header, payload);
-        try {
-            jwsObject.sign(new MACSigner(SIGNER_KEY.getBytes()));
-            return jwsObject.serialize();
-        } catch (JOSEException e) {throw new JOSEException("Failed to sign JWT token", e);}
+        jwsObject.sign(new MACSigner(SIGNER_KEY.getBytes()));
+        return jwsObject.serialize();
     }
-    private  String buildScope(User user) {
+
+    private String buildScope(User user){
         StringJoiner stringJoiner = new StringJoiner(" ");
-        if (CollectionUtils.isNotEmpty(user.getRoles())) {
-            user.getRoles().forEach(stringJoiner::add);
-        }
+
+        if (!CollectionUtils.isEmpty(user.getRoles()))
+            user.getRoles().forEach(role -> {
+                stringJoiner.add("ROLE_" + role.getName());
+                if (!CollectionUtils.isEmpty(role.getPermissions()))
+                    role.getPermissions()
+                            .forEach(permission -> stringJoiner.add(permission.getName()));
+            });
+
         return stringJoiner.toString();
     }
 

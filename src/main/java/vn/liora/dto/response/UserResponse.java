@@ -23,6 +23,6 @@ public class UserResponse {
     String avatar;
     Boolean active;
     LocalDate createdDate;
-    Set<String> roles;
+    Set<RoleResponse> roles;
 }
 
