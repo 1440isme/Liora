@@ -20,7 +20,7 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "IdUser")
      Long userId;
-    @Column(name = "UserName", nullable = false, unique = true)
+    @Column(name = "Username", nullable = false, unique = true)
      String username;
     @Column(name = "Password", nullable = false)
      String password;
@@ -28,9 +28,9 @@ public class User {
      String email;
     @Column(name = "Phone")
      String phone;
-    @Column(name = "Firstname",nullable = false)
+    @Column(name = "Firstname",nullable = false, columnDefinition = "NVARCHAR(100)")
      String firstname ;
-    @Column(name = "Lastname",nullable = false)
+    @Column(name = "Lastname",nullable = false, columnDefinition = "NVARCHAR(100)")
      String lastname ;
     @Column(name = "DoB")
      LocalDate dob;
