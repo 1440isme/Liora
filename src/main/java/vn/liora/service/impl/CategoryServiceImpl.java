@@ -126,7 +126,7 @@ public class CategoryServiceImpl implements ICategoryService {
 
     @Override
     public List<Category> findAllChildCategories() {
-        return categoryRepository.findByParentCategoryIdNotNull();
+        return categoryRepository.findByParentCategoryNotNull();
     }
 
     @Override
@@ -137,5 +137,41 @@ public class CategoryServiceImpl implements ICategoryService {
     @Override
     public long count() {
         return categoryRepository.count();
+    }
+
+    @Override
+    public List<Category> findActiveCategories() {
+        return  categoryRepository.findByIsActiveTrue();
+    }
+
+    @Override
+    public List<Category> findInactiveCategories() {
+        return  categoryRepository.findByIsActiveFalse();
+    }
+
+    @Override
+    public List<Category> findActiveRootCategories() {
+        return categoryRepository.findByIsActiveTrueAndParentCategoryIsNull();
+    }
+
+    @Override
+    public List<Category> findActiveChildCategories(Long parentId) {
+        return categoryRepository.findByIsActiveTrueAndParentCategoryId(parentId);
+    }
+
+    @Override
+    public void deactivateCategory(Long id) {
+        Category category = categoryRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
+        category.setIsActive(false);
+        categoryRepository.save(category);
+    }
+
+    @Override
+    public void activateCategory(Long id) {
+        Category category = categoryRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
+        category.setIsActive(true);
+        categoryRepository.save(category);
     }
 }

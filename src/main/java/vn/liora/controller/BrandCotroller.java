@@ -71,4 +71,28 @@ public class BrandCotroller {
         return apiResponse;
     }
 
+    // Thêm endpoints
+    @GetMapping("/active")
+    ApiResponse<List<Brand>> getActiveBrands() {
+        ApiResponse<List<Brand>> apiResponse = new ApiResponse<>();
+        apiResponse.setResult(brandService.findActiveBrands());
+        return apiResponse;
+    }
+
+    @PutMapping("/{id}/deactivate")
+    ApiResponse<String> deactivateBrand(@PathVariable Long id) {
+        ApiResponse<String> apiResponse = new ApiResponse<>();
+        brandService.deactivateBrand(id);
+        apiResponse.setResult("Brand deactivated successfully");
+        return apiResponse;
+    }
+
+    @PutMapping("/{id}/activate")
+    ApiResponse<String> activateBrand(@PathVariable Long id) {
+        ApiResponse<String> apiResponse = new ApiResponse<>();
+        brandService.activateBrand(id);
+        apiResponse.setResult("Brand activated successfully");
+        return apiResponse;
+    }
+
 }

@@ -40,4 +40,11 @@ public interface ICategoryService {
 
     long count();
 
+    // xóa mềm
+    List<Category> findActiveCategories();
+    List<Category> findInactiveCategories();
+    List<Category> findActiveRootCategories();
+    List<Category> findActiveChildCategories(Long parentId);
+    void deactivateCategory(Long id);
+    void activateCategory(Long id);
 }

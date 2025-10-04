@@ -22,4 +22,7 @@ public class CategoryCreationRequest {
     private Long parentCategoryId;
 
     private Boolean isParent;
+
+    @Builder.Default
+    private Boolean isActive = true;
 }

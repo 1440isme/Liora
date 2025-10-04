@@ -12,7 +12,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class BrandUpdateRequest {
-    @NotBlank
-    @Size(max = 255)
+    @Size(max = 255, message = "VALIDATION_NAME_TOO_LONG")
     private String name;
+
+    private Boolean isActive;
 }

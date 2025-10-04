@@ -12,7 +12,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class BrandCreationRequest {
-    @NotBlank
-    @Size(max = 255)
+    @NotBlank(message = "VALIDATION_REQUIRED_FIELD")
+    @Size(max = 255, message = "VALIDATION_NAME_TOO_LONG")
     private String name;
+
+    @Builder.Default
+    private Boolean isActive = true;
 }

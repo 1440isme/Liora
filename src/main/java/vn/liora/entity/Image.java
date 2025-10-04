@@ -15,12 +15,13 @@ public class Image {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "IdImage")
-    private int imageId;
+    private Long imageId;
 
-    @Column(name = "ImageUrl", columnDefinition = "VARCHAR(255)")
+    @Column(name = "ImageUrl", columnDefinition = "NVARCHAR(255)")
     private String imageUrl;
 
-    @Column(name = "IdProduct")
-    private Long productId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "IdProduct")
+    private Product product;
 
 }

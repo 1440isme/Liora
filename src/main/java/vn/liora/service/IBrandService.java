@@ -31,4 +31,9 @@ public interface IBrandService {
     List<Brand> findByNameContaining(String name);
     Page<Brand> findByNameContaining(String name, Pageable pageable);
     Optional<Brand> findByName(String name);
+    // Thực hiện các chức năng xóa mềm
+    List<Brand> findActiveBrands();
+    List<Brand> findInactiveBrands();
+    void deactivateBrand(Long id);
+    void activateBrand(Long id);
 }

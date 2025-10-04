@@ -15,8 +15,13 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable()) // tắt CSRF để test POST/PUT dễ dàng
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/users/*").permitAll()
-                        .requestMatchers("/users").permitAll()// mở cho endpoint /users
-                        .anyRequest().authenticated()          // còn lại phải login
+                        .requestMatchers("/users").permitAll()// mở cho endpoint /users;
+                        .requestMatchers("/brands/*").permitAll()
+                        .requestMatchers("/brands").permitAll()
+                        .requestMatchers("/categories/*").permitAll()
+                        .requestMatchers("/categories").permitAll()
+                        .requestMatchers("/categories/**").permitAll()
+                        .anyRequest().authenticated()  // còn lại phải login
                 );
 
         return http.build();

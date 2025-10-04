@@ -124,4 +124,30 @@ public class BrandServiceImpl implements IBrandService {
     public Optional<Brand> findByName(String name) {
         return brandRepository.findByName(name);
     }
+
+    @Override
+    public List<Brand> findActiveBrands() {
+        return brandRepository.findByIsActiveTrue();
+    }
+
+    @Override
+    public List<Brand> findInactiveBrands() {
+        return brandRepository.findByIsActiveFalse();
+    }
+
+    @Override
+    public void deactivateBrand(Long id) {
+        Brand brand = brandRepository.findById(id)
+            .orElseThrow(() -> new AppException(ErrorCode.BRAND_NOT_FOUND));
+        brand.setIsActive(false);
+        brandRepository.save(brand);
+    }
+
+    @Override
+    public void activateBrand(Long id) {
+        Brand brand = brandRepository.findById(id)
+            .orElseThrow(() -> new AppException(ErrorCode.BRAND_NOT_FOUND));
+        brand.setIsActive(true);
+        brandRepository.save(brand);
+    }
 }

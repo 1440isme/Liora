@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -31,14 +32,16 @@ public class Product {
     @Column(name = "Price", precision = 10, scale = 2, nullable = false)
     private BigDecimal price;
 
-    @Transient
-    private BigDecimal discountPrice;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "IdBrand")
+    private Brand brand;
 
-    @Column(name = "IdBrand")
-    private Long brandId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "IdCategory")
+    private Category category;
 
-    @Column(name = "IdCategory")
-    private Long categoryId;
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Image> images;
 
     @Column(name = "Stock")
     private Integer stock;
@@ -59,4 +62,7 @@ public class Product {
 
     @Transient
     private Integer ratingCount;
+
+    @Column(name = "IsActive")
+    private Boolean isActive = true;
 }

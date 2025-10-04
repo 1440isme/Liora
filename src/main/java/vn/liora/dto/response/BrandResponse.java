@@ -12,4 +12,5 @@ import lombok.NoArgsConstructor;
 public class BrandResponse {
     private Long brandId;
     private String name;
+    private Boolean isActive;
 }

@@ -93,4 +93,35 @@ public class CategoryController {
         return apiResponse;
     }
 
+    // Thêm endpoints
+    @GetMapping("/active/root")
+    ApiResponse<List<Category>> getActiveRootCategories() {
+        ApiResponse<List<Category>> apiResponse = new ApiResponse<>();
+        apiResponse.setResult(categoryService.findActiveRootCategories());
+        return apiResponse;
+    }
+
+    @GetMapping("/active/{id}/children")
+    ApiResponse<List<Category>> getActiveChildCategories(@PathVariable Long id) {
+        ApiResponse<List<Category>> apiResponse = new ApiResponse<>();
+        apiResponse.setResult(categoryService.findActiveChildCategories(id));
+        return apiResponse;
+    }
+
+    @PutMapping("/{id}/deactivate")
+    ApiResponse<String> deactivateCategory(@PathVariable Long id) {
+        ApiResponse<String> apiResponse = new ApiResponse<>();
+        categoryService.deactivateCategory(id);
+        apiResponse.setResult("Category deactivated successfully");
+        return apiResponse;
+    }
+
+    @PutMapping("/{id}/activate")
+    ApiResponse<String> activateCategory(@PathVariable Long id) {
+        ApiResponse<String> apiResponse = new ApiResponse<>();
+        categoryService.activateCategory(id);
+        apiResponse.setResult("Category activated successfully");
+        return apiResponse;
+    }
+
 }

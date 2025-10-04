@@ -20,4 +20,6 @@ public class CategoryUpdateRequest {
     private Long parentCategoryId;
 
     private Boolean isParent;
+
+    private Boolean isActive;
 }

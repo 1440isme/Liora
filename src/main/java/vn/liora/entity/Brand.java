@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -19,4 +21,10 @@ public class Brand {
 
     @Column(name = "Name", nullable = false, columnDefinition = "NVARCHAR(255)")
     private String name;
+
+    @Column(name = "IsActive")
+    private Boolean isActive = true;
+
+    @OneToMany(mappedBy = "brand", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Product> products;
 }
