@@ -20,22 +20,25 @@ public interface CategoryRepository extends JpaRepository<Category,Long> {
 
     List<Category> findByParentCategoryIsNull(); // lấy tất cả danh mục gốc (parentCategory = null)
     List<Category> findByParentCategory(Category parentCategory); // lấy danh mục con của danh mục cha cụ thể
-    List<Category> findByParentCategoryId(Long id); // lấy danh mục con của danh mục cha cụ thể
 
     List<Category> findByParentCategoryNotNull(); // lấy tất cả danh mục con (ko phải danh mục gốc)
 
-    @Query("SELECT c FROM Category c WHERE c.parentCategoryId IS NULL ORDER BY c.name")
+    @Query("SELECT c FROM Category c WHERE c.parentCategory IS NULL ORDER BY c.name")
     List<Category> findRootCategories();
 
-    @Query("SELECT c FROM Category c WHERE c.parentCategoryId = :parentId ORDER BY c.name")
+    @Query("SELECT c FROM Category c WHERE c.parentCategory.categoryId = :parentId ORDER BY c.name")
     List<Category> findChildCategories(@Param("parentId") Long parentId);
 
     // Kiểm tra danh mục có con không
-    @Query("SELECT COUNT(c) > 0 FROM Category c WHERE c.parentCategoryId = :categoryId")
+    @Query("SELECT COUNT(c) > 0 FROM Category c WHERE c.parentCategory.categoryId = :categoryId")
     boolean hasChildren(@Param("categoryId") Long categoryId);
 
     List<Category> findByIsActiveTrue();
     List<Category> findByIsActiveFalse();
-    List<Category> findByIsActiveTrueAndParentCategoryIsNull();
-    List<Category> findByIsActiveTrueAndParentCategoryId(Long parentId);
+
+    @Query("SELECT c FROM Category c WHERE c.isActive = true AND c.parentCategory IS NULL")
+    List<Category> findActiveRootCategories();
+
+    @Query("SELECT c FROM Category c WHERE c.isActive = true AND c.parentCategory.categoryId = :parentId")
+    List<Category> findActiveChildCategoriesByParentId(@Param("parentId") Long parentId);
 }

@@ -1,6 +1,5 @@
 package vn.liora.service.impl;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -18,7 +17,6 @@ import vn.liora.repository.UserRepository;
 import vn.liora.service.IUserService;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 @Service

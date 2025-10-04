@@ -9,6 +9,7 @@ import vn.liora.dto.request.CategoryCreationRequest;
 import vn.liora.dto.request.CategoryUpdateRequest;
 import vn.liora.dto.response.CategoryResponse;
 import vn.liora.entity.Category;
+import vn.liora.mapper.CategoryMapper;
 import vn.liora.service.impl.CategoryServiceImpl;
 
 import java.util.List;
@@ -18,6 +19,8 @@ import java.util.List;
 public class CategoryController {
     @Autowired
     private CategoryServiceImpl categoryService;
+    @Autowired
+    private CategoryMapper categoryMapper;
 
     @PostMapping
     ApiResponse<Category> createCategory(@RequestBody CategoryCreationRequest request){
@@ -80,16 +83,24 @@ public class CategoryController {
     }
 
     @GetMapping("/{id}/children")
-    ApiResponse<List<Category>> getChildrenCategories(@PathVariable Long id){
-        ApiResponse<List<Category>> apiResponse = new ApiResponse<>();
-        apiResponse.setResult(categoryService.findChildCategories(id));
+    ApiResponse<List<CategoryResponse>> getChildrenCategories(@PathVariable Long id){
+        ApiResponse<List<CategoryResponse>> apiResponse = new ApiResponse<>();
+        List<Category> categories = categoryService.findChildCategories(id);
+        List<CategoryResponse> categoryResponses = categories.stream()
+                .map(categoryMapper::toCategoryResponse)
+                .toList();
+        apiResponse.setResult(categoryResponses);
         return apiResponse;
     }
 
     @GetMapping("/children")
-    ApiResponse<List<Category>> getAllChildrenCategories(){
-        ApiResponse<List<Category>> apiResponse = new ApiResponse<>();
-        apiResponse.setResult(categoryService.findAllChildCategories());
+    ApiResponse<List<CategoryResponse>> getAllChildrenCategories(){
+        ApiResponse<List<CategoryResponse>> apiResponse = new ApiResponse<>();
+        List<Category> categories = categoryService.findAllChildCategories();
+        List<CategoryResponse> categoryResponses = categories.stream()
+                .map(categoryMapper::toCategoryResponse)
+                .toList();
+        apiResponse.setResult(categoryResponses);
         return apiResponse;
     }
 

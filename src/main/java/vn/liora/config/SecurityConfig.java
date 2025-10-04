@@ -17,6 +17,7 @@ public class SecurityConfig {
                         .requestMatchers("/users/*").permitAll()
                         .requestMatchers("/users").permitAll()// mở cho endpoint /users;
                         .requestMatchers("/brands/*").permitAll()
+                        .requestMatchers("/brands/**").permitAll()
                         .requestMatchers("/brands").permitAll()
                         .requestMatchers("/categories/*").permitAll()
                         .requestMatchers("/categories").permitAll()

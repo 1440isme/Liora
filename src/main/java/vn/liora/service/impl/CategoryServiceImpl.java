@@ -30,6 +30,14 @@ public class CategoryServiceImpl implements ICategoryService {
             throw new AppException(ErrorCode.CATEGORY_EXISTED);
         }
         Category category = categoryMapper.toCategory(request);
+        
+        // Xử lý parentCategoryId
+        if (request.getParentCategoryId() != null) {
+            Category parentCategory = categoryRepository.findById(request.getParentCategoryId())
+                    .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
+            category.setParentCategory(parentCategory);
+        }
+        
         return categoryRepository.save(category);
     }
 
@@ -51,6 +59,17 @@ public class CategoryServiceImpl implements ICategoryService {
         }
 
         categoryMapper.updateCategory(category, request);
+        
+        // Xử lý parentCategoryId
+        if (request.getParentCategoryId() != null) {
+            Category parentCategory = categoryRepository.findById(request.getParentCategoryId())
+                    .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
+            category.setParentCategory(parentCategory);
+        } else if (request.getParentCategoryId() == null && request.getName() != null) {
+            // Nếu parentCategoryId = null trong request, có thể muốn xóa parent
+            category.setParentCategory(null);
+        }
+        
         categoryRepository.save(category);
 
         return categoryMapper.toCategoryResponse(category);
@@ -151,12 +170,12 @@ public class CategoryServiceImpl implements ICategoryService {
 
     @Override
     public List<Category> findActiveRootCategories() {
-        return categoryRepository.findByIsActiveTrueAndParentCategoryIsNull();
+        return categoryRepository.findActiveRootCategories();
     }
 
     @Override
     public List<Category> findActiveChildCategories(Long parentId) {
-        return categoryRepository.findByIsActiveTrueAndParentCategoryId(parentId);
+        return categoryRepository.findActiveChildCategoriesByParentId(parentId);
     }
 
     @Override
@@ -165,6 +184,12 @@ public class CategoryServiceImpl implements ICategoryService {
                 .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
         category.setIsActive(false);
         categoryRepository.save(category);
+        
+        // Cascade deactivate all children
+        List<Category> children = categoryRepository.findChildCategories(id);
+        for (Category child : children) {
+            deactivateCategory(child.getCategoryId()); // Recursive deactivate
+        }
     }
 
     @Override
@@ -173,5 +198,11 @@ public class CategoryServiceImpl implements ICategoryService {
                 .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
         category.setIsActive(true);
         categoryRepository.save(category);
+        
+        // Cascade activate all children
+        List<Category> children = categoryRepository.findChildCategories(id);
+        for (Category child : children) {
+            activateCategory(child.getCategoryId()); // Recursive activate
+        }
     }
 }

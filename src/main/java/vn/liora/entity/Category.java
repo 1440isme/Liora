@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.util.List;
 
@@ -25,9 +26,6 @@ public class Category {
     @Column(name = "Name", nullable = false, columnDefinition = "NVARCHAR(255)")
     private String name;
 
-    @Column(name = "IdCategoryParent")
-    private Long parentCategoryId;
-
     @Column(name = "IsParent")
     private Boolean isParent;
 
@@ -39,6 +37,7 @@ public class Category {
     private Category parentCategory;
 
     @OneToMany(mappedBy = "parentCategory", cascade = CascadeType.ALL, fetch = FetchType.LAZY) // 1 category có nhiều child category (con)
+    @JsonIgnore
     private List<Category> childCategories;
 
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
