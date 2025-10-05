@@ -1,0 +1,40 @@
+package vn.liora.entity;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.*;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
+@Entity
+@Table(name = "Orders")
+public class Order {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "IdOrder")
+    Long idOrder;
+    @Column(name = "Address", nullable = false, columnDefinition = "NVARCHAR(255)")
+    String address;
+    @Column(name = "OrderDate", nullable = false)
+    LocalDateTime orderDate;
+    @Column(name = "ShippingFee", nullable = false)
+    BigDecimal shippingFee;
+    @Column(name = "TotalDiscount", nullable = false)
+    BigDecimal totalDiscount;
+    @Column(name = "Total", nullable = false)
+    BigDecimal total;
+    @Column(name = "PaymentStatus", nullable = false)
+    Boolean paymentStatus;
+    @ManyToOne
+    @JoinColumn(name = "IdUser")
+    @JsonIgnore
+    private User user;
+
+}
