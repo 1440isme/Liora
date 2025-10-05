@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import vn.liora.validator.DobConstraint;
 
 import java.time.LocalDate;
 
@@ -14,6 +15,7 @@ import java.time.LocalDate;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+
 public class UserCreationRequest {
     @Size(min = 3, message = "USERNAME_INVALID")
     @Column(unique = true)
@@ -25,6 +27,7 @@ public class UserCreationRequest {
     private String phone;
     private String firstname;
     private String lastname;
+    @DobConstraint(min = 8, message = "INVALID_DOB")
     private LocalDate dob;
     private Boolean gender;
     private String avatar;

@@ -1,47 +1,48 @@
 package vn.liora.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDate;
+import java.util.Set;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-
+@Builder
+@FieldDefaults(level = AccessLevel.PRIVATE)
 @Entity
 @Table(name = "Users")
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "IdUsers")
-    private Long userId;
-    @Column(name = "UserName", nullable = false, unique = true)
-    private String username;
+    @Column(name = "IdUser")
+     Long userId;
+    @Column(name = "Username", nullable = false, unique = true)
+     String username;
     @Column(name = "Password", nullable = false)
-    private String password;
+     String password;
     @Column(name = "Email", nullable = false)
-    private String email;
+     String email;
     @Column(name = "Phone")
-    private String phone;
-    @Column(name = "Firstname",nullable = false)
-    private String firstname ;
-    @Column(name = "Lastname",nullable = false)
-    private String lastname ;
+     String phone;
+    @Column(name = "Firstname",nullable = false, columnDefinition = "NVARCHAR(100)")
+     String firstname ;
+    @Column(name = "Lastname",nullable = false, columnDefinition = "NVARCHAR(100)")
+     String lastname ;
     @Column(name = "DoB")
-    private LocalDate dob;
+     LocalDate dob;
     @Column(name = "Gender")
-    private Boolean gender;
+     Boolean gender;
     @Column(name = "Avatar")
-    private String avatar;
+     String avatar;
     @Column(name = "Active")
-    private Boolean active;
+     Boolean active;
     @Column(name = "CreatedDate")
-    private LocalDate createdDate;
-    @Column(name = "IsAdmin")
-    private Boolean isAdmin;
-    @Column(name = "IsManager")
-    private Boolean isManager;
+     LocalDate createdDate;
+
+    @ManyToMany
+    @JoinTable(name = "User_Role")
+    Set<Role> roles;
 }
