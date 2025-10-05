@@ -1,0 +1,322 @@
+// Admin Forms Styles
+// ==================
+
+@import 'variables';
+
+.admin-form {
+    .form-group {
+        margin-bottom: $spacing-lg;
+
+        .form-label {
+            display: block;
+            margin-bottom: $spacing-xs;
+            font-weight: 500;
+            color: $dark-color;
+            font-size: $font-size-sm;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: $spacing-sm $spacing-md;
+            border: 1px solid #ddd;
+            border-radius: $border-radius;
+            font-size: $font-size-base;
+            transition: all 0.3s ease;
+            background: white;
+
+            &:focus {
+                outline: none;
+                border-color: $primary-color;
+                box-shadow: 0 0 0 3px rgba($primary-color, 0.1);
+            }
+
+            &:disabled {
+                background: $light-color;
+                color: $secondary-color;
+                cursor: not-allowed;
+            }
+
+            &.is-invalid {
+                border-color: $danger-color;
+                box-shadow: 0 0 0 3px rgba($danger-color, 0.1);
+            }
+
+            &.is-valid {
+                border-color: $success-color;
+                box-shadow: 0 0 0 3px rgba($success-color, 0.1);
+            }
+        }
+
+        .form-text {
+            font-size: $font-size-sm;
+            color: $secondary-color;
+            margin-top: $spacing-xs;
+        }
+
+        .invalid-feedback {
+            display: block;
+            font-size: $font-size-sm;
+            color: $danger-color;
+            margin-top: $spacing-xs;
+        }
+
+        .valid-feedback {
+            display: block;
+            font-size: $font-size-sm;
+            color: $success-color;
+            margin-top: $spacing-xs;
+        }
+    }
+
+    .form-row {
+        display: flex;
+        gap: $spacing-md;
+        margin-bottom: $spacing-lg;
+
+        .form-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
+        @media (max-width: $breakpoint-sm) {
+            flex-direction: column;
+            gap: 0;
+        }
+    }
+
+    .form-actions {
+        display: flex;
+        gap: $spacing-sm;
+        justify-content: flex-end;
+        margin-top: $spacing-xl;
+        padding-top: $spacing-lg;
+        border-top: 1px solid #eee;
+
+        @media (max-width: $breakpoint-sm) {
+            flex-direction: column;
+        }
+    }
+}
+
+// Form Types
+.form-inline {
+    display: flex;
+    align-items: center;
+    gap: $spacing-md;
+    flex-wrap: wrap;
+
+    .form-group {
+        margin-bottom: 0;
+    }
+
+    @media (max-width: $breakpoint-sm) {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+
+// Input Groups
+.input-group {
+    display: flex;
+    align-items: stretch;
+
+    .input-group-prepend,
+    .input-group-append {
+        display: flex;
+        align-items: center;
+        padding: $spacing-sm $spacing-md;
+        background: $light-color;
+        border: 1px solid #ddd;
+        color: $secondary-color;
+        font-size: $font-size-sm;
+    }
+
+    .input-group-prepend {
+        border-right: none;
+        border-radius: $border-radius 0 0 $border-radius;
+    }
+
+    .input-group-append {
+        border-left: none;
+        border-radius: 0 $border-radius $border-radius 0;
+    }
+
+    .form-control {
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+
+        &:focus {
+            border-color: $primary-color;
+            box-shadow: none;
+        }
+    }
+
+    .input-group-prepend+.form-control {
+        border-left: 1px solid #ddd;
+    }
+}
+
+// Checkboxes and Radios
+.form-check {
+    display: flex;
+    align-items: center;
+    margin-bottom: $spacing-sm;
+
+    .form-check-input {
+        margin-right: $spacing-sm;
+        margin-top: 0;
+    }
+
+    .form-check-label {
+        margin-bottom: 0;
+        cursor: pointer;
+    }
+
+    &.form-check-inline {
+        display: inline-flex;
+        margin-right: $spacing-lg;
+        margin-bottom: 0;
+    }
+}
+
+// File Input
+.form-file {
+    position: relative;
+    display: inline-block;
+    width: 100%;
+
+    .form-file-input {
+        position: absolute;
+        opacity: 0;
+        width: 100%;
+        height: 100%;
+        cursor: pointer;
+    }
+
+    .form-file-label {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: $spacing-lg;
+        border: 2px dashed #ddd;
+        border-radius: $border-radius;
+        background: $light-color;
+        color: $secondary-color;
+        cursor: pointer;
+        transition: all 0.3s ease;
+
+        &:hover {
+            border-color: $primary-color;
+            color: $primary-color;
+        }
+
+        .form-file-icon {
+            font-size: 24px;
+            margin-right: $spacing-sm;
+        }
+
+        .form-file-text {
+            font-size: $font-size-sm;
+        }
+    }
+
+    &.has-file {
+        .form-file-label {
+            border-color: $success-color;
+            color: $success-color;
+            background: rgba($success-color, 0.1);
+        }
+    }
+}
+
+// Select2 Customization
+.select2-container {
+    .select2-selection--single {
+        height: 38px;
+        border: 1px solid #ddd;
+        border-radius: $border-radius;
+
+        .select2-selection__rendered {
+            line-height: 36px;
+            padding-left: $spacing-md;
+        }
+
+        .select2-selection__arrow {
+            height: 36px;
+        }
+    }
+
+    .select2-selection--multiple {
+        min-height: 38px;
+        border: 1px solid #ddd;
+        border-radius: $border-radius;
+
+        .select2-selection__choice {
+            background: $primary-color;
+            border: none;
+            border-radius: 4px;
+            color: white;
+            padding: 2px 8px;
+            margin: 2px;
+        }
+    }
+
+    &.select2-container--focus {
+        .select2-selection {
+            border-color: $primary-color;
+            box-shadow: 0 0 0 3px rgba($primary-color, 0.1);
+        }
+    }
+}
+
+// Date Picker
+.datepicker {
+    .datepicker-days {
+        .day {
+            &.active {
+                background: $primary-color;
+                color: white;
+            }
+
+            &:hover {
+                background: rgba($primary-color, 0.1);
+            }
+        }
+    }
+}
+
+// Form Validation States
+.was-validated {
+    .form-control {
+        &:valid {
+            border-color: $success-color;
+            box-shadow: 0 0 0 3px rgba($success-color, 0.1);
+        }
+
+        &:invalid {
+            border-color: $danger-color;
+            box-shadow: 0 0 0 3px rgba($danger-color, 0.1);
+        }
+    }
+}
+
+// Form Loading State
+.form-loading {
+    position: relative;
+    pointer-events: none;
+
+    &::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10;
+    }
+}

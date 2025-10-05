@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Modal</title>
+</head>
+
+<body>
+    <!-- Product Detail Modal -->
+    <div class="modal fade" id="productModal" tabindex="-1" aria-labelledby="productModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="productModalLabel">Chi tiết sản phẩm</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <!-- Product Images -->
+                        <div class="col-md-4">
+                            <div id="productImages">
+                                <!-- Images will be loaded here -->
+                            </div>
+                        </div>
+
+                        <!-- Product Information -->
+                        <div class="col-md-8">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h4 id="productName">Tên sản phẩm</h4>
+                                    <p class="text-muted" id="productSku">SKU: ABC123</p>
+                                </div>
+                                <div class="col-md-6 text-end">
+                                    <h3 class="text-primary" id="productPrice">25,000,000 ₫</h3>
+                                    <p class="text-muted" id="productOriginalPrice"></p>
+                                </div>
+                            </div>
+
+                            <hr>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6>Thông tin cơ bản</h6>
+                                    <table class="table table-sm">
+                                        <tr>
+                                            <td><strong>Danh mục:</strong></td>
+                                            <td id="productCategory">Điện thoại</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Thương hiệu:</strong></td>
+                                            <td id="productBrand">Apple</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Trạng thái:</strong></td>
+                                            <td id="productStatus">Hoạt động</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Tồn kho:</strong></td>
+                                            <td id="productStock">50</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6>Thông tin bổ sung</h6>
+                                    <table class="table table-sm">
+                                        <tr>
+                                            <td><strong>Trọng lượng:</strong></td>
+                                            <td id="productWeight">200g</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Kích thước:</strong></td>
+                                            <td id="productDimensions">15 x 8 x 1 cm</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Bảo hành:</strong></td>
+                                            <td id="productWarranty">12 tháng</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Tags:</strong></td>
+                                            <td id="productTags">smartphone, apple, ios</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <hr>
+
+                            <div class="mb-3">
+                                <h6>Mô tả ngắn</h6>
+                                <p id="productShortDescription" class="text-muted">Mô tả ngắn về sản phẩm</p>
+                            </div>
+
+                            <div class="mb-3">
+                                <h6>Mô tả chi tiết</h6>
+                                <div id="productDescription">Mô tả chi tiết về sản phẩm</div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6>Thống kê</h6>
+                                    <table class="table table-sm">
+                                        <tr>
+                                            <td><strong>Lượt xem:</strong></td>
+                                            <td id="productViewCount">1,234</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Đã bán:</strong></td>
+                                            <td id="productSoldQuantity">56</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Đánh giá:</strong></td>
+                                            <td id="productRating">4.5/5</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Ngày tạo:</strong></td>
+                                            <td id="productCreatedAt">15/12/2024</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <a id="editProductBtn" href="#" class="btn btn-warning">
+                        <i class="fas fa-edit"></i> Chỉnh sửa
+                    </a>
+                    <button type="button" class="btn btn-danger" id="deleteProductBtn">
+                        <i class="fas fa-trash"></i> Xóa
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Edit Modal -->
+    <div class="modal fade" id="quickEditModal" tabindex="-1" aria-labelledby="quickEditModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="quickEditModalLabel">Chỉnh sửa nhanh</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="quickEditForm">
+                        <input type="hidden" id="quickEditProductId" name="id">
+
+                        <div class="mb-3">
+                            <label for="quickEditName" class="form-label">Tên sản phẩm</label>
+                            <input type="text" class="form-control" id="quickEditName" name="name" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="quickEditPrice" class="form-label">Giá bán</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="quickEditPrice" name="price" min="0"
+                                    step="1000" required>
+                                <span class="input-group-text">₫</span>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="quickEditStock" class="form-label">Số lượng tồn kho</label>
+                            <input type="number" class="form-control" id="quickEditStock" name="stockQuantity" min="0"
+                                required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="quickEditStatus" class="form-label">Trạng thái</label>
+                            <select class="form-select" id="quickEditStatus" name="status">
+                                <option value="ACTIVE">Hoạt động</option>
+                                <option value="INACTIVE">Ngừng bán</option>
+                                <option value="OUT_OF_STOCK">Hết hàng</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy bỏ</button>
+                    <button type="button" class="btn btn-primary" id="saveQuickEditBtn">Lưu thay đổi</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Product Modal Functions
+        function showProductModal(productId) {
+            // Load product data via AJAX
+            fetch('/admin/api/products/' + productId)
+                .then(response => response.json())
+                .then(data => {
+                    // Populate modal with product data
+                    document.getElementById('productName').textContent = data.name;
+                    document.getElementById('productSku').textContent = 'SKU: ' + data.sku;
+                    document.getElementById('productPrice').textContent = formatCurrency(data.price);
+                    document.getElementById('productCategory').textContent = data.categoryName;
+                    document.getElementById('productBrand').textContent = data.brandName;
+                    document.getElementById('productStock').textContent = data.stockQuantity;
+                    document.getElementById('productViewCount').textContent = data.viewCount;
+                    document.getElementById('productSoldQuantity').textContent = data.soldQuantity;
+                    document.getElementById('productCreatedAt').textContent = formatDate(data.createdAt);
+
+                    // Set edit button href
+                    document.getElementById('editProductBtn').href = '/admin/products/' + productId + '/edit';
+
+                    // Show modal
+                    new bootstrap.Modal(document.getElementById('productModal')).show();
+                })
+                .catch(error => {
+                    console.error('Error loading product:', error);
+                    alert('Không thể tải thông tin sản phẩm');
+                });
+        }
+
+        function showQuickEditModal(productId) {
+            // Load product data for quick edit
+            fetch('/admin/api/products/' + productId)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('quickEditProductId').value = data.id;
+                    document.getElementById('quickEditName').value = data.name;
+                    document.getElementById('quickEditPrice').value = data.price;
+                    document.getElementById('quickEditStock').value = data.stockQuantity;
+                    document.getElementById('quickEditStatus').value = data.status;
+
+                    // Show modal
+                    new bootstrap.Modal(document.getElementById('quickEditModal')).show();
+                })
+                .catch(error => {
+                    console.error('Error loading product:', error);
+                    alert('Không thể tải thông tin sản phẩm');
+                });
+        }
+
+        // Save quick edit
+        document.getElementById('saveQuickEditBtn').addEventListener('click', function () {
+            const formData = new FormData(document.getElementById('quickEditForm'));
+            const productId = formData.get('id');
+
+            fetch('/admin/api/products/' + productId + '/quick-edit', {
+                method: 'PUT',
+                body: formData
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Close modal and reload page
+                        bootstrap.Modal.getInstance(document.getElementById('quickEditModal')).hide();
+                        location.reload();
+                    } else {
+                        alert('Có lỗi xảy ra: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error updating product:', error);
+                    alert('Không thể cập nhật sản phẩm');
+                });
+        });
+
+        // Utility functions
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('vi-VN', {
+                style: 'currency',
+                currency: 'VND'
+            }).format(amount);
+        }
+
+        function formatDate(dateString) {
+            return new Date(dateString).toLocaleDateString('vi-VN');
+        }
+    </script>
+</body>
+
+</html>

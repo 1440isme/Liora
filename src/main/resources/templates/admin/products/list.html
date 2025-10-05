@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="admin/fragments/admin-head :: admin-head('Danh sách sản phẩm - Liora Admin')"></head>
+
+<body class="with-welcome-text">
+    <div class="container-scroller">
+        <div class="container-fluid page-body-wrapper">
+            <div th:replace="admin/layout/admin-navbar"></div>
+            <div th:replace="admin/layout/admin-sidebar"></div>
+
+            <div class="main-panel">
+                <div class="content-wrapper">
+                    <div class="d-sm-flex align-items-center justify-content-between border-bottom mb-3">
+                        <h1 class="h3 mb-0">Quản lý sản phẩm</h1>
+                        <div class="btn-wrapper">
+                            <a href="/admin/products/add" class="btn btn-primary text-white me-2"><i
+                                    class="mdi mdi-plus"></i> Thêm sản phẩm</a>
+                            <button type="button" class="btn btn-otline-dark"><i class="mdi mdi-file-excel"></i> Xuất
+                                Excel</button>
+                        </div>
+                    </div>
+
+                    <div class="card card-rounded mb-4">
+                        <div class="card-body">
+                            <h4 class="card-title card-title-dash">Bộ lọc</h4>
+                            <form method="get" action="/admin/products">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <label for="search" class="form-label">Tìm kiếm</label>
+                                        <input type="text" class="form-control" id="search" name="search"
+                                            th:value="${param.search}" placeholder="Tên sản phẩm, SKU...">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label for="category" class="form-label">Danh mục</label>
+                                        <select class="form-select" id="category" name="category">
+                                            <option value="">Tất cả danh mục</option>
+                                            <option th:each="cat : ${categories}" th:value="${cat.id}"
+                                                th:text="${cat.name}"
+                                                th:selected="${param.category != null and param.category == cat.id}">
+                                            </option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label for="brand" class="form-label">Thương hiệu</label>
+                                        <select class="form-select" id="brand" name="brand">
+                                            <option value="">Tất cả thương hiệu</option>
+                                            <option th:each="brand : ${brands}" th:value="${brand.id}"
+                                                th:text="${brand.name}"
+                                                th:selected="${param.brand != null and param.brand == brand.id}">
+                                            </option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label for="status" class="form-label">Trạng thái</label>
+                                        <select class="form-select" id="status" name="status">
+                                            <option value="">Tất cả trạng thái</option>
+                                            <option value="ACTIVE" th:selected="${param.status == 'ACTIVE'}">Hoạt động
+                                            </option>
+                                            <option value="INACTIVE" th:selected="${param.status == 'INACTIVE'}">Ngừng
+                                                bán
+                                            </option>
+                                            <option value="OUT_OF_STOCK"
+                                                th:selected="${param.status == 'OUT_OF_STOCK'}">Hết
+                                                hàng</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3 d-flex align-items-end">
+                                        <button type="submit" class="btn btn-primary text-white me-2"><i
+                                                class="mdi mdi-magnify"></i> Tìm kiếm</button>
+                                        <a href="/admin/products" class="btn btn-otline-dark"><i
+                                                class="mdi mdi-close"></i> Xóa bộ lọc</a>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="card card-rounded mb-4">
+                        <div class="card-body">
+                            <h4 class="card-title card-title-dash">Danh sách sản phẩm</h4>
+                            <div th:replace="admin/products/components/product-table"></div>
+                        </div>
+                    </div>
+                    <div th:replace="admin/layout/admin-footer"></div>
+                </div>
+            </div>
+        </div>
+
+        <div th:replace="admin/fragments/admin-scripts :: admin-scripts"></div>
+        <script src="/admin/js/admin/products.js"></script>
+</body>
+
+</html>
