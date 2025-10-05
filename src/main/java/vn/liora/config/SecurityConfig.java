@@ -25,7 +25,12 @@ import javax.crypto.spec.SecretKeySpec;
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    private  final  String[] PUBLIC_ENDPOINTS = {"/users", "/auth/token", "/auth/introspect", "/auth/logout", "/auth/refresh"};
+    private  final  String[] PUBLIC_ENDPOINTS = {
+            "/users", "/auth/token", "/auth/introspect", "/auth/logout", "/auth/refresh",
+            "/brands/**", "/categories/**", "/products/**"
+
+
+    };
 
 
     @Autowired
@@ -35,6 +40,9 @@ public class SecurityConfig {
         httpSecurity
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST,PUBLIC_ENDPOINTS).permitAll()
+                        .requestMatchers(HttpMethod.GET,PUBLIC_ENDPOINTS).permitAll()
+                        .requestMatchers(HttpMethod.DELETE,PUBLIC_ENDPOINTS).permitAll()
+                        .requestMatchers(HttpMethod.PUT,PUBLIC_ENDPOINTS).permitAll()
 
                         .anyRequest().authenticated()
                 );
