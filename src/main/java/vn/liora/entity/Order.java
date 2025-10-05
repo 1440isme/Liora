@@ -20,8 +20,6 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "IdOrder")
     Long idOrder;
-    @Column(name = "Address", nullable = false, columnDefinition = "NVARCHAR(255)")
-    String address;
     @Column(name = "OrderDate", nullable = false)
     LocalDateTime orderDate;
     @Column(name = "ShippingFee", nullable = false)
@@ -32,6 +30,13 @@ public class Order {
     BigDecimal total;
     @Column(name = "PaymentStatus", nullable = false)
     Boolean paymentStatus;
+
+    @ManyToOne
+    @JoinColumn(name = "IdAddress", nullable = false)
+    @JsonIgnore
+    private Address address;
+
+
     @ManyToOne
     @JoinColumn(name = "IdUser")
     @JsonIgnore
