@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý vai trò chi tiết - Liora Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="/admin/css/admin-style.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="wrapper">
+        <!-- Include Sidebar -->
+        <div th:replace="admin/layout/admin-sidebar"></div>
+
+        <!-- Page Content -->
+        <div id="content">
+            <!-- Include Navbar -->
+            <div th:replace="admin/layout/admin-navbar"></div>
+
+            <!-- Main Content -->
+            <div class="container-fluid">
+                <!-- Page Header -->
+                <div class="d-sm-flex align-items-center justify-content-between mb-4">
+                    <h1 class="h3 mb-0 text-gray-800">Quản lý vai trò chi tiết</h1>
+                    <div class="btn-group" role="group">
+                        <a href="/admin/roles" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left fa-sm text-white-50"></i> Quay lại
+                        </a>
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                            data-bs-target="#addRoleModal">
+                            <i class="fas fa-plus fa-sm text-white-50"></i> Thêm vai trò
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Role Cards -->
+                <div class="row">
+                    <div th:each="role : ${roles}" class="col-lg-4 col-md-6 mb-4">
+                        <div class="card shadow h-100">
+                            <div class="card-header py-3">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h6 class="m-0 font-weight-bold text-primary" th:text="${role.name}">Tên vai trò
+                                    </h6>
+                                    <span class="badge"
+                                        th:classappend="${role.status == 'ACTIVE'} ? 'bg-success' : 'bg-secondary'"
+                                        th:text="${role.status == 'ACTIVE'} ? 'Hoạt động' : 'Không hoạt động'">Hoạt
+                                        động</span>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <strong>Mã vai trò:</strong> <code th:text="${role.code}">ADMIN</code>
+                                </div>
+                                <div class="mb-3">
+                                    <strong>Mô tả:</strong>
+                                    <p class="text-muted mb-0" th:text="${role.description}">Mô tả vai trò</p>
+                                </div>
+                                <div class="mb-3">
+                                    <strong>Quyền hạn:</strong>
+                                    <div class="mt-2">
+                                        <div th:each="permission : ${role.permissions}"
+                                            class="badge bg-primary me-1 mb-1" th:text="${permission.name}">READ_USERS
+                                        </div>
+                                        <div th:if="${role.permissions == null or role.permissions.isEmpty()}"
+                                            class="text-muted">Không có quyền hạn</div>
+                                    </div>
+                                </div>
+                                <div class="row text-center mb-3">
+                                    <div class="col-6">
+                                        <div class="fw-bold text-info" th:text="${role.permissions.size()}">0</div>
+                                        <small class="text-muted">Quyền hạn</small>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="fw-bold text-primary" th:text="${role.userCount}">0</div>
+                                        <small class="text-muted">Người dùng</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-footer">
+                                <div class="btn-group w-100" role="group">
+                                    <button type="button" class="btn btn-sm btn-outline-info"
+                                        th:onclick="'viewRole(' + ${role.id} + ')'" title="Xem chi tiết">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-warning"
+                                        th:onclick="'editRole(' + ${role.id} + ')'" title="Chỉnh sửa">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger"
+                                        th:onclick="'deleteRole(' + ${role.id} + ', \'' + ${role.name} + '\')'"
+                                        title="Xóa">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Role Statistics -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card shadow mb-4">
+                            <div class="card-header py-3">
+                                <h6 class="m-0 font-weight-bold text-primary">Thống kê vai trò</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <div class="text-center">
+                                            <div class="h3 text-primary" th:text="${totalRoles}">0</div>
+                                            <div class="text-muted">Tổng vai trò</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="text-center">
+                                            <div class="h3 text-success" th:text="${activeRoles}">0</div>
+                                            <div class="text-muted">Đang hoạt động</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="text-center">
+                                            <div class="h3 text-warning" th:text="${inactiveRoles}">0</div>
+                                            <div class="text-muted">Không hoạt động</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="text-center">
+                                            <div class="h3 text-info" th:text="${totalUsersWithRoles}">0</div>
+                                            <div class="text-muted">Người dùng có vai trò</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Permission Distribution -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card shadow mb-4">
+                            <div class="card-header py-3">
+                                <h6 class="m-0 font-weight-bold text-primary">Phân bố quyền hạn theo vai trò</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-bordered">
+                                        <thead>
+                                            <tr>
+                                                <th>Vai trò</th>
+                                                <th>Quyền hạn</th>
+                                                <th>Số lượng</th>
+                                                <th>Người dùng</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr th:each="role : ${roles}">
+                                                <td>
+                                                    <div class="fw-bold" th:text="${role.name}">Admin</div>
+                                                    <small class="text-muted" th:text="${role.code}">ADMIN</small>
+                                                </td>
+                                                <td>
+                                                    <div th:each="permission : ${role.permissions}"
+                                                        class="badge bg-primary me-1 mb-1" th:text="${permission.name}">
+                                                        READ_USERS</div>
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-info"
+                                                        th:text="${role.permissions.size()}">15</span>
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-primary" th:text="${role.userCount}">5</span>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Include Footer -->
+            <div th:replace="admin/layout/admin-footer"></div>
+        </div>
+    </div>
+
+    <!-- Add Role Modal -->
+    <div class="modal fade" id="addRoleModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Thêm vai trò mới</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form th:action="@{/admin/roles}" method="post">
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="name" class="form-label">Tên vai trò <span
+                                            class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="name" name="name" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="code" class="form-label">Mã vai trò <span
+                                            class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="code" name="code" required
+                                        placeholder="ADMIN">
+                                    <div class="form-text">Sử dụng định dạng UPPER_CASE</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Mô tả</label>
+                            <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Quyền hạn</label>
+                            <div class="row">
+                                <div th:each="group : ${permissionGroups}" class="col-md-6 mb-3">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h6 class="mb-0" th:text="${group.name}">Nhóm quyền hạn</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div th:each="permission : ${group.permissions}" class="form-check">
+                                                <input class="form-check-input" type="checkbox"
+                                                    th:id="'permission_' + ${permission.id}" th:name="permissions"
+                                                    th:value="${permission.id}">
+                                                <label class="form-check-label"
+                                                    th:for="'permission_' + ${permission.id}"
+                                                    th:text="${permission.name}">Tên quyền hạn</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="status" name="status" value="ACTIVE"
+                                    checked>
+                                <label class="form-check-label" for="status">
+                                    Kích hoạt
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy bỏ</button>
+                        <button type="submit" class="btn btn-primary">Thêm vai trò</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Role Modal -->
+    <div class="modal fade" id="editRoleModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Chỉnh sửa vai trò</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="editRoleForm" method="post">
+                    <input type="hidden" name="_method" value="PUT">
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="editName" class="form-label">Tên vai trò <span
+                                            class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="editName" name="name" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="editCode" class="form-label">Mã vai trò <span
+                                            class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="editCode" name="code" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="editDescription" class="form-label">Mô tả</label>
+                            <textarea class="form-control" id="editDescription" name="description" rows="3"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Quyền hạn</label>
+                            <div id="editPermissions">
+                                <!-- Permissions will be loaded here -->
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="editStatus" name="status"
+                                    value="ACTIVE">
+                                <label class="form-check-label" for="editStatus">
+                                    Kích hoạt
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy bỏ</button>
+                        <button type="submit" class="btn btn-primary">Cập nhật vai trò</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Role Modal -->
+    <div class="modal fade" id="viewRoleModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Chi tiết vai trò</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Thông tin cơ bản</h6>
+                            <table class="table table-sm">
+                                <tr>
+                                    <td><strong>Tên vai trò:</strong></td>
+                                    <td id="viewRoleName">-</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Mã vai trò:</strong></td>
+                                    <td id="viewRoleCode">-</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Mô tả:</strong></td>
+                                    <td id="viewRoleDescription">-</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Trạng thái:</strong></td>
+                                    <td id="viewRoleStatus">-</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Ngày tạo:</strong></td>
+                                    <td id="viewRoleCreatedAt">-</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Quyền hạn</h6>
+                            <div id="viewRolePermissions">
+                                <!-- Permissions will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Xác nhận xóa vai trò</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Bạn có chắc chắn muốn xóa vai trò <strong id="deleteRoleName">Tên vai trò</strong>?</p>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Cảnh báo:</strong> Vai trò này có thể đang được sử dụng bởi các người dùng.
+                    </div>
+                    <p class="text-danger">Hành động này không thể hoàn tác!</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy bỏ</button>
+                    <form id="deleteForm" method="post" class="d-inline">
+                        <input type="hidden" name="_method" value="DELETE">
+                        <button type="submit" class="btn btn-danger">Xóa vai trò</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="/admin/js/admin/roles.js"></script>
+
+    <script>
+        function viewRole(roleId) {
+            // Load role data via AJAX
+            fetch('/admin/api/roles/' + roleId)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('viewRoleName').textContent = data.name;
+                    document.getElementById('viewRoleCode').textContent = data.code;
+                    document.getElementById('viewRoleDescription').textContent = data.description || '-';
+                    document.getElementById('viewRoleStatus').innerHTML =
+                        '<span class="badge ' + (data.status === 'ACTIVE' ? 'bg-success' : 'bg-secondary') + '">' +
+                        (data.status === 'ACTIVE' ? 'Hoạt động' : 'Không hoạt động') + '</span>';
+                    document.getElementById('viewRoleCreatedAt').textContent = new Date(data.createdAt).toLocaleDateString('vi-VN');
+
+                    // Load permissions
+                    let permissionsHtml = '';
+                    if (data.permissions && data.permissions.length > 0) {
+                        data.permissions.forEach(permission => {
+                            permissionsHtml += '<div class="badge bg-primary me-1 mb-1">' + permission.name + '</div>';
+                        });
+                    } else {
+                        permissionsHtml = '<span class="text-muted">Không có quyền hạn</span>';
+                    }
+                    document.getElementById('viewRolePermissions').innerHTML = permissionsHtml;
+
+                    new bootstrap.Modal(document.getElementById('viewRoleModal')).show();
+                })
+                .catch(error => {
+                    console.error('Error loading role:', error);
+                    alert('Không thể tải thông tin vai trò');
+                });
+        }
+
+        function editRole(roleId) {
+            // Load role data via AJAX
+            fetch('/admin/api/roles/' + roleId)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('editName').value = data.name;
+                    document.getElementById('editCode').value = data.code;
+                    document.getElementById('editDescription').value = data.description || '';
+                    document.getElementById('editStatus').checked = data.status === 'ACTIVE';
+
+                    // Load permissions
+                    loadPermissionsForEdit(data.permissions);
+
+                    document.getElementById('editRoleForm').action = '/admin/roles/' + roleId;
+                    new bootstrap.Modal(document.getElementById('editRoleModal')).show();
+                })
+                .catch(error => {
+                    console.error('Error loading role:', error);
+                    alert('Không thể tải thông tin vai trò');
+                });
+        }
+
+        function loadPermissionsForEdit(rolePermissions) {
+            // Load all permissions and create checkboxes
+            fetch('/admin/api/permissions')
+                .then(response => response.json())
+                .then(data => {
+                    let permissionsHtml = '';
+                    data.forEach(permission => {
+                        const isChecked = rolePermissions.some(rp => rp.id === permission.id);
+                        permissionsHtml += `
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" 
+                                       id="edit_permission_${permission.id}" 
+                                       name="permissions" 
+                                       value="${permission.id}"
+                                       ${isChecked ? 'checked' : ''}>
+                                <label class="form-check-label" 
+                                       for="edit_permission_${permission.id}">
+                                    ${permission.name}
+                                </label>
+                            </div>
+                        `;
+                    });
+                    document.getElementById('editPermissions').innerHTML = permissionsHtml;
+                })
+                .catch(error => {
+                    console.error('Error loading permissions:', error);
+                });
+        }
+
+        function deleteRole(roleId, roleName) {
+            document.getElementById('deleteRoleName').textContent = roleName;
+            document.getElementById('deleteForm').action = '/admin/roles/' + roleId;
+            new bootstrap.Modal(document.getElementById('deleteModal')).show();
+        }
+    </script>
+</body>
+
+</html>

@@ -6,7 +6,7 @@ import vn.liora.entity.User;
 
 import java.util.List;
 
-public interface OrderRepository extends JpaRepository<Order, String> {
-    List<Order> findByUser(User user);
-    List<Order> findByUserAndStatus(User user, String status);
-}
+//public interface OrderRepository extends JpaRepository<Order, String> {
+//    List<Order> findByUser(User user);
+//    List<Order> findByUserAndStatus(User user, String status);
+//}

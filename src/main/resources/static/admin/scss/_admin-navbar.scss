@@ -1,0 +1,145 @@
+// Admin Navbar Styles
+// ===================
+
+@import 'variables';
+
+.admin-navbar {
+    background: white;
+    border-bottom: 1px solid #eee;
+    padding: $spacing-sm $spacing-lg;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    .navbar-brand {
+        font-size: $font-size-lg;
+        font-weight: 600;
+        color: $dark-color;
+        text-decoration: none;
+    }
+
+    .navbar-nav {
+        display: flex;
+        align-items: center;
+        gap: $spacing-md;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+
+        .nav-item {
+            .nav-link {
+                color: $secondary-color;
+                text-decoration: none;
+                padding: $spacing-sm $spacing-md;
+                border-radius: $border-radius;
+                transition: all 0.3s ease;
+
+                &:hover {
+                    color: $primary-color;
+                    background-color: rgba($primary-color, 0.1);
+                }
+
+                &.active {
+                    color: $primary-color;
+                    background-color: rgba($primary-color, 0.1);
+                }
+            }
+        }
+    }
+
+    .navbar-actions {
+        display: flex;
+        align-items: center;
+        gap: $spacing-sm;
+
+        .btn-notification {
+            position: relative;
+            background: none;
+            border: none;
+            color: $secondary-color;
+            font-size: 18px;
+            padding: $spacing-sm;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+
+            &:hover {
+                background-color: rgba($primary-color, 0.1);
+                color: $primary-color;
+            }
+
+            .badge {
+                position: absolute;
+                top: 0;
+                right: 0;
+                background: $danger-color;
+                color: white;
+                border-radius: 50%;
+                width: 18px;
+                height: 18px;
+                font-size: 10px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+        }
+
+        .user-dropdown {
+            position: relative;
+
+            .user-avatar {
+                width: 32px;
+                height: 32px;
+                border-radius: 50%;
+                cursor: pointer;
+                border: 2px solid #eee;
+                transition: all 0.3s ease;
+
+                &:hover {
+                    border-color: $primary-color;
+                }
+            }
+
+            .dropdown-menu {
+                position: absolute;
+                top: 100%;
+                right: 0;
+                background: white;
+                border: 1px solid #eee;
+                border-radius: $border-radius;
+                box-shadow: $box-shadow;
+                min-width: 200px;
+                z-index: 1000;
+                opacity: 0;
+                visibility: hidden;
+                transform: translateY(-10px);
+                transition: all 0.3s ease;
+
+                &.show {
+                    opacity: 1;
+                    visibility: visible;
+                    transform: translateY(0);
+                }
+
+                .dropdown-item {
+                    display: block;
+                    padding: $spacing-sm $spacing-md;
+                    color: $dark-color;
+                    text-decoration: none;
+                    transition: all 0.3s ease;
+
+                    &:hover {
+                        background-color: rgba($primary-color, 0.1);
+                        color: $primary-color;
+                    }
+
+                    &.divider {
+                        height: 1px;
+                        background: #eee;
+                        margin: $spacing-sm 0;
+                        padding: 0;
+                    }
+                }
+            }
+        }
+    }
+}
