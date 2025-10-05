@@ -1,8 +1,10 @@
 package vn.liora.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Min;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -30,20 +32,25 @@ public class Product {
     private String description;
 
     @Column(name = "Price", precision = 10, scale = 2, nullable = false)
+    @DecimalMin(value = "0.0", message = "Price must be positive")
     private BigDecimal price;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "IdBrand")
+    @JsonIgnore
     private Brand brand;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "IdCategory")
+    @JsonIgnore
     private Category category;
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
     private List<Image> images;
 
     @Column(name = "Stock")
+    @Min(value = 0, message = "Stock cannot be negative")
     private Integer stock;
 
     @Column(name = "SoldCount")
@@ -51,6 +58,9 @@ public class Product {
 
     @Column(name = "CreatedDate", columnDefinition = "DATETIME")
     private LocalDateTime createdDate;
+
+    @Column(name = "UpdatedDate", columnDefinition = "DATETIME")
+    private LocalDateTime updatedDate;
 
     @Column(name = "Available")
     private Boolean available;

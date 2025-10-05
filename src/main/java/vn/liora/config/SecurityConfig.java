@@ -22,6 +22,9 @@ public class SecurityConfig {
                         .requestMatchers("/categories/*").permitAll()
                         .requestMatchers("/categories").permitAll()
                         .requestMatchers("/categories/**").permitAll()
+                        .requestMatchers("/products/*").permitAll()
+                        .requestMatchers("/products").permitAll()
+                        .requestMatchers("/products/**").permitAll()
                         .anyRequest().authenticated()  // còn lại phải login
                 );
 

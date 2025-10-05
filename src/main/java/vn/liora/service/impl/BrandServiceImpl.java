@@ -1,5 +1,6 @@
 package vn.liora.service.impl;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -13,17 +14,21 @@ import vn.liora.dto.request.BrandCreationRequest;
 import vn.liora.dto.request.BrandUpdateRequest;
 import vn.liora.dto.response.BrandResponse;
 import vn.liora.entity.Brand;
+import vn.liora.entity.Product;
 import vn.liora.exception.AppException;
 import vn.liora.exception.ErrorCode;
 import vn.liora.mapper.BrandMapper;
 import vn.liora.repository.BrandRepository;
 
+import vn.liora.repository.ProductRepository;
 import vn.liora.service.IBrandService;
 
 @Service
 public class BrandServiceImpl implements IBrandService {
     @Autowired
     private BrandRepository brandRepository;
+    @Autowired
+    private ProductRepository productRepository;
     @Autowired
     private BrandMapper brandMapper;
     @Override
@@ -141,6 +146,13 @@ public class BrandServiceImpl implements IBrandService {
             .orElseThrow(() -> new AppException(ErrorCode.BRAND_NOT_FOUND));
         brand.setIsActive(false);
         brandRepository.save(brand);
+
+        List<Product> products = productRepository.findByBrandBrandId(id);
+        for (Product product : products) {
+            product.setIsActive(false);
+            product.setUpdatedDate(LocalDateTime.now());
+            productRepository.save(product);
+        }
     }
 
     @Override
@@ -149,5 +161,12 @@ public class BrandServiceImpl implements IBrandService {
             .orElseThrow(() -> new AppException(ErrorCode.BRAND_NOT_FOUND));
         brand.setIsActive(true);
         brandRepository.save(brand);
+
+        List<Product> products = productRepository.findByBrandBrandId(id);
+        for (Product product : products) {
+            product.setIsActive(true);
+            product.setUpdatedDate(LocalDateTime.now());
+            productRepository.save(product);
+        }
     }
 }

@@ -9,12 +9,15 @@ import vn.liora.dto.request.CategoryCreationRequest;
 import vn.liora.dto.request.CategoryUpdateRequest;
 import vn.liora.dto.response.CategoryResponse;
 import vn.liora.entity.Category;
+import vn.liora.entity.Product;
 import vn.liora.exception.AppException;
 import vn.liora.exception.ErrorCode;
 import vn.liora.mapper.CategoryMapper;
 import vn.liora.repository.CategoryRepository;
+import vn.liora.repository.ProductRepository;
 import vn.liora.service.ICategoryService;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -22,6 +25,8 @@ import java.util.Optional;
 public class CategoryServiceImpl implements ICategoryService {
     @Autowired
     private CategoryRepository categoryRepository;
+    @Autowired
+    private ProductRepository productRepository;
     @Autowired
     private CategoryMapper categoryMapper;
     @Override
@@ -190,6 +195,13 @@ public class CategoryServiceImpl implements ICategoryService {
         for (Category child : children) {
             deactivateCategory(child.getCategoryId()); // Recursive deactivate
         }
+
+        List<Product> products = productRepository.findByCategoryCategoryId(id);
+        for (Product product : products) {
+            product.setIsActive(false);
+            product.setUpdatedDate(LocalDateTime.now());
+            productRepository.save(product);
+        }
     }
 
     @Override
@@ -203,6 +215,13 @@ public class CategoryServiceImpl implements ICategoryService {
         List<Category> children = categoryRepository.findChildCategories(id);
         for (Category child : children) {
             activateCategory(child.getCategoryId()); // Recursive activate
+        }
+
+        List<Product> products = productRepository.findByCategoryCategoryId(id);
+        for (Product product : products) {
+            product.setIsActive(true);
+            product.setUpdatedDate(LocalDateTime.now());
+            productRepository.save(product);
         }
     }
 }
