@@ -2,22 +2,22 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 
 <body th:fragment="admin-scripts">
-    <!-- plugins:js (StarAdmin vendors) -->
-    <script src="/admin/assets/vendors/js/vendor.bundle.base.js"></script>
-    <script src="/admin/assets/vendors/bootstrap-datepicker/bootstrap-datepicker.min.js"></script>
+    <!-- plugins:js (use built outputs only) -->
+    <script th:src="@{/admin/js/vendors/vendor.bundle.base.js}"></script>
+
     <!-- End plugins:js -->
 
     <!-- Plugin js for this page (optional) -->
-    <script src="/admin/assets/vendors/chart.js/chart.umd.js"></script>
-    <script src="/admin/assets/vendors/progressbar.js/progressbar.min.js"></script>
+    <script th:src="@{/admin/js/vendors/chart.js/chart.umd.js}"></script>
+
     <!-- End plugin js for this page -->
 
-    <!-- inject:js (StarAdmin core) -->
-    <script src="/admin/assets/js/off-canvas.js"></script>
-    <script src="/admin/assets/js/template.js"></script>
-    <script src="/admin/assets/js/settings.js"></script>
-    <script src="/admin/assets/js/hoverable-collapse.js"></script>
-    <script src="/admin/assets/js/todolist.js"></script>
+    <!-- Core scripts (use built outputs) -->
+    <script th:src="@{/admin/js/admin/off-canvas.js}"></script>
+    <script th:src="@{/admin/js/admin/template.js}"></script>
+    <script th:src="@{/admin/js/admin/settings.js}"></script>
+    <script th:src="@{/admin/js/admin/hoverable-collapse.js}"></script>
+    <script th:src="@{/admin/js/admin/todolist.js}"></script>
     <!-- endinject -->
 
     <!-- Fallback: Bootstrap bundle from CDN to ensure collapse/offcanvas works if local assets fail -->
