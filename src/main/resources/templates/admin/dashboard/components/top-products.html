@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Top Products</title>
+</head>
+
+<body>
+    <!-- Top Products Card -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">Sản phẩm bán chạy</h6>
+            <a href="/admin/products" class="btn btn-sm btn-primary">Xem tất cả</a>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Hình ảnh</th>
+                            <th>Tên sản phẩm</th>
+                            <th>Danh mục</th>
+                            <th>Đã bán</th>
+                            <th>Doanh thu</th>
+                            <th>Đánh giá</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="product : ${topProducts}">
+                            <td>
+                                <img th:src="${product.imageUrl}" th:alt="${product.name}" class="img-thumbnail"
+                                    width="50" height="50" style="object-fit: cover;">
+                            </td>
+                            <td>
+                                <div class="fw-bold" th:text="${product.name}">iPhone 15 Pro Max</div>
+                                <small class="text-muted" th:text="${product.sku}">SKU: IP15PM-256</small>
+                            </td>
+                            <td th:text="${product.categoryName}">Điện thoại</td>
+                            <td>
+                                <span class="badge bg-success" th:text="${product.soldQuantity}">150</span>
+                            </td>
+                            <td th:text="${#numbers.formatDecimal(product.revenue, 0, 'COMMA', 0, 'POINT')} + ' ₫'">
+                                2,500,000,000 ₫</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <span class="text-warning me-1">
+                                        <i class="fas fa-star"
+                                            th:each="i : ${#numbers.sequence(1, product.rating)}"></i>
+                                        <i class="far fa-star"
+                                            th:each="i : ${#numbers.sequence(product.rating + 1, 5)}"></i>
+                                    </span>
+                                    <small class="text-muted" th:text="${product.rating} + '/5'">4.5/5</small>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(topProducts)}">
+                            <td colspan="6" class="text-center text-muted">Không có dữ liệu sản phẩm</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
