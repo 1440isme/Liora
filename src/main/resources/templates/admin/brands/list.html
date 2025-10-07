@@ -110,6 +110,14 @@
 
 <div th:replace="admin/fragments/admin-scripts :: admin-scripts"></div>
 <script src="/admin/js/admin/brands.js"></script>
+
+    <script>
+        function deleteBrand(brandId, brandName) {
+            document.getElementById('deleteBrandName').textContent = brandName;
+            document.getElementById('deleteForm').action = '/admin/brands/' + brandId;
+            new bootstrap.Modal(document.getElementById('deleteModal')).show();
+        }
+    </script>
 </body>
 
 </html>

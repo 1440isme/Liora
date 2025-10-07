@@ -161,6 +161,49 @@
         }
     }
 </script>
+
+    <script>
+        // Auto-generate slug from name
+        document.getElementById('name').addEventListener('input', function () {
+            const name = this.value;
+            const slug = name
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '') // Remove diacritics
+                .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
+                .replace(/\s+/g, '-') // Replace spaces with hyphens
+                .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
+                .trim('-'); // Remove leading/trailing hyphens
+
+            document.getElementById('slug').value = slug;
+        });
+
+        // Logo preview
+        document.getElementById('logo').addEventListener('change', function (e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    document.getElementById('logoPreview').innerHTML =
+                        '<img src="' + e.target.result + '" class="img-thumbnail" style="max-width: 200px; max-height: 200px;">';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Banner preview
+        document.getElementById('banner').addEventListener('change', function (e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    document.getElementById('bannerPreview').innerHTML =
+                        '<img src="' + e.target.result + '" class="img-fluid rounded">';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    </script>
 </body>
 
 </html>

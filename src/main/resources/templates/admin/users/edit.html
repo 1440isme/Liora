@@ -336,37 +336,37 @@
                 </div>
             </div>
         </div>
+    </div>
 
-        <div th:replace="admin/fragments/admin-scripts :: admin-scripts"></div>
-        <script src="/admin/js/admin/users.js"></script>
+    <div th:replace="admin/fragments/admin-scripts :: admin-scripts"></div>
 
-        <script>
-            // Password confirmation validation
-            document.getElementById('confirmPassword').addEventListener('input', function () {
-                const password = document.getElementById('password').value;
-                const confirmPassword = this.value;
+    <script>
+        // Password confirmation validation
+        document.getElementById('confirmPassword').addEventListener('input', function () {
+            const password = document.getElementById('password').value;
+            const confirmPassword = this.value;
 
-                if (password !== confirmPassword) {
-                    this.setCustomValidity('Mật khẩu xác nhận không khớp');
-                    this.classList.add('is-invalid');
-                } else {
-                    this.setCustomValidity('');
-                    this.classList.remove('is-invalid');
-                }
-            });
+            if (password !== confirmPassword) {
+                this.setCustomValidity('Mật khẩu xác nhận không khớp');
+                this.classList.add('is-invalid');
+            } else {
+                this.setCustomValidity('');
+                this.classList.remove('is-invalid');
+            }
+        });
 
-            // Avatar preview
-            document.getElementById('avatar').addEventListener('change', function (e) {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = function (e) {
-                        document.getElementById('previewImg').src = e.target.result;
-                    };
-                    reader.readAsDataURL(file);
-                }
-            });
-        </script>
+        // Avatar preview
+        document.getElementById('avatar').addEventListener('change', function (e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    document.getElementById('previewImg').src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    </script>
 </body>
 
 </html>
