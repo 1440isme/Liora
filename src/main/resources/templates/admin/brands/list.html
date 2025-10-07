@@ -174,51 +174,50 @@
                             </ul>
                         </nav>
                     </div>
-                    <div th:replace="admin/layout/admin-footer"></div>
+                </div>
+                <div th:replace="admin/layout/admin-footer"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Xác nhận xóa thương hiệu</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Bạn có chắc chắn muốn xóa thương hiệu <strong id="deleteBrandName">Tên thương hiệu</strong>?
+                    </p>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Cảnh báo:</strong> Nếu thương hiệu có sản phẩm, chúng sẽ được chuyển về thương hiệu
+                        mặc
+                        định.
+                    </div>
+                    <p class="text-danger">Hành động này không thể hoàn tác!</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy bỏ</button>
+                    <form id="deleteForm" method="post" class="d-inline">
+                        <input type="hidden" name="_method" value="DELETE">
+                        <button type="submit" class="btn btn-danger">Xóa thương hiệu</button>
+                    </form>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Delete Confirmation Modal -->
-        <div class="modal fade" id="deleteModal" tabindex="-1">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Xác nhận xóa thương hiệu</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <p>Bạn có chắc chắn muốn xóa thương hiệu <strong id="deleteBrandName">Tên thương hiệu</strong>?
-                        </p>
-                        <div class="alert alert-warning">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            <strong>Cảnh báo:</strong> Nếu thương hiệu có sản phẩm, chúng sẽ được chuyển về thương hiệu
-                            mặc
-                            định.
-                        </div>
-                        <p class="text-danger">Hành động này không thể hoàn tác!</p>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy bỏ</button>
-                        <form id="deleteForm" method="post" class="d-inline">
-                            <input type="hidden" name="_method" value="DELETE">
-                            <button type="submit" class="btn btn-danger">Xóa thương hiệu</button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div th:replace="admin/fragments/admin-scripts :: admin-scripts"></div>
-        <script src="/admin/js/admin/brands.js"></script>
-
-        <script>
-            function deleteBrand(brandId, brandName) {
-                document.getElementById('deleteBrandName').textContent = brandName;
-                document.getElementById('deleteForm').action = '/admin/brands/' + brandId;
-                new bootstrap.Modal(document.getElementById('deleteModal')).show();
-            }
-        </script>
+    <div th:replace="admin/fragments/admin-scripts :: admin-scripts"></div>
+    <script>
+        function deleteBrand(brandId, brandName) {
+            document.getElementById('deleteBrandName').textContent = brandName;
+            document.getElementById('deleteForm').action = '/admin/brands/' + brandId;
+            new bootstrap.Modal(document.getElementById('deleteModal')).show();
+        }
+    </script>
 </body>
 
 </html>

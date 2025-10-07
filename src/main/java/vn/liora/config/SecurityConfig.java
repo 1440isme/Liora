@@ -23,7 +23,9 @@ public class SecurityConfig {
                         "/users", "/auth/token", "/auth/introspect", "/auth/logout", "/auth/refresh",
                         "/brands/**", "/categories/**", "/products/**", "/admin/**", "/admin/login", "/home",
                         // static resources
-                        "/", "/favicon.ico", "/static/**", "/user/**", "/css/**", "/js/**", "/images/**", "/webjars/**"
+                        "/", "/favicon.ico", "/static/**", "/user/**", "/css/**", "/js/**", "/images/**", "/webjars/**",
+                        // admin static resources
+                        "/admin/css/**", "/admin/js/**", "/admin/images/**", "/admin/vendors/**", "/admin/fonts/**"
 
         };
 
