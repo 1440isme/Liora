@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.util.List;
 import java.util.Set;
 
 @Data
@@ -26,6 +27,10 @@ public class Cart {
     @JoinColumn(name = "IdUser")
     @JsonIgnore
     private User user;
+
+    @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
+    private List<CartProduct> cartProducts;
 
 
 }

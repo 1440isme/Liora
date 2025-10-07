@@ -75,4 +75,8 @@ public class Product {
 
     @Column(name = "IsActive")
     private Boolean isActive = true;
+
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
+    private List<CartProduct> cartProducts;
 }
