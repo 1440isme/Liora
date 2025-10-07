@@ -34,6 +34,7 @@ public interface ICategoryService {
 
     // Phân tầng
     List<Category> findRootCategories();
+    List<Category> findAllRootCategories(); // Lấy tất cả root categories (cả active và inactive)
     List<Category> findChildCategories(Long parentId);
     List<Category> findAllChildCategories();
     boolean hasChildren(Long categoryId);

@@ -54,8 +54,14 @@ public class UploadFileController {
     public ResponseEntity<ApiResponse<Map<String, String>>> uploadBrandImage(
             @RequestParam("file") MultipartFile file) {
         try {
+            System.out.println("=== UPLOAD BRAND IMAGE START ===");
+            System.out.println("File name: " + file.getOriginalFilename());
+            System.out.println("File size: " + file.getSize() + " bytes");
+            System.out.println("Content type: " + file.getContentType());
+            
             // Validation
             if (!validateFile(file)) {
+                System.err.println("File validation failed");
                 return ResponseEntity.badRequest()
                         .body(ApiResponse.error("File không hợp lệ hoặc quá lớn"));
             }
@@ -86,6 +92,7 @@ public class UploadFileController {
                     .body(ApiResponse.error("Lỗi khi upload: " + e.getMessage()));
         }
     }
+
 
     /**
      * Upload ảnh cho sản phẩm

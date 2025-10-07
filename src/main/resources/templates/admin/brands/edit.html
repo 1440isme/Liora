@@ -4,291 +4,164 @@
 <head th:replace="admin/fragments/admin-head :: admin-head('Chỉnh sửa thương hiệu - Liora Admin')"></head>
 
 <body class="with-welcome-text">
-    <div class="container-scroller">
-        <div class="container-fluid page-body-wrapper">
-            <div th:replace="admin/layout/admin-navbar"></div>
-            <div th:replace="admin/layout/admin-sidebar"></div>
+<div class="container-scroller">
+    <div class="container-fluid page-body-wrapper">
+        <div th:replace="admin/layout/admin-navbar"></div>
+        <div th:replace="admin/layout/admin-sidebar"></div>
 
-            <div class="main-panel">
-                <div class="content-wrapper">
-                    <!-- Page Header -->
-                    <div class="d-sm-flex align-items-center justify-content-between border-bottom mb-3">
-                        <h1 class="h3 mb-0">Chỉnh sửa thương hiệu</h1>
-                        <nav aria-label="breadcrumb">
-                            <ol class="breadcrumb">
-                                <li class="breadcrumb-item"><a href="/admin/dashboard">Dashboard</a></li>
-                                <li class="breadcrumb-item"><a href="/admin/brands">Thương hiệu</a></li>
-                                <li class="breadcrumb-item active">Chỉnh sửa</li>
-                            </ol>
-                        </nav>
-                    </div>
-
-                    <!-- Brand Form -->
-                    <div class="row">
-                        <div class="col-lg-8 grid-margin stretch-card">
-                            <div class="card card-rounded w-100">
-                                <div class="card-body">
-                                    <h4 class="card-title card-title-dash">Thông tin thương hiệu</h4>
-                                    <form th:action="@{/admin/brands/{id}(id=${brand.id})}" th:object="${brandRequest}"
-                                        method="post" enctype="multipart/form-data">
-                                        <input type="hidden" name="_method" value="PUT">
-
-                                        <!-- Basic Information -->
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <div class="mb-3">
-                                                    <label for="name" class="form-label">Tên thương hiệu <span
-                                                            class="text-danger">*</span></label>
-                                                    <input type="text" class="form-control" id="name" name="name"
-                                                        th:field="*{name}" required>
-                                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('name')}"
-                                                        th:errors="*{name}"></div>
-                                                </div>
-                                            </div>
-
-                                            <div class="col-md-6">
-                                                <div class="mb-3">
-                                                    <label for="slug" class="form-label">URL Slug</label>
-                                                    <input type="text" class="form-control" id="slug" name="slug"
-                                                        th:field="*{slug}">
-                                                    <div class="form-text">URL thân thiện (tự động tạo từ tên thương
-                                                        hiệu)
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- Description -->
-                                        <div class="mb-3">
-                                            <label for="description" class="form-label">Mô tả</label>
-                                            <textarea class="form-control" id="description" name="description"
-                                                th:field="*{description}" rows="4"></textarea>
-                                        </div>
-
-                                        <!-- Website and Contact -->
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <div class="mb-3">
-                                                    <label for="website" class="form-label">Website</label>
-                                                    <input type="url" class="form-control" id="website" name="website"
-                                                        th:field="*{website}" placeholder="https://example.com">
-                                                </div>
-                                            </div>
-
-                                            <div class="col-md-6">
-                                                <div class="mb-3">
-                                                    <label for="email" class="form-label">Email liên hệ</label>
-                                                    <input type="email" class="form-control" id="email" name="email"
-                                                        th:field="*{email}" placeholder="contact@example.com">
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- Phone and Address -->
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <div class="mb-3">
-                                                    <label for="phone" class="form-label">Số điện thoại</label>
-                                                    <input type="tel" class="form-control" id="phone" name="phone"
-                                                        th:field="*{phone}" placeholder="+84 123 456 789">
-                                                </div>
-                                            </div>
-
-                                            <div class="col-md-6">
-                                                <div class="mb-3">
-                                                    <label for="address" class="form-label">Địa chỉ</label>
-                                                    <input type="text" class="form-control" id="address" name="address"
-                                                        th:field="*{address}"
-                                                        placeholder="123 Đường ABC, Quận XYZ, TP.HCM">
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- Founded Year and Country -->
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <div class="mb-3">
-                                                    <label for="foundedYear" class="form-label">Năm thành lập</label>
-                                                    <input type="number" class="form-control" id="foundedYear"
-                                                        name="foundedYear" th:field="*{foundedYear}" min="1800"
-                                                        max="2024">
-                                                </div>
-                                            </div>
-
-                                            <div class="col-md-6">
-                                                <div class="mb-3">
-                                                    <label for="country" class="form-label">Quốc gia</label>
-                                                    <input type="text" class="form-control" id="country" name="country"
-                                                        th:field="*{country}" placeholder="Việt Nam">
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- Sort Order -->
-                                        <div class="mb-3">
-                                            <label for="sortOrder" class="form-label">Thứ tự sắp xếp</label>
-                                            <input type="number" class="form-control" id="sortOrder" name="sortOrder"
-                                                th:field="*{sortOrder}" min="0">
-                                            <div class="form-text">Số càng nhỏ càng hiển thị trước</div>
-                                        </div>
-
-                                        <!-- Features -->
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <div class="mb-3">
-                                                    <div class="form-check">
-                                                        <input class="form-check-input" type="checkbox" id="featured"
-                                                            name="featured" th:field="*{featured}">
-                                                        <label class="form-check-label" for="featured">
-                                                            Thương hiệu nổi bật
-                                                        </label>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div class="col-md-6">
-                                                <div class="mb-3">
-                                                    <div class="form-check">
-                                                        <input class="form-check-input" type="checkbox" id="isActive"
-                                                            name="isActive" th:field="*{isActive}">
-                                                        <label class="form-check-label" for="isActive">
-                                                            Kích hoạt
-                                                        </label>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div class="mt-4">
-                                            <button type="submit" class="btn btn-primary text-white me-2"><i
-                                                    class="mdi mdi-content-save"></i> Cập nhật thương hiệu</button>
-                                            <a href="/admin/brands" class="btn btn-otline-dark me-2"><i
-                                                    class="mdi mdi-close"></i> Hủy bỏ</a>
-                                            <button type="button" class="btn btn-danger" data-bs-toggle="modal"
-                                                data-bs-target="#deleteModal"><i class="mdi mdi-delete"></i> Xóa thương
-                                                hiệu</button>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Sidebar -->
-                        <div class="col-lg-4 grid-margin stretch-card">
-                            <div class="card card-rounded mb-4">
-                                <div class="card-body text-center">
-                                    <h4 class="card-title card-title-dash">Logo hiện tại</h4>
-                                    <div th:if="${brand.logoUrl != null}">
-                                        <img th:src="${brand.logoUrl}" th:alt="${brand.name}" class="img-thumbnail"
-                                            style="max-width: 200px; max-height: 200px;">
-                                    </div>
-                                    <div th:if="${brand.logoUrl == null}" class="text-muted">
-                                        Chưa có logo
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="card card-rounded mb-4">
-                                <div class="card-body">
-                                    <h4 class="card-title card-title-dash">Cập nhật logo</h4>
-                                    <div class="mb-3">
-                                        <label for="logo" class="form-label">Logo mới</label>
-                                        <input type="file" class="form-control" id="logo" name="logo" accept="image/*">
-                                        <div class="form-text">Kích thước khuyến nghị: 200x200px</div>
-                                    </div>
-
-                                    <!-- Logo Preview -->
-                                    <div id="logoPreview" class="mt-3 text-center">
-                                        <!-- Preview logo will be shown here -->
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="card card-rounded mb-4">
-                                <div class="card-body">
-                                    <h4 class="card-title card-title-dash">Banner hiện tại</h4>
-                                    <div th:if="${brand.bannerUrl != null}">
-                                        <img th:src="${brand.bannerUrl}" th:alt="${brand.name}"
-                                            class="img-fluid rounded">
-                                    </div>
-                                    <div th:if="${brand.bannerUrl == null}" class="text-muted">
-                                        Chưa có banner
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="card card-rounded mb-4">
-                                <div class="card-body">
-                                    <h4 class="card-title card-title-dash">Cập nhật banner</h4>
-                                    <div class="mb-3">
-                                        <label for="banner" class="form-label">Banner mới</label>
-                                        <input type="file" class="form-control" id="banner" name="banner"
-                                            accept="image/*">
-                                        <div class="form-text">Kích thước khuyến nghị: 1200x300px</div>
-                                    </div>
-
-                                    <!-- Banner Preview -->
-                                    <div id="bannerPreview" class="mt-3">
-                                        <!-- Preview banner will be shown here -->
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="card card-rounded">
-                                <div class="card-body">
-                                    <h4 class="card-title card-title-dash">Thông tin bổ sung</h4>
-                                    <p><strong>Ngày tạo:</strong> <span
-                                            th:text="${#temporals.format(brand.createdAt, 'dd/MM/yyyy HH:mm')}">15/12/2024
-                                            10:30</span></p>
-                                    <p><strong>Cập nhật lần cuối:</strong> <span
-                                            th:text="${#temporals.format(brand.updatedAt, 'dd/MM/yyyy HH:mm')}">15/12/2024
-                                            15:45</span></p>
-                                    <p><strong>Số sản phẩm:</strong> <span th:text="${brand.productCount}">25</span></p>
-                                    <p><strong>Tổng doanh thu:</strong> <span
-                                            th:text="${#numbers.formatDecimal(brand.totalSales, 0, 'COMMA', 0, 'POINT')} + ' ₫'">1,500,000,000
-                                            ₫</span></p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div th:replace="admin/layout/admin-footer"></div>
+        <div class="main-panel">
+            <div class="content-wrapper">
+                <!-- Page Header -->
+                <div class="d-sm-flex align-items-center justify-content-between border-bottom mb-3">
+                    <h1 class="h3 mb-0">Chỉnh sửa thương hiệu</h1>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="/admin/dashboard">Dashboard</a></li>
+                            <li class="breadcrumb-item"><a href="/admin/brands">Thương hiệu</a></li>
+                            <li class="breadcrumb-item active">Chỉnh sửa</li>
+                        </ol>
+                    </nav>
                 </div>
-            </div>
-        </div>
 
-        <!-- Delete Confirmation Modal -->
-        <div class="modal fade" id="deleteModal" tabindex="-1">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Xác nhận xóa thương hiệu</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <p>Bạn có chắc chắn muốn xóa thương hiệu <strong th:text="${brand.name}">Tên thương
-                                hiệu</strong>?
-                        </p>
-                        <div class="alert alert-warning">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            <strong>Cảnh báo:</strong> Nếu thương hiệu có sản phẩm, chúng sẽ được chuyển về thương hiệu
-                            mặc
-                            định.
+                <!-- Brand Form -->
+                <div class="row">
+                    <div class="col-lg-8 grid-margin stretch-card">
+                        <div class="card card-rounded w-100">
+                            <div class="card-body">
+                                <h4 class="card-title card-title-dash">Thông tin thương hiệu</h4>
+                                <form id="brandForm" th:action="@{/admin/brands}" method="post" data-brand-id="">
+                                    <!-- Basic Information -->
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <div class="mb-3">
+                                                <label for="name" class="form-label">Tên thương hiệu <span class="text-danger">*</span></label>
+                                                <input type="text" class="form-control" id="name" name="name" required>
+                                                <div class="invalid-feedback" id="nameError"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Logo Upload -->
+                                    <div class="row">
+                                        <div class="col-md-12">
+                                            <div class="mb-3">
+                                                <label for="logoFile" class="form-label">Logo thương hiệu</label>
+                                                <input type="file" class="form-control" id="logoFile" name="logoFile" accept="image/*">
+                                                <div class="form-text">Chọn file ảnh (JPG, PNG, GIF) - Tối đa 5MB</div>
+                                                <div class="invalid-feedback" id="logoError"></div>
+                                            </div>
+                                            
+                                            <!-- Logo Preview -->
+                                            <div id="logoPreview" class="mb-3" style="display: none;">
+                                                <img id="previewImage" src="" alt="Logo preview" 
+                                                     style="max-width: 200px; max-height: 200px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                                                <div class="mt-2">
+                                                    <button type="button" class="btn btn-sm btn-outline-danger" id="removeLogo">
+                                                        <i class="mdi mdi-delete"></i> Xóa ảnh
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Status -->
+                                    <div class="mb-3">
+                                        <div class="custom-switch-container" style="display: flex; align-items: center; gap: 0.5rem;">
+                                            <label class="custom-switch">
+                                                <input type="checkbox" id="isActive" name="isActive" checked>
+                                                <span class="slider"></span>
+                                            </label>
+                                            <label for="isActive" style="font-weight: 500; margin: 0; line-height: 1.5rem;">
+                                                Kích hoạt thương hiệu
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div class="mt-4">
+                                        <button type="submit" class="btn btn-primary text-white me-2">
+                                            <i class="mdi mdi-content-save"></i> Cập nhật thương hiệu
+                                        </button>
+                                        <a href="/admin/brands" class="btn btn-otline-dark">
+                                            <i class="mdi mdi-close"></i> Hủy bỏ
+                                        </a>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
-                        <p class="text-danger">Hành động này không thể hoàn tác!</p>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy bỏ</button>
-                        <form th:action="@{/admin/brands/{id}(id=${brand.id})}" method="post" class="d-inline">
-                            <input type="hidden" name="_method" value="DELETE">
-                            <button type="submit" class="btn btn-danger">Xóa thương hiệu</button>
-                        </form>
+
+                    <!-- Sidebar -->
+                    <div class="col-lg-4 grid-margin stretch-card">
+                        <div class="card card-rounded">
+                            <div class="card-body">
+                                <h4 class="card-title card-title-dash">Thông tin thương hiệu</h4>
+                                <div id="brandInfo">
+                                    <!-- Brand info will be loaded here -->
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
+            <div th:replace="admin/layout/admin-footer"></div>
         </div>
     </div>
+</div>
 
-    <div th:replace="admin/fragments/admin-scripts :: admin-scripts"></div>
+<div th:replace="admin/fragments/admin-scripts :: admin-scripts"></div>
+<script src="/admin/js/admin/brands.js"></script>
+
+<script>
+    // Load brand data when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        const brandId = window.location.pathname.split('/').pop();
+        if (brandId && brandId !== 'edit') {
+            loadBrandData(brandId);
+        }
+    });
+
+    async function loadBrandData(brandId) {
+        try {
+            const response = await fetch(`/brands/${brandId}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+
+            const data = await response.json();
+            const brand = data.result;
+
+            // Populate form
+            document.getElementById('name').value = brand.name;
+            document.getElementById('isActive').checked = brand.isActive;
+            document.getElementById('brandForm').dataset.brandId = brand.brandId;
+
+            // Show brand info
+            document.getElementById('brandInfo').innerHTML = `
+                    <div class="mb-3">
+                        <strong>ID:</strong> ${brand.brandId}
+                    </div>
+                    <div class="mb-3">
+                        <strong>Trạng thái:</strong>
+                        <span class="badge ${brand.isActive ? 'bg-success' : 'bg-secondary'}">
+                            ${brand.isActive ? 'Hoạt động' : 'Ngừng hoạt động'}
+                        </span>
+                    </div>
+                `;
+
+        } catch (error) {
+            console.error('Error loading brand data:', error);
+            alert('Không thể tải thông tin thương hiệu');
+        }
+    }
+</script>
+
     <script>
         // Auto-generate slug from name
         document.getElementById('name').addEventListener('input', function () {

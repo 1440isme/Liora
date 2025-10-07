@@ -31,6 +31,9 @@ public enum ErrorCode {
     VALIDATION_REQUIRED_FIELD(2006, "This field is required", HttpStatus.BAD_REQUEST),
     PRODUCT_EXISTED(2007, "Product existed", HttpStatus.BAD_REQUEST),
     PRODUCT_NOT_FOUND(2008, "Product not found", HttpStatus.NOT_FOUND),
+    CATEGORY_PARENT_INACTIVE(2009, "Cannot activate category because parent category is inactive", HttpStatus.BAD_REQUEST),
+    CATEGORY_CIRCULAR_REFERENCE(2010, "Category cannot be parent of itself", HttpStatus.BAD_REQUEST),
+    CATEGORY_INVALID_PARENT_LOGIC(2011, "Category with parent cannot be parent category", HttpStatus.BAD_REQUEST),
 
     // Hanh: 3000 - 3999
 
