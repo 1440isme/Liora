@@ -31,9 +31,30 @@ public enum ErrorCode {
     VALIDATION_REQUIRED_FIELD(2006, "This field is required", HttpStatus.BAD_REQUEST),
     PRODUCT_EXISTED(2007, "Product existed", HttpStatus.BAD_REQUEST),
     PRODUCT_NOT_FOUND(2008, "Product not found", HttpStatus.NOT_FOUND),
+    CATEGORY_PARENT_INACTIVE(2009, "Cannot activate category because parent category is inactive", HttpStatus.BAD_REQUEST),
+    CATEGORY_CIRCULAR_REFERENCE(2010, "Category cannot be parent of itself", HttpStatus.BAD_REQUEST),
+    CATEGORY_INVALID_PARENT_LOGIC(2011, "Category with parent cannot be parent category", HttpStatus.BAD_REQUEST),
+
 
     // Hanh: 3000 - 3999
+    // Thêm các error codes này vào enum ErrorCode
+    ADDRESS_NOT_FOUND(3000, "Address not found", HttpStatus.NOT_FOUND),
+    CANNOT_DELETE_DEFAULT_ADDRESS(3001, "Cannot delete default address when other addresses exist", HttpStatus.BAD_REQUEST),
+    DEFAULT_ADDRESS_NOT_FOUND(3002, "Default address not found", HttpStatus.NOT_FOUND),
+    CART_NOT_FOUND(3003, "Cart not found", HttpStatus.NOT_FOUND),
+    CART_PRODUCT_NOT_FOUND(3004, "Cart product not found", HttpStatus.NOT_FOUND),
+    ORDER_NOT_FOUND(3005, "Order not found", HttpStatus.NOT_FOUND),
+    ORDER_PRODUCT_NOT_FOUND(3006, "Order product not found", HttpStatus.NOT_FOUND),
+    CART_ALREADY_EXISTS(3007, "Cart already exists for this user", HttpStatus.BAD_REQUEST),
+    INVALID_CART_QUANTITY(3008, "Invalid cart quantity", HttpStatus.BAD_REQUEST),
+    INVALID_ORDER_STATUS(3009, "Invalid order status", HttpStatus.BAD_REQUEST),
+    ORDER_CANNOT_BE_CANCELLED(3010, "Order cannot be cancelled in current status", HttpStatus.BAD_REQUEST),
+    PRODUCT_OUT_OF_STOCK(3011, "Product is out of stock", HttpStatus.BAD_REQUEST),
+    INSUFFICIENT_STOCK(3012, "Insufficient product stock", HttpStatus.BAD_REQUEST),
 
+
+    VALIDATION_PHONE_INVALID_LENGTH(3013, "Phone number must be exactly 10 digits", HttpStatus.BAD_REQUEST),
+    VALIDATION_QUANTITY_MIN_ONE(3014, "Quantity must be at least 1", HttpStatus.BAD_REQUEST),
     // Khoi: 4000 - 4999
 
     ;

@@ -20,9 +20,6 @@ public class Category {
     @Column(name = "IdCategory")
     private Long categoryId;
 
-    @Column(name = "Icon")
-    private String icon;
-
     @Column(name = "Name", nullable = false, columnDefinition = "NVARCHAR(255)")
     private String name;
 

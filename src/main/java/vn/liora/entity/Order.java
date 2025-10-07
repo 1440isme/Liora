@@ -27,9 +27,16 @@ public class Order {
     @Column(name = "TotalDiscount", nullable = false)
     BigDecimal totalDiscount;
     @Column(name = "Total", nullable = false)
-    BigDecimal total;
+    BigDecimal total ;
+
+    @Column(name = "PaymentMethod", nullable = false)
+    String paymentMethod;
+
     @Column(name = "PaymentStatus", nullable = false)
-    Boolean paymentStatus;
+    Boolean paymentStatus = false;
+
+    @Column(name = "OrderStatus", nullable = false)
+    Boolean orderStatus = true;
 
     @ManyToOne
     @JoinColumn(name = "IdAddress", nullable = false)

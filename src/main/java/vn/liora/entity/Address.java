@@ -23,7 +23,7 @@ public class Address {
     String name;
     @Column(name = "Phone", nullable = false)
     String phone;
-    @Column(name = "AdressDetail", nullable = false, columnDefinition = "NVARCHAR(255)")
+    @Column(name = "AddressDetail", nullable = false, columnDefinition = "NVARCHAR(255)")
     String addressDetail;
     @Column(name = "Ward", nullable = false, columnDefinition = "NVARCHAR(255)")
     String ward;
@@ -32,7 +32,14 @@ public class Address {
     @Column(name = "IsDefault")
     Boolean isDefault;
 
-    @OneToMany(mappedBy = "address", fetch = FetchType.LAZY)
+
+    @OneToMany(mappedBy = "address", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
     private List<Order> orders;
+
+    @ManyToOne
+    @JoinColumn(name = "IdUser")
+    @JsonIgnore
+    private User user;
 
 }

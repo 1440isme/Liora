@@ -55,29 +55,64 @@ public class CategoryServiceImpl implements ICategoryService {
 
     @Override
     public CategoryResponse updateCategory(Long id, CategoryUpdateRequest request) {
+        // 1. Tìm danh mục cần cập nhật
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
 
-        if (request.getName() != null && !request.getName().equalsIgnoreCase(category.getName())
-                && categoryRepository.existsByName(request.getName())) {
-            throw new AppException(ErrorCode.CATEGORY_EXISTED);
+        // 2. Kiểm tra tên trùng lặp
+        if (request.getName() != null && !request.getName().equalsIgnoreCase(category.getName())) {
+            Optional<Category> existingCategory = categoryRepository.findByName(request.getName());
+            if (existingCategory.isPresent() && !existingCategory.get().getCategoryId().equals(id)) {
+                throw new AppException(ErrorCode.CATEGORY_EXISTED);
+            }
         }
 
-        categoryMapper.updateCategory(category, request);
-        
-        // Xử lý parentCategoryId
+        // 3. Kiểm tra circular reference - danh mục không thể là cha của chính nó
+        if (request.getParentCategoryId() != null && request.getParentCategoryId().equals(id)) {
+            throw new AppException(ErrorCode.CATEGORY_CIRCULAR_REFERENCE);
+        }
+
+        // 4. Kiểm tra circular reference - danh mục không thể là cha của danh mục cha của nó
         if (request.getParentCategoryId() != null) {
             Category parentCategory = categoryRepository.findById(request.getParentCategoryId())
                     .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
+            
+            // Kiểm tra nếu danh mục cha có parent là danh mục hiện tại (tạo vòng lặp)
+            if (isCircularReference(category, parentCategory)) {
+                throw new AppException(ErrorCode.CATEGORY_CIRCULAR_REFERENCE);
+            }
+        }
+
+        // 5. Cập nhật thông tin từ mapper
+        categoryMapper.updateCategory(category, request);
+        
+        // 6. Xử lý parentCategoryId - LOGIC ĐÃ SỬA
+        if (request.getParentCategoryId() != null) {
+            // Có parentCategoryId → gán parent
+            Category parentCategory = categoryRepository.findById(request.getParentCategoryId())
+                    .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
             category.setParentCategory(parentCategory);
-        } else if (request.getParentCategoryId() == null && request.getName() != null) {
-            // Nếu parentCategoryId = null trong request, có thể muốn xóa parent
+        } else {
+            // parentCategoryId = null → xóa parent (bất kể có name hay không)
             category.setParentCategory(null);
         }
         
+        // 7. Lưu vào database
         categoryRepository.save(category);
 
         return categoryMapper.toCategoryResponse(category);
+    }
+
+    // Helper method để kiểm tra circular reference
+    private boolean isCircularReference(Category category, Category potentialParent) {
+        Category current = potentialParent;
+        while (current != null) {
+            if (current.getCategoryId().equals(category.getCategoryId())) {
+                return true;
+            }
+            current = current.getParentCategory();
+        }
+        return false;
     }
 
     @Override
@@ -144,6 +179,11 @@ public class CategoryServiceImpl implements ICategoryService {
     }
 
     @Override
+    public List<Category> findAllRootCategories() {
+        return categoryRepository.findRootCategories(); // Lấy tất cả root categories (cả active và inactive)
+    }
+
+    @Override
     public List<Category> findChildCategories(Long parentId) {
         return categoryRepository.findChildCategories(parentId);
     }
@@ -187,6 +227,10 @@ public class CategoryServiceImpl implements ICategoryService {
     public void deactivateCategory(Long id) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
+
+        // Lưu thông tin parent trước khi deactivate (có thể sử dụng sau này)
+        // Category parentCategory = category.getParentCategory();
+        
         category.setIsActive(false);
         categoryRepository.save(category);
         
@@ -208,6 +252,21 @@ public class CategoryServiceImpl implements ICategoryService {
     public void activateCategory(Long id) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
+        
+        // Kiểm tra nếu có parent và parent bị deactivate thì không thể activate
+        if (category.getParentCategory() != null && !category.getParentCategory().getIsActive()) {
+            throw new AppException(ErrorCode.CATEGORY_PARENT_INACTIVE);
+        }
+
+        // Chỉ activate nếu parent category còn tồn tại và active
+        if (category.getParentCategory() != null) {
+            Category parentCategory = categoryRepository.findById(category.getParentCategory().getCategoryId())
+                    .orElse(null);
+            if (parentCategory == null || !parentCategory.getIsActive()) {
+                throw new AppException(ErrorCode.CATEGORY_PARENT_INACTIVE);
+            }
+        }
+        
         category.setIsActive(true);
         categoryRepository.save(category);
         
@@ -224,4 +283,18 @@ public class CategoryServiceImpl implements ICategoryService {
             productRepository.save(product);
         }
     }
+
+    // Thêm method mới để khôi phục parent category (có thể sử dụng sau này)
+    // private void restoreParentCategory(Category category) {
+    //     if (category.getParentCategory() != null) {
+    //         // Kiểm tra parent category còn tồn tại không
+    //         Category parentCategory = categoryRepository.findById(category.getParentCategory().getCategoryId())
+    //                 .orElse(null);
+    //         if (parentCategory == null || !parentCategory.getIsActive()) {
+    //             // Nếu parent không tồn tại hoặc inactive, xóa parent
+    //             category.setParentCategory(null);
+    //             categoryRepository.save(category);
+    //         }
+    //     }
+    // }
 }

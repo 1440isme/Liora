@@ -3,7 +3,6 @@ package vn.liora.config;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -20,11 +19,19 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
         private final String[] PUBLIC_ENDPOINTS = {
-                        "/users", "/auth/token", "/auth/introspect", "/auth/logout", "/auth/refresh",
-                        "/brands/**", "/categories/**", "/products/**", "/admin/**", "/admin/login", "/home",
-                        // static resources
-                        "/", "/favicon.ico", "/static/**", "/user/**", "/css/**", "/js/**", "/images/**", "/webjars/**"
-
+                "/users", "/auth/token", "/auth/introspect", "/auth/logout", "/auth/refresh",
+                "/brands/**", "/categories/**", "/products/**", "/admin/login", "/home",
+                "/admin/permission/**", "/admin/roles/**",
+                // static resources
+                "/", "/favicon.ico", "/static/**", "/user/**", "/css/**", "/js/**", "/images/**", "/webjars/**",
+                // admin static resources - CỤ THỂ HƠN
+                "/admin/css/**", "/admin/js/**", "/admin/images/**", "/admin/fonts/**", "/admin/vendors/**",
+                // upload endpoints
+                "/admin/api/upload/**", "/uploads/**",
+                // admin pages - CHỈ CHO PHÉP TRUY CẬP TRANG ADMIN, KHÔNG BAO GỒM STATIC
+                "/admin" , "/admin/dashboard", "/admin/brands/**", "/admin/categories/**", "/admin/products/**", "/admin/orders/**", "/admin/users/**",
+                // API endpoints - CHO PHÉP TRUY CẬP KHÔNG CẦN XÁC THỰC
+                "/admin/api/**"
         };
 
         @Autowired
