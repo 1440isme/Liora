@@ -21,6 +21,7 @@ public class RoleServiceImpl implements IRoleService {
     RoleRepository roleRepository;
     PermissionRepository permissionRepository;
     RoleMapper roleMapper;
+
     @Override
     public RoleResponse create(RoleRequest request) {
         var role = roleMapper.toRole(request);
@@ -33,7 +34,34 @@ public class RoleServiceImpl implements IRoleService {
     @Override
     public List<RoleResponse> getAll() {
         return roleRepository.findAll()
-            .stream().map(roleMapper::toRoleResponse).toList();
+                .stream().map(roleMapper::toRoleResponse).toList();
+    }
+
+    @Override
+    public RoleResponse getById(String name) {
+        var role = roleRepository.findById(name)
+                .orElseThrow(() -> new RuntimeException("Role not found: " + name));
+        return roleMapper.toRoleResponse(role);
+    }
+
+    @Override
+    public RoleResponse update(String name, RoleRequest request) {
+        var role = roleRepository.findById(name)
+                .orElseThrow(() -> new RuntimeException("Role not found: " + name));
+
+        // Update description
+        if (request.getDescription() != null) {
+            role.setDescription(request.getDescription());
+        }
+
+        // Update permissions
+        if (request.getPermissions() != null) {
+            var permissions = permissionRepository.findAllById(request.getPermissions());
+            role.setPermissions(new HashSet<>(permissions));
+        }
+
+        roleRepository.save(role);
+        return roleMapper.toRoleResponse(role);
     }
 
     @Override

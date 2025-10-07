@@ -29,54 +29,51 @@
                             <div class="card card-rounded w-100">
                                 <div class="card-body">
                                     <h4 class="card-title card-title-dash">Thông tin người dùng</h4>
-                                    <form th:action="@{/admin/users}" th:object="${userRequest}" method="post"
+                                    <form id="userAddForm" th:action="@{/admin/users}" method="post"
                                         enctype="multipart/form-data">
-                                        <!-- Basic Information -->
+                                        <!-- Username -->
+                                        <div class="mb-3">
+                                            <label for="username" class="form-label">Tên đăng nhập <span
+                                                    class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" id="username" name="username"
+                                                required>
+                                        </div>
+
+                                        <!-- Họ tên -->
                                         <div class="row">
                                             <div class="col-md-6">
                                                 <div class="mb-3">
                                                     <label for="firstName" class="form-label">Họ <span
                                                             class="text-danger">*</span></label>
                                                     <input type="text" class="form-control" id="firstName"
-                                                        name="firstName" th:field="*{firstName}" required>
-                                                    <div class="invalid-feedback"
-                                                        th:if="${#fields.hasErrors('firstName')}"
-                                                        th:errors="*{firstName}"></div>
+                                                        name="firstName" required>
                                                 </div>
                                             </div>
-
                                             <div class="col-md-6">
                                                 <div class="mb-3">
                                                     <label for="lastName" class="form-label">Tên <span
                                                             class="text-danger">*</span></label>
                                                     <input type="text" class="form-control" id="lastName"
-                                                        name="lastName" th:field="*{lastName}" required>
-                                                    <div class="invalid-feedback"
-                                                        th:if="${#fields.hasErrors('lastName')}"
-                                                        th:errors="*{lastName}"></div>
+                                                        name="lastName" required>
                                                 </div>
                                             </div>
                                         </div>
 
+                                        <!-- Email & Phone -->
                                         <div class="row">
                                             <div class="col-md-6">
                                                 <div class="mb-3">
                                                     <label for="email" class="form-label">Email <span
                                                             class="text-danger">*</span></label>
                                                     <input type="email" class="form-control" id="email" name="email"
-                                                        th:field="*{email}" required>
-                                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('email')}"
-                                                        th:errors="*{email}"></div>
+                                                        required>
                                                 </div>
                                             </div>
-
                                             <div class="col-md-6">
                                                 <div class="mb-3">
                                                     <label for="phone" class="form-label">Số điện thoại</label>
                                                     <input type="tel" class="form-control" id="phone" name="phone"
-                                                        th:field="*{phone}" placeholder="0123456789">
-                                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('phone')}"
-                                                        th:errors="*{phone}"></div>
+                                                        placeholder="0123456789">
                                                 </div>
                                             </div>
                                         </div>
@@ -88,14 +85,10 @@
                                                     <label for="password" class="form-label">Mật khẩu <span
                                                             class="text-danger">*</span></label>
                                                     <input type="password" class="form-control" id="password"
-                                                        name="password" th:field="*{password}" required>
+                                                        name="password" required>
                                                     <div class="form-text">Tối thiểu 8 ký tự</div>
-                                                    <div class="invalid-feedback"
-                                                        th:if="${#fields.hasErrors('password')}"
-                                                        th:errors="*{password}"></div>
                                                 </div>
                                             </div>
-
                                             <div class="col-md-6">
                                                 <div class="mb-3">
                                                     <label for="confirmPassword" class="form-label">Xác nhận mật khẩu
@@ -107,117 +100,32 @@
                                             </div>
                                         </div>
 
-                                        <!-- Date of Birth -->
+                                        <!-- Ngày sinh & Giới tính -->
                                         <div class="row">
                                             <div class="col-md-6">
                                                 <div class="mb-3">
-                                                    <label for="dateOfBirth" class="form-label">Ngày sinh</label>
-                                                    <input type="date" class="form-control" id="dateOfBirth"
-                                                        name="dateOfBirth" th:field="*{dateOfBirth}">
+                                                    <label for="dob" class="form-label">Ngày sinh</label>
+                                                    <input type="date" class="form-control" id="dob" name="dob">
                                                 </div>
                                             </div>
-
                                             <div class="col-md-6">
                                                 <div class="mb-3">
                                                     <label for="gender" class="form-label">Giới tính</label>
-                                                    <select class="form-select" id="gender" name="gender"
-                                                        th:field="*{gender}">
+                                                    <select class="form-select" id="gender" name="gender">
                                                         <option value="">Chọn giới tính</option>
                                                         <option value="MALE">Nam</option>
                                                         <option value="FEMALE">Nữ</option>
-                                                        <option value="OTHER">Khác</option>
                                                     </select>
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <!-- Address -->
+                                        <!-- Trạng thái -->
                                         <div class="mb-3">
-                                            <label for="address" class="form-label">Địa chỉ</label>
-                                            <textarea class="form-control" id="address" name="address"
-                                                th:field="*{address}" rows="3"
-                                                placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành phố"></textarea>
-                                        </div>
-
-                                        <!-- Role and Status -->
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <div class="mb-3">
-                                                    <label for="role" class="form-label">Vai trò <span
-                                                            class="text-danger">*</span></label>
-                                                    <select class="form-select" id="role" name="role" th:field="*{role}"
-                                                        required>
-                                                        <option value="">Chọn vai trò</option>
-                                                        <option value="USER">Người dùng</option>
-                                                        <option value="MODERATOR">Moderator</option>
-                                                        <option value="ADMIN">Admin</option>
-                                                    </select>
-                                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('role')}"
-                                                        th:errors="*{role}"></div>
-                                                </div>
-                                            </div>
-
-                                            <div class="col-md-6">
-                                                <div class="mb-3">
-                                                    <label for="status" class="form-label">Trạng thái <span
-                                                            class="text-danger">*</span></label>
-                                                    <select class="form-select" id="status" name="status"
-                                                        th:field="*{status}" required>
-                                                        <option value="ACTIVE">Hoạt động</option>
-                                                        <option value="INACTIVE">Không hoạt động</option>
-                                                        <option value="BANNED">Bị cấm</option>
-                                                    </select>
-                                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('status')}"
-                                                        th:errors="*{status}"></div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- Additional Information -->
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <div class="mb-3">
-                                                    <label for="bio" class="form-label">Giới thiệu</label>
-                                                    <textarea class="form-control" id="bio" name="bio" th:field="*{bio}"
-                                                        rows="3" placeholder="Giới thiệu về bản thân"></textarea>
-                                                </div>
-                                            </div>
-
-                                            <div class="col-md-6">
-                                                <div class="mb-3">
-                                                    <label for="website" class="form-label">Website</label>
-                                                    <input type="url" class="form-control" id="website" name="website"
-                                                        th:field="*{website}" placeholder="https://example.com">
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- Features -->
-                                        <div class="row">
-                                            <div class="col-md-6">
-                                                <div class="mb-3">
-                                                    <div class="form-check">
-                                                        <input class="form-check-input" type="checkbox"
-                                                            id="emailVerified" name="emailVerified"
-                                                            th:field="*{emailVerified}">
-                                                        <label class="form-check-label" for="emailVerified">
-                                                            Email đã xác thực
-                                                        </label>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div class="col-md-6">
-                                                <div class="mb-3">
-                                                    <div class="form-check">
-                                                        <input class="form-check-input" type="checkbox"
-                                                            id="phoneVerified" name="phoneVerified"
-                                                            th:field="*{phoneVerified}">
-                                                        <label class="form-check-label" for="phoneVerified">
-                                                            Số điện thoại đã xác thực
-                                                        </label>
-                                                    </div>
-                                                </div>
+                                            <div class="form-check ms-1">
+                                                <input class="form-check-input" type="checkbox" id="status"
+                                                    name="status" value="ACTIVE" checked>
+                                                <label class="form-check-label" for="status">Kích hoạt tài khoản</label>
                                             </div>
                                         </div>
 
@@ -316,7 +224,7 @@
     </div>
 
     <div th:replace="admin/fragments/admin-scripts :: admin-scripts"></div>
-
+    <script src="/admin/js/admin/users-manage.js"></script>
     <script>
         // Password confirmation validation
         document.getElementById('confirmPassword').addEventListener('input', function () {
