@@ -42,21 +42,7 @@ public class AdminPageController {
         return "admin/products/edit";
     }
 
-    // Categories
-    @GetMapping("/categories")
-    public String categoriesList() {
-        return "admin/categories/list";
-    }
-
-    @GetMapping("/categories/add")
-    public String categoriesAdd() {
-        return "admin/categories/add";
-    }
-
-    @GetMapping("/categories/{id}/edit")
-    public String categoriesEdit(@PathVariable("id") Long id) {
-        return "admin/categories/edit";
-    }
+    // Categories - Removed duplicate mappings (handled by CategoryViewController)
 
     // Brands
     @GetMapping("/brands")

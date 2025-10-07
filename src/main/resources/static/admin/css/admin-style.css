@@ -288,3 +288,244 @@ body {
         grid-template-columns: 1fr;
     }
 }
+
+/* Admin Notification Styles - Simple Toast */
+.toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+}
+
+.admin-toast {
+    min-width: 300px;
+    max-width: 400px;
+    background: white;
+    border: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.admin-toast .toast-header {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    font-weight: 600;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* XÓA TẤT CẢ ICON VÀ SPACING */
+.admin-toast .toast-header i,
+.admin-toast .toast-header .fas,
+.admin-toast .toast-header .fa {
+    display: none !important;
+}
+
+.admin-toast .toast-header .me-2 {
+    display: none !important;
+}
+
+.admin-toast .toast-body {
+    padding: 12px 16px;
+    font-size: 14px;
+}
+
+.admin-toast-success .toast-header {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+}
+
+.admin-toast-error .toast-header {
+    background: linear-gradient(135deg, #dc3545, #e74c3c);
+    color: white;
+}
+
+.admin-toast-warning .toast-header {
+    background: linear-gradient(135deg, #ffc107, #ffb300);
+    color: #212529;
+}
+
+.admin-toast-info .toast-header {
+    background: linear-gradient(135deg, #17a2b8, #138496);
+    color: white;
+}
+
+.admin-toast .btn-close {
+    filter: invert(1);
+    background: none;
+    border: none;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 0;
+    margin: 0;
+}
+
+.admin-toast-warning .btn-close {
+    filter: none;
+}
+
+/* Animation */
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutRight {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+.admin-toast {
+    animation: slideInRight 0.3s ease-out;
+}
+
+/* Category Table Styles */
+.category-row[data-level="0"] {
+    background-color: #ffffff;
+    border-left: 4px solid #007bff;
+}
+
+.category-row[data-level="1"] {
+    background-color: #f8f9fa;
+    border-left: 4px solid #28a745;
+}
+
+.category-row[data-level="2"] {
+    background-color: #e9ecef;
+    border-left: 4px solid #ffc107;
+}
+
+.category-row:hover {
+    background-color: #e3f2fd !important;
+    transform: translateX(2px);
+    transition: all 0.2s ease;
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+    color: #495057;
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.table td {
+    vertical-align: middle;
+    border-top: 1px solid #dee2e6;
+    padding: 0.75rem;
+}
+
+.btn-group-sm .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+.badge {
+    font-size: 0.75em;
+    padding: 0.375rem 0.75rem;
+}
+
+/* Tree Structure Styles */
+.tree-prefix {
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    color: #6c757d;
+    white-space: pre;
+    user-select: none;
+}
+
+.category-row[data-level="0"] .tree-prefix {
+    color: #007bff;
+    font-weight: bold;
+}
+
+.category-row[data-level="1"] .tree-prefix {
+    color: #28a745;
+}
+
+.category-row[data-level="2"] .tree-prefix {
+    color: #ffc107;
+}
+
+/* Icon colors based on level */
+.category-row[data-level="0"] .mdi-folder {
+    color: #007bff !important;
+}
+
+.category-row[data-level="1"] .mdi-folder {
+    color: #28a745 !important;
+}
+
+.category-row[data-level="2"] .mdi-file-document {
+    color: #ffc107 !important;
+}
+
+/* Enhanced visual hierarchy */
+.category-row[data-level="0"] strong {
+    font-size: 1.1em;
+    color: #007bff;
+}
+
+.category-row[data-level="1"] strong {
+    font-size: 1.05em;
+    color: #28a745;
+}
+
+.category-row[data-level="2"] strong {
+    color: #6c757d;
+}
+
+/* Expand/Collapse Styles */
+.expand-btn {
+    border: none;
+    background: none;
+    color: #6c757d;
+    transition: all 0.2s ease;
+}
+
+.expand-btn:hover {
+    color: #007bff;
+    background: none;
+}
+
+.expand-icon {
+    transition: transform 0.2s ease;
+}
+
+.expand-btn.expanded .expand-icon {
+    transform: rotate(90deg);
+}
+
+/* Collapsed rows */
+.category-row.collapsed {
+    display: none;
+}
+
+/* Enhanced tree structure */
+.category-row[data-level="0"] {
+    font-weight: 600;
+}
+
+.category-row[data-level="1"] {
+    font-weight: 500;
+}
+
+.category-row[data-level="2"] {
+    font-weight: 400;
+}
