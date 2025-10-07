@@ -1,169 +1,307 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản lý quyền hạn - Liora Admin</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
-    <link href="/admin/css/admin-style.css" rel="stylesheet">
-</head>
+<head th:replace="~{admin/fragments/admin-head :: admin-head('Quản lý quyền hạn - Liora Admin')}"></head>
 
-<body>
-    <div class="wrapper">
-        <!-- Include Sidebar -->
-        <div th:replace="admin/layout/admin-sidebar"></div>
+<body class="with-welcome-text">
+    <div class="container-scroller">
+        <div class="container-fluid page-body-wrapper">
+            <div th:replace="~{admin/layout/admin-navbar}"></div>
+            <div th:replace="~{admin/layout/admin-sidebar}"></div>
 
-        <!-- Page Content -->
-        <div id="content">
-            <!-- Include Navbar -->
-            <div th:replace="admin/layout/admin-navbar"></div>
-
-            <!-- Main Content -->
-            <div class="container-fluid">
-                <!-- Page Header -->
-                <div class="d-sm-flex align-items-center justify-content-between mb-4">
-                    <h1 class="h3 mb-0 text-gray-800">Quản lý quyền hạn</h1>
-                    <div class="btn-group" role="group">
-                        <button type="button" class="btn btn-primary" data-bs-toggle="modal"
-                            data-bs-target="#addPermissionModal">
-                            <i class="fas fa-plus fa-sm text-white-50"></i> Thêm quyền hạn
-                        </button>
-                        <button type="button" class="btn btn-success">
-                            <i class="fas fa-download fa-sm text-white-50"></i> Xuất Excel
-                        </button>
+            <div class="main-panel">
+                <div class="content-wrapper">
+                    <!-- Breadcrumb -->
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="page-header">
+                                    <nav aria-label="breadcrumb">
+                                        <ol class="breadcrumb">
+                                            <li class="breadcrumb-item"><a href="/admin/dashboard">Dashboard</a></li>
+                                            <li class="breadcrumb-item"><a href="#">Hệ thống</a></li>
+                                            <li class="breadcrumb-item active" aria-current="page">Quyền hạn</li>
+                                        </ol>
+                                    </nav>
+                                    <h3 class="page-title">Quản lý quyền hạn</h3>
+                                </div>
+                                <div class="btn-toolbar" role="toolbar">
+                                    <div class="btn-group me-2" role="group">
+                                        <button type="button" class="btn btn-primary btn-icon-text" data-bs-toggle="modal"
+                                            data-bs-target="#addPermissionModal">
+                                            <i class="mdi mdi-plus btn-icon-prepend"></i>
+                                            Thêm quyền hạn
+                                        </button>
+                                    </div>
+                                    <div class="btn-group" role="group">
+                                        <button type="button" class="btn btn-success btn-icon-text">
+                                            <i class="mdi mdi-file-excel btn-icon-prepend"></i>
+                                            Xuất Excel
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </div>
 
-                <!-- Permissions Table -->
-                <div class="card shadow mb-4">
-                    <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">Danh sách quyền hạn</h6>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-bordered" id="permissionsTable" width="100%" cellspacing="0">
-                                <thead>
-                                    <tr>
-                                        <th>Tên quyền hạn</th>
-                                        <th>Mã quyền hạn</th>
-                                        <th>Mô tả</th>
-                                        <th>Nhóm</th>
-                                        <th>Trạng thái</th>
-                                        <th>Ngày tạo</th>
-                                        <th>Thao tác</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr th:each="permission : ${permissions}">
-                                        <td>
-                                            <div class="fw-bold" th:text="${permission.name}">Xem người dùng</div>
-                                        </td>
-                                        <td>
-                                            <code th:text="${permission.code}">READ_USERS</code>
-                                        </td>
-                                        <td th:text="${permission.description}">Quyền xem danh sách người dùng</td>
-                                        <td>
-                                            <span class="badge bg-info" th:text="${permission.group}">Người dùng</span>
-                                        </td>
-                                        <td>
-                                            <span class="badge"
-                                                th:classappend="${permission.status == 'ACTIVE'} ? 'bg-success' : 'bg-secondary'"
-                                                th:text="${permission.status == 'ACTIVE'} ? 'Hoạt động' : 'Không hoạt động'">Hoạt
-                                                động</span>
-                                        </td>
-                                        <td th:text="${#temporals.format(permission.createdAt, 'dd/MM/yyyy')}">
-                                            15/12/2024</td>
-                                        <td>
-                                            <div class="btn-group" role="group">
-                                                <button type="button" class="btn btn-sm btn-info"
-                                                    th:onclick="'editPermission(' + ${permission.id} + ')'"
-                                                    title="Chỉnh sửa">
-                                                    <i class="fas fa-edit"></i>
-                                                </button>
-                                                <button type="button" class="btn btn-sm btn-danger"
-                                                    th:onclick="'deletePermission(' + ${permission.id} + ', \'' + ${permission.name} + '\')'"
-                                                    title="Xóa">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
+                    <!-- Stats Cards -->
+                    <div class="row">
+                        <div class="col-xl-3 col-lg-3 col-md-3 col-sm-6 grid-margin stretch-card">
+                            <div class="card card-statistics">
+                                <div class="card-body">
+                                    <div class="clearfix">
+                                        <div class="float-left">
+                                            <i class="mdi mdi-key text-warning icon-lg"></i>
+                                        </div>
+                                        <div class="float-right">
+                                            <p class="mb-0 text-right">Tổng quyền hạn</p>
+                                            <div class="fluid-container">
+                                                <h3 class="font-weight-medium text-right mb-0" th:text="${#lists.size(permissions)}">0</h3>
                                             </div>
-                                        </td>
-                                    </tr>
-                                    <tr th:if="${#lists.isEmpty(permissions)}">
-                                        <td colspan="7" class="text-center text-muted py-4">
-                                            <i class="fas fa-key fa-3x mb-3"></i>
-                                            <p>Chưa có quyền hạn nào</p>
-                                            <button type="button" class="btn btn-primary" data-bs-toggle="modal"
-                                                data-bs-target="#addPermissionModal">
-                                                Thêm quyền hạn đầu tiên
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xl-3 col-lg-3 col-md-3 col-sm-6 grid-margin stretch-card">
+                            <div class="card card-statistics">
+                                <div class="card-body">
+                                    <div class="clearfix">
+                                        <div class="float-left">
+                                            <i class="mdi mdi-check-circle text-success icon-lg"></i>
+                                        </div>
+                                        <div class="float-right">
+                                            <p class="mb-0 text-right">Đang hoạt động</p>
+                                            <div class="fluid-container">
+                                                <h3 class="font-weight-medium text-right mb-0"
+                                                    th:text="${#lists.size(permissions.?[status == 'ACTIVE'])}">0</h3>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xl-3 col-lg-3 col-md-3 col-sm-6 grid-margin stretch-card">
+                            <div class="card card-statistics">
+                                <div class="card-body">
+                                    <div class="clearfix">
+                                        <div class="float-left">
+                                            <i class="mdi mdi-close-circle text-danger icon-lg"></i>
+                                        </div>
+                                        <div class="float-right">
+                                            <p class="mb-0 text-right">Không hoạt động</p>
+                                            <div class="fluid-container">
+                                                <h3 class="font-weight-medium text-right mb-0"
+                                                    th:text="${#lists.size(permissions.?[status != 'ACTIVE'])}">0</h3>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xl-3 col-lg-3 col-md-3 col-sm-6 grid-margin stretch-card">
+                            <div class="card card-statistics">
+                                <div class="card-body">
+                                    <div class="clearfix">
+                                        <div class="float-left">
+                                            <i class="mdi mdi-folder-multiple text-info icon-lg"></i>
+                                        </div>
+                                        <div class="float-right">
+                                            <p class="mb-0 text-right">Số nhóm</p>
+                                            <div class="fluid-container">
+                                                <h3 class="font-weight-medium text-right mb-0"
+                                                    th:text="${#sets.size(permissions.![group])}">0</h3>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Permissions Table -->
+                    <div class="row">
+                        <div class="col-lg-12 grid-margin stretch-card">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h4 class="card-title">Danh sách quyền hạn</h4>
+                                        <div class="btn-group">
+                                            <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle"
+                                                data-bs-toggle="dropdown">
+                                                <i class="mdi mdi-filter-variant"></i> Lọc
                                             </button>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                                            <ul class="dropdown-menu">
+                                                <li><a class="dropdown-item" href="#" onclick="filterTable('all')">Tất cả</a></li>
+                                                <li><a class="dropdown-item" href="#" onclick="filterTable('active')">Đang hoạt động</a></li>
+                                                <li><a class="dropdown-item" href="#" onclick="filterTable('inactive')">Không hoạt động</a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+
+                                    <div class="table-responsive">
+                                        <table class="table table-striped" id="permissionsTable">
+                                            <thead>
+                                                <tr>
+                                                    <th><i class="mdi mdi-key"></i> Tên quyền hạn</th>
+                                                    <th><i class="mdi mdi-code-tags"></i> Mã quyền hạn</th>
+                                                    <th><i class="mdi mdi-text"></i> Mô tả</th>
+                                                    <th><i class="mdi mdi-folder"></i> Nhóm</th>
+                                                    <th><i class="mdi mdi-check-circle"></i> Trạng thái</th>
+                                                    <th><i class="mdi mdi-calendar"></i> Ngày tạo</th>
+                                                    <th><i class="mdi mdi-settings"></i> Thao tác</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr th:each="permission : ${permissions}">
+                                                    <td>
+                                                        <div class="d-flex align-items-center">
+                                                            <div class="symbol symbol-circle symbol-50px overflow-hidden me-3">
+                                                                <div class="symbol-label bg-light-primary text-primary fs-6 fw-bolder"
+                                                                     th:text="${#strings.substring(permission.name,0,2)}">XN</div>
+                                                            </div>
+                                                            <div class="d-flex flex-column">
+                                                                <div class="text-gray-800 text-hover-primary mb-1 fw-bold"
+                                                                     th:text="${permission.name}">Xem người dùng</div>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge badge-outline-info" th:text="${permission.code}">READ_USERS</span>
+                                                    </td>
+                                                    <td>
+                                                        <span th:text="${permission.description}" class="text-muted">Quyền xem danh sách người dùng</span>
+                                                    </td>
+                                                    <td>
+                                                        <span class="badge badge-pill badge-info" th:text="${permission.group}">Người dùng</span>
+                                                    </td>
+                                                    <td>
+                                                        <label class="badge" th:classappend="${permission.status == 'ACTIVE'} ? 'badge-success' : 'badge-secondary'">
+                                                            <span th:text="${permission.status == 'ACTIVE'} ? 'Hoạt động' : 'Không hoạt động'">Hoạt động</span>
+                                                        </label>
+                                                    </td>
+                                                    <td>
+                                                        <span th:text="${#temporals.format(permission.createdAt, 'dd/MM/yyyy')}"
+                                                              class="text-muted">15/12/2024</span>
+                                                    </td>
+                                                    <td>
+                                                        <div class="dropdown">
+                                                            <button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button"
+                                                                data-bs-toggle="dropdown">
+                                                                Thao tác
+                                                            </button>
+                                                            <div class="dropdown-menu">
+                                                                <a class="dropdown-item" href="#"
+                                                                   th:onclick="'editPermission(' + ${permission.id} + ')'">
+                                                                    <i class="mdi mdi-pencil text-primary me-2"></i>Chỉnh sửa
+                                                                </a>
+                                                                <div class="dropdown-divider"></div>
+                                                                <a class="dropdown-item text-danger" href="#"
+                                                                   th:onclick="'deletePermission(' + ${permission.id} + ', \'' + ${permission.name} + '\')'">
+                                                                    <i class="mdi mdi-delete text-danger me-2"></i>Xóa
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                <tr th:if="${#lists.isEmpty(permissions)}">
+                                                    <td colspan="7" class="text-center py-5">
+                                                        <div class="empty-state">
+                                                            <i class="mdi mdi-key-variant icon-lg text-muted mb-3"></i>
+                                                            <h5 class="text-muted mb-3">Chưa có quyền hạn nào</h5>
+                                                            <p class="text-muted mb-4">Bắt đầu bằng cách thêm quyền hạn đầu tiên cho hệ thống</p>
+                                                            <button type="button" class="btn btn-primary btn-icon-text"
+                                                                data-bs-toggle="modal" data-bs-target="#addPermissionModal">
+                                                                <i class="mdi mdi-plus btn-icon-prepend"></i>
+                                                                Thêm quyền hạn đầu tiên
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
+                <div th:replace="~{admin/layout/admin-footer}"></div>
             </div>
-
-            <!-- Include Footer -->
-            <div th:replace="admin/layout/admin-footer"></div>
         </div>
     </div>
 
     <!-- Add Permission Modal -->
     <div class="modal fade" id="addPermissionModal" tabindex="-1">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Thêm quyền hạn mới</h5>
+                    <h5 class="modal-title">
+                        <i class="mdi mdi-plus-circle me-2"></i>Thêm quyền hạn mới
+                    </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <form th:action="@{/admin/permissions}" method="post">
+                <form th:action="@{/admin/permissions}" method="post" class="forms-sample">
                     <div class="modal-body">
-                        <div class="mb-3">
-                            <label for="name" class="form-label">Tên quyền hạn <span
-                                    class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="name" name="name" required>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="name" class="form-label">Tên quyền hạn <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="name" name="name" required
+                                           placeholder="Nhập tên quyền hạn">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="code" class="form-label">Mã quyền hạn <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="code" name="code" required
+                                           placeholder="READ_USERS" style="text-transform: uppercase;">
+                                    <small class="form-text text-muted">Sử dụng định dạng UPPER_CASE</small>
+                                </div>
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label for="code" class="form-label">Mã quyền hạn <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="code" name="code" required
-                                placeholder="READ_USERS">
-                            <div class="form-text">Sử dụng định dạng UPPER_CASE</div>
-                        </div>
-                        <div class="mb-3">
+                        <div class="form-group">
                             <label for="description" class="form-label">Mô tả</label>
-                            <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                            <textarea class="form-control" id="description" name="description" rows="3"
+                                      placeholder="Mô tả chi tiết về quyền hạn này"></textarea>
                         </div>
-                        <div class="mb-3">
-                            <label for="group" class="form-label">Nhóm <span class="text-danger">*</span></label>
-                            <select class="form-select" id="group" name="group" required>
-                                <option value="">Chọn nhóm</option>
-                                <option value="Người dùng">Người dùng</option>
-                                <option value="Sản phẩm">Sản phẩm</option>
-                                <option value="Đơn hàng">Đơn hàng</option>
-                                <option value="Danh mục">Danh mục</option>
-                                <option value="Thương hiệu">Thương hiệu</option>
-                                <option value="Báo cáo">Báo cáo</option>
-                                <option value="Hệ thống">Hệ thống</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="status" name="status" value="ACTIVE"
-                                    checked>
-                                <label class="form-check-label" for="status">
-                                    Kích hoạt
-                                </label>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="group" class="form-label">Nhóm <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="group" name="group" required>
+                                        <option value="">-- Chọn nhóm --</option>
+                                        <option value="Người dùng">👤 Người dùng</option>
+                                        <option value="Sản phẩm">📦 Sản phẩm</option>
+                                        <option value="Đơn hàng">🛒 Đơn hàng</option>
+                                        <option value="Danh mục">📂 Danh mục</option>
+                                        <option value="Thương hiệu">🏷️ Thương hiệu</option>
+                                        <option value="Báo cáo">📊 Báo cáo</option>
+                                        <option value="Hệ thống">⚙️ Hệ thống</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Trạng thái</label>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="status" name="status"
+                                               value="ACTIVE" checked>
+                                        <label class="form-check-label" for="status">
+                                            Kích hoạt quyền hạn
+                                        </label>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy bỏ</button>
-                        <button type="submit" class="btn btn-primary">Thêm quyền hạn</button>
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">
+                            <i class="mdi mdi-close me-2"></i>Hủy bỏ
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="mdi mdi-check me-2"></i>Thêm quyền hạn
+                        </button>
                     </div>
                 </form>
             </div>
@@ -172,55 +310,72 @@
 
     <!-- Edit Permission Modal -->
     <div class="modal fade" id="editPermissionModal" tabindex="-1">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Chỉnh sửa quyền hạn</h5>
+                    <h5 class="modal-title">
+                        <i class="mdi mdi-pencil me-2"></i>Chỉnh sửa quyền hạn
+                    </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <form id="editPermissionForm" method="post">
+                <form id="editPermissionForm" method="post" class="forms-sample">
                     <input type="hidden" name="_method" value="PUT">
                     <div class="modal-body">
-                        <div class="mb-3">
-                            <label for="editName" class="form-label">Tên quyền hạn <span
-                                    class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="editName" name="name" required>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="editName" class="form-label">Tên quyền hạn <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="editName" name="name" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="editCode" class="form-label">Mã quyền hạn <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="editCode" name="code" required
+                                           style="text-transform: uppercase;">
+                                </div>
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label for="editCode" class="form-label">Mã quyền hạn <span
-                                    class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="editCode" name="code" required>
-                        </div>
-                        <div class="mb-3">
+                        <div class="form-group">
                             <label for="editDescription" class="form-label">Mô tả</label>
                             <textarea class="form-control" id="editDescription" name="description" rows="3"></textarea>
                         </div>
-                        <div class="mb-3">
-                            <label for="editGroup" class="form-label">Nhóm <span class="text-danger">*</span></label>
-                            <select class="form-select" id="editGroup" name="group" required>
-                                <option value="">Chọn nhóm</option>
-                                <option value="Người dùng">Người dùng</option>
-                                <option value="Sản phẩm">Sản phẩm</option>
-                                <option value="Đơn hàng">Đơn hàng</option>
-                                <option value="Danh mục">Danh mục</option>
-                                <option value="Thương hiệu">Thương hiệu</option>
-                                <option value="Báo cáo">Báo cáo</option>
-                                <option value="Hệ thống">Hệ thống</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="editStatus" name="status"
-                                    value="ACTIVE">
-                                <label class="form-check-label" for="editStatus">
-                                    Kích hoạt
-                                </label>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="editGroup" class="form-label">Nhóm <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="editGroup" name="group" required>
+                                        <option value="">-- Chọn nhóm --</option>
+                                        <option value="Người dùng">👤 Người dùng</option>
+                                        <option value="Sản phẩm">📦 Sản phẩm</option>
+                                        <option value="Đơn hàng">🛒 Đơn hàng</option>
+                                        <option value="Danh mục">📂 Danh mục</option>
+                                        <option value="Thương hiệu">🏷️ Thương hiệu</option>
+                                        <option value="Báo cáo">📊 Báo cáo</option>
+                                        <option value="Hệ thống">⚙️ Hệ thống</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">Trạng thái</label>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="editStatus" name="status" value="ACTIVE">
+                                        <label class="form-check-label" for="editStatus">
+                                            Kích hoạt quyền hạn
+                                        </label>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy bỏ</button>
-                        <button type="submit" class="btn btn-primary">Cập nhật quyền hạn</button>
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">
+                            <i class="mdi mdi-close me-2"></i>Hủy bỏ
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="mdi mdi-check me-2"></i>Cập nhật quyền hạn
+                        </button>
                     </div>
                 </form>
             </div>
@@ -232,22 +387,38 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Xác nhận xóa quyền hạn</h5>
+                    <h5 class="modal-title text-danger">
+                        <i class="mdi mdi-alert me-2"></i>Xác nhận xóa quyền hạn
+                    </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <p>Bạn có chắc chắn muốn xóa quyền hạn <strong id="deletePermissionName">Tên quyền hạn</strong>?</p>
-                    <div class="alert alert-warning">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        <strong>Cảnh báo:</strong> Quyền hạn này có thể đang được sử dụng bởi các vai trò.
+                    <div class="text-center mb-4">
+                        <i class="mdi mdi-alert-circle-outline text-warning" style="font-size: 4rem;"></i>
                     </div>
-                    <p class="text-danger">Hành động này không thể hoàn tác!</p>
+                    <p class="text-center mb-3">
+                        Bạn có chắc chắn muốn xóa quyền hạn
+                        <strong class="text-primary" id="deletePermissionName">Tên quyền hạn</strong>?
+                    </p>
+                    <div class="alert alert-warning">
+                        <div class="d-flex">
+                            <i class="mdi mdi-alert-triangle me-2"></i>
+                            <div>
+                                <strong>Cảnh báo:</strong> Quyền hạn này có thể đang được sử dụng bởi các vai trò.
+                                Hành động này không thể hoàn tác!
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy bỏ</button>
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">
+                        <i class="mdi mdi-close me-2"></i>Hủy bỏ
+                    </button>
                     <form id="deleteForm" method="post" class="d-inline">
                         <input type="hidden" name="_method" value="DELETE">
-                        <button type="submit" class="btn btn-danger">Xóa quyền hạn</button>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="mdi mdi-delete me-2"></i>Xóa quyền hạn
+                        </button>
                     </form>
                 </div>
             </div>
@@ -255,11 +426,7 @@
     </div>
 
     <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-    <script src="/admin/js/admin/permissions.js"></script>
+    <div th:replace="~{admin/fragments/admin-scripts :: admin-scripts}"></div>
 
     <script>
         function editPermission(permissionId) {
@@ -278,7 +445,7 @@
                 })
                 .catch(error => {
                     console.error('Error loading permission:', error);
-                    alert('Không thể tải thông tin quyền hạn');
+                    AdminUtils.showError('Không thể tải thông tin quyền hạn');
                 });
         }
 
@@ -286,6 +453,18 @@
             document.getElementById('deletePermissionName').textContent = permissionName;
             document.getElementById('deleteForm').action = '/admin/permissions/' + permissionId;
             new bootstrap.Modal(document.getElementById('deleteModal')).show();
+        }
+
+        function filterTable(status) {
+            const table = $('#permissionsTable').DataTable();
+
+            if (status === 'all') {
+                table.column(4).search('').draw();
+            } else if (status === 'active') {
+                table.column(4).search('Hoạt động').draw();
+            } else if (status === 'inactive') {
+                table.column(4).search('Không hoạt động').draw();
+            }
         }
 
         // Initialize DataTable
@@ -298,7 +477,17 @@
                 "order": [[5, "desc"]], // Sort by created date
                 "columnDefs": [
                     { "orderable": false, "targets": [6] } // Disable sorting for actions column
+                ],
+                "responsive": true,
+                "dom": 'Bfrtip',
+                "buttons": [
+                    'copy', 'csv', 'excel', 'pdf', 'print'
                 ]
+            });
+
+            // Auto uppercase for permission code
+            $('#code, #editCode').on('input', function() {
+                this.value = this.value.toUpperCase();
             });
         });
     </script>

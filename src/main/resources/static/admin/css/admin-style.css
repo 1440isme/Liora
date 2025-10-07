@@ -270,6 +270,50 @@ body {
     font-size: 14px;
 }
 
+/* Thu gọn sidebar khi có class sidebar-icon-only trên body */
+body.sidebar-icon-only .sidebar .nav .nav-item .nav-link .menu-title {
+    display: none;
+}
+
+body.sidebar-icon-only .sidebar .nav .nav-item .nav-link .menu-arrow {
+    display: none;
+}
+
+body.sidebar-icon-only .sidebar .nav .nav-category {
+    display: none;
+}
+
+body.sidebar-icon-only .sidebar {
+    width: 70px;
+}
+
+body.sidebar-icon-only .sidebar .nav .nav-item .nav-link {
+    text-align: center;
+    padding: 12px;
+}
+
+body.sidebar-icon-only .sidebar .nav .nav-item .nav-link .menu-icon {
+    margin-right: 0;
+    font-size: 20px;
+}
+
+body.sidebar-icon-only .main-panel {
+    margin-left: 70px;
+    width: calc(100% - 70px);
+}
+
+/* Ensure admin sidebar is fully scrollable and not clipped */
+.sidebar {
+    height: 100vh;
+    max-height: 100vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.sidebar .nav {
+    overflow: visible;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .admin-sidebar {
