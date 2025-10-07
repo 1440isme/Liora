@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="admin/fragments/admin-head :: admin-head('Danh sách đơn hàng - Liora Admin')"></head>
+
+<body class="with-welcome-text">
+    <div class="container-scroller">
+        <div class="container-fluid page-body-wrapper">
+            <div th:replace="admin/layout/admin-navbar"></div>
+            <div th:replace="admin/layout/admin-sidebar"></div>
+
+            <div class="main-panel">
+                <div class="content-wrapper">
+                    <div class="d-sm-flex align-items-center justify-content-between border-bottom mb-3">
+                        <h1 class="h3 mb-0">Quản lý đơn hàng</h1>
+                        <div class="btn-wrapper">
+                            <button type="button" class="btn btn-otline-dark me-2"><i class="mdi mdi-file-excel"></i>
+                                Xuất Excel</button>
+                            <button type="button" class="btn btn-otline-dark"><i class="mdi mdi-printer"></i> In báo
+                                cáo</button>
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card card-rounded h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs fw-bold text-primary text-uppercase mb-1">
+                                                Tổng đơn hàng
+                                            </div>
+                                            <div class="h5 mb-0 fw-bold" th:text="${totalOrders}">0
+                                            </div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="mdi mdi-cart-outline mdi-36px text-muted"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card card-rounded h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs fw-bold text-success text-uppercase mb-1">
+                                                Đơn hàng mới
+                                            </div>
+                                            <div class="h5 mb-0 fw-bold" th:text="${newOrders}">0
+                                            </div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="mdi mdi-plus-circle-outline mdi-36px text-muted"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card card-rounded h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs fw-bold text-warning text-uppercase mb-1">
+                                                Đang xử lý
+                                            </div>
+                                            <div class="h5 mb-0 fw-bold" th:text="${processingOrders}">0</div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="mdi mdi-clock-outline mdi-36px text-muted"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card card-rounded h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs fw-bold text-info text-uppercase mb-1">
+                                                Tổng doanh thu
+                                            </div>
+                                            <div class="h5 mb-0 fw-bold" th:text="${totalRevenue}">₫0
+                                            </div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="mdi mdi-cash mdi-36px text-muted"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card card-rounded mb-4">
+                        <div class="card-body">
+                            <h4 class="card-title card-title-dash">Bộ lọc</h4>
+                            <form method="get" action="/admin/orders">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <label for="search" class="form-label">Tìm kiếm</label>
+                                        <input type="text" class="form-control" id="search" name="search"
+                                            th:value="${param.search}" placeholder="Mã đơn hàng, tên khách hàng...">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label for="status" class="form-label">Trạng thái</label>
+                                        <select class="form-select" id="status" name="status">
+                                            <option value="">Tất cả trạng thái</option>
+                                            <option value="PENDING" th:selected="${param.status == 'PENDING'}">Chờ xử lý
+                                            </option>
+                                            <option value="CONFIRMED" th:selected="${param.status == 'CONFIRMED'}">Đã
+                                                xác
+                                                nhận</option>
+                                            <option value="SHIPPED" th:selected="${param.status == 'SHIPPED'}">Đang giao
+                                            </option>
+                                            <option value="DELIVERED" th:selected="${param.status == 'DELIVERED'}">Đã
+                                                giao
+                                            </option>
+                                            <option value="CANCELLED" th:selected="${param.status == 'CANCELLED'}">Đã
+                                                hủy
+                                            </option>
+                                            <option value="RETURNED" th:selected="${param.status == 'RETURNED'}">Đã trả
+                                            </option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label for="paymentStatus" class="form-label">Thanh toán</label>
+                                        <select class="form-select" id="paymentStatus" name="paymentStatus">
+                                            <option value="">Tất cả</option>
+                                            <option value="PENDING" th:selected="${param.paymentStatus == 'PENDING'}">
+                                                Chờ
+                                                thanh toán</option>
+                                            <option value="PAID" th:selected="${param.paymentStatus == 'PAID'}">Đã thanh
+                                                toán</option>
+                                            <option value="FAILED" th:selected="${param.paymentStatus == 'FAILED'}">
+                                                Thanh
+                                                toán thất bại</option>
+                                            <option value="REFUNDED" th:selected="${param.paymentStatus == 'REFUNDED'}">
+                                                Đã
+                                                hoàn tiền</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label for="dateFrom" class="form-label">Từ ngày</label>
+                                        <input type="date" class="form-control" id="dateFrom" name="dateFrom"
+                                            th:value="${param.dateFrom}">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label for="dateTo" class="form-label">Đến ngày</label>
+                                        <input type="date" class="form-control" id="dateTo" name="dateTo"
+                                            th:value="${param.dateTo}">
+                                    </div>
+                                    <div class="col-md-1 d-flex align-items-end">
+                                        <button type="submit" class="btn btn-primary text-white"><i
+                                                class="mdi mdi-magnify"></i></button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="card card-rounded mb-4">
+                        <div class="card-body">
+                            <h4 class="card-title card-title-dash">Danh sách đơn hàng</h4>
+                            <div th:replace="admin/orders/components/order-table"></div>
+                        </div>
+                    </div>
+                </div>
+                <div th:replace="admin/layout/admin-footer"></div>
+            </div>
+        </div>
+    </div>
+
+    <div th:replace="admin/fragments/admin-scripts :: admin-scripts"></div>
+</body>
+
+</html>

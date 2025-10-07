@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="~{admin/fragments/admin-head :: admin-head('Dashboard - Liora Admin')}"></head>
+
+<body class="with-welcome-text">
+    <div class="container-scroller">
+        <div class="container-fluid page-body-wrapper">
+            <div th:replace="~{admin/layout/admin-navbar}"></div>
+            <div th:replace="~{admin/layout/admin-sidebar}"></div>
+
+            <div class="main-panel">
+                <div class="content-wrapper">
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <div class="home-tab">
+                                <div class="d-sm-flex align-items-center justify-content-between border-bottom">
+                                    <ul class="nav nav-tabs" role="tablist">
+                                        <li class="nav-item">
+                                            <a class="nav-link active ps-0" id="home-tab" data-bs-toggle="tab"
+                                                href="#overview" role="tab" aria-controls="overview"
+                                                aria-selected="true">Tổng quan</a>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <div class="tab-content tab-content-basic">
+                                    <div class="tab-pane fade show active" id="overview" role="tabpanel"
+                                        aria-labelledby="overview">
+                                        <div th:replace="~{admin/dashboard/components/statistics-cards}"></div>
+                                        <div class="row">
+                                            <div class="col-xl-8 col-lg-7">
+                                                <div class="card card-rounded">
+                                                    <div class="card-body">
+                                                        <h4 class="card-title card-title-dash">Biểu đồ doanh thu</h4>
+                                                        <div class="chartjs-bar-wrapper mt-3">
+                                                            <canvas id="marketingOverview"></canvas>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-xl-4 col-lg-5">
+                                                <div class="card card-rounded">
+                                                    <div class="card-body">
+                                                        <h4 class="card-title card-title-dash">Phân bố sản phẩm</h4>
+                                                        <canvas id="doughnutChart"></canvas>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-lg-6 mb-4">
+                                                <div th:replace="~{admin/dashboard/components/recent-orders}"></div>
+                                            </div>
+                                            <div class="col-lg-6 mb-4">
+                                                <div th:replace="~{admin/dashboard/components/top-products}"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div th:replace="~{admin/layout/admin-footer}"></div>
+            </div>
+        </div>
+    </div>
+
+    <div th:replace="~{admin/fragments/admin-scripts :: admin-scripts}"></div>
+    <script src="/admin/js/admin/admin-dashboard.js"></script>
+
+</body>
+
+</html>

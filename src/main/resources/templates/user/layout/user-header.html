@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+
+<body>
+    <!-- Top Header Start -->
+    <nav class="navbar navbar-expand-lg navbar-light sticky-top custom-nav" id="main-navbar" th:fragment="header">
+        <div class="container">
+            <!-- Logo -->
+            <a class="navbar-brand fw-bold fs-3 text-dark" href="#" onclick="showPage('home')">
+                Liora ✨
+            </a>
+
+            <!-- Mobile Toggle -->
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <i class="fas fa-bars text-dark"></i>
+            </button>
+
+            <!-- Navigation Items -->
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <!-- Desktop Menu -->
+                <ul class="navbar-nav mx-auto d-none d-lg-flex">
+                    <li class="nav-item">
+                        <a class="nav-link nav-btn" href="#" onclick="showPage('skincare')"
+                            data-page="skincare">Skincare</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link nav-btn" href="#" onclick="showPage('makeup')" data-page="makeup">Makeup</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link nav-btn" href="#" onclick="showPage('bestsellers')"
+                            data-page="bestsellers">Bestsellers</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link nav-btn" href="#" onclick="showPage('new-arrivals')"
+                            data-page="new-arrivals">New Arrivals</a>
+                    </li>
+                </ul>
+
+                <!-- Search Bar (Desktop) -->
+                <div class="d-none d-lg-block me-3" style="width: 300px;">
+                    <div class="position-relative">
+                        <i class="fas fa-search position-absolute"
+                            style="left: 15px; top: 50%; transform: translateY(-50%); color: #6c757d;"></i>
+                        <input type="text" class="form-control search-input" placeholder="Tìm kiếm sản phẩm..."
+                            style="padding-left: 45px;">
+                    </div>
+                </div>
+
+                <!-- Desktop Icons -->
+                <div class="d-none d-lg-flex align-items-center">
+                    <button class="btn btn-link text-dark p-2 me-2 nav-icon-btn">
+                        <i class="fas fa-heart"></i>
+                    </button>
+
+                    <!-- User Account -->
+                    <div id="user-section">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+
+                    <button class="btn btn-link text-dark p-2 position-relative nav-icon-btn">
+                        <i class="fas fa-shopping-bag"></i>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill cart-badge">
+                            0
+                        </span>
+                    </button>
+                </div>
+
+                <!-- Mobile Menu -->
+                <div class="d-lg-none mt-3">
+                    <!-- Mobile Search -->
+                    <div class="mb-3">
+                        <div class="position-relative">
+                            <i class="fas fa-search position-absolute"
+                                style="left: 15px; top: 50%; transform: translateY(-50%); color: #6c757d;"></i>
+                            <input type="text" class="form-control search-input" placeholder="Search products..."
+                                style="padding-left: 45px;">
+                        </div>
+                    </div>
+
+                    <!-- Mobile Navigation Links -->
+                    <ul class="navbar-nav">
+                        <li class="nav-item">
+                            <a class="nav-link nav-btn-mobile" href="#" onclick="showPage('skincare')"
+                                data-page="skincare">Skincare</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link nav-btn-mobile" href="#" onclick="showPage('makeup')"
+                                data-page="makeup">Makeup</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link nav-btn-mobile" href="#" onclick="showPage('bestsellers')"
+                                data-page="bestsellers">Bestsellers</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link nav-btn-mobile" href="#" onclick="showPage('new-arrivals')"
+                                data-page="new-arrivals">New Arrivals</a>
+                        </li>
+                    </ul>
+
+                    <!-- Mobile User Section -->
+                    <div class="border-top border-pink-light pt-3 mt-3">
+                        <div id="mobile-user-section">
+                            <!-- Will be populated by JavaScript -->
+                        </div>
+                    </div>
+
+                    <!-- Mobile Icons -->
+                    <div class="d-flex justify-content-center gap-4 pt-3">
+                        <button class="btn btn-link text-dark nav-icon-btn">
+                            <i class="fas fa-heart fa-lg"></i>
+                        </button>
+                        <button class="btn btn-link text-dark position-relative nav-icon-btn">
+                            <i class="fas fa-shopping-bag fa-lg"></i>
+                            <span
+                                class="position-absolute top-0 start-100 translate-middle badge rounded-pill cart-badge">
+                                0
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+    <!-- Header End -->
+</body>
+
+</html>

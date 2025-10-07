@@ -8,7 +8,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -25,6 +24,7 @@ import vn.liora.repository.UserRepository;
 import vn.liora.service.IUserService;
 
 import java.util.HashSet;
+import java.util.Set;
 import java.util.List;
 import java.util.Optional;
 
@@ -33,10 +33,10 @@ import java.util.Optional;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class UserServiceImpl implements IUserService {
 
-     UserRepository userRepository;
-     RoleRepository roleRepository;
-     UserMapper userMapper;
-     PasswordEncoder passwordEncoder;
+    UserRepository userRepository;
+    RoleRepository roleRepository;
+    UserMapper userMapper;
+    PasswordEncoder passwordEncoder;
 
     @Override
     public void deleteAll() {
@@ -67,19 +67,20 @@ public class UserServiceImpl implements IUserService {
         User user = userMapper.toUser(request);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
 
-        HashSet<String> roles = new HashSet<>();
-        roles.add("ROLE_" + Role.USER.name());
-        //user.setRoles(roles);
+        var defaultRole = roleRepository.findById(Role.USER.name())
+                .orElseThrow(() -> new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION));
+        user.setRoles(Set.of(defaultRole));
 
         return userMapper.toUserResponse(save(user));
     }
+
     @Override
-    public UserResponse updateUser(Long userId, UserUpdateRequest request){
+    public UserResponse updateUser(Long userId, UserUpdateRequest request) {
         User user = userRepository.findById(userId)
-                .orElseThrow(()-> new AppException(ErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
         userMapper.updateUser(user, request);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        var roles =  roleRepository.findAllById(request.getRoles());
+        var roles = roleRepository.findAllById(request.getRoles());
         user.setRoles(new HashSet<>(roles));
         return userMapper.toUserResponse(save(user));
     }
@@ -88,18 +89,18 @@ public class UserServiceImpl implements IUserService {
     @Override
     public UserResponse findById(Long id) {
         return userMapper.toUserResponse(userRepository.findById(id)
-                .orElseThrow(()-> new AppException(ErrorCode.USER_NOT_FOUND)));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND)));
     }
 
     @Override
     public UserResponse getMyInfo() {
-         var context = SecurityContextHolder.getContext();
-         String name = context.getAuthentication().getName();
+        var context = SecurityContextHolder.getContext();
+        String name = context.getAuthentication().getName();
 
-         User user = userRepository.findByUsername(name)
-                 .orElseThrow(()-> new AppException(ErrorCode.USER_NOT_EXISTED));
+        User user = userRepository.findByUsername(name)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
-         return userMapper.toUserResponse(user);
+        return userMapper.toUserResponse(user);
     }
 
     @Override
@@ -132,13 +133,14 @@ public class UserServiceImpl implements IUserService {
     public <S extends User> S save(S entity) {
         if (entity.getUserId() == null) {
             return userRepository.save(entity);
-        }else {
+        } else {
             Optional<User> opt = findByIdOptional(entity.getUserId());
             if (opt.isPresent()) {
                 if (StringUtils.hasText(entity.getAvatar()))
                     entity.setAvatar(opt.get().getAvatar());
-            }   else entity.setAvatar(entity.getAvatar());
-        return userRepository.save(entity);
+            } else
+                entity.setAvatar(entity.getAvatar());
+            return userRepository.save(entity);
         }
     }
 
@@ -157,4 +159,3 @@ public class UserServiceImpl implements IUserService {
         return userRepository.findByUsername(username);
     }
 }
-

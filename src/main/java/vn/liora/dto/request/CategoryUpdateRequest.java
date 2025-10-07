@@ -14,9 +14,6 @@ public class CategoryUpdateRequest {
     @Size(max = 255, message = "VALIDATION_NAME_TOO_LONG")
     private String name;
 
-    @Size(max = 255, message = "VALIDATION_ICON_TOO_LONG")
-    private String icon;
-
     private Long parentCategoryId;
 
     private Boolean isParent;

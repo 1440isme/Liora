@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Chart</title>
+</head>
+
+<body>
+    <!-- Sales Chart -->
+    <div class="chart-area">
+        <canvas id="myAreaChart"></canvas>
+    </div>
+
+    <script>
+        // Sales Chart Data
+        const salesData = {
+            labels: ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'],
+            datasets: [{
+                label: 'Doanh thu (₫)',
+                data: [12000000, 19000000, 3000000, 5000000, 2000000, 3000000, 45000000, 50000000, 35000000, 40000000, 55000000, 60000000],
+                borderColor: 'rgb(75, 192, 192)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                tension: 0.1
+            }]
+        };
+
+        // Chart configuration
+        const config = {
+            type: 'line',
+            data: salesData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function (value) {
+                                return new Intl.NumberFormat('vi-VN', {
+                                    style: 'currency',
+                                    currency: 'VND'
+                                }).format(value);
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                return 'Doanh thu: ' + new Intl.NumberFormat('vi-VN', {
+                                    style: 'currency',
+                                    currency: 'VND'
+                                }).format(context.parsed.y);
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        // Initialize chart
+        document.addEventListener('DOMContentLoaded', function () {
+            const ctx = document.getElementById('myAreaChart').getContext('2d');
+            new Chart(ctx, config);
+        });
+    </script>
+</body>
+
+</html>

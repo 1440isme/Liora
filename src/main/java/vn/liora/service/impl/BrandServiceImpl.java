@@ -131,13 +131,13 @@ public class BrandServiceImpl implements IBrandService {
     }
 
     @Override
-    public List<Brand> findActiveBrands() {
-        return brandRepository.findByIsActiveTrue();
+    public Page<Brand> findActiveBrands(Pageable pageable) {
+        return brandRepository.findByIsActiveTrue(pageable);
     }
 
     @Override
-    public List<Brand> findInactiveBrands() {
-        return brandRepository.findByIsActiveFalse();
+    public Page<Brand> findInactiveBrands(Pageable pageable) {
+        return brandRepository.findByIsActiveFalse(pageable);
     }
 
     @Override

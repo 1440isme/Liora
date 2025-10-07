@@ -11,8 +11,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import vn.liora.entity.User;
 import vn.liora.enums.Role;
 import vn.liora.repository.UserRepository;
+import vn.liora.repository.RoleRepository;
 
 import java.util.HashSet;
+import java.util.Set;
 
 @Configuration
 @RequiredArgsConstructor
@@ -23,11 +25,17 @@ public class ApplicationInitConfig {
     PasswordEncoder passwordEncoder;
 
     @Bean
-    ApplicationRunner applicationRunner(UserRepository userRepository) {
+    ApplicationRunner applicationRunner(UserRepository userRepository, RoleRepository roleRepository) {
         return args -> {
             if (userRepository.findByUsername("admin").isEmpty()) {
-                var roles = new HashSet<String>();
-                roles.add("ROLE_" + Role.ADMIN.name());
+                var adminRole = roleRepository.findById(Role.ADMIN.name())
+                        .orElseGet(() -> {
+                            var r = vn.liora.entity.Role.builder()
+                                    .name(Role.ADMIN.name())
+                                    .description("Administrator")
+                                    .build();
+                            return roleRepository.save(r);
+                        });
                 User user = User.builder()
                         .username("admin")
                         .password(passwordEncoder.encode("admin"))
@@ -35,7 +43,7 @@ public class ApplicationInitConfig {
                         .firstname("Admin")
                         .lastname("User")
                         .active(true)
-                        //.roles(roles)
+                        .roles(Set.of(adminRole))
                         .build();
                 userRepository.save(user);
                 log.warn("Create admin with password default: admin, please change it");
