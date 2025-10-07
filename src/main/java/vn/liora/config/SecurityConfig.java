@@ -21,6 +21,7 @@ public class SecurityConfig {
         private final String[] PUBLIC_ENDPOINTS = {
                 "/users", "/auth/token", "/auth/introspect", "/auth/logout", "/auth/refresh",
                 "/brands/**", "/categories/**", "/products/**", "/admin/login", "/home",
+                "/admin/permission/**", "/admin/roles/**",
                 // static resources
                 "/", "/favicon.ico", "/static/**", "/user/**", "/css/**", "/js/**", "/images/**", "/webjars/**",
                 // admin static resources - CỤ THỂ HƠN
