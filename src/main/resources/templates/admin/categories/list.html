@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+
+<head th:replace="admin/fragments/admin-head :: admin-head('Danh sách danh mục - Liora Admin')"></head>
+
+<body class="with-welcome-text">
+    <div class="container-scroller">
+        <div class="container-fluid page-body-wrapper">
+            <div th:replace="admin/layout/admin-navbar"></div>
+            <div th:replace="admin/layout/admin-sidebar"></div>
+
+            <div class="main-panel">
+                <div class="content-wrapper">
+                    <!-- Page Header -->
+                    <div class="d-sm-flex align-items-center justify-content-between border-bottom mb-3">
+                        <h1 class="h3 mb-0">Quản lý danh mục</h1>
+                        <div class="btn-wrapper">
+                            <a href="/admin/categories/add" class="btn btn-primary text-white me-2"><i
+                                    class="mdi mdi-plus"></i> Thêm danh mục</a>
+                            <button type="button" class="btn btn-otline-dark me-2" onclick="expandAll()"><i
+                                    class="mdi mdi-arrow-expand-all"></i> Mở rộng tất cả</button>
+                            <button type="button" class="btn btn-otline-dark" onclick="collapseAll()"><i
+                                    class="mdi mdi-arrow-collapse-all"></i> Thu gọn tất cả</button>
+                        </div>
+                    </div>
+
+                    <!-- Categories Tree -->
+                    <div class="row">
+                        <div class="col-12 grid-margin stretch-card">
+                            <div class="card card-rounded">
+                                <div class="card-body">
+                                    <h4 class="card-title card-title-dash">Cây danh mục</h4>
+                                    <div th:replace="admin/categories/components/category-tree"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div th:replace="admin/layout/admin-footer"></div>
+            </div>
+        </div>
+    </div>
+
+    <div th:replace="admin/fragments/admin-scripts :: admin-scripts"></div>
+    <script src="/admin/js/admin/categories.js"></script>
+</body>
+
+</html>
