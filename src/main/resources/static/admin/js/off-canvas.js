@@ -1,25 +1,27 @@
 (function ($) {
   'use strict';
 
-  function throttle(func, limit) {
-    let inThrottle;
-    return function (...args) {
-      if (!inThrottle) {
-        func.apply(this, args);
-        inThrottle = true;
-        setTimeout(() => inThrottle = false, limit);
-      }
-    };
-  }
-
   $(function () {
-    $('[data-bs-toggle="offcanvas"]').on("click", throttle(function () {
+    console.log('%c[OFF-CANVAS] Script loaded', 'color: green; font-weight: bold');
+
+    // Offcanvas toggle (mobile)
+    $('[data-bs-toggle="offcanvas"]').on("click", function (e) {
+      e.preventDefault();
       $('.sidebar-offcanvas').toggleClass('active');
-    }, 300));
+      console.log('%c[OFF-CANVAS] Offcanvas toggled', 'color: blue');
+    });
 
-
-    $('[data-bs-toggle="minimize"]').on("click", throttle(function () {
+    // Sidebar minimize toggle
+    $('[data-bs-toggle="minimize"]').on("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
       $('body').toggleClass('sidebar-icon-only');
-    }, 300));
+
+      // Save state
+      var isMinimized = $('body').hasClass('sidebar-icon-only');
+      localStorage.setItem('sidebarMinimized', isMinimized);
+
+      console.log('%c[OFF-CANVAS] Sidebar toggled:', 'color: orange; font-weight: bold', isMinimized ? 'minimized' : 'expanded');
+    });
   });
 })(jQuery);

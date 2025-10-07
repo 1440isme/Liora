@@ -30,6 +30,10 @@
     <!-- Project common scripts -->
     <script src="/admin/js/admin/admin-ajax.js"></script>
 
+    <!-- Sidebar scripts -->
+    <script src="/admin/js/off-canvas.js"></script>
+    <script src="/admin/js/hoverable-collapse.js"></script>
+
     <script>
         // Global configuration
         window.AdminConfig = {
@@ -45,7 +49,12 @@
 
         document.addEventListener('DOMContentLoaded', function () {
             try {
-                console.log('Admin scripts loaded!');
+                console.log('%c========================================', 'color: cyan; font-weight: bold');
+                console.log('%c[ADMIN-SCRIPTS] DOMContentLoaded', 'color: cyan; font-weight: bold');
+                console.log('%c========================================', 'color: cyan; font-weight: bold');
+                console.log('[ADMIN-SCRIPTS] Current URL:', window.location.href);
+                console.log('[ADMIN-SCRIPTS] jQuery loaded:', typeof jQuery !== 'undefined');
+                console.log('[ADMIN-SCRIPTS] Bootstrap loaded:', typeof bootstrap !== 'undefined');
 
                 // Xử lý sidebar active state
                 var currentPath = window.location.pathname;
@@ -65,33 +74,6 @@
                     });
                 }
 
-                // Bắt sự kiện khi nhấn nút minimize - tìm theo selector chính xác
-                var minimizeBtn = document.querySelector('button[data-bs-toggle="minimize"]');
-                console.log('Minimize button found:', minimizeBtn);
-
-                if (minimizeBtn) {
-                    minimizeBtn.addEventListener('click', function (e) {
-                        e.preventDefault();
-                        console.log('Minimize button clicked!');
-
-                        // Toggle class sidebar-icon-only trên body
-                        document.body.classList.toggle('sidebar-icon-only');
-
-                        var isMinimized = document.body.classList.contains('sidebar-icon-only');
-                        console.log('Sidebar minimized:', isMinimized);
-
-                        // Lưu trạng thái vào localStorage
-                        localStorage.setItem('sidebarMinimized', isMinimized);
-
-                        // Trigger custom event để các component khác có thể lắng nghe
-                        window.dispatchEvent(new CustomEvent('sidebarToggle', {
-                            detail: { minimized: isMinimized }
-                        }));
-                    });
-                } else {
-                    console.warn('Minimize button not found! Check selector: button[data-bs-toggle="minimize"]');
-                }
-
                 // Khôi phục trạng thái sidebar từ localStorage
                 var sidebarMinimized = localStorage.getItem('sidebarMinimized');
                 if (sidebarMinimized === 'true') {
@@ -107,11 +89,6 @@
         // jQuery ready function
         $(document).ready(function () {
             console.log('jQuery ready!');
-
-            // Backup method với jQuery
-            $('button[data-bs-toggle="minimize"]').on('click', function (e) {
-                console.log('Minimize button clicked via jQuery backup method');
-            });
 
             // Initialize tooltips
             var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));

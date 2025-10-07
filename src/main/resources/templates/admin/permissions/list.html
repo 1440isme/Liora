@@ -27,8 +27,8 @@
                                 </div>
                                 <div class="btn-toolbar" role="toolbar">
                                     <div class="btn-group me-2" role="group">
-                                        <button type="button" class="btn btn-primary btn-icon-text" data-bs-toggle="modal"
-                                            data-bs-target="#addPermissionModal">
+                                        <button type="button" class="btn btn-primary btn-icon-text"
+                                            data-bs-toggle="modal" data-bs-target="#addPermissionModal">
                                             <i class="mdi mdi-plus btn-icon-prepend"></i>
                                             Thêm quyền hạn
                                         </button>
@@ -56,7 +56,8 @@
                                         <div class="float-right">
                                             <p class="mb-0 text-right">Tổng quyền hạn</p>
                                             <div class="fluid-container">
-                                                <h3 class="font-weight-medium text-right mb-0" th:text="${#lists.size(permissions)}">0</h3>
+                                                <h3 class="font-weight-medium text-right mb-0"
+                                                    th:text="${#lists.size(permissions)}">0</h3>
                                             </div>
                                         </div>
                                     </div>
@@ -127,14 +128,18 @@
                                     <div class="d-flex justify-content-between align-items-center mb-3">
                                         <h4 class="card-title">Danh sách quyền hạn</h4>
                                         <div class="btn-group">
-                                            <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle"
+                                            <button type="button"
+                                                class="btn btn-outline-secondary btn-sm dropdown-toggle"
                                                 data-bs-toggle="dropdown">
                                                 <i class="mdi mdi-filter-variant"></i> Lọc
                                             </button>
                                             <ul class="dropdown-menu">
-                                                <li><a class="dropdown-item" href="#" onclick="filterTable('all')">Tất cả</a></li>
-                                                <li><a class="dropdown-item" href="#" onclick="filterTable('active')">Đang hoạt động</a></li>
-                                                <li><a class="dropdown-item" href="#" onclick="filterTable('inactive')">Không hoạt động</a></li>
+                                                <li><a class="dropdown-item" href="#" onclick="filterTable('all')">Tất
+                                                        cả</a></li>
+                                                <li><a class="dropdown-item" href="#"
+                                                        onclick="filterTable('active')">Đang hoạt động</a></li>
+                                                <li><a class="dropdown-item" href="#"
+                                                        onclick="filterTable('inactive')">Không hoạt động</a></li>
                                             </ul>
                                         </div>
                                     </div>
@@ -156,48 +161,60 @@
                                                 <tr th:each="permission : ${permissions}">
                                                     <td>
                                                         <div class="d-flex align-items-center">
-                                                            <div class="symbol symbol-circle symbol-50px overflow-hidden me-3">
+                                                            <div
+                                                                class="symbol symbol-circle symbol-50px overflow-hidden me-3">
                                                                 <div class="symbol-label bg-light-primary text-primary fs-6 fw-bolder"
-                                                                     th:text="${#strings.substring(permission.name,0,2)}">XN</div>
+                                                                    th:text="${#strings.substring(permission.name,0,2)}">
+                                                                    XN</div>
                                                             </div>
                                                             <div class="d-flex flex-column">
                                                                 <div class="text-gray-800 text-hover-primary mb-1 fw-bold"
-                                                                     th:text="${permission.name}">Xem người dùng</div>
+                                                                    th:text="${permission.name}">Xem người dùng</div>
                                                             </div>
                                                         </div>
                                                     </td>
                                                     <td>
-                                                        <span class="badge badge-outline-info" th:text="${permission.code}">READ_USERS</span>
+                                                        <span class="badge badge-outline-info"
+                                                            th:text="${permission.code}">READ_USERS</span>
                                                     </td>
                                                     <td>
-                                                        <span th:text="${permission.description}" class="text-muted">Quyền xem danh sách người dùng</span>
+                                                        <span th:text="${permission.description}"
+                                                            class="text-muted">Quyền xem danh sách người dùng</span>
                                                     </td>
                                                     <td>
-                                                        <span class="badge badge-pill badge-info" th:text="${permission.group}">Người dùng</span>
+                                                        <span class="badge badge-pill badge-info"
+                                                            th:text="${permission.group}">Người dùng</span>
                                                     </td>
                                                     <td>
-                                                        <label class="badge" th:classappend="${permission.status == 'ACTIVE'} ? 'badge-success' : 'badge-secondary'">
-                                                            <span th:text="${permission.status == 'ACTIVE'} ? 'Hoạt động' : 'Không hoạt động'">Hoạt động</span>
+                                                        <label class="badge"
+                                                            th:classappend="${permission.status == 'ACTIVE'} ? 'badge-success' : 'badge-secondary'">
+                                                            <span
+                                                                th:text="${permission.status == 'ACTIVE'} ? 'Hoạt động' : 'Không hoạt động'">Hoạt
+                                                                động</span>
                                                         </label>
                                                     </td>
                                                     <td>
-                                                        <span th:text="${#temporals.format(permission.createdAt, 'dd/MM/yyyy')}"
-                                                              class="text-muted">15/12/2024</span>
+                                                        <span
+                                                            th:text="${#temporals.format(permission.createdAt, 'dd/MM/yyyy')}"
+                                                            class="text-muted">15/12/2024</span>
                                                     </td>
                                                     <td>
                                                         <div class="dropdown">
-                                                            <button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button"
-                                                                data-bs-toggle="dropdown">
+                                                            <button
+                                                                class="btn btn-outline-primary btn-sm dropdown-toggle"
+                                                                type="button" data-bs-toggle="dropdown">
                                                                 Thao tác
                                                             </button>
                                                             <div class="dropdown-menu">
                                                                 <a class="dropdown-item" href="#"
-                                                                   th:onclick="'editPermission(' + ${permission.id} + ')'">
-                                                                    <i class="mdi mdi-pencil text-primary me-2"></i>Chỉnh sửa
+                                                                    th:onclick="'editPermission(' + ${permission.id} + ')'">
+                                                                    <i
+                                                                        class="mdi mdi-pencil text-primary me-2"></i>Chỉnh
+                                                                    sửa
                                                                 </a>
                                                                 <div class="dropdown-divider"></div>
                                                                 <a class="dropdown-item text-danger" href="#"
-                                                                   th:onclick="'deletePermission(' + ${permission.id} + ', \'' + ${permission.name} + '\')'">
+                                                                    th:onclick="'deletePermission(' + ${permission.id} + ', \'' + ${permission.name} + '\')'">
                                                                     <i class="mdi mdi-delete text-danger me-2"></i>Xóa
                                                                 </a>
                                                             </div>
@@ -209,9 +226,11 @@
                                                         <div class="empty-state">
                                                             <i class="mdi mdi-key-variant icon-lg text-muted mb-3"></i>
                                                             <h5 class="text-muted mb-3">Chưa có quyền hạn nào</h5>
-                                                            <p class="text-muted mb-4">Bắt đầu bằng cách thêm quyền hạn đầu tiên cho hệ thống</p>
+                                                            <p class="text-muted mb-4">Bắt đầu bằng cách thêm quyền hạn
+                                                                đầu tiên cho hệ thống</p>
                                                             <button type="button" class="btn btn-primary btn-icon-text"
-                                                                data-bs-toggle="modal" data-bs-target="#addPermissionModal">
+                                                                data-bs-toggle="modal"
+                                                                data-bs-target="#addPermissionModal">
                                                                 <i class="mdi mdi-plus btn-icon-prepend"></i>
                                                                 Thêm quyền hạn đầu tiên
                                                             </button>
@@ -246,16 +265,18 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="name" class="form-label">Tên quyền hạn <span class="text-danger">*</span></label>
+                                    <label for="name" class="form-label">Tên quyền hạn <span
+                                            class="text-danger">*</span></label>
                                     <input type="text" class="form-control" id="name" name="name" required
-                                           placeholder="Nhập tên quyền hạn">
+                                        placeholder="Nhập tên quyền hạn">
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="code" class="form-label">Mã quyền hạn <span class="text-danger">*</span></label>
+                                    <label for="code" class="form-label">Mã quyền hạn <span
+                                            class="text-danger">*</span></label>
                                     <input type="text" class="form-control" id="code" name="code" required
-                                           placeholder="READ_USERS" style="text-transform: uppercase;">
+                                        placeholder="READ_USERS" style="text-transform: uppercase;">
                                     <small class="form-text text-muted">Sử dụng định dạng UPPER_CASE</small>
                                 </div>
                             </div>
@@ -263,12 +284,13 @@
                         <div class="form-group">
                             <label for="description" class="form-label">Mô tả</label>
                             <textarea class="form-control" id="description" name="description" rows="3"
-                                      placeholder="Mô tả chi tiết về quyền hạn này"></textarea>
+                                placeholder="Mô tả chi tiết về quyền hạn này"></textarea>
                         </div>
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="group" class="form-label">Nhóm <span class="text-danger">*</span></label>
+                                    <label for="group" class="form-label">Nhóm <span
+                                            class="text-danger">*</span></label>
                                     <select class="form-select" id="group" name="group" required>
                                         <option value="">-- Chọn nhóm --</option>
                                         <option value="Người dùng">👤 Người dùng</option>
@@ -286,7 +308,7 @@
                                     <label class="form-label">Trạng thái</label>
                                     <div class="form-check form-switch">
                                         <input class="form-check-input" type="checkbox" id="status" name="status"
-                                               value="ACTIVE" checked>
+                                            value="ACTIVE" checked>
                                         <label class="form-check-label" for="status">
                                             Kích hoạt quyền hạn
                                         </label>
@@ -324,15 +346,17 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="editName" class="form-label">Tên quyền hạn <span class="text-danger">*</span></label>
+                                    <label for="editName" class="form-label">Tên quyền hạn <span
+                                            class="text-danger">*</span></label>
                                     <input type="text" class="form-control" id="editName" name="name" required>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="editCode" class="form-label">Mã quyền hạn <span class="text-danger">*</span></label>
+                                    <label for="editCode" class="form-label">Mã quyền hạn <span
+                                            class="text-danger">*</span></label>
                                     <input type="text" class="form-control" id="editCode" name="code" required
-                                           style="text-transform: uppercase;">
+                                        style="text-transform: uppercase;">
                                 </div>
                             </div>
                         </div>
@@ -343,7 +367,8 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="editGroup" class="form-label">Nhóm <span class="text-danger">*</span></label>
+                                    <label for="editGroup" class="form-label">Nhóm <span
+                                            class="text-danger">*</span></label>
                                     <select class="form-select" id="editGroup" name="group" required>
                                         <option value="">-- Chọn nhóm --</option>
                                         <option value="Người dùng">👤 Người dùng</option>
@@ -360,7 +385,8 @@
                                 <div class="form-group">
                                     <label class="form-label">Trạng thái</label>
                                     <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" id="editStatus" name="status" value="ACTIVE">
+                                        <input class="form-check-input" type="checkbox" id="editStatus" name="status"
+                                            value="ACTIVE">
                                         <label class="form-check-label" for="editStatus">
                                             Kích hoạt quyền hạn
                                         </label>
@@ -477,16 +503,11 @@
                 "order": [[5, "desc"]], // Sort by created date
                 "columnDefs": [
                     { "orderable": false, "targets": [6] } // Disable sorting for actions column
-                ],
-                "responsive": true,
-                "dom": 'Bfrtip',
-                "buttons": [
-                    'copy', 'csv', 'excel', 'pdf', 'print'
                 ]
             });
 
             // Auto uppercase for permission code
-            $('#code, #editCode').on('input', function() {
+            $('#code, #editCode').on('input', function () {
                 this.value = this.value.toUpperCase();
             });
         });
