@@ -9,9 +9,13 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
+import org.springframework.security.oauth2.server.resource.web.DefaultBearerTokenResolver;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 
 @Configuration
 @EnableWebSecurity
@@ -43,9 +47,12 @@ public class SecurityConfig {
                 httpSecurity
                                 .authorizeHttpRequests(auth -> auth
                                                 .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
+                                                // Cho phép /info render view; bảo vệ ở client bằng token check
+                                                .requestMatchers("/info").permitAll()
                                                 .anyRequest().permitAll());
                 // .anyRequest().authenticated());
                 httpSecurity.oauth2ResourceServer(oauth2 -> oauth2
+                                .bearerTokenResolver(bearerTokenResolver())
                                 .jwt(jwtConfigurer -> jwtConfigurer.decoder(customJwtDecoder)
                                                 .jwtAuthenticationConverter(jwtAuthenticationConverter()))
                                 .authenticationEntryPoint((new JwtAuthenticationEntryPoint())));
@@ -68,5 +75,30 @@ public class SecurityConfig {
         @Bean
         PasswordEncoder passwordEncoder() {
                 return new BCryptPasswordEncoder(10);
+        }
+
+        @Bean
+        public BearerTokenResolver bearerTokenResolver() {
+                DefaultBearerTokenResolver defaultResolver = new DefaultBearerTokenResolver();
+                defaultResolver.setBearerTokenHeaderName("Authorization");
+                return new BearerTokenResolver() {
+                        @Override
+                        public String resolve(HttpServletRequest request) {
+                                // 1) Try Authorization header first
+                                String token = defaultResolver.resolve(request);
+                                if (token != null)
+                                        return token;
+                                // 2) Try access_token cookie
+                                Cookie[] cookies = request.getCookies();
+                                if (cookies != null) {
+                                        for (Cookie c : cookies) {
+                                                if ("access_token".equals(c.getName())) {
+                                                        return c.getValue();
+                                                }
+                                        }
+                                }
+                                return null;
+                        }
+                };
         }
 }

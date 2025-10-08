@@ -193,19 +193,39 @@ class AuthManager {
 
             // Persist token for subsequent API calls
             localStorage.setItem('access_token', token);
+            // Also set http cookie so server can read token on SSR pages like /info
+            try {
+                document.cookie = `access_token=${token}; path=/; SameSite=Lax`;
+            } catch (_) { }
             localStorage.setItem('authenticated', 'true');
             // Decode token to get display name and roles if available
             const payload = this.parseJwt(token);
             const roles = this.extractRolesFromPayload(payload);
             const displayName = payload?.name || payload?.fullName || username;
             const isAdmin = roles.includes('ADMIN') || roles.includes('ROLE_ADMIN');
-            // Persist minimal user profile for UI (used by main.js checkAuthState)
-            const storedUser = { username, name: displayName, roles, isAdmin };
+            // Persist minimal user profile immediately for UI
+            let storedUser = { username, name: displayName, roles, isAdmin };
             localStorage.setItem('liora_user', JSON.stringify(storedUser));
 
-            // Defer toast until after modal is closed to avoid being hidden by backdrop
+            // Try to enrich profile from /users/myInfo to get full name
+            try {
+                const meRes = await fetch('/users/myInfo', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                if (meRes.ok) {
+                    const meData = await meRes.json();
+                    const me = meData.result || {};
+                    const fullName = `${me.firstname || ''} ${me.lastname || ''}`.trim() || storedUser.name;
+                    storedUser = { ...storedUser, name: fullName, username: me.username || storedUser.username };
+                    localStorage.setItem('liora_user', JSON.stringify(storedUser));
+                }
+            } catch (_) { }
 
-            // Minimal currentUser placeholder (until profile endpoint exists)
+            // Update runtime state and UI
             this.currentUser = storedUser;
             this.updateUserDisplay();
             if (window.app) {
@@ -250,12 +270,24 @@ class AuthManager {
 
     signOut() {
         localStorage.removeItem('liora_user');
+        try {
+            // Clear access_token cookie
+            document.cookie = 'access_token=; Max-Age=0; path=/; SameSite=Lax';
+        } catch (_) { }
         this.currentUser = null;
         this.updateUserDisplay();
 
         if (window.app) {
             window.app.showToast('Đăng xuất thành công! ✨', 'success');
         }
+
+        // Ensure redirect to /home from any route (e.g., /info)
+        try {
+            if (window && window.location && window.location.pathname !== '/home') {
+                window.location.href = '/home';
+                return;
+            }
+        } catch (_) { }
     }
 
     toggleAuthMode(e) {

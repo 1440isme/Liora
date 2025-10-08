@@ -1,5 +1,5 @@
 // Main JavaScript functionality
-class HazamieApp {
+class LioraApp {
     constructor() {
         this.currentPage = 'home';
         this.cartItems = [];
@@ -11,7 +11,10 @@ class HazamieApp {
 
     init() {
         this.bindEvents();
-        this.loadInitialData();
+        // Make initialization resilient across pages (e.g., /info)
+        try {
+            this.loadInitialData();
+        } catch (_) { /* ignore to continue auth/header render */ }
         this.checkAuthState();
         this.updateCartDisplay();
 
@@ -467,26 +470,66 @@ class HazamieApp {
     }
 
     loadInitialData() {
-        // Load featured products
-        const featuredProducts = ProductManager.getFeaturedProducts();
+        // Load featured products (only if ProductManager exists on this page)
         const grid = document.getElementById('featured-products-grid');
-        if (grid) {
+        if (grid && window.ProductManager && typeof ProductManager.getFeaturedProducts === 'function') {
+            const featuredProducts = ProductManager.getFeaturedProducts();
             grid.innerHTML = this.renderProductGrid(featuredProducts);
         }
 
-        // Load reviews
-        ReviewManager.loadReviews();
+        // Load reviews (only if ReviewManager exists on this page)
+        if (window.ReviewManager && typeof ReviewManager.loadReviews === 'function') {
+            ReviewManager.loadReviews();
+        }
     }
 
     checkAuthState() {
         // Check if user is logged in (from localStorage)
-        const userData = localStorage.getItem('hazamie_user');
+        const userData = localStorage.getItem('liora_user');
         if (userData) {
             this.currentUser = JSON.parse(userData);
+            // Hydrate roles/isAdmin from access_token if missing
+            const lacksRoles = !Array.isArray(this.currentUser.roles) || this.currentUser.roles.length === 0;
+            const notAdminFlag = this.currentUser.isAdmin !== true;
+            if (lacksRoles || notAdminFlag) {
+                try {
+                    const token = localStorage.getItem('access_token');
+                    if (token) {
+                        const payload = this.parseJwt(token);
+                        const roles = this.extractRolesFromPayload(payload);
+                        const isAdmin = roles.includes('ADMIN') || roles.includes('ROLE_ADMIN');
+                        this.currentUser = { ...this.currentUser, roles, isAdmin };
+                        localStorage.setItem('liora_user', JSON.stringify(this.currentUser));
+                    }
+                } catch (_) { }
+            }
             this.updateUserDisplay();
         } else {
             this.updateUserDisplay();
         }
+    }
+
+    parseJwt(token) {
+        try {
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(atob(base64)
+                .split('')
+                .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+                .join(''));
+            return JSON.parse(jsonPayload);
+        } catch (_) { return {}; }
+    }
+
+    extractRolesFromPayload(payload) {
+        try {
+            if (!payload) return [];
+            if (Array.isArray(payload.roles)) return payload.roles.map(r => String(r).toUpperCase());
+            if (Array.isArray(payload.authorities)) return payload.authorities.map(r => String(r).toUpperCase());
+            if (typeof payload.scope === 'string') return payload.scope.split(' ').map(r => r.toUpperCase());
+            if (payload.realm_access && Array.isArray(payload.realm_access.roles)) return payload.realm_access.roles.map(r => r.toUpperCase());
+            return [];
+        } catch (_) { return []; }
     }
 
     updateUserDisplay() {
@@ -495,7 +538,8 @@ class HazamieApp {
 
         if (this.currentUser) {
             const displayName = this.currentUser.name || this.currentUser.username || 'User';
-            const isAdmin = !!this.currentUser.isAdmin;
+            const rolesArr = Array.isArray(this.currentUser.roles) ? this.currentUser.roles.map(r => String(r).toUpperCase()) : [];
+            const isAdmin = this.currentUser.isAdmin === true || rolesArr.includes('ADMIN') || rolesArr.includes('ROLE_ADMIN');
             const adminLink = isAdmin ? `<li><a class="dropdown-item" href="/admin" id="adminPanelLink"><i class="fas fa-tools me-2"></i>Trang quản trị</a></li>` : '';
 
             const userHTML = `
@@ -506,20 +550,20 @@ class HazamieApp {
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenuButton">
                         <li class="dropdown-header">Xin chào, ${displayName}</li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="#" onclick="app.openUserInfo()"><i class="fas fa-id-card me-2"></i>Thông tin cá nhân</a></li>
+                        <li><a class="dropdown-item" href="/info" onclick="app.openUserInfo()"><i class="fas fa-id-card me-2"></i>Thông tin cá nhân</a></li>
                         ${adminLink}
-                        <li><a class="dropdown-item" href="#" onclick="app.signOut()"><i class="fas fa-sign-out-alt me-2"></i>Đăng xuất</a></li>
+                        <li><a class="dropdown-item" href="/home" onclick="app.signOut()"><i class="fas fa-sign-out-alt me-2"></i>Đăng xuất</a></li>
                     </ul>
                 </div>
             `;
 
             const mobileUserHTML = `
                 <div class="text-dark fw-medium mb-2">Hi, ${displayName}! 💕</div>
-                <button class="btn btn-outline-pink w-100 rounded-pill mb-2" onclick="app.openUserInfo()">
+                <button class="btn btn-outline-pink w-100 rounded-pill mb-2" href="/info" onclick="app.openUserInfo()">
                     <i class="fas fa-id-card me-2"></i>Thông tin cá nhân
                 </button>
                 ${isAdmin ? '<a class="btn btn-outline-pink w-100 rounded-pill mb-2" href="/admin"><i class="fas fa-tools me-2"></i>Trang quản trị</a>' : ''}
-                <button class="btn btn-outline-pink w-100 rounded-pill" onclick="app.signOut()">
+                <button class="btn btn-outline-pink w-100 rounded-pill" href="/home" onclick="app.signOut()">
                     <i class="fas fa-sign-out-alt me-2"></i>Đăng xuất
                 </button>
             `;
@@ -545,16 +589,23 @@ class HazamieApp {
     }
 
     signOut() {
-        localStorage.removeItem('hazamie_user');
+        localStorage.removeItem('liora_user');
+        localStorage.removeItem('access_token');
+        try { document.cookie = 'access_token=; Max-Age=0; path=/; SameSite=Lax'; } catch (_) { }
         this.currentUser = null;
         this.updateUserDisplay();
         this.showToast('Signed out successfully', 'success');
         document.dispatchEvent(new CustomEvent('user:logout'));
 
-        // Redirect to home if on a protected page
-        if (this.currentPage !== 'home') {
-            this.showPage('home');
-        }
+        // Always redirect to /home (works across pages like /info)
+        try {
+            if (window && window.location && window.location.pathname !== '/home') {
+                window.location.href = '/home';
+                return;
+            }
+        } catch (_) { }
+        // Fallback for SPA context
+        this.showPage('home');
     }
 
     showToast(message, type = 'info') {
@@ -565,7 +616,7 @@ class HazamieApp {
             <div id="${toastId}" class="toast ${type}" role="alert">
                 <div class="toast-header">
                     <i class="fas fa-${type === 'success' ? 'check-circle text-success' : type === 'error' ? 'exclamation-circle text-danger' : 'info-circle text-info'} me-2"></i>
-                    <strong class="me-auto">Hazamie Cosmetic</strong>
+                    <strong class="me-auto">Liora Cosmetic</strong>
                     <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
                 </div>
                 <div class="toast-body">
@@ -607,7 +658,7 @@ function showPage(pageName) {
 // Initialize app when DOM is loaded
 let app;
 document.addEventListener('DOMContentLoaded', () => {
-    app = new HazamieApp();
+    app = new LioraApp();
     // Ensure user UI renders after all fragments load
     setTimeout(() => {
         app.updateUserDisplay();
@@ -615,4 +666,4 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Export for use in other scripts
-window.HazamieApp = HazamieApp;
+window.LioraApp = LioraApp;
