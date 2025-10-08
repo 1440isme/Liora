@@ -155,17 +155,7 @@ public class UserServiceImpl implements IUserService {
 
     @Override
     public <S extends User> S save(S entity) {
-        if (entity.getUserId() == null) {
-            return userRepository.save(entity);
-        } else {
-            Optional<User> opt = findByIdOptional(entity.getUserId());
-            if (opt.isPresent()) {
-                if (StringUtils.hasText(entity.getAvatar()))
-                    entity.setAvatar(opt.get().getAvatar());
-            } else
-                entity.setAvatar(entity.getAvatar());
-            return userRepository.save(entity);
-        }
+        return userRepository.save(entity);
     }
 
     @Override

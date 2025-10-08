@@ -224,6 +224,19 @@ class UserFormManager {
     async init() {
         console.log('[UserFormManager] init', { path: window.location.pathname, isAdd: this.isAddPage, isEdit: this.isEditPage, userId: this.userId });
         this.form.addEventListener('submit', (e) => this.handleSubmit(e));
+
+        // Avatar preview
+        const avatarInput = document.getElementById('avatar');
+        if (avatarInput) {
+            avatarInput.addEventListener('change', (e) => this.handleAvatarPreview(e));
+        }
+
+        // Password confirmation validation
+        const confirmPasswordInput = document.getElementById('confirmPassword');
+        if (confirmPasswordInput) {
+            confirmPasswordInput.addEventListener('input', (e) => this.handlePasswordConfirmation(e));
+        }
+
         if (this.isEditPage && this.userId) {
             await this.loadUser(this.userId);
         }
@@ -258,6 +271,33 @@ class UserFormManager {
         } catch (e) {
             console.error('Failed to load user', e);
             AdminUtils.showError('Không thể tải thông tin người dùng');
+        }
+    }
+
+    handleAvatarPreview(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const previewImg = document.getElementById('previewImg');
+                if (previewImg) {
+                    previewImg.src = e.target.result;
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    handlePasswordConfirmation(e) {
+        const password = document.getElementById('password')?.value || '';
+        const confirmPassword = e.target.value;
+
+        if (password !== confirmPassword) {
+            e.target.setCustomValidity('Mật khẩu xác nhận không khớp');
+            e.target.classList.add('is-invalid');
+        } else {
+            e.target.setCustomValidity('');
+            e.target.classList.remove('is-invalid');
         }
     }
 
@@ -328,10 +368,11 @@ class UserFormManager {
 
         if (avatarFile) {
             try {
-                const uploadRes = await adminAjax.uploadFile(avatarFile, 'image');
-                payload.avatar = (uploadRes?.result?.url) || (uploadRes?.url) || null;
+                const avatarUrl = await this.uploadAvatar(avatarFile);
+                payload.avatar = avatarUrl;
             } catch (e) {
                 console.warn('Upload avatar failed, continue without avatar', e);
+                throw new Error('Lỗi khi upload ảnh đại diện: ' + e.message);
             }
         }
 
@@ -369,14 +410,53 @@ class UserFormManager {
 
         if (avatarFile) {
             try {
-                const uploadRes = await adminAjax.uploadFile(avatarFile, 'image');
-                payload.avatar = (uploadRes?.result?.url) || (uploadRes?.url) || null;
+                const avatarUrl = await this.uploadAvatar(avatarFile);
+                payload.avatar = avatarUrl;
             } catch (e) {
                 console.warn('Upload avatar failed, continue without avatar', e);
+                throw new Error('Lỗi khi upload ảnh đại diện: ' + e.message);
             }
         }
 
         await adminAjax.put(`/users/${userId}`, payload);
+    }
+
+    async uploadAvatar(file) {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            console.log('Starting avatar upload for file:', file.name, 'Size:', file.size, 'Type:', file.type);
+
+            const response = await fetch('/admin/api/upload/users/avatar', {
+                method: 'POST',
+                body: formData
+            });
+
+            console.log('Avatar upload response status:', response.status);
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Avatar upload failed:', response.status, errorText);
+                throw new Error(`Upload failed: ${response.status} - ${errorText}`);
+            }
+
+            const result = await response.json();
+            console.log('Avatar upload response:', result);
+
+            // Kiểm tra cấu trúc response và xử lý lỗi
+            if (result && result.result && result.result.avatarUrl) {
+                return result.result.avatarUrl;
+            } else if (result && result.avatarUrl) {
+                return result.avatarUrl;
+            } else {
+                console.error('Unexpected avatar upload response structure:', result);
+                throw new Error('Unexpected response structure from avatar upload API');
+            }
+        } catch (error) {
+            console.error('Avatar upload error:', error);
+            throw error;
+        }
     }
 
     mapGenderToBoolean(g) {
