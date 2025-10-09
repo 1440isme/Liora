@@ -30,7 +30,8 @@
                                     <form id="categoryForm" method="post" enctype="multipart/form-data">
                                         <!-- Category Name -->
                                         <div class="mb-3">
-                                            <label for="name" class="form-label">Tên danh mục <span class="text-danger">*</span></label>
+                                            <label for="name" class="form-label">Tên danh mục <span
+                                                    class="text-danger">*</span></label>
                                             <input type="text" class="form-control" id="name" name="name" required>
                                             <div class="invalid-feedback" id="nameError"></div>
                                         </div>
@@ -40,7 +41,8 @@
                                         <div class="mb-3">
                                             <label for="parentCategoryId" class="form-label">Danh mục cha</label>
                                             <select class="form-select" id="parentCategoryId" name="parentCategoryId">
-                                                <option value="">-- Chọn danh mục cha (để trống nếu là danh mục gốc) --</option>
+                                                <option value="">-- Chọn danh mục cha (để trống nếu là danh mục gốc) --
+                                                </option>
                                                 <!-- Options will be loaded via JavaScript -->
                                             </select>
                                         </div>
@@ -48,7 +50,8 @@
                                         <!-- Category Type -->
                                         <div class="mb-3">
                                             <div class="form-check ms-3">
-                                                <input class="form-check-input" type="checkbox" id="isParent" name="isParent">
+                                                <input class="form-check-input" type="checkbox" id="isParent"
+                                                    name="isParent">
                                                 <label class="form-check-label" for="isParent">
                                                     Là danh mục cha (có thể chứa danh mục con)
                                                 </label>
@@ -58,7 +61,8 @@
                                         <!-- Status -->
                                         <div class="mb-3">
                                             <div class="form-check ms-3">
-                                                <input class="form-check-input" type="checkbox" id="isActive" name="isActive" checked>
+                                                <input class="form-check-input" type="checkbox" id="isActive"
+                                                    name="isActive" checked>
                                                 <label class="form-check-label" for="isActive">
                                                     Kích hoạt danh mục
                                                 </label>
@@ -121,6 +125,8 @@
     </div>
 
     <div th:replace="admin/fragments/admin-scripts :: admin-scripts"></div>
+
+    <script src="/admin/js/admin/categories.js"></script>
 </body>
 
 </html>
