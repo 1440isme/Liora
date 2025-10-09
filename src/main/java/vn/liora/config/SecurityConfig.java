@@ -7,6 +7,10 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.configurers.oauth2.client.OAuth2LoginConfigurer;
+import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
+import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
@@ -36,11 +40,15 @@ public class SecurityConfig {
                         "/admin", "/admin/dashboard", "/admin/brands/**", "/admin/categories/**", "/admin/products/**",
                         "/admin/orders/**", "/admin/users/**",
                         // API endpoints - CHO PHÉP TRUY CẬP KHÔNG CẦN XÁC THỰC
-                        "/admin/api/**"
+                        "/admin/api/**",
+                        "/oauth2/**", "/login/oauth2/**", "/authenticate", "/auth/google/**"
         };
 
         @Autowired
         private CustomJwtDecoder customJwtDecoder;
+
+        @Autowired
+        private OAuth2UserService<OAuth2UserRequest, OAuth2User> customOAuth2UserService;
 
         @Bean
         public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
@@ -49,13 +57,18 @@ public class SecurityConfig {
                                                 .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
                                                 // Cho phép /info render view; bảo vệ ở client bằng token check
                                                 .requestMatchers("/info").permitAll()
-                                                .anyRequest().permitAll());
-                // .anyRequest().authenticated());
-                httpSecurity.oauth2ResourceServer(oauth2 -> oauth2
-                                .bearerTokenResolver(bearerTokenResolver())
-                                .jwt(jwtConfigurer -> jwtConfigurer.decoder(customJwtDecoder)
-                                                .jwtAuthenticationConverter(jwtAuthenticationConverter()))
-                                .authenticationEntryPoint((new JwtAuthenticationEntryPoint())));
+                                                .anyRequest().permitAll())
+                                .oauth2Login(oauth2 -> oauth2
+                                                .loginPage("/login")
+                                                .defaultSuccessUrl("/authenticate", true)
+                                                .userInfoEndpoint(userInfo -> userInfo
+                                                                .userService(customOAuth2UserService)))
+                                .oauth2ResourceServer(oauth2 -> oauth2
+                                                .bearerTokenResolver(bearerTokenResolver())
+                                                .jwt(jwtConfigurer -> jwtConfigurer.decoder(customJwtDecoder)
+                                                                .jwtAuthenticationConverter(
+                                                                                jwtAuthenticationConverter()))
+                                                .authenticationEntryPoint(new JwtAuthenticationEntryPoint()));
 
                 httpSecurity.csrf(AbstractHttpConfigurer::disable);
                 return httpSecurity.build();

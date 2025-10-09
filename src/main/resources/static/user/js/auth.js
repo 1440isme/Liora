@@ -10,6 +10,36 @@ class AuthManager {
     init() {
         this.bindEvents();
         this.checkAuthState();
+        this.checkOAuth2Token();
+    }
+
+    checkOAuth2Token() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+        const authStatus = urlParams.get('auth');
+
+        if (token && authStatus === 'success') {
+            localStorage.setItem('access_token', token);
+            localStorage.setItem('authenticated', 'true');
+
+            // Decode token để lấy thông tin user
+            const payload = this.parseJwt(token);
+            const roles = this.extractRolesFromPayload(payload);
+            const displayName = payload?.name || payload?.fullName || 'User';
+            const isAdmin = roles.includes('ADMIN') || roles.includes('ROLE_ADMIN');
+
+            let storedUser = {
+                username: payload?.sub,
+                name: displayName,
+                roles,
+                isAdmin
+            };
+            localStorage.setItem('liora_user', JSON.stringify(storedUser));
+
+            // Redirect về trang chính và xóa params
+            window.history.replaceState({}, document.title, window.location.pathname);
+            window.location.reload();
+        }
     }
 
     bindEvents() {
@@ -47,11 +77,15 @@ class AuthManager {
         const submitBtn = document.getElementById('authSubmitBtn');
         const usernameInput = document.getElementById('username');
         const passwordInput = document.getElementById('password');
-        const nameInput = document.getElementById('authName');
+        const emailInput = document.getElementById('authEmail');
+        const firstNameInput = document.getElementById('authFirstName');
+        const lastNameInput = document.getElementById('authLastName');
 
         const username = usernameInput ? usernameInput.value.trim() : '';
         const password = passwordInput ? passwordInput.value : '';
-        const name = nameInput ? nameInput.value.trim() : '';
+        const email = emailInput ? emailInput.value.trim() : '';
+        const firstname = firstNameInput ? firstNameInput.value.trim() : '';
+        const lastname = lastNameInput ? lastNameInput.value.trim() : '';
 
         // Basic validation
         if (!username || !password) {
@@ -64,16 +98,22 @@ class AuthManager {
         //     return;
         // }
 
-        if (this.isSignUp && !name) {
-            this.showError('Please enter your name');
-            return;
+        if (this.isSignUp) {
+            if (!email) {
+                this.showError('Vui lòng nhập email');
+                return;
+            }
+            if (!firstname || !lastname) {
+                this.showError('Vui lòng nhập họ và tên');
+                return;
+            }
         }
 
         try {
             this.setLoadingState(submitBtn, true);
 
             if (this.isSignUp) {
-                await this.signUp(username, password, name);
+                await this.signUp({ username, password, email, firstname, lastname });
             } else {
                 await this.signIn(username, password);
             }
@@ -111,54 +151,31 @@ class AuthManager {
         }
     }
 
-    async signUp(email, password, name) {
-        // Simulate API call
-        return new Promise((resolve, reject) => {
-            setTimeout(() => {
-                // Check if user already exists (simulation)
-                const existingUsers = this.getStoredUsers();
-                if (existingUsers.find(user => user.email === email)) {
-                    reject(new Error('An account with this email already exists'));
-                    return;
-                }
+    async signUp({ username, password, email, firstname, lastname }) {
+        const payload = {
+            username,
+            password,
+            email,
+            phone: null,
+            firstname,
+            lastname,
+            dob: null,
+            gender: null,
+            active: true,
+            avatar: null
+        };
 
-                // Create new user
-                const newUser = {
-                    id: 'user_' + Date.now(),
-                    email,
-                    name,
-                    createdAt: new Date().toISOString(),
-                    avatar: `https://images.unsplash.com/photo-1494790108755-2616b4f3a22e?w=150&q=80`
-                };
-
-                // Store user (using liora_* keys)
-                existingUsers.push(newUser);
-                localStorage.setItem('liora_users', JSON.stringify(existingUsers));
-                localStorage.setItem('liora_user', JSON.stringify(newUser));
-
-                // Update runtime state
-                this.currentUser = newUser;
-                this.updateUserDisplay();
-                document.dispatchEvent(new CustomEvent('user:login', { detail: newUser }));
-
-                // Close modal then show toast (consistent with login/logout)
-                const authModal = bootstrap.Modal.getInstance(document.getElementById('authModal'));
-                if (authModal) {
-                    const modalEl = document.getElementById('authModal');
-                    const onHidden = () => {
-                        modalEl.removeEventListener('hidden.bs.modal', onHidden);
-                        if (window.app) {
-                            window.app.showToast(`Chào mừng đến với Liora, ${name}! 🎉`, 'success');
-                        }
-                    };
-                    modalEl.addEventListener('hidden.bs.modal', onHidden);
-                    authModal.hide();
-                }
-                this.resetForm();
-
-                resolve(newUser);
-            }, 1500); // Simulate network delay
+        const res = await fetch('/users', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
         });
+        if (!res.ok) {
+            let msg = 'Không thể tạo tài khoản';
+            try { const err = await res.json(); msg = err.message || msg; } catch (_) { }
+            throw new Error(msg);
+        }
+        await this.signIn(username, password);
     }
 
     async signIn(username, password) {
@@ -299,18 +316,18 @@ class AuthManager {
 
     updateAuthModal() {
         const modalTitle = document.getElementById('authModalTitle');
-        const nameField = document.getElementById('nameField');
+        const signupFields = document.getElementById('signupFields');
         const submitBtn = document.getElementById('authSubmitBtn');
         const toggleBtn = document.getElementById('authToggle');
 
         if (this.isSignUp) {
             modalTitle.textContent = 'Join Liora ✨';
-            nameField.style.display = 'block';
+            signupFields.style.display = 'block';
             submitBtn.textContent = 'Tạo tài khoản';
             toggleBtn.textContent = 'Đã có tài khoản? Đăng nhập';
         } else {
             modalTitle.textContent = 'Welcome Back! 💕';
-            nameField.style.display = 'none';
+            signupFields.style.display = 'none';
             submitBtn.textContent = 'Đăng nhập';
             toggleBtn.textContent = "Chưa có tài khoản? Đăng ký";
         }
@@ -403,30 +420,7 @@ class AuthManager {
         }
     }
 
-    getDefaultUsers() {
-        // Default demo users
-        const defaultUsers = [
-            {
-                id: 'user_demo1',
-                email: 'demo@liora.com',
-                name: 'Beauty Queen',
-                createdAt: '2024-01-01T00:00:00.000Z',
-                avatar: 'https://images.unsplash.com/photo-1494790108755-2616b4f3a22e?w=150&q=80'
-            },
-            {
-                id: 'user_admin',
-                email: 'nhocval@gmail.com',
-                name: 'Admin User',
-                createdAt: '2024-01-01T00:00:00.000Z',
-                avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&q=80',
-                isAdmin: true
-            }
-        ];
 
-        // Store default users
-        localStorage.setItem('liora_users', JSON.stringify(defaultUsers));
-        return defaultUsers;
-    }
 
     // Get current user info
     getCurrentUser() {

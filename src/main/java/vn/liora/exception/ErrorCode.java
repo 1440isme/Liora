@@ -14,13 +14,15 @@ public enum ErrorCode {
     // Binh: 1001 - 1999
     INVALID_KEY(1001, "Invalid message key", HttpStatus.BAD_REQUEST),
     USER_EXISTED(1002, "User existed", HttpStatus.BAD_REQUEST),
+    EMAIL_EXISTED(1010, "Email existed", HttpStatus.BAD_REQUEST),
     USER_NOT_FOUND(1003, "User not found", HttpStatus.NOT_FOUND),
     USERNAME_INVALID(1004, "Username must be at least {min} characters long", HttpStatus.BAD_REQUEST),
     PASSWORD_INVALID(1005, "Password must be at least {min} characters long", HttpStatus.BAD_REQUEST),
+    ACCOUNT_LOCKED(1011, "Account is locked", HttpStatus.FORBIDDEN),
     USER_NOT_EXISTED(1006, "User not existed", HttpStatus.NOT_FOUND),
-    UNAUTHENTICATED(1007, "Unauthenticated",HttpStatus.UNAUTHORIZED),
-    UNAUTHORIZED(1008, "You do not have permission",HttpStatus.FORBIDDEN),
-    INVALID_DOB(1009, "Your age has must be at least {min}",HttpStatus.BAD_REQUEST),
+    UNAUTHENTICATED(1007, "Unauthenticated", HttpStatus.UNAUTHORIZED),
+    UNAUTHORIZED(1008, "You do not have permission", HttpStatus.FORBIDDEN),
+    INVALID_DOB(1009, "Your age has must be at least {min}", HttpStatus.BAD_REQUEST),
     // Dai: 2000 - 2999
     BRAND_EXISTED(2000, "Brand existed", HttpStatus.BAD_REQUEST),
     BRAND_NOT_FOUND(2001, "Brand not found", HttpStatus.NOT_FOUND),
@@ -31,7 +33,8 @@ public enum ErrorCode {
     VALIDATION_REQUIRED_FIELD(2006, "This field is required", HttpStatus.BAD_REQUEST),
     PRODUCT_EXISTED(2007, "Product existed", HttpStatus.BAD_REQUEST),
     PRODUCT_NOT_FOUND(2008, "Product not found", HttpStatus.NOT_FOUND),
-    CATEGORY_PARENT_INACTIVE(2009, "Cannot activate category because parent category is inactive", HttpStatus.BAD_REQUEST),
+    CATEGORY_PARENT_INACTIVE(2009, "Cannot activate category because parent category is inactive",
+            HttpStatus.BAD_REQUEST),
     CATEGORY_CIRCULAR_REFERENCE(2010, "Category cannot be parent of itself", HttpStatus.BAD_REQUEST),
     CATEGORY_INVALID_PARENT_LOGIC(2011, "Category with parent cannot be parent category", HttpStatus.BAD_REQUEST),
 
@@ -40,6 +43,7 @@ public enum ErrorCode {
     // Khoi: 4000 - 4999
 
     ;
+
     private int code;
     private String message;
     private HttpStatusCode statusCode;
