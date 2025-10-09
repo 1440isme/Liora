@@ -74,8 +74,10 @@ public enum ErrorCode {
     INSUFFICIENT_STOCK(3012, "Insufficient product stock", HttpStatus.BAD_REQUEST),
 
     VALIDATION_PHONE_INVALID_LENGTH(3013, "Phone number must be exactly 10 digits", HttpStatus.BAD_REQUEST),
+
     VALIDATION_QUANTITY_MIN_ONE(3014, "Quantity must be at least 1", HttpStatus.BAD_REQUEST),
-    
+    NO_SELECTED_PRODUCT(400, "No selected product", HttpStatus.BAD_REQUEST),
+    CANNOT_REMOVE_DEFAULT_ADDRESS(400,  "Cannot remove default address", HttpStatus.BAD_REQUEST),
     // Khoi: 4000 - 4999 (Review & Discount)
     REVIEW_NOT_FOUND(4000, "Review not found", HttpStatus.NOT_FOUND),
     REVIEW_NOT_ALLOWED(4001, "User is not allowed to review this product", HttpStatus.BAD_REQUEST),
