@@ -61,7 +61,7 @@ public interface IProductService {
     // ========== RATING FILTERS ==========
     List<Product> findByRatingGreaterThanEqual(BigDecimal minRating);
     List<Product> findByRatingRange(BigDecimal minRating, BigDecimal maxRating);
-    List<Product> findHighRatedProducts(BigDecimal minRating);
+    List<Product> findProductsByMinRating(BigDecimal minRating);
 
     // ========== COMBINED FILTERS ==========
     List<Product> findActiveAvailableByBrandAndCategory(Long brandId, Long categoryId);
@@ -75,7 +75,7 @@ public interface IProductService {
 
     // ========== BUSINESS QUERIES ==========
     List<Product> findTopSellingInStockProducts(Pageable pageable);
-    List<Product> findHighRatedProducts(BigDecimal minRating, Pageable pageable);
+    List<Product> findHighRatedProductsWithPagination(BigDecimal minRating, Pageable pageable);
     List<Product> findNewestProducts(Pageable pageable);
 
     // ========== ADMIN QUERIES ==========
