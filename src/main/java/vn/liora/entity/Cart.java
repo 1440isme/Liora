@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
+import java.util.List;
 import java.util.Set;
 
 @Data
@@ -21,11 +22,17 @@ public class Cart {
     Long idCart;
     @Column(name = "Name")
     String name;
+    @Column(name = "CoutnProduct")
+    Integer countProduct;
 
     @OneToOne
     @JoinColumn(name = "IdUser")
     @JsonIgnore
     private User user;
+
+    @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
+    private List<CartProduct> cartProducts;
 
 
 }

@@ -23,16 +23,28 @@ public class Address {
     String name;
     @Column(name = "Phone", nullable = false)
     String phone;
-    @Column(name = "AdressDetail", nullable = false, columnDefinition = "NVARCHAR(255)")
+    @Column(name = "AddressDetail", nullable = false, columnDefinition = "NVARCHAR(255)")
     String addressDetail;
     @Column(name = "Ward", nullable = false, columnDefinition = "NVARCHAR(255)")
     String ward;
     @Column(name = "Province", nullable = false, columnDefinition = "NVARCHAR(255)")
     String province;
     @Column(name = "IsDefault")
-    Boolean isDefault;
+    Boolean isDefault = false;
 
-    @OneToMany(mappedBy = "address", fetch = FetchType.LAZY)
+    @Column(name = "IsActive")
+    Boolean isActive = true;
+
+
+
+
+    @OneToMany(mappedBy = "address", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
     private List<Order> orders;
+
+    @ManyToOne
+    @JoinColumn(name = "IdUser")
+    @JsonIgnore
+    private User user;
 
 }
