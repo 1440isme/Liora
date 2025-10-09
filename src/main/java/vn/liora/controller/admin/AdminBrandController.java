@@ -8,25 +8,25 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import vn.liora.dto.request.ApiResponse;
 import vn.liora.dto.request.BrandCreationRequest;
 import vn.liora.dto.request.BrandUpdateRequest;
 import vn.liora.dto.response.BrandResponse;
 import vn.liora.entity.Brand;
 import vn.liora.mapper.BrandMapper;
-import vn.liora.service.impl.BrandServiceImpl;
+import vn.liora.service.IBrandService;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/admin/api/brands")
+@CrossOrigin(origins = "*")
+@RequiredArgsConstructor
 public class AdminBrandController {
 
-    @Autowired
-    private BrandServiceImpl brandService;
-
-    @Autowired
-    private BrandMapper brandMapper;
+    private final IBrandService brandService;
+    private final BrandMapper brandMapper;
 
     @PostMapping
     public ResponseEntity<ApiResponse<BrandResponse>> addBrand(@Valid @RequestBody BrandCreationRequest request) {
