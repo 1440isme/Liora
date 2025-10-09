@@ -33,9 +33,11 @@ public class Order {
     String paymentMethod;
 
     @Column(name = "PaymentStatus", nullable = false)
+    @Builder.Default
     Boolean paymentStatus = false;
 
     @Column(name = "OrderStatus", nullable = false)
+    @Builder.Default
     Boolean orderStatus = true;
 
     @ManyToOne
@@ -49,4 +51,11 @@ public class Order {
     @JsonIgnore
     private User user;
 
+    @Column(name = "IdDiscount")
+    private Long discountId;
+
+    @ManyToOne
+    @JoinColumn(name = "IdDiscount", insertable = false, updatable = false)
+    @JsonIgnore
+    private Discount discount;
 }

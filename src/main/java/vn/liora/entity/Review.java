@@ -1,15 +1,18 @@
 package vn.liora.entity;
 
-
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.*;
-import lombok.experimental.FieldDefaults;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
 
 @Data
-@NoArgsConstructor
 @AllArgsConstructor
-@Builder
-@FieldDefaults(level = AccessLevel.PRIVATE)
+@NoArgsConstructor
 @Entity
 @Table(name = "Reviews")
 public class Review {
@@ -18,8 +21,35 @@ public class Review {
     @Column(name = "IdReview")
     private Long reviewId;
 
-    @Column(name = "Content", nullable = true, columnDefinition = "NVARCHAR(255)")
+//    @Column(name = "Title", columnDefinition = "NVARCHAR(100)")
+//    private String title;
+
+    @Column(name = "Content", columnDefinition = "NVARCHAR(255)")
     private String content;
 
+    @Column(name = "Rating", nullable = false)
+    @Min(value = 1, message = "Rating must be at least 1")
+    @Max(value = 5, message = "Rating must be at most 5")
+    private Integer rating;
 
+    @Column(name = "Anonymous", nullable = false)
+    private Boolean anonymous = false;
+
+    @Column(name = "CreatedAt", nullable = false, columnDefinition = "DATETIME")
+    private LocalDateTime createdAt;
+
+    @Column(name = "LastUpdate", nullable = false, columnDefinition = "DATETIME")
+    private LocalDateTime lastUpdate;
+
+    @Column(name = "IdUser", nullable = false)
+    private Long userId;
+
+    @Column(name = "IdProduct", nullable = false)
+    private Long productId;
+
+    // ========== RELATIONSHIPS ==========
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "IdOrderProduct", nullable = false)
+    @JsonIgnore
+    private OrderProduct orderProduct;
 }
