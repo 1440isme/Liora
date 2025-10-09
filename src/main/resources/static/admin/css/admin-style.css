@@ -241,6 +241,7 @@ body.sidebar-icon-only .sidebar .nav .nav-item.pinned>.nav-link::after {
         transform: translateX(100%);
         opacity: 0;
     }
+
     to {
         transform: translateX(0);
         opacity: 1;
@@ -252,6 +253,7 @@ body.sidebar-icon-only .sidebar .nav .nav-item.pinned>.nav-link::after {
         transform: translateX(0);
         opacity: 1;
     }
+
     to {
         transform: translateX(100%);
         opacity: 0;
@@ -395,7 +397,9 @@ body.sidebar-icon-only .sidebar .nav .nav-item.pinned>.nav-link::after {
 
 .category-row[data-level="2"] {
     font-weight: 400;
-/* CRITICAL: Ensure nav-item can show submenu outside */
-.sidebar .nav .nav-item {
-    position: relative;
+
+    /* CRITICAL: Ensure nav-item can show submenu outside */
+    .sidebar .nav .nav-item {
+        position: relative;
+    }
 }
