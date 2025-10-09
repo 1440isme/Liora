@@ -38,6 +38,7 @@ public class Order {
     @Column(name = "OrderStatus", nullable = false)
     Boolean orderStatus = true;
 
+
     @ManyToOne
     @JoinColumn(name = "IdAddress", nullable = false)
     @JsonIgnore

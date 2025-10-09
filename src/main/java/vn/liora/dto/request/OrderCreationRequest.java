@@ -13,6 +13,7 @@ import jakarta.validation.constraints.NotBlank;
 
 public class OrderCreationRequest {
 
+
     @NotBlank(message = "VALIDATION_REQUIRED_FIELD")
     String  paymentMethod;
     @NotNull(message = "VALIDATION_REQUIRED_FIELD")

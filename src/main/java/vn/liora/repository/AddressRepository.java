@@ -14,8 +14,21 @@ import java.util.Optional;
 @Repository
 
 public interface AddressRepository extends JpaRepository<Address, Long> {
-    List<Address> findByUser(User user);
     Optional<Address> findByUserAndIsDefaultTrue(User user);
+    Optional<Address> findByIdAddress(Long idAddress);
+    List<Address> findByUserAndIsActiveTrue(User user);
+
+
+    @Modifying
+    @Query("UPDATE Address a SET a.isDefault = false WHERE a.user.userId = :userId AND a.isActive = true")
+    void clearDefaultByUser(@Param("userId") Long userId);
+
+
+
+    @Modifying
+    @Query("UPDATE Address a SET a.isActive = false WHERE a.idAddress = :idAddress AND a.isActive = true")
+    void deleteByIdAndIsActiveTrue(@Param("idAddress") Long idAddress);
+
 
 }
 

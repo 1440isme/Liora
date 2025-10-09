@@ -42,7 +42,7 @@ public class SecurityConfig {
                 httpSecurity
                                 .authorizeHttpRequests(auth -> auth
                                                 .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
-                                                .anyRequest().authenticated());
+                                                .anyRequest().permitAll());
                 httpSecurity.oauth2ResourceServer(oauth2 -> oauth2
                                 .jwt(jwtConfigurer -> jwtConfigurer.decoder(customJwtDecoder)
                                                 .jwtAuthenticationConverter(jwtAuthenticationConverter()))

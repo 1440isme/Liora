@@ -22,6 +22,8 @@ public class Cart {
     Long idCart;
     @Column(name = "Name")
     String name;
+    @Column(name = "CoutnProduct")
+    Integer countProduct;
 
     @OneToOne
     @JoinColumn(name = "IdUser")

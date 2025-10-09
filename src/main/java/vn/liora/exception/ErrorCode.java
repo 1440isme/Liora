@@ -52,9 +52,19 @@ public enum ErrorCode {
     PRODUCT_OUT_OF_STOCK(3011, "Product is out of stock", HttpStatus.BAD_REQUEST),
     INSUFFICIENT_STOCK(3012, "Insufficient product stock", HttpStatus.BAD_REQUEST),
 
-
     VALIDATION_PHONE_INVALID_LENGTH(3013, "Phone number must be exactly 10 digits", HttpStatus.BAD_REQUEST),
     VALIDATION_QUANTITY_MIN_ONE(3014, "Quantity must be at least 1", HttpStatus.BAD_REQUEST),
+    CANNOT_REMOVE_DEFAULT_ADDRESS(3015, "Cannot remove default address", HttpStatus.BAD_REQUEST),
+    NO_SELECTED_PRODUCT(3016, "No selected product", HttpStatus.BAD_REQUEST)
+
+
+
+
+
+
+    ;
+
+
     // Khoi: 4000 - 4999
 
     ;
