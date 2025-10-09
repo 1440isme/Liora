@@ -75,18 +75,16 @@ public enum ErrorCode {
 
     VALIDATION_PHONE_INVALID_LENGTH(3013, "Phone number must be exactly 10 digits", HttpStatus.BAD_REQUEST),
     VALIDATION_QUANTITY_MIN_ONE(3014, "Quantity must be at least 1", HttpStatus.BAD_REQUEST),
-    CANNOT_REMOVE_DEFAULT_ADDRESS(3015, "Cannot remove default address", HttpStatus.BAD_REQUEST),
-    NO_SELECTED_PRODUCT(3016, "No selected product", HttpStatus.BAD_REQUEST)
-
-
-
-
-
-
-    ;
-
-
-    // Khoi: 4000 - 4999
+    
+    // Khoi: 4000 - 4999 (Review & Discount)
+    REVIEW_NOT_FOUND(4000, "Review not found", HttpStatus.NOT_FOUND),
+    REVIEW_NOT_ALLOWED(4001, "User is not allowed to review this product", HttpStatus.BAD_REQUEST),
+    REVIEW_ALREADY_EXISTS(4002, "Review already exists for this order product", HttpStatus.BAD_REQUEST),
+    DISCOUNT_NOT_FOUND(4003, "Discount not found", HttpStatus.NOT_FOUND),
+    DISCOUNT_NAME_ALREADY_EXISTS(4004, "Discount name already exists", HttpStatus.BAD_REQUEST),
+    INVALID_DATE_RANGE(4005, "Invalid date range", HttpStatus.BAD_REQUEST),
+    DISCOUNT_CANNOT_BE_APPLIED(4006, "Discount cannot be applied", HttpStatus.BAD_REQUEST),
+    VALIDATION_DISCOUNT_TYPE_TOO_LONG(4007, "Discount type must not exceed 50 characters", HttpStatus.BAD_REQUEST),
 
     ;
 

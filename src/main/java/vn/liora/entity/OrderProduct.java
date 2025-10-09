@@ -35,6 +35,7 @@ public class OrderProduct {
     @JsonIgnore
     private Product product;
 
-
-
+    @OneToOne(mappedBy = "orderProduct", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
+    Review review;
 }
