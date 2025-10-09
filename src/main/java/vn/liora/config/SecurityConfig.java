@@ -31,7 +31,8 @@ public class SecurityConfig {
                 // admin pages - CHỈ CHO PHÉP TRUY CẬP TRANG ADMIN, KHÔNG BAO GỒM STATIC
                 "/admin" , "/admin/dashboard", "/admin/brands/**", "/admin/categories/**", "/admin/products/**", "/admin/orders/**", "/admin/users/**",
                 // API endpoints - CHO PHÉP TRUY CẬP KHÔNG CẦN XÁC THỰC
-                "/admin/api/**"
+                "/admin/api/**",
+                "/api/products/**", "/api/categories/**" , "/api/brands/**"
         };
 
         @Autowired

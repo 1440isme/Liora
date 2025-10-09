@@ -2,9 +2,7 @@ package vn.liora.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.DecimalMax;
-import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -26,22 +24,27 @@ public class Product {
     private Long productId;
 
     @Column(name = "Name", nullable = false, columnDefinition = "NVARCHAR(255)")
+    @NotBlank(message = "PRODUCT_NAME_REQUIRED")
     private String name;
 
-    @Column(name = "Description", nullable = false, columnDefinition = "NVARCHAR(500)")
+    @Column(name = "Description", nullable = false, columnDefinition = "NVARCHAR(MAX)")
+    @NotBlank(message = "PRODUCT_DESCRIPTION_REQUIRED")
     private String description;
 
     @Column(name = "Price", precision = 10, scale = 2, nullable = false)
-    @DecimalMin(value = "0.0", message = "Price must be positive")
+    @DecimalMin(value = "0.01", message = "PRODUCT_PRICE_INVALID")
+    @DecimalMax(value = "99999999.99", message = "PRODUCT_PRICE_TOO_HIGH")
     private BigDecimal price;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "IdBrand")
+    @NotNull(message = "PRODUCT_BRAND_REQUIRED")
     @JsonIgnore
     private Brand brand;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "IdCategory")
+    @NotNull(message = "PRODUCT_CATEGORY_REQUIRED")
     @JsonIgnore
     private Category category;
 
@@ -50,11 +53,12 @@ public class Product {
     private List<Image> images;
 
     @Column(name = "Stock")
-    @Min(value = 0, message = "Stock cannot be negative")
-    private Integer stock;
+    @NotNull(message = "PRODUCT_STOCK_INVALID")
+    @Min(value = 0, message = "PRODUCT_STOCK_INVALID")
+    private Integer stock = 0;
 
     @Column(name = "SoldCount")
-    private Integer soldCount;
+    private Integer soldCount = 0;
 
     @Column(name = "CreatedDate", columnDefinition = "DATETIME")
     private LocalDateTime createdDate;
@@ -63,12 +67,12 @@ public class Product {
     private LocalDateTime updatedDate;
 
     @Column(name = "Available")
-    private Boolean available;
+    private Boolean available = true;
 
     @Column(name = "AverageRating", precision = 2, scale = 1)
-    @DecimalMin(value = "0.0", message = "Rating must be at least 0.0")
-    @DecimalMax(value = "5.0", message = "Rating must be at most 5.0")
-    private BigDecimal averageRating;
+    @DecimalMin(value = "0.0", message = "PRODUCT_RATING_INVALID")
+    @DecimalMax(value = "5.0", message = "PRODUCT_RATING_INVALID")
+    private BigDecimal averageRating =  BigDecimal.ZERO;
 
     @Transient
     private Integer ratingCount;
