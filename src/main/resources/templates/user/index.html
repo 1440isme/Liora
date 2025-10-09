@@ -165,18 +165,30 @@
                 </div>
                 <div class="modal-body px-4 pb-4">
                     <form id="authForm">
-                        <button type="button" class="google-btn" onclick="signInWithGoogle()">
+                        <a class="google-btn" href="/oauth2/authorization/google">
                             <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google">
                             Đăng nhập với Google
-                        </button>
+                        </a>
 
                         <div class="divider">
                             <span>hoặc</span>
                         </div>
-                        <div id="nameField" class="mb-3" style="display: none;">
-                            <label class="form-label fw-medium text-dark">Name</label>
-                            <input type="text" class="form-control rounded-pill" placeholder="Tên của bạn"
-                                id="authName">
+                        <div id="signupFields" style="display: none;">
+                            <div class="mb-3">
+                                <label class="form-label fw-medium text-dark">Email</label>
+                                <input type="email" class="form-control rounded-pill" placeholder="Email của bạn"
+                                    id="authEmail">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-medium text-dark">Họ</label>
+                                <input type="text" class="form-control rounded-pill" placeholder="Họ"
+                                    id="authFirstName">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-medium text-dark">Tên</label>
+                                <input type="text" class="form-control rounded-pill" placeholder="Tên"
+                                    id="authLastName">
+                            </div>
                         </div>
                         <div class="mb-3">
                             <label class="form-label fw-medium text-dark">Username</label>

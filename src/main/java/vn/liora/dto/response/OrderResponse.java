@@ -20,6 +20,7 @@ public class OrderResponse {
     BigDecimal shippingFee;
     BigDecimal totalDiscount;
     BigDecimal total;
-    Long idUser;
+    Long idAddress;
+    Long userId;
 
 }

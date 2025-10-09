@@ -215,7 +215,7 @@ public class ProductController {
     @GetMapping("/high-rated")
     ApiResponse<List<Product>> getHighRatedProducts(@RequestParam BigDecimal minRating) {
         ApiResponse<List<Product>> apiResponse = new ApiResponse<>();
-        apiResponse.setResult(productService.findHighRatedProducts(minRating));
+        apiResponse.setResult(productService.findProductsByMinRating(minRating));
         return apiResponse;
     }
 

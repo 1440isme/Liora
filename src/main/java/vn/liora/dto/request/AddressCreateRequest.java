@@ -12,6 +12,7 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 
 public class AddressCreateRequest {
+
     @NotBlank(message = "VALIDATION_REQUIRED_FIELD")
     String name;
 
@@ -19,7 +20,6 @@ public class AddressCreateRequest {
     @Size(min = 10, max = 10, message = "VALIDATION_PHONE_INVALID_LENGTH")
     String phone;
 
-    @NotBlank(message = "VALIDATION_REQUIRED_FIELD")
     String addressDetail;
 
     @NotBlank(message = "VALIDATION_REQUIRED_FIELD")
@@ -29,5 +29,8 @@ public class AddressCreateRequest {
     String province;
 
     Boolean isDefault;
+
+
+
 }
 

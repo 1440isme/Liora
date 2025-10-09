@@ -13,7 +13,9 @@ import java.util.List;
 @Repository
 public interface OrderProductRepository extends JpaRepository<OrderProduct,Long> {
     List<OrderProduct> findByOrder(Order order);
-    long countByOrder(Order order);
+
+    @Query("SELECT COUNT(op) FROM OrderProduct op WHERE op.order = :order")
+    long countProductsByOrder(@Param("order") Order order);
 
     @Query("SELECT SUM(op.totalPrice) FROM OrderProduct op WHERE op.order = :order")
     BigDecimal getTotalPriceByOrder(@Param("order") Order order);

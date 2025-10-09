@@ -6,13 +6,11 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import vn.liora.dto.request.CartProductCreationRequest;
 import vn.liora.dto.request.CartProductUpdateRequest;
 import vn.liora.dto.response.CartProductResponse;
-import vn.liora.entity.Cart;
-import vn.liora.entity.CartProduct;
-import vn.liora.entity.Product;
-import vn.liora.entity.User;
+import vn.liora.entity.*;
 import vn.liora.exception.AppException;
 import vn.liora.exception.ErrorCode;
 import vn.liora.mapper.CartProductMapper;
@@ -22,7 +20,9 @@ import vn.liora.repository.ProductRepository;
 import vn.liora.repository.UserRepository;
 import vn.liora.service.ICartProductService;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -37,102 +37,98 @@ public class CartProductServiceImpl implements ICartProductService {
     CartProductMapper cartProductMapper;
 
     @Override
-    public CartProductResponse addProductToCart(CartProductCreationRequest request) {
-        String currentUser = SecurityContextHolder.getContext().getAuthentication().getName();
+    @Transactional
+    public CartProductResponse addProductToCart(Long idCart, CartProductCreationRequest request) {
 
-
-
-        User user = userRepository.findByUsername(currentUser)
-                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
-        Cart cart = cartRepository.findByUser(user);
-
-        // Lấy sản phẩm
+        Cart cart = cartRepository.findById(idCart)
+                .orElseThrow(() -> new AppException(ErrorCode.CART_NOT_FOUND));
         Product product = productRepository.findById(request.getIdProduct())
                 .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
+        // Kiểm tra nếu sản phẩm đã tồn tại trong giỏ hàng
+        Optional<CartProduct> existing = cartProductRepository.findByCart_IdCartAndProduct_ProductId(idCart, request.getIdProduct());
+        CartProduct cartProduct ;
 
-        // Kiểm tra quyền user (thường không cần nếu lấy cart theo user)
-        if (!cart.getUser().getUsername().equals(currentUser)) {
-            throw new AppException(ErrorCode.UNAUTHORIZED);
+        if (existing.isPresent()) {
+            cartProduct = existing.get();
+            cartProduct.setQuantity(cartProduct.getQuantity() + request.getQuantity());
+            cartProduct.setTotalPrice(product.getPrice()
+                    .multiply(BigDecimal.valueOf(cartProduct.getQuantity())));
+        } else {
+            // Nếu chưa có thì tạo mới
+            cartProduct = cartProductMapper.toCartProduct(request);
+            cartProduct.setCart(cart);
+            cartProduct.setProduct(product);
+            cartProduct.setChoose(false);
+            cartProduct.setTotalPrice(product.getPrice()
+                    .multiply(BigDecimal.valueOf(cartProduct.getQuantity())));
         }
-
-        CartProduct cartProduct = cartProductMapper.toCartProduct(request);
-        cartProduct.setCart(cart);
-        cartProduct.setProduct(product);
-
-        // Lưu vào database
         cartProduct = cartProductRepository.save(cartProduct);
 
-        // Trả về DTO
         return cartProductMapper.toCartProductResponse(cartProduct);
+
+
     }
 
     @Override
-    public CartProductResponse updateCartProduct(Long idCartProduct, CartProductUpdateRequest request) {
-        CartProduct cartProduct = cartProductRepository.findById(idCartProduct)
-                .orElseThrow(() -> new AppException(ErrorCode.CART_PRODUCT_NOT_FOUND));
-
-        String currentUser = SecurityContextHolder.getContext().getAuthentication().getName();
-        if (!cartProduct.getCart().getUser().getUsername().equals(currentUser)) {
-            throw new AppException(ErrorCode.UNAUTHORIZED);
-        }
-
-        cartProductMapper.updateCartProduct(cartProduct, request);
+    public CartProductResponse updateCartProduct(Long idCart, Long idCartProduct, CartProductUpdateRequest request) {
+            Cart cart = cartRepository.findById(idCart)
+                    .orElseThrow(() -> new AppException(ErrorCode.CART_NOT_FOUND));
+            CartProduct cartProduct = cartProductRepository.findByIdCartProduct(idCartProduct)
+                    .orElseThrow(() -> new AppException(ErrorCode.CART_PRODUCT_NOT_FOUND));
+            cartProductMapper.updateCartProduct(cartProduct, request);
+            Product product = cartProduct.getProduct();
+        cartProduct.setTotalPrice(product.getPrice().multiply(BigDecimal.valueOf(cartProduct.getQuantity())));
         cartProduct = cartProductRepository.save(cartProduct);
-        return cartProductMapper.toCartProductResponse(cartProduct);
-    }
+            return cartProductMapper.toCartProductResponse(cartProduct);
+        }
 
     @Override
-    public void removeProductFromCart(Long idCartProduct) {
-        CartProduct cartProduct = cartProductRepository.findById(idCartProduct)
+    @Transactional
+    public void removeProductInCart(Long idCart, Long idCartProduct) {
+        Cart cart = cartRepository.findById(idCart)
+                .orElseThrow(() -> new AppException(ErrorCode.CART_NOT_FOUND));
+        CartProduct cartProduct = cartProductRepository.findByIdCartProduct(idCartProduct)
                 .orElseThrow(() -> new AppException(ErrorCode.CART_PRODUCT_NOT_FOUND));
-
-        String currentUser = SecurityContextHolder.getContext().getAuthentication().getName();
-        if (!cartProduct.getCart().getUser().getUsername().equals(currentUser)) {
-            throw new AppException(ErrorCode.UNAUTHORIZED);
-        }
-
         cartProductRepository.delete(cartProduct);
     }
 
     @Override
-    public CartProductResponse getCartProductById(Long idCartProduct) {
-        CartProduct cartProduct = cartProductRepository.findById(idCartProduct)
-                .orElseThrow(() -> new AppException(ErrorCode.CART_PRODUCT_NOT_FOUND));
+    @Transactional
 
-        String currentUser = SecurityContextHolder.getContext().getAuthentication().getName();
-        if (!cartProduct.getCart().getUser().getUsername().equals(currentUser)) {
-            throw new AppException(ErrorCode.UNAUTHORIZED);
+    public void removeProductsInCart(Long idCart, List<Long> idCartProduct) {
+        Cart cart = cartRepository.findById(idCart)
+                .orElseThrow(() -> new AppException(ErrorCode.CART_NOT_FOUND));
+        List<CartProduct> cartProducts = cartProductRepository.findByCartAndChooseTrue(cart);
+        if (cartProducts.isEmpty()) {
+            throw new AppException(ErrorCode.CART_PRODUCT_NOT_FOUND);
         }
+        cartProductRepository.deleteAll(cartProducts);
 
+
+    }
+
+    @Override
+    @Transactional
+
+    public CartProductResponse getCartProductById(Long idCartProduct) {
+        CartProduct cartProduct = cartProductRepository.findByIdCartProduct(idCartProduct)
+                .orElseThrow(() -> new AppException(ErrorCode.CART_PRODUCT_NOT_FOUND));
         return cartProductMapper.toCartProductResponse(cartProduct);
     }
 
     @Override
-    public List<CartProductResponse> getCartProducts(Long idCart) {
+    public List<CartProductResponse> getSelectedProducts(Long idCart) {
         Cart cart = cartRepository.findById(idCart)
                 .orElseThrow(() -> new AppException(ErrorCode.CART_NOT_FOUND));
 
-        String currentUser= SecurityContextHolder.getContext().getAuthentication().getName();
-        if (!cart.getUser().getUsername().equals(currentUser)) {
-            throw new AppException(ErrorCode.UNAUTHORIZED);
-        }
+        // Lấy các sản phẩm đã chọn trong giỏ
+        List<CartProduct> selectedProducts = cartProductRepository.findByCartAndChooseTrue(cart);
 
-        List<CartProduct> cartProducts = cartProductRepository.findByCart(cart);
-        return cartProductMapper.toCartProductResponseList(cartProducts);
-    }
-
-    @Override
-    public void clearCartProducts(Long idCart) {
-        Cart cart = cartRepository.findById(idCart)
-                .orElseThrow(() -> new AppException(ErrorCode.CART_NOT_FOUND));
-
-        String currentUser= SecurityContextHolder.getContext().getAuthentication().getName();
-        if (!cart.getUser().getUsername().equals(currentUser)) {
-            throw new AppException(ErrorCode.UNAUTHORIZED);
-        }
-
-
-        List<CartProduct> cartProducts = cartProductRepository.findByCart(cart);
-        cartProductRepository.deleteAll(cartProducts);
+        // Map sang DTO
+        return cartProductMapper.toCartProductResponseList(selectedProducts);
     }
 }
+
+
+
+

@@ -78,16 +78,18 @@
             </div>
         </li>
         <li class="nav-item">
-            <a class="nav-link" href="/admin/permissions">
-                <i class="menu-icon mdi mdi-shield-key-outline"></i>
-                <span class="menu-title">Quyền hạn</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="/admin/roles">
+            <a class="nav-link" data-bs-toggle="collapse" href="#roles-menu" role="button" aria-expanded="false"
+                aria-controls="roles-menu">
                 <i class="menu-icon mdi mdi-account-check-outline"></i>
                 <span class="menu-title">Vai trò</span>
+                <i class="menu-arrow"></i>
             </a>
+            <div class="collapse" id="roles-menu">
+                <ul class="nav flex-column sub-menu">
+                    <li class="nav-item"> <a class="nav-link" href="/admin/roles">Danh sách vai trò</a></li>
+                    <li class="nav-item"> <a class="nav-link" href="/admin/permissions">Quyền hạn</a></li>
+                </ul>
+            </div>
         </li>
         <li class="nav-item">
             <a class="nav-link" href="/admin/settings">

@@ -30,7 +30,12 @@ public class Address {
     @Column(name = "Province", nullable = false, columnDefinition = "NVARCHAR(255)")
     String province;
     @Column(name = "IsDefault")
-    Boolean isDefault;
+    Boolean isDefault = false;
+
+    @Column(name = "IsActive")
+    Boolean isActive = true;
+
+
 
 
     @OneToMany(mappedBy = "address", cascade = CascadeType.ALL, fetch = FetchType.LAZY)

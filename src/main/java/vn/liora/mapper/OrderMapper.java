@@ -20,10 +20,16 @@ public interface OrderMapper {
     @Mapping(target = "address", ignore = true)
     @Mapping(target = "orderStatus", ignore = true)
     Order toOrder(OrderCreationRequest request);
+    @Mapping(target = "idAddress", source = "address.idAddress")
+    @Mapping(target = "userId", source = "user.userId")
+
+
 
     OrderResponse toOrderResponse(Order order);
 
     // Map list entity → list response
     List<OrderResponse> toOrderResponseList(List<Order> orders);
+    @Mapping(target = "paymentStatus", source = "paymentStatus")
+    @Mapping(target = "orderStatus", source = "orderStatus")
     void updateOrder(@MappingTarget Order order, OrderUpdateRequest request);
 }

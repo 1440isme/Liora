@@ -1,0 +1,74 @@
+package vn.liora.controller.user;
+
+import jakarta.validation.Valid;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import vn.liora.dto.request.CartProductCreationRequest;
+import vn.liora.dto.request.CartProductUpdateRequest;
+import vn.liora.dto.response.CartProductResponse;
+import vn.liora.entity.CartProduct;
+import vn.liora.service.ICartProductService;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/CartProduct/{idCart}")
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+@Slf4j
+
+public class CartProductController {
+    @Autowired
+    ICartProductService cartProductService;
+    @PostMapping
+    public ResponseEntity<CartProductResponse> addProductToCart(
+            @PathVariable Long idCart,
+            @Valid @RequestBody CartProductCreationRequest request)     {
+        CartProductResponse response = cartProductService.addProductToCart(idCart, request);
+        return ResponseEntity.ok(response);
+    }
+
+    // Cập nhật sản phẩm trong giỏ
+    @PutMapping("/{cartProductId}")
+    public ResponseEntity<CartProductResponse> updateCartProduct(
+            @PathVariable Long idCart,
+            @PathVariable Long cartProductId,
+            @Valid @RequestBody CartProductUpdateRequest request
+    ) {
+        CartProductResponse response = cartProductService.updateCartProduct(idCart, cartProductId, request);
+        return ResponseEntity.ok(response);
+    }
+
+    // Xoá sản phẩm khỏi giỏ
+    @DeleteMapping("/{cartProductId}")
+    public ResponseEntity<Void> removeProductInCart(
+            @PathVariable Long idCart,
+            @PathVariable Long cartProductId
+    ) {
+        cartProductService.removeProductInCart(idCart, cartProductId);
+        return ResponseEntity.noContent().build();
+    }
+
+    // Lấy thông tin sản phẩm trong giỏ
+    @GetMapping("/{cartProductId}")
+    public ResponseEntity<CartProductResponse> getCartProductById(
+            @PathVariable Long cartProductId
+    ) {
+        CartProductResponse response = cartProductService.getCartProductById(cartProductId);
+        return ResponseEntity.ok(response);
+    }
+    @GetMapping("/selected-products")
+    public ResponseEntity<List<CartProductResponse>> getSelectedProducts(
+            @PathVariable Long idCart) {
+        List<CartProductResponse> responses = cartProductService.getSelectedProducts(idCart);
+        return ResponseEntity.ok(responses);
+    }
+
+}
+
+

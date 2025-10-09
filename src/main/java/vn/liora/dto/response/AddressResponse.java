@@ -16,7 +16,7 @@ public class AddressResponse {
     String ward;
     String province;
     Boolean isDefault;
-    Long idUser;
+    Long userId;
 
 
 }

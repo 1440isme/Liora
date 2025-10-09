@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import vn.liora.entity.Address;
 import vn.liora.entity.Cart;
 import vn.liora.entity.CartProduct;
 import vn.liora.entity.Product;
@@ -16,18 +17,11 @@ import java.util.Optional;
 
 @Repository
 public interface CartProductRepository extends JpaRepository<CartProduct,Long> {
-    List<CartProduct> findByCart(Cart cart);
-    long countByCart(Cart cart);
-
-    void deleteByCart(Cart cart);
-    void deleteByCartAndProduct(Cart cart, Product product);
+    Optional<CartProduct> findByIdCartProduct(Long idCartProduct);
+    Optional<CartProduct> findByCart_IdCartAndProduct_ProductId(Long idCart, Long productId);
     List<CartProduct> findByCartAndChooseTrue(Cart cart);
 
 
-    @Modifying
-    @Transactional
-    @Query("UPDATE CartProduct cp SET cp.totalPrice = cp.quantity * cp.product.price WHERE cp.cart = :cart")
-    void updateTotalPriceByCart(@Param("cart") Cart cart);
 
 
 }

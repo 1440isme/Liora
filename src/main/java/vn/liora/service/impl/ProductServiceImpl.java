@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import vn.liora.dto.request.ProductCreationRequest;
 import vn.liora.dto.request.ProductUpdateRequest;
 import vn.liora.dto.response.ProductResponse;
@@ -23,61 +24,48 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 @Service
-public class    ProductServiceImpl implements IProductService {
-    @Autowired
-    private ProductRepository productRepository;
-    @Autowired
-    private CategoryRepository categoryRepository;
-    @Autowired
-    private BrandRepository brandRepository;
-    @Autowired
-    private ProductMapper productMapper;
+public class ProductServiceImpl implements IProductService {
+    private final ProductRepository productRepository;
+    private final CategoryRepository categoryRepository;
+    private final BrandRepository brandRepository;
+    private final ProductMapper productMapper;
+
+    public ProductServiceImpl(ProductRepository productRepository,
+                              CategoryRepository categoryRepository,
+                              BrandRepository brandRepository,
+                              ProductMapper productMapper) {
+        this.productRepository = productRepository;
+        this.categoryRepository = categoryRepository;
+        this.brandRepository = brandRepository;
+        this.productMapper = productMapper;
+    }
 
     // ========== BASIC CRUD ==========
+    @Transactional
     @Override
     public Product createProduct(ProductCreationRequest request) {
-        try {
-            System.out.println("=== START CREATE PRODUCT ===");
+        // Validate brand
+        Brand brand = brandRepository.findById(request.getBrandId())
+                .orElseThrow(() -> new AppException(ErrorCode.BRAND_NOT_FOUND));
 
-            // Validate brand
-            Brand brand = brandRepository.findById(request.getBrandId())
-                    .orElseThrow(() -> new AppException(ErrorCode.BRAND_NOT_FOUND));
-            System.out.println("Brand OK: " + brand.getName());
+        // Validate category
+        Category category = categoryRepository.findById(request.getCategoryId())
+                .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
 
-            // Validate category
-            Category category = categoryRepository.findById(request.getCategoryId())
-                    .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
-            System.out.println("Category OK: " + category.getName());
-
-            // Check name uniqueness
-            if (productRepository.existsByName(request.getName())) {
-                throw new AppException(ErrorCode.PRODUCT_EXISTED);
-            }
-            System.out.println("Name uniqueness OK");
-
-            // Create product
-            Product product = productMapper.toProduct(request);
-            System.out.println("Mapper OK");
-
-            product.setBrand(brand);
-            product.setCategory(category);
-            product.setCreatedDate(LocalDateTime.now());
-            product.setUpdatedDate(LocalDateTime.now());
-            product.setSoldCount(0);
-            product.setAverageRating(BigDecimal.ZERO);
-            product.setRatingCount(0);
-            System.out.println("Product setup OK");
-
-            Product savedProduct = productRepository.save(product);
-            System.out.println("Save OK: " + savedProduct.getProductId());
-
-            return savedProduct; // ← Trả về Product thay vì ProductResponse
-
-        } catch (Exception e) {
-            System.out.println("ERROR: " + e.getMessage());
-            e.printStackTrace();
-            throw e;
+        // Check name uniqueness
+        if (productRepository.existsByName(request.getName())) {
+            throw new AppException(ErrorCode.PRODUCT_NAME_ALREADY_EXISTS);
         }
+
+        // Create product
+        Product product = productMapper.toProduct(request);
+
+        product.setBrand(brand);
+        product.setCategory(category);
+        product.setCreatedDate(LocalDateTime.now());
+
+        Product savedProduct = productRepository.save(product);
+        return savedProduct; // ← Trả về Product thay vì ProductResponse
     }
 
     @Override
@@ -87,6 +75,7 @@ public class    ProductServiceImpl implements IProductService {
         return productMapper.toProductResponse(product);
     }
 
+    @Transactional
     @Override
     public ProductResponse updateProduct(Long id, ProductUpdateRequest request) {
         Product product =  productRepository.findById(id)
@@ -117,6 +106,7 @@ public class    ProductServiceImpl implements IProductService {
 
     }
 
+    @Transactional
     @Override
     public void deleteById(Long id) {
         if (!productRepository.existsById(id)) {
@@ -125,6 +115,7 @@ public class    ProductServiceImpl implements IProductService {
         productRepository.deleteById(id);
     }
 
+    @Transactional
     @Override
     public void deleteAll() {
         productRepository.deleteAll();
@@ -277,7 +268,7 @@ public class    ProductServiceImpl implements IProductService {
     }
 
     @Override
-    public List<Product> findHighRatedProducts(BigDecimal minRating) {
+    public List<Product> findProductsByMinRating(BigDecimal minRating) {
         return productRepository.findByAverageRatingGreaterThanEqual(minRating);
     }
     // ========== COMBINED FILTERS ==========
@@ -317,7 +308,7 @@ public class    ProductServiceImpl implements IProductService {
     }
 
     @Override
-    public List<Product> findHighRatedProducts(BigDecimal minRating, Pageable pageable) {
+    public List<Product> findHighRatedProductsWithPagination(BigDecimal minRating, Pageable pageable) {
         return productRepository.findHighRatedProducts(minRating, pageable);
     }
 
@@ -341,6 +332,7 @@ public class    ProductServiceImpl implements IProductService {
         return productRepository.findByIsActiveWithPagination(false, pageable);
     }
     // ========== STATUS MANAGEMENT (SOFT DELETE) ==========
+    @Transactional
     @Override
     public void activateProduct(Long id) {
         Product product = productRepository.findById(id)
@@ -350,6 +342,7 @@ public class    ProductServiceImpl implements IProductService {
         productRepository.save(product);
     }
 
+    @Transactional
     @Override
     public void deactivateProduct(Long id) {
         Product product = productRepository.findById(id)
@@ -359,6 +352,7 @@ public class    ProductServiceImpl implements IProductService {
         productRepository.save(product);
     }
 
+    @Transactional
     @Override
     public void setAvailable(Long id, Boolean available) {
         Product product = productRepository.findById(id)
@@ -368,17 +362,34 @@ public class    ProductServiceImpl implements IProductService {
         productRepository.save(product);
     }
 
+    @Transactional
     @Override
     public void updateStock(Long id, Integer stock) {
+        if (stock < 0) {
+            throw new AppException(ErrorCode.PRODUCT_STOCK_INVALID);
+        }
+        if (stock > 999999) {
+            throw new AppException(ErrorCode.PRODUCT_STOCK_TOO_HIGH);
+        }
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
         product.setStock(stock);
+        if (stock == 0) {
+            product.setAvailable(false); // Tự động set hết hàng khi stock = 0
+        }
         product.setUpdatedDate(LocalDateTime.now());
         productRepository.save(product);
     }
 
+    @Transactional
     @Override
     public void updateSoldCount(Long id, Integer soldCount) {
+        if (soldCount < 0) {
+            throw new AppException(ErrorCode.PRODUCT_SOLD_COUNT_INVALID);
+        }
+        if (soldCount > 999999) {
+            throw new AppException(ErrorCode.PRODUCT_SOLD_COUNT_TOO_HIGH);
+        }
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
         product.setSoldCount(soldCount);
