@@ -239,28 +239,13 @@ public class DiscountServiceImpl implements IDiscountService {
         }
         
         // Calculate discount based on type
-        BigDecimal discountAmount;
-        if ("PERCENTAGE".equals(discount.getDiscountType())) {
-            // Calculate percentage discount
-            discountAmount = orderTotal.multiply(discount.getDiscountValue()).divide(new BigDecimal("100"));
-            
-            // Apply maximum discount if set
-            if (discount.getMaxDiscountAmount() != null && discountAmount.compareTo(discount.getMaxDiscountAmount()) > 0) {
-                discountAmount = discount.getMaxDiscountAmount();
-            }
-        } else if ("FIXED_AMOUNT".equals(discount.getDiscountType())) {
-            // Fixed amount discount
-            discountAmount = discount.getDiscountValue();
-            
-            // Don't exceed order total
-            if (discountAmount.compareTo(orderTotal) > 0) {
-                discountAmount = orderTotal;
-            }
-        } else {
-            // Default to percentage if type is unknown
-            discountAmount = orderTotal.multiply(discount.getDiscountValue()).divide(new BigDecimal("100"));
+        BigDecimal discountAmount = orderTotal.multiply(discount.getDiscountValue()).divide(new BigDecimal("100"));
+
+        // Apply maximum discount if set
+        if (discount.getMaxDiscountAmount() != null && discountAmount.compareTo(discount.getMaxDiscountAmount()) > 0) {
+            discountAmount = discount.getMaxDiscountAmount();
         }
-        
+
         return discountAmount;
     }
     

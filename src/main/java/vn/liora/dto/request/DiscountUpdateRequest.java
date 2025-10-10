@@ -19,9 +19,6 @@ public class DiscountUpdateRequest {
     @Size(max = 500, message = "VALIDATION_DESCRIPTION_TOO_LONG")
     private String description;
     
-    @Size(max = 50, message = "VALIDATION_DISCOUNT_TYPE_TOO_LONG")
-    private String discountType;
-    
     @DecimalMin(value = "0.0", message = "VALIDATION_DISCOUNT_VALUE_POSITIVE")
     private BigDecimal discountValue;
     
