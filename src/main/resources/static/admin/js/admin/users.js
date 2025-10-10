@@ -12,6 +12,12 @@ class UsersManager {
     }
 
     init() {
+        // Remove any existing date display elements that might have been created before
+        const dateDisplay = document.getElementById('search-date-display');
+        if (dateDisplay) {
+            dateDisplay.remove();
+        }
+
         this.attachEventListeners();
         this.loadUsers();
     }
@@ -40,6 +46,15 @@ class UsersManager {
                 this.applyFilters();
             }, 300));
         }
+
+        // Clear filters button
+        const clearFiltersBtn = document.getElementById('clearFilters');
+        if (clearFiltersBtn) {
+            clearFiltersBtn.addEventListener('click', () => this.clearFilters());
+        }
+
+        // Initialize datepickers
+        this.initializeDatepickers();
     }
 
     async loadUsers() {
@@ -66,6 +81,45 @@ class UsersManager {
                 (u.email || '').toLowerCase().includes(q) ||
                 (u.phone || '').toLowerCase().includes(q)
             );
+        }
+
+        // filter by role
+        if (this.currentFilters.role) {
+            filtered = filtered.filter(u =>
+                (u.roles || []).some(r => r.name === this.currentFilters.role)
+            );
+        }
+
+        // filter by status
+        if (this.currentFilters.status) {
+            if (this.currentFilters.status === 'ACTIVE') {
+                filtered = filtered.filter(u => u.active === true);
+            } else if (this.currentFilters.status === 'INACTIVE') {
+                filtered = filtered.filter(u => u.active === false);
+            }
+        }
+
+        // filter by date range
+        if (this.currentFilters.dateFrom) {
+            const fromDate = this.parseDateFilter(this.currentFilters.dateFrom);
+            if (fromDate) {
+                filtered = filtered.filter(u => {
+                    if (!u.createdDate) return false;
+                    const userDate = new Date(u.createdDate);
+                    return userDate >= fromDate;
+                });
+            }
+        }
+
+        if (this.currentFilters.dateTo) {
+            const toDate = this.parseDateFilter(this.currentFilters.dateTo);
+            if (toDate) {
+                filtered = filtered.filter(u => {
+                    if (!u.createdDate) return false;
+                    const userDate = new Date(u.createdDate);
+                    return userDate <= toDate;
+                });
+            }
         }
 
         // sort
@@ -98,20 +152,21 @@ class UsersManager {
             this.renderEmptyState();
             return;
         }
-        container.innerHTML = users.map(u => this.createRow(u)).join('');
+        container.innerHTML = users.map((u, index) => this.createRow(u, index)).join('');
     }
 
-    createRow(u) {
+    createRow(u, index = 0) {
         const fullName = `${u.firstname || ''} ${u.lastname || ''}`.trim() || 'N/A';
         const rolesHtml = (u.roles && u.roles.length)
             ? u.roles.map(r => `<span class="badge bg-secondary">${r.name}</span>`).join(' ')
             : '<span class="text-muted">-</span>';
         const activeBadge = u.active ? '<span class="badge bg-success">Hoạt động</span>' : '<span class="badge bg-secondary">Không hoạt động</span>';
         const created = u.createdDate ? this.formatDate(u.createdDate) : '-';
-        const avatar = u.avatar || '/admin/images/users/placeholder.jpg';
+        const avatar = u.avatar || 'https://placehold.co/40';
 
         return `
             <tr>
+                <td class="text-center fw-bold">${index + 1}</td>
                 <td>
                     <img src="${avatar}" alt="${fullName}" class="img-thumbnail rounded-circle" width="50" height="50" style="object-fit: cover;">
                 </td>
@@ -142,7 +197,7 @@ class UsersManager {
         const text = message || 'Chưa có người dùng nào';
         container.innerHTML = `
             <tr>
-                <td colspan="6" class="text-center py-5">
+                <td colspan="7" class="text-center py-5">
                     <i class="mdi mdi-account-group-outline mdi-48px text-muted"></i>
                     <p class="mt-2 text-muted">${text}</p>
                     <a href="/admin/users/add" class="btn btn-primary text-white">Thêm người dùng đầu tiên</a>
@@ -196,6 +251,120 @@ class UsersManager {
             t = setTimeout(() => fn.apply(this, args), wait);
         };
     }
+
+    clearFilters() {
+        // Clear all filter inputs
+        const inputs = ['search', 'role', 'status', 'dateFrom', 'dateTo'];
+        inputs.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = '';
+        });
+
+        // Remove any existing date display elements
+        const dateDisplay = document.getElementById('search-date-display');
+        if (dateDisplay) {
+            dateDisplay.remove();
+        }
+
+        // Also remove any date overlays that might exist
+        const dateOverlays = document.querySelectorAll('[class*="date-display-"]');
+        dateOverlays.forEach(overlay => overlay.remove());
+
+        // Reset filters and reapply
+        this.currentFilters = { search: '' };
+        this.applyFilters();
+
+        // Update URL without filters
+        const url = new URL(window.location);
+        inputs.forEach(param => url.searchParams.delete(param));
+        window.history.replaceState({}, '', url);
+    }
+
+    initializeDatepickers() {
+        const dateFrom = document.getElementById('dateFrom');
+        const dateTo = document.getElementById('dateTo');
+
+        console.log('Initializing datepickers:', { dateFrom: !!dateFrom, dateTo: !!dateTo });
+
+        if (dateFrom) {
+            this.setupDateInput(dateFrom, 'dateFrom');
+        }
+
+        if (dateTo) {
+            this.setupDateInput(dateTo, 'dateTo');
+        }
+    }
+
+    setupDateInput(element, fieldName) {
+        if (!element) return;
+
+        console.log('Setting up date input for:', fieldName);
+
+        // Convert dd/mm/yyyy to yyyy-mm-dd for date input
+        const toDateInput = (value) => {
+            if (!value || !value.includes('/')) return value;
+            const parts = value.split('/');
+            if (parts.length === 3) {
+                const day = parts[0].padStart(2, '0');
+                const month = parts[1].padStart(2, '0');
+                const year = parts[2];
+                return `${year}-${month}-${day}`;
+            }
+            return value;
+        };
+
+        // Initialize with proper format if value exists
+        if (element.value) {
+            element.value = toDateInput(element.value);
+        }
+
+        // Add change event listener for filtering
+        element.addEventListener('change', () => {
+            console.log('Date input changed:', fieldName, 'value:', element.value);
+
+            // Update filter and apply
+            this.currentFilters[fieldName] = element.value;
+            this.applyFilters();
+        });
+    }
+
+    formatDateForFilter(date) {
+        if (!date) return null;
+        const day = date.getDate().toString().padStart(2, '0');
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const year = date.getFullYear();
+        return `${day}/${month}/${year}`;
+    }
+
+    parseDateFilter(dateStr) {
+        if (!dateStr) return null;
+
+        // Handle yyyy-mm-dd format (from date input)
+        const date = new Date(dateStr);
+        if (!isNaN(date.getTime())) {
+            return date;
+        }
+
+        // Handle dd/mm/yyyy format (fallback)
+        if (dateStr.includes('/')) {
+            const parts = dateStr.split('/');
+            if (parts.length === 3) {
+                const day = parseInt(parts[0], 10);
+                const month = parseInt(parts[1], 10) - 1; // Month is 0-indexed
+                const year = parseInt(parts[2], 10);
+
+                // Validate date
+                if (day >= 1 && day <= 31 && month >= 0 && month <= 11 && year >= 1900) {
+                    const date = new Date(year, month, day);
+                    if (!isNaN(date.getTime())) {
+                        return date;
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
 }
 
 /**
@@ -237,8 +406,34 @@ class UserFormManager {
             confirmPasswordInput.addEventListener('input', (e) => this.handlePasswordConfirmation(e));
         }
 
+        // Load roles for role selection
+        await this.loadRoles();
+
         if (this.isEditPage && this.userId) {
             await this.loadUser(this.userId);
+        }
+    }
+
+    async loadRoles() {
+        try {
+            const res = await adminAjax.get('/roles');
+            const roles = res.result;
+            const roleSelect = document.getElementById('role');
+
+            if (roleSelect) {
+                // Clear existing options except the first one
+                roleSelect.innerHTML = '<option value="">Chọn vai trò</option>';
+
+                // Add role options
+                roles.forEach(role => {
+                    const option = document.createElement('option');
+                    option.value = role.name;
+                    option.textContent = role.description || role.name;
+                    roleSelect.appendChild(option);
+                });
+            }
+        } catch (error) {
+            console.error('Failed to load roles:', error);
         }
     }
 
@@ -344,6 +539,7 @@ class UserFormManager {
         const lastname = this.getValue('lastName');
         const dob = this.getValue('dob');
         const genderRaw = this.getValue('gender');
+        const role = this.getValue('role');
         const active = this.getCheckbox('status');
         const avatarFile = document.getElementById('avatar')?.files?.[0] || null;
 
@@ -352,6 +548,7 @@ class UserFormManager {
         if (!confirmPassword || confirmPassword !== password) throw new Error('Mật khẩu xác nhận không khớp');
         if (!email) throw new Error('Vui lòng nhập email');
         if (!firstname || !lastname) throw new Error('Vui lòng nhập họ và tên');
+        if (!role) throw new Error('Vui lòng chọn vai trò');
 
         const payload = {
             username,
@@ -362,6 +559,7 @@ class UserFormManager {
             lastname,
             dob: dob || null,
             gender: this.mapGenderToBoolean(genderRaw),
+            role: role,
             active: active,
             avatar: null
         };
@@ -535,8 +733,71 @@ class UsersFilters {
         const list = this.users || []; // this.users populated in loadUsers
         UsersFilters.updateStats(list);
         this.applyFilters = () => {
-            const filters = UsersFilters.getFiltersFromDOM();
-            const filtered = UsersFilters.apply(list, filters);
+            // Get filters from DOM
+            this.currentFilters = {
+                search: document.getElementById('search')?.value?.toLowerCase().trim() || '',
+                role: document.getElementById('role')?.value || '',
+                status: document.getElementById('status')?.value || '',
+                dateFrom: document.getElementById('dateFrom')?.value || '',
+                dateTo: document.getElementById('dateTo')?.value || ''
+            };
+
+            // Apply filters using the main logic
+            let filtered = [...list];
+
+            // search by name, username, email, phone
+            if (this.currentFilters.search) {
+                const q = this.currentFilters.search;
+                filtered = filtered.filter(u =>
+                    (u.firstname + ' ' + u.lastname).toLowerCase().includes(q) ||
+                    (u.username || '').toLowerCase().includes(q) ||
+                    (u.email || '').toLowerCase().includes(q) ||
+                    (u.phone || '').toLowerCase().includes(q)
+                );
+            }
+
+            // filter by role
+            if (this.currentFilters.role) {
+                filtered = filtered.filter(u =>
+                    (u.roles || []).some(r => r.name === this.currentFilters.role)
+                );
+            }
+
+            // filter by status
+            if (this.currentFilters.status) {
+                if (this.currentFilters.status === 'ACTIVE') {
+                    filtered = filtered.filter(u => u.active === true);
+                } else if (this.currentFilters.status === 'INACTIVE') {
+                    filtered = filtered.filter(u => u.active === false);
+                }
+            }
+
+            // filter by date range
+            if (this.currentFilters.dateFrom) {
+                const fromDate = this.parseDateFilter(this.currentFilters.dateFrom);
+                if (fromDate) {
+                    filtered = filtered.filter(u => {
+                        if (!u.createdDate) return false;
+                        const userDate = new Date(u.createdDate);
+                        return userDate >= fromDate;
+                    });
+                }
+            }
+
+            if (this.currentFilters.dateTo) {
+                const toDate = this.parseDateFilter(this.currentFilters.dateTo);
+                if (toDate) {
+                    filtered = filtered.filter(u => {
+                        if (!u.createdDate) return false;
+                        const userDate = new Date(u.createdDate);
+                        return userDate <= toDate;
+                    });
+                }
+            }
+
+            // sort
+            filtered = this.sortUsers(filtered, this.currentSort);
+
             this.renderUsers(filtered);
         };
         // bind filter events
@@ -591,6 +852,16 @@ class UsersFilters {
 })();
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Remove any existing date display elements immediately
+    const dateDisplay = document.getElementById('search-date-display');
+    if (dateDisplay) {
+        dateDisplay.remove();
+    }
+
+    // Remove any date overlays
+    const dateOverlays = document.querySelectorAll('[class*="date-display-"]');
+    dateOverlays.forEach(overlay => overlay.remove());
+
     // Initialize list page manager if container present
     if (document.querySelector('.users-container')) {
         new UsersManager();

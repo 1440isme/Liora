@@ -6,7 +6,6 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -85,9 +84,11 @@ public class UserServiceImpl implements IUserService {
             user.setActive(true);
         }
 
-        var defaultRole = roleRepository.findById(Role.USER.name())
+        // Set role based on request or default to USER
+        String roleName = request.getRole() != null ? request.getRole() : Role.USER.name();
+        var selectedRole = roleRepository.findById(roleName)
                 .orElseThrow(() -> new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION));
-        user.setRoles(Set.of(defaultRole));
+        user.setRoles(Set.of(selectedRole));
 
         return userMapper.toUserResponse(save(user));
     }
