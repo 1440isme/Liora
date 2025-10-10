@@ -60,7 +60,7 @@ public class AddressServiceImpl implements IAddressService {
     @Transactional
     public AddressResponse updateAddress(Long userId, Long idAddress, AddressUpdateRequest request) {
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
         Address address = addressRepository.findById(idAddress)
                 .orElseThrow(() -> new AppException(ErrorCode.ADDRESS_NOT_FOUND));
@@ -68,18 +68,20 @@ public class AddressServiceImpl implements IAddressService {
         if (Boolean.TRUE.equals(request.getIsDefault())) {
             addressRepository.clearDefaultByUser(userId);
             address.setIsDefault(true);
-          }
+        }
         if (Boolean.FALSE.equals(request.getIsDefault()) && Boolean.TRUE.equals(address.getIsDefault())) {
             throw new AppException(ErrorCode.CANNOT_REMOVE_DEFAULT_ADDRESS);
         }
+
         addressMapper.updateAddress(address, request);
         address = addressRepository.save(address);
+
         return addressMapper.toAddressResponse(address);
     }
 
     @Override
     @Transactional
-    public void deleteAddress(Long userId,Long idAddress) {
+    public void deleteAddress(Long userId, Long idAddress) {
 
         Address address = addressRepository.findByIdAddress(idAddress)
                 .orElseThrow(() -> new AppException(ErrorCode.ADDRESS_NOT_FOUND));
@@ -95,10 +97,8 @@ public class AddressServiceImpl implements IAddressService {
         addressRepository.save(address);
     }
 
-
-
     @Override
-    public AddressResponse getAddressById(Long userId,Long idAddress) {
+    public AddressResponse getAddressById(Long userId, Long idAddress) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
         Address address = addressRepository.findByIdAddress(idAddress)
@@ -110,7 +110,6 @@ public class AddressServiceImpl implements IAddressService {
     public List<AddressResponse> getMyAddresses(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
-
 
         List<Address> addresses = addressRepository.findByUserAndIsActiveTrue(user);
         return addressMapper.toAddressResponseList(addresses);

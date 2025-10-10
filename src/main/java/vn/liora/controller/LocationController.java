@@ -73,24 +73,17 @@ public class LocationController {
                     new HttpEntity<>(headers),
                     String.class);
 
-            // Kiểm tra response có phải JSON không
             String body = upstream.getBody();
-            System.out.println("WaveBear API response: " + body);
-            System.out.println("Response status: " + upstream.getStatusCode());
-
             if (body != null && body.trim().startsWith("[")) {
                 return ResponseEntity.ok()
                         .contentType(MediaType.APPLICATION_JSON)
                         .body(body);
             } else {
-                System.out.println("API trả về HTML thay vì JSON: " + body);
                 return ResponseEntity.ok()
                         .contentType(MediaType.APPLICATION_JSON)
                         .body("[]");
             }
         } catch (Exception ex) {
-            System.out.println("Lỗi gọi API WaveBear: " + ex.getMessage());
-            ex.printStackTrace();
             return ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_JSON)
                     .body("[]");
@@ -112,20 +105,17 @@ public class LocationController {
                     new HttpEntity<>(headers),
                     String.class);
 
-            // Kiểm tra response có phải JSON không
             String body = upstream.getBody();
             if (body != null && body.trim().startsWith("[")) {
                 return ResponseEntity.ok()
                         .contentType(MediaType.APPLICATION_JSON)
                         .body(body);
             } else {
-                System.out.println("API ward trả về HTML thay vì JSON: " + body);
                 return ResponseEntity.ok()
                         .contentType(MediaType.APPLICATION_JSON)
                         .body("[]");
             }
         } catch (Exception ex) {
-            System.out.println("Lỗi gọi API ward WaveBear: " + ex.getMessage());
             return ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_JSON)
                     .body("[]");
