@@ -32,12 +32,6 @@ public class Address {
     @Column(name = "IsDefault")
     Boolean isDefault = false;
 
-    @Column(name = "IsActive")
-    Boolean isActive = true;
-
-
-
-
     @OneToMany(mappedBy = "address", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnore
     private List<Order> orders;

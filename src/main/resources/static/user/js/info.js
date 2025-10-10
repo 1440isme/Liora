@@ -570,6 +570,12 @@ class UserInfoManager {
         }
     }
 
+    closeAddressModal() {
+        const el = document.getElementById('addAddressModal');
+        if (!el) return;
+        el.classList.remove('show');
+    }
+
     populateEditForm(address) {
         document.getElementById('editAddrName').value = address?.name || '';
         document.getElementById('editAddrPhone').value = address?.phone || '';
@@ -845,7 +851,15 @@ class UserInfoManager {
     }
 
     async submitAddAddress() {
+        // Prevent double submission
+        const submitBtn = document.getElementById('btnSubmitAddAddress');
+        if (submitBtn.disabled) return;
+
         try {
+            // Disable submit button to prevent double submission
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang lưu...';
+
             const token = localStorage.getItem('access_token');
             if (!token || !this.currentUser?.userId) {
                 this.showError('Vui lòng đăng nhập');
@@ -890,15 +904,22 @@ class UserInfoManager {
             }
 
             this.showToast('Đã lưu địa chỉ thành công', 'success');
-            // Close modal
-            const el = document.getElementById('addAddressModal');
-            const modal = el ? bootstrap.Modal.getInstance(el) : null;
-            if (modal) modal.hide();
 
+            // Close modal properly using CSS class
+            this.closeAddressModal();
+
+            // Reset form
+            this.resetAddAddressForm();
+
+            // Reload addresses
             this.loadAddresses();
         } catch (e) {
             console.error(e);
             this.showError(e?.message || 'Không thể lưu địa chỉ');
+        } finally {
+            // Re-enable submit button
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-save"></i> Lưu địa chỉ';
         }
     }
 
@@ -1164,9 +1185,13 @@ function uploadAvatar(e) {
 
 // Đóng modal địa chỉ - CSS only (zero flicker)
 function closeAddressModal() {
-    const el = document.getElementById('addAddressModal');
-    if (!el) return;
-    el.classList.remove('show');
+    if (window.userInfoManager) {
+        window.userInfoManager.closeAddressModal();
+    } else {
+        const el = document.getElementById('addAddressModal');
+        if (!el) return;
+        el.classList.remove('show');
+    }
 }
 
 // Initialize when DOM is loaded

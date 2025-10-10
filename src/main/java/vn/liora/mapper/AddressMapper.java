@@ -23,7 +23,6 @@ public interface AddressMapper {
     @Mapping(target = "idAddress", ignore = true)
     @Mapping(target = "user", ignore = true)
     @Mapping(target = "orders", ignore = true)
-    @Mapping(target = "isActive", ignore = true)
     void updateAddress(@MappingTarget Address address, AddressUpdateRequest request);
 
     List<AddressResponse> toAddressResponseList(List<Address> addresses);
