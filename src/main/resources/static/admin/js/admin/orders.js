@@ -159,6 +159,37 @@ class OrderManager {
                 minute: '2-digit'
             }).format(orderDateTime);
 
+            // Xử lý hiển thị thông tin khách hàng
+            let customerDisplay = '';
+            if (order.customerName && order.customerName.trim() !== '') {
+                // Nếu có customerName thì hiển thị tên và ID
+                customerDisplay = `
+                    <div>
+                        <span class="fw-bold text-dark">${order.customerName}</span>
+                        <br>
+                        <small class="text-muted">ID: ${order.userId || 'N/A'}</small>
+                    </div>
+                `;
+            } else if (order.userId) {
+                // Nếu chỉ có userId thì hiển thị ID và tải tên
+                customerDisplay = `
+                    <div>
+                        <span class="fw-bold text-primary">ID: ${order.userId}</span>
+                        <br>
+                        <small class="text-muted" id="customerName-${order.idOrder}">Đang tải...</small>
+                    </div>
+                `;
+            } else {
+                // Nếu không có thông tin gì thì hiển thị Khách
+                customerDisplay = `
+                    <div>
+                        <span class="fw-bold text-secondary">Khách</span>
+                        <br>
+                        <small class="text-muted">ID: N/A</small>
+                    </div>
+                `;
+            }
+
             const row = `
                 <tr>
                     <td>${startIndex + index + 1}</td>
@@ -173,11 +204,7 @@ class OrderManager {
                         </div>
                     </td>
                     <td>
-                        <div>
-                            <span class="fw-bold text-primary">ID: ${order.userId || 'N/A'}</span>
-                            <br>
-                            <small class="text-muted" id="customerName-${order.idOrder}">Đang tải...</small>
-                        </div>
+                        ${customerDisplay}
                     </td>
                     <td>
                         <span class="fw-bold text-success">
@@ -215,8 +242,8 @@ class OrderManager {
             `;
             tbody.append(row);
 
-            // Load customer name asynchronously
-            if (order.userId) {
+            // Chỉ tải tên khách hàng nếu chưa có customerName và có userId
+            if ((!order.customerName || order.customerName.trim() === '') && order.userId) {
                 this.loadCustomerName(order.userId, order.idOrder);
             }
         });
@@ -342,16 +369,16 @@ class OrderManager {
 
     async updateOrderStatus(orderId) {
         try {
-            const order = this.orders.find(o => o.idOrder === orderId); // Sử dụng idOrder
+            const order = this.orders.find(o => o.idOrder === orderId);
             if (!order) {
                 this.showAlert('error', 'Lỗi', 'Không tìm thấy đơn hàng');
                 return;
             }
 
-            // Show update status modal
+            // Show update status modal với string values
             $('#updateOrderId').val(orderId);
             $('#updatePaymentStatus').val(order.paymentStatus ? 'true' : 'false');
-            $('#updateOrderStatus').val(order.orderStatus ? 'true' : 'false');
+            $('#updateOrderStatus').val(order.orderStatus || 'PENDING'); // Set string value
             $('#updateStatusModal').modal('show');
 
         } catch (error) {
@@ -364,7 +391,7 @@ class OrderManager {
         try {
             const orderId = $('#updateOrderId').val();
             const paymentStatus = $('#updatePaymentStatus').val() === 'true';
-            const orderStatus = $('#updateOrderStatus').val() === 'true';
+            const orderStatus = $('#updateOrderStatus').val(); // Keep as string
 
             const response = await fetch(`${this.baseUrl}/${orderId}`, {
                 method: 'PUT',
@@ -373,7 +400,7 @@ class OrderManager {
                 },
                 body: JSON.stringify({
                     paymentStatus: paymentStatus,
-                    orderStatus: orderStatus
+                    orderStatus: orderStatus // Send string value
                 })
             });
 
@@ -398,11 +425,22 @@ class OrderManager {
         if (!searchTerm) {
             this.filteredOrders = [...this.orders];
         } else {
-            this.filteredOrders = this.orders.filter(order =>
-                order.idOrder.toString().includes(searchTerm) ||
-                (order.userId && order.userId.toString().includes(searchTerm)) ||
-                (order.paymentMethod && order.paymentMethod.toLowerCase().includes(searchTerm))
-            );
+            this.filteredOrders = this.orders.filter(order => {
+                // Tìm theo mã đơn hàng (hỗ trợ cả #1 và 1)
+                const orderIdMatch = order.idOrder.toString().includes(searchTerm) ||
+                                   order.idOrder.toString().includes(searchTerm.replace('#')) ||
+                                   (`#${order.idOrder}`).toLowerCase().includes(searchTerm);
+
+                // Tìm theo ID khách hàng
+                const userIdMatch = order.userId && order.userId.toString().includes(searchTerm);
+
+                // Tìm theo tên khách hàng
+                const customerNameMatch = order.customerName &&
+                                        order.customerName.toLowerCase().includes(searchTerm);
+
+
+                return orderIdMatch || userIdMatch || customerNameMatch ;
+            });
         }
 
         this.currentPage = 1;
@@ -424,9 +462,9 @@ class OrderManager {
                 matches = matches && (order.paymentStatus === (paymentStatus === 'true'));
             }
 
-            // Filter by order status
+            // Filter by order status - now supports string values
             if (orderStatus !== '') {
-                matches = matches && (order.orderStatus === (orderStatus === 'true'));
+                matches = matches && (order.orderStatus === orderStatus);
             }
 
             // Filter by date range
@@ -543,11 +581,29 @@ class OrderManager {
     }
 
     getOrderStatusClass(status) {
-        return status ? 'bg-primary' : 'bg-secondary';
+        switch(status) {
+            case 'PENDING':
+                return 'bg-warning';
+            case 'CANCELLED':
+                return 'bg-danger';
+            case 'COMPLETED':
+                return 'bg-success';
+            default:
+                return 'bg-secondary';
+        }
     }
 
     getOrderStatusText(status) {
-        return status ? 'Đã xử lý' : 'Chờ xử lý';
+        switch(status) {
+            case 'PENDING':
+                return 'Chờ xử lý';
+            case 'CANCELLED':
+                return 'Đã hủy';
+            case 'COMPLETED':
+                return 'Hoàn thành';
+            default:
+                return 'Không xác định';
+        }
     }
 
     showLoading() {

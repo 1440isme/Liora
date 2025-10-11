@@ -37,7 +37,7 @@ public class Order {
     @Column(name = "OrderStatus", nullable = false)
     String orderStatus;
 
-    @Column(name = "Name", nullable = false)
+    @Column(name = "Name", nullable = false, columnDefinition = "NVARCHAR(255)")
     String name;
     @Column(name = "Phone", nullable = false)
     String phone;
@@ -47,6 +47,8 @@ public class Order {
     String email;
     @Column(name ="Note", columnDefinition = "NVARCHAR(255)")
     String note;
+
+
 
     @ManyToOne
     @JoinColumn(name = "IdAddress", nullable = true)

@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public interface IOrderService {
-    OrderResponse createOrder(Long userId, OrderCreationRequest request);
+    OrderResponse createOrder(Long idCart, OrderCreationRequest request);
     OrderResponse updateOrderStatus(Long idOrder, OrderUpdateRequest request);
     OrderResponse getOrderById(Long idOrder);
     List<OrderResponse> getMyOrders(Long userId);

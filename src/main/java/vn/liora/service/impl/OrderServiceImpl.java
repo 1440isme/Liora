@@ -41,12 +41,10 @@ public class OrderServiceImpl implements IOrderService {
     @Override
     @Transactional
 
-    public OrderResponse createOrder(Long userId,OrderCreationRequest request) {
-
-            User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
-            Cart cart = cartRepository.findByUser(user)
-                    .orElseThrow(() -> new AppException(ErrorCode.CART_NOT_FOUND));
+    public OrderResponse createOrder(Long idCart, OrderCreationRequest request) {
+             Cart cart = cartRepository.findById(idCart)
+                .orElseThrow(() -> new AppException(ErrorCode.CART_NOT_FOUND));
+            User user = cart.getUser();
             List<CartProduct> selected = cartProductRepository.findByCartAndChooseTrue(cart);
             if (selected.isEmpty())
                 throw new AppException(ErrorCode.NO_SELECTED_PRODUCT);

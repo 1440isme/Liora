@@ -20,7 +20,7 @@ public class OrderResponse {
     String email;
     String note;
     LocalDateTime orderDate;
-    Boolean orderStatus;
+    String orderStatus;
     String paymentMethod;
     Boolean paymentStatus;
     BigDecimal shippingFee;
@@ -28,5 +28,5 @@ public class OrderResponse {
     BigDecimal total;
     Long idAddress;
     Long userId;
-
+    String customerName; // Thêm field để hiển thị tên khách hàng
 }
