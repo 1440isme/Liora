@@ -372,74 +372,8 @@ class OrderManager {
     }
 
     async viewOrderDetail(orderId) {
-        try {
-            const order = this.orders.find(o => o.idOrder === orderId); // Sử dụng idOrder
-            if (!order) {
-                this.showAlert('error', 'Lỗi', 'Không tìm thấy đơn hàng');
-                return;
-            }
-
-            // Populate modal with order details
-            $('#modalOrderId').text(`#${order.idOrder}`);
-            $('#modalCustomerName').text(`User ID: ${order.userId || 'N/A'}`);
-            $('#modalCustomerEmail').text('Đang tải...');
-            $('#modalCustomerPhone').text('Đang tải...');
-            $('#modalOrderDate').text(this.formatDate(order.orderDate));
-            $('#modalTotalAmount').text(new Intl.NumberFormat('vi-VN', {
-                style: 'currency',
-                currency: 'VND'
-            }).format(order.total || 0));
-            $('#modalOrderStatus').html(`<span class="badge ${this.getOrderStatusClass(order.orderStatus)}">${this.getOrderStatusText(order.orderStatus)}</span>`);
-            $('#modalShippingAddress').text(`Address ID: ${order.idAddress || 'N/A'}`);
-            $('#modalNotes').text('Không có ghi chú');
-
-            // Populate order items - tạm thời hiển thị thông báo
-            const itemsContainer = $('#modalOrderItems');
-            itemsContainer.empty();
-            itemsContainer.append('<p class="text-muted text-center">API chi tiết sản phẩm chưa được triển khai</p>');
-
-            // Load thông tin user nếu có userId
-            if (order.userId) {
-                this.loadUserInfoForModal(order.userId);
-            }
-
-            // Load thông tin address nếu có idAddress
-            if (order.idAddress) {
-                this.loadAddressInfoForModal(order.idAddress);
-            }
-
-            $('#orderDetailModal').modal('show');
-
-        } catch (error) {
-            console.error('Error viewing order detail:', error);
-            this.showAlert('error', 'Lỗi', 'Không thể xem chi tiết đơn hàng');
-        }
-    }
-
-    async loadUserInfoForModal(userId) {
-        try {
-            const response = await fetch(`/admin/api/users/${userId}`);
-            if (response.ok) {
-                const user = await response.json();
-                $('#modalCustomerName').text(user.fullName || user.firstName + ' ' + user.lastName || 'N/A');
-                $('#modalCustomerEmail').text(user.email || 'N/A');
-                $('#modalCustomerPhone').text(user.phoneNumber || 'N/A');
-            }
-        } catch (error) {
-            console.error('Error loading user info:', error);
-        }
-    }
-
-    async loadAddressInfoForModal(addressId) {
-        try {
-            const response = await fetch(`/admin/api/addresses/${addressId}`);
-            if (response.ok) {
-                const address = await response.json();
-                $('#modalShippingAddress').text(address.fullAddress || address.street || 'N/A');
-            }
-        } catch (error) {
-            console.error('Error loading address info:', error);
-        }
+        // Chuyển hướng đến trang chi tiết đơn hàng thay vì mở modal
+        window.location.href = `/admin/orders/detail/${orderId}`;
     }
 
     async updateOrderStatus(orderId) {

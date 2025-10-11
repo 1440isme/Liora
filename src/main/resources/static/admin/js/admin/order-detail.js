@@ -6,7 +6,8 @@
 class OrderDetailManager {
     constructor() {
         this.baseUrl = '/admin/api/orders';
-        this.orderId = this.getOrderIdFromUrl();
+        // Ưu tiên lấy orderId từ server trước, sau đó mới từ URL
+        this.orderId = window.orderIdFromServer || this.getOrderIdFromUrl();
         this.orderData = null;
         this.init();
     }
@@ -110,42 +111,47 @@ class OrderDetailManager {
         document.title = `Chi tiết đơn hàng #${order.idOrder} - Liora Admin`;
         $('#pageOrderId').text(`#${order.idOrder}`);
         
-        // Customer information - hiển thị ID user trực tiếp và tên (không có avatar, không có "Đang tải...")
+        // Customer information - lấy trực tiếp từ Order
         $('#customerId').text(order.userId || 'N/A');
-        $('#customerName').text('N/A'); // Sẽ được cập nhật khi load customer info
-        $('#customerEmail').text('N/A');
-        $('#customerPhone').text('N/A');
+        $('#customerName').text(order.name || 'N/A');
+        $('#customerEmail').text(order.email || 'N/A');
+        $('#customerPhone').text(order.phone || 'N/A');
+        $('#customerAddress').text(order.addressDetail || 'N/A');
 
-        // Load customer info if userId available
-        if (order.userId) {
-            this.loadCustomerInfo(order.userId);
-        }
-        
+
         // Order information - sử dụng các trường đúng từ OrderResponse
         $('#orderIdDetail').text(`#${order.idOrder}`);
 
-        // Tách thời gian thành ngày và giờ riêng
-        const orderDateTime = new Date(order.orderDate);
-        const dateString = new Intl.DateTimeFormat('vi-VN', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit'
-        }).format(orderDateTime);
-        const timeString = new Intl.DateTimeFormat('vi-VN', {
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit'
-        }).format(orderDateTime);
+        // Gộp ngày và thời gian thành một dòng với xử lý lỗi
+        try {
+            const orderDateTime = new Date(order.orderDate);
 
-        $('#orderDate').text(dateString);
-        $('#orderTime').text(timeString);
+            // Kiểm tra xem ngày có hợp lệ không
+            if (isNaN(orderDateTime.getTime())) {
+                $('#orderDateTime').text('Không có thông tin');
+            } else {
+                const fullDateTime = new Intl.DateTimeFormat('vi-VN', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                }).format(orderDateTime);
 
-        $('#paymentStatus').html(`<span class="badge ${this.getPaymentStatusClass(order.paymentStatus)}">${this.getPaymentStatusText(order.paymentStatus)}</span>`);
-        $('#orderStatus').html(`<span class="badge ${this.getOrderStatusClass(order.orderStatus)}">${this.getOrderStatusText(order.orderStatus)}</span>`);
-        
-        // Payment method
+                $('#orderDateTime').text(fullDateTime);
+            }
+        } catch (error) {
+            console.error('Error formatting date:', error);
+            $('#orderDateTime').text('Lỗi định dạng ngày');
+        }
+
+        // Payment method - đặt trước trạng thái
         $('#paymentMethod').text(order.paymentMethod || 'Tiền mặt');
-        
+
+        // Bỏ trạng thái thanh toán, chỉ hiển thị trạng thái đơn hàng - đặt sau phương thức
+        $('#orderStatus').html(`<span class="badge ${this.getOrderStatusClass(order.orderStatus)}">${this.getOrderStatusText(order.orderStatus)}</span>`);
+
         // Order details - sử dụng trường total thay vì totalAmount
         const formattedAmount = new Intl.NumberFormat('vi-VN', {
             style: 'currency',
@@ -177,74 +183,52 @@ class OrderDetailManager {
             currency: 'VND'
         }).format(subtotal));
         
-        $('#orderNotes').text('Không có ghi chú'); // OrderResponse không có trường notes
-        
+        // Order notes - sử dụng trường note từ Order
+        $('#orderNotes').text(order.note || 'Không có ghi chú');
+
         // Load order items - cần API riêng
         this.loadOrderItems(order.idOrder);
     }
 
-    async loadCustomerInfo(userId) {
-        try {
-            // Giả sử có API để lấy thông tin user
-            const response = await fetch(`/admin/api/users/${userId}`);
-            if (response.ok) {
-                const user = await response.json();
-                $('#customerName').text(user.fullName || user.firstName + ' ' + user.lastName || 'N/A');
-                $('#customerEmail').text(user.email || 'N/A');
-                $('#customerPhone').text(user.phoneNumber || 'N/A');
-                $('#customerAddress').text(user.address || 'N/A');
-                if (user.avatar) {
-                    $('#customerAvatar').attr('src', user.avatar);
-                }
-            }
-        } catch (error) {
-            console.error('Error loading customer info:', error);
-            $('#customerName').text('N/A');
-            $('#customerEmail').text('N/A');
-            $('#customerPhone').text('N/A');
-            $('#customerAddress').text('N/A');
-        }
-    }
-
-    async loadAddressInfo(addressId) {
-        try {
-            // Giả sử có API để lấy thông tin address
-            const response = await fetch(`/admin/api/addresses/${addressId}`);
-            if (response.ok) {
-                const address = await response.json();
-                $('#shippingAddress').text(address.fullAddress || address.street || 'N/A');
-            }
-        } catch (error) {
-            console.error('Error loading address info:', error);
-            $('#shippingAddress').text('N/A');
-        }
-    }
-
     async loadOrderItems(orderId) {
         try {
-            // Giả sử có API để lấy order items
             const response = await fetch(`/admin/api/orders/${orderId}/items`);
             if (response.ok) {
                 const items = await response.json();
-                this.renderOrderItems(items);
-            } else {
-                // Nếu không có API, hiển thị thông báo
+                console.log('Order items loaded:', items);
+
+                if (items && items.length > 0) {
+                    this.renderOrderItems(items);
+                } else {
+                    // Nếu không có sản phẩm nào
+                    $('#orderItemsTable').html(`
+                        <tr>
+                            <td colspan="6" class="text-center py-4">
+                                <i class="mdi mdi-package-variant-closed mdi-48px text-muted mb-3"></i>
+                                <p class="text-muted">Không có sản phẩm nào trong đơn hàng</p>
+                            </td>
+                        </tr>
+                    `);
+                }
+            } else if (response.status === 404) {
                 $('#orderItemsTable').html(`
                     <tr>
                         <td colspan="6" class="text-center py-4">
-                            <i class="mdi mdi-information mdi-48px text-muted mb-3"></i>
-                            <p class="text-muted">API chi tiết sản phẩm chưa được triển khai</p>
+                            <i class="mdi mdi-alert mdi-48px text-warning mb-3"></i>
+                            <p class="text-muted">Không tìm thấy thông tin đơn hàng</p>
                         </td>
                     </tr>
                 `);
+            } else {
+                throw new Error(`API Error: ${response.status}`);
             }
         } catch (error) {
             console.error('Error loading order items:', error);
             $('#orderItemsTable').html(`
                 <tr>
                     <td colspan="6" class="text-center py-4">
-                        <i class="mdi mdi-alert mdi-48px text-muted mb-3"></i>
-                        <p class="text-muted">Không thể tải danh sách sản phẩm</p>
+                        <i class="mdi mdi-alert mdi-48px text-danger mb-3"></i>
+                        <p class="text-muted">Không thể tải danh sách sản phẩm: ${error.message}</p>
                     </td>
                 </tr>
             `);
@@ -255,7 +239,7 @@ class OrderDetailManager {
         const tbody = $('#orderItemsTable');
         tbody.empty();
 
-        if (items.length === 0) {
+        if (!items || items.length === 0) {
             tbody.append(`
                 <tr>
                     <td colspan="6" class="text-center py-4">
@@ -267,29 +251,32 @@ class OrderDetailManager {
             return;
         }
 
-        let subtotal = 0;
-        items.forEach(item => {
-            const itemTotal = item.price * item.quantity;
-            subtotal += itemTotal;
+        let subtotalFromItems = 0;
+        items.forEach((item, index) => {
+            const itemTotal = item.totalPrice || 0;
+            subtotalFromItems += itemTotal;
 
             const row = `
                 <tr>
                     <td>
-                        <img src="${item.product?.image || '/admin/images/products/default-product.jpg'}" 
-                             alt="${item.product?.name}" class="rounded" width="60" height="60">
+                        <div class="d-flex align-items-center justify-content-center bg-light rounded" style="width: 60px; height: 60px;">
+                            <i class="mdi mdi-package-variant mdi-24px text-muted"></i>
+                        </div>
                     </td>
                     <td>
-                        <h6 class="mb-1">${item.product?.name || 'N/A'}</h6>
-                        <small class="text-muted">SKU: ${item.product?.sku || 'N/A'}</small>
+                        <h6 class="mb-1">Sản phẩm #${item.idProduct}</h6>
+                        <small class="text-muted">ID: ${item.idOrderProduct}</small>
                     </td>
                     <td class="fw-medium">
-                        ${new Intl.NumberFormat('vi-VN', {
-                            style: 'currency',
-                            currency: 'VND'
-                        }).format(item.price)}
+                        ${item.totalPrice && item.quantity ? 
+                            new Intl.NumberFormat('vi-VN', {
+                                style: 'currency',
+                                currency: 'VND'
+                            }).format(item.totalPrice / item.quantity) : 'N/A'
+                        }
                     </td>
                     <td>
-                        <span class="badge bg-light text-dark">${item.quantity}</span>
+                        <span class="badge bg-light text-dark">${item.quantity || 0}</span>
                     </td>
                     <td class="fw-bold text-primary">
                         ${new Intl.NumberFormat('vi-VN', {
@@ -305,11 +292,13 @@ class OrderDetailManager {
             tbody.append(row);
         });
 
-        // Update subtotal
-        $('#subtotal').text(new Intl.NumberFormat('vi-VN', {
-            style: 'currency',
-            currency: 'VND'
-        }).format(subtotal));
+        // Update subtotal based on actual items if available
+        if (subtotalFromItems > 0) {
+            $('#subtotal').text(new Intl.NumberFormat('vi-VN', {
+                style: 'currency',
+                currency: 'VND'
+            }).format(subtotalFromItems));
+        }
     }
 
     updateTimeline() {
@@ -391,7 +380,7 @@ class OrderDetailManager {
             <!DOCTYPE html>
             <html>
             <head>
-                <title>Đơn hàng #${order.id}</title>
+                <title>Đơn hàng #${order.idOrder}</title>
                 <meta charset="utf-8">
                 <style>
                     body { font-family: Arial, sans-serif; margin: 20px; }
@@ -408,63 +397,32 @@ class OrderDetailManager {
             <body>
                 <div class="header">
                     <h1>LIORA FASHION</h1>
-                    <h2>ĐơN HÀNG #${order.id}</h2>
-                    <p>Ngày: ${this.formatDate(order.createdAt)}</p>
+                    <h2>ĐơN HÀNG #${order.idOrder}</h2>
+                    <p>Ngày: ${this.formatDate(order.orderDate)}</p>
                 </div>
                 
                 <div class="info-section">
                     <div class="info-title">Thông tin khách hàng:</div>
-                    <p><strong>Họ tên:</strong> ${order.user?.fullName || 'N/A'}</p>
-                    <p><strong>Email:</strong> ${order.user?.email || 'N/A'}</p>
-                    <p><strong>Điện thoại:</strong> ${order.user?.phoneNumber || 'N/A'}</p>
-                    <p><strong>Địa chỉ giao hàng:</strong> ${order.shippingAddress || 'N/A'}</p>
+                    <p><strong>Họ tên:</strong> ${$('#customerName').text() || 'N/A'}</p>
+                    <p><strong>Email:</strong> ${$('#customerEmail').text() || 'N/A'}</p>
+                    <p><strong>Điện thoại:</strong> ${$('#customerPhone').text() || 'N/A'}</p>
+                    <p><strong>Địa chỉ giao hàng:</strong> ${$('#shippingAddress').text() || 'N/A'}</p>
                 </div>
                 
                 <div class="info-section">
-                    <div class="info-title">Danh sách sản phẩm:</div>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Tên sản phẩm</th>
-                                <th>Đơn giá</th>
-                                <th>Số lượng</th>
-                                <th>Thành tiền</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${(order.orderItems || []).map(item => `
-                                <tr>
-                                    <td>${item.product?.name || 'N/A'}</td>
-                                    <td>${new Intl.NumberFormat('vi-VN', {
-                                        style: 'currency',
-                                        currency: 'VND'
-                                    }).format(item.price)}</td>
-                                    <td>${item.quantity}</td>
-                                    <td>${new Intl.NumberFormat('vi-VN', {
-                                        style: 'currency',
-                                        currency: 'VND'
-                                    }).format(item.price * item.quantity)}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-                
-                <div class="info-section">
-                    <p class="total">Tổng tiền: ${new Intl.NumberFormat('vi-VN', {
+                    <div class="info-title">Thông tin đơn hàng:</div>
+                    <p><strong>Tổng tiền:</strong> ${new Intl.NumberFormat('vi-VN', {
                         style: 'currency',
                         currency: 'VND'
-                    }).format(order.totalAmount)}</p>
+                    }).format(order.total)}</p>
                     <p><strong>Trạng thái thanh toán:</strong> ${this.getPaymentStatusText(order.paymentStatus)}</p>
                     <p><strong>Trạng thái đơn hàng:</strong> ${this.getOrderStatusText(order.orderStatus)}</p>
                 </div>
                 
-                ${order.notes ? `
                 <div class="info-section">
                     <div class="info-title">Ghi chú:</div>
-                    <p>${order.notes}</p>
+                    <p>${$('#orderNotes').text() || 'Không có ghi chú'}</p>
                 </div>
-                ` : ''}
             </body>
             </html>
         `;
