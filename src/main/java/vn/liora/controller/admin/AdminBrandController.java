@@ -111,7 +111,7 @@ public class AdminBrandController {
     public ResponseEntity<ApiResponse<List<BrandResponse>>> getAllBrands() {
         ApiResponse<List<BrandResponse>> response = new ApiResponse<>();
         try {
-            List<Brand> brands = brandService.findAll();
+            List<Brand> brands = brandService.findActiveBrands();
             List<BrandResponse> brandResponses = brands.stream()
                     .map(brandMapper::toBrandResponse)
                     .toList();

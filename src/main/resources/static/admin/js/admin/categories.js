@@ -51,6 +51,8 @@ class CategoriesManager {
             categoryForm.addEventListener('submit', this.handleFormSubmit.bind(this));
         }
 
+        // Optimize hover events with passive listeners
+        this.optimizeHoverEvents();
 
         // Delete buttons
         document.addEventListener('click', (e) => {
@@ -119,13 +121,15 @@ class CategoriesManager {
             isParentCheckbox.addEventListener('change', (e) => {
                 const parentSelect = document.getElementById('parentCategoryId');
                 if (e.target.checked) {
-                    // If checked, clear parent category
+                    // Nếu tick "Là danh mục cha", KHÔNG xóa parent category
+                    // Chỉ disable dropdown nếu muốn (hoặc không disable)
                     if (parentSelect) {
-                        parentSelect.value = '';
-                        parentSelect.disabled = true;
+                        // parentSelect.value = ''; // BỎ dòng này
+                        // parentSelect.disabled = true; // BỎ dòng này
+                        console.log('Category can contain sub-categories but still has parent');
                     }
                 } else {
-                    // If unchecked, enable parent category selection
+                    // Nếu bỏ tick, enable parent category selection
                     if (parentSelect) {
                         parentSelect.disabled = false;
                     }
@@ -179,6 +183,9 @@ class CategoriesManager {
             } else {
                 console.log('No categories container found, skipping render');
             }
+            
+            // Update statistics for list page
+            this.updateCategoryStats(response.result);
         } catch (error) {
             console.error('Error loading categories:', error);
             this.showNotification('Không thể tải danh sách danh mục', 'error');
@@ -331,10 +338,10 @@ class CategoriesManager {
         }
 
         // Validate business logic: Parent category cannot have parent
-        if (data.isParent && data.parentCategoryId) {
-            this.showNotification('Danh mục cha không thể có danh mục cha. Vui lòng bỏ chọn "Là danh mục cha" hoặc xóa danh mục cha.', 'error');
-            return;
-        }
+        // if (data.isParent && data.parentCategoryId) {
+        //     this.showNotification('Danh mục cha không thể có danh mục cha. Vui lòng bỏ chọn "Là danh mục cha" hoặc xóa danh mục cha.', 'error');
+        //     return;
+        // }
 
         try {
             let response;
@@ -849,11 +856,11 @@ class CategoriesManager {
         }
         
         // Disable parent select if is parent category
-        const isParentCheckbox = document.getElementById('isParent');
-        if (isParentCheckbox && isParentCheckbox.checked && parentSelect) {
-            parentSelect.disabled = true;
-            console.log('✅ Disabled parent select because isParent is checked');
-        }
+        // const isParentCheckbox = document.getElementById('isParent');
+        // if (isParentCheckbox && isParentCheckbox.checked && parentSelect) {
+        //     parentSelect.disabled = true;
+        //     console.log('✅ Disabled parent select because isParent is checked');
+        // }
     }
 
     // Get current parent category ID from form or other sources
@@ -1149,7 +1156,7 @@ class CategoriesManager {
             console.log('Category ID from path:', categoryId);
             if (categoryId) {
                 try {
-                    const response = await this.ajax.get(`/categories/${categoryId}`);
+                    const response = await this.ajax.get(`/admin/api/categories/${categoryId}`);
                     console.log('API Response:', response);
                     console.log('Category data:', response.result);
                     console.log('Parent Category ID:', response.result?.parentCategoryId);
@@ -1242,16 +1249,18 @@ class CategoriesManager {
             }
             
             // Disable parent select nếu là parent category
-            if (isParentCheckbox && isParentCheckbox.checked && parentSelect) {
-                parentSelect.disabled = true;
-                console.log('✅ Disabled parent select because isParent is checked');
-            }
+            // if (isParentCheckbox && isParentCheckbox.checked && parentSelect) {
+            //     parentSelect.disabled = true;
+            //     console.log('✅ Disabled parent select because isParent is checked');
+            // }
         }).catch(error => {
             console.error('❌ Error loading parent categories:', error);
         });
     }
 
     updateCategoryStats(categories) {
+        console.log('updateCategoryStats called with:', categories);
+        
         if (Array.isArray(categories)) {
             // Update stats for list page
             const totalCategories = this.countAllCategories(categories);
@@ -1266,16 +1275,16 @@ class CategoriesManager {
                 child: childCategories
             });
             
-            document.getElementById('totalCategories').textContent = totalCategories;
-            document.getElementById('activeCategories').textContent = activeCategories;
-            document.getElementById('parentCategories').textContent = parentCategories;
-            document.getElementById('childCategories').textContent = childCategories;
-        } else {
-            // Update stats for edit page
-            document.getElementById('childCount').textContent = '0'; // Placeholder
-            document.getElementById('productCount').textContent = '0'; // Placeholder
-            document.getElementById('statusBadge').textContent = categories.isActive ? 'Hoạt động' : 'Tạm dừng';
-            document.getElementById('statusBadge').className = `badge ${categories.isActive ? 'bg-success' : 'bg-danger'}`;
+            // Update list page stats
+            const totalEl = document.getElementById('totalCategories');
+            const activeEl = document.getElementById('activeCategories');
+            const parentEl = document.getElementById('parentCategories');
+            const childEl = document.getElementById('childCategories');
+            
+            if (totalEl) totalEl.textContent = totalCategories;
+            if (activeEl) activeEl.textContent = activeCategories;
+            if (parentEl) parentEl.textContent = parentCategories;
+            if (childEl) childEl.textContent = childCategories;
         }
     }
 
@@ -1310,6 +1319,7 @@ class CategoriesManager {
         });
         return count;
     }
+
 
     debounce(func, wait) {
         let timeout;
@@ -1403,6 +1413,35 @@ class CategoriesManager {
             nextRow.classList.add('collapsed');
             nextRow = nextRow.nextElementSibling;
         }
+    }
+
+    // Optimize hover events for better performance
+    optimizeHoverEvents() {
+        // Use passive event listeners for better performance
+        const tableRows = document.querySelectorAll('.categories-page .table tbody tr');
+        
+        tableRows.forEach(row => {
+            // Add passive mouse events
+            row.addEventListener('mouseenter', this.handleRowHover.bind(this), { passive: true });
+            row.addEventListener('mouseleave', this.handleRowLeave.bind(this), { passive: true });
+        });
+    }
+
+    // Handle row hover with throttling
+    handleRowHover(e) {
+        const row = e.currentTarget;
+        // Use requestAnimationFrame for smooth animation
+        requestAnimationFrame(() => {
+            row.classList.add('table-row-hover');
+        });
+    }
+
+    // Handle row leave
+    handleRowLeave(e) {
+        const row = e.currentTarget;
+        requestAnimationFrame(() => {
+            row.classList.remove('table-row-hover');
+        });
     }
 }
 

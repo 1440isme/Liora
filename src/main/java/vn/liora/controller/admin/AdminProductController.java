@@ -3,19 +3,28 @@ package vn.liora.controller.admin;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
 import vn.liora.dto.request.ApiResponse;
 import vn.liora.dto.request.ProductCreationRequest;
 import vn.liora.dto.request.ProductUpdateRequest;
+import vn.liora.dto.response.ImageResponse;
 import vn.liora.dto.response.ProductResponse;
+import vn.liora.entity.Image;
 import vn.liora.entity.Product;
 import vn.liora.exception.AppException;
 import vn.liora.mapper.ProductMapper;
+import vn.liora.service.IImageService;
 import vn.liora.service.IProductService;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/admin/api/products")
@@ -25,36 +34,75 @@ public class AdminProductController {
 
     private final IProductService productService;
     private final ProductMapper productMapper;
+    private final IImageService imageService;
 
     // ============== BASIC CRUD ==============
-    @PostMapping
-    public ResponseEntity<ApiResponse<ProductResponse>> createProduct(@Valid @RequestBody ProductCreationRequest request){
+    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<ProductResponse>> createProductWithImages(
+        @RequestParam("name") String name,
+        @RequestParam("categoryId") Long categoryId,
+        @RequestParam("brandId") Long brandId,
+        @RequestParam("price") BigDecimal price,
+        @RequestParam("stock") Integer stock,
+        @RequestParam("description") String description,
+        @RequestParam(value = "isActive", defaultValue = "true") Boolean isActive,
+        @RequestParam(value = "productImages", required = false) MultipartFile[] productImages
+    )  
+    {
         ApiResponse<ProductResponse> response = new ApiResponse<>();
         try {
-            // Thêm business validation
-            if (request.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
+            // Validation
+            if (price.compareTo(BigDecimal.ZERO) <= 0) {
                 response.setCode(400);
                 response.setMessage("Giá sản phẩm phải lớn hơn 0");
                 return ResponseEntity.badRequest().body(response);
             }
 
-            if (request.getStock() < 0) {
+            if (stock < 0) {
                 response.setCode(400);
                 response.setMessage("Số lượng tồn kho không được âm");
                 return ResponseEntity.badRequest().body(response);
             }
 
+            // Tự động set available dựa vào stock
+            Boolean available = stock > 0;
+            
+            // Tạo ProductCreationRequest từ form data
+            ProductCreationRequest request = ProductCreationRequest.builder()
+                .name(name)
+                .categoryId(categoryId)
+                .brandId(brandId)
+                .price(price)
+                .stock(stock)
+                .description(description)
+                .available(available)
+                .isActive(isActive)
+                .build();
+
+            // Tạo sản phẩm
             Product product = productService.createProduct(request);
+            
+            // Xử lý upload tất cả hình ảnh bằng IImageService
+            if (productImages != null && productImages.length > 0) {
+                try {
+                    imageService.uploadMultipleProductImages(product.getProductId(), productImages);
+                } catch (Exception e) {
+                    // Log lỗi nhưng không throw exception
+                    System.err.println("Error uploading images: " + e.getMessage());
+                    // Có thể thêm response message về việc upload hình ảnh thất bại
+                }
+            }
+
             ProductResponse productResponse = productMapper.toProductResponse(product);
             response.setResult(productResponse);
             response.setMessage("Tạo sản phẩm thành công");
             return ResponseEntity.ok(response);
+            
         } catch (AppException e) {
             response.setCode(e.getErrorCode().getCode());
             response.setMessage(e.getErrorCode().getMessage());
             return ResponseEntity.status(e.getErrorCode().getCode()).body(response);
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             response.setCode(500);
             response.setMessage("Lỗi hệ thống: " + e.getMessage());
             return ResponseEntity.internalServerError().body(response);
@@ -65,6 +113,7 @@ public class AdminProductController {
     public ResponseEntity<ApiResponse<Page<ProductResponse>>> getAllProducts(
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String status,
+            @RequestParam(required = false) String stockStatus,
             @RequestParam(required = false) String available,
             @RequestParam(required = false) Long brandId,
             @RequestParam(required = false) Long categoryId,
@@ -89,12 +138,27 @@ public class AdminProductController {
                 products = productService.findAll(pageable);
             }
 
-            // Lọc theo trạng thái
+            // Lọc theo trạng thái (active/inactive)
             if (status != null && !status.isEmpty()) {
                 List<Product> filteredProducts = products.getContent().stream()
                         .filter(product -> {
                             if ("active".equals(status)) return product.getIsActive();
                             if ("inactive".equals(status)) return !product.getIsActive();
+                            return true;
+                        })
+                        .toList();
+
+                products = new PageImpl<>(
+                        filteredProducts, pageable, filteredProducts.size()
+                );
+            }
+
+            // Lọc theo trạng thái tồn kho
+            if (stockStatus != null && !stockStatus.isEmpty()) {
+                List<Product> filteredProducts = products.getContent().stream()
+                        .filter(product -> {
+                            if ("IN_STOCK".equals(stockStatus)) return product.getStock() > 0;
+                            if ("OUT_OF_STOCK".equals(stockStatus)) return product.getStock() == 0 || product.getStock() == null;
                             return true;
                         })
                         .toList();
@@ -170,7 +234,21 @@ public class AdminProductController {
                 );
             }
 
-            Page<ProductResponse> productResponses = products.map(productMapper::toProductResponse);
+            Page<ProductResponse> productResponses = products.map(product -> {
+                ProductResponse productResponse = productMapper.toProductResponse(product);
+                
+                // Load main image
+                try {
+                    Optional<Image> mainImage = imageService.findMainImageByProductId(product.getProductId());
+                    if (mainImage.isPresent()) {
+                        productResponse.setMainImageUrl(mainImage.get().getImageUrl());
+                    }
+                } catch (Exception e) {
+                    System.err.println("Error loading image for product " + product.getProductId() + ": " + e.getMessage());
+                }
+                
+                return productResponse;
+            });
             response.setResult(productResponses);
             response.setMessage("Lấy danh sách sản phẩm thành công");
             return ResponseEntity.ok(response);
@@ -515,25 +593,6 @@ public class AdminProductController {
         }
     }
 
-    @GetMapping("/statistics/by-category/{categoryId}")
-    public ResponseEntity<ApiResponse<Long>> getProductCountByCategory(@PathVariable Long categoryId) {
-        ApiResponse<Long> response = new ApiResponse<>();
-        try {
-            if (categoryId <= 0) {
-                response.setCode(400);
-                response.setMessage("ID danh mục không hợp lệ");
-                return ResponseEntity.badRequest().body(response);
-            }
-            Long count = productService.countByCategory(categoryId);
-            response.setResult(count);
-            response.setMessage("Lấy số lượng sản phẩm theo danh mục thành công");
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            response.setCode(500);
-            response.setMessage("Lỗi khi lấy số lượng sản phẩm theo danh mục: " + e.getMessage());
-            return ResponseEntity.internalServerError().body(response);
-        }
-    }
     // ========== BUSINESS QUERIES ==========
     @GetMapping("/top-selling")
     public ResponseEntity<ApiResponse<List<ProductResponse>>> getTopSellingProducts(Pageable pageable) {
@@ -708,6 +767,171 @@ public class AdminProductController {
                         pageable.getPageSize(),
                         Sort.by("createdDate").descending()
                 );
+        }
+    }
+
+    // ========== IMAGE MANAGEMENT ==========
+    @GetMapping("/{id}/images")
+    public ResponseEntity<ApiResponse<List<ImageResponse>>> getProductImages(@PathVariable Long id) {
+        ApiResponse<List<ImageResponse>> response = new ApiResponse<>();
+        try {
+            if (id <= 0) {
+                response.setCode(400);
+                response.setMessage("ID sản phẩm không hợp lệ");
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            List<Image> images = imageService.findByProductIdOrderByDisplayOrder(id);
+            // Convert to DTO
+            List<ImageResponse> imageResponses = images.stream()
+                .map(image -> ImageResponse.builder()
+                    .imageId(image.getImageId())
+                    .imageUrl(image.getImageUrl())
+                    .isMain(image.getIsMain())
+                    .displayOrder(image.getDisplayOrder())
+                    .build())
+                .collect(Collectors.toList());
+                
+            response.setResult(imageResponses);
+            response.setMessage("Lấy danh sách hình ảnh thành công");
+            return ResponseEntity.ok(response);
+        } catch (AppException e) {
+            response.setCode(e.getErrorCode().getCode());
+            response.setMessage(e.getErrorCode().getMessage());
+            return ResponseEntity.status(e.getErrorCode().getCode()).body(response);
+        } catch (Exception e) {
+            response.setCode(500);
+            response.setMessage("Lỗi khi lấy danh sách hình ảnh: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(response);
+        }
+    }
+
+    @PutMapping("/{productId}/images/{imageId}/set-main")
+    public ResponseEntity<ApiResponse<String>> setMainImage(
+        @PathVariable Long productId,
+        @PathVariable Long imageId
+    ) {
+        ApiResponse<String> response = new ApiResponse<>();
+        
+        try {
+            // Kiểm tra product tồn tại
+            Optional<Product> productOpt = productService.findByIdOptional(productId);
+            if (productOpt.isEmpty()) {
+                response.setCode(404);
+                response.setMessage("Không tìm thấy sản phẩm");
+                return ResponseEntity.notFound().build();
+            }
+            
+            // Set image làm main
+            imageService.setMainImage(productId, imageId);
+            
+            response.setCode(200);
+            response.setMessage("Đặt làm ảnh chính thành công");
+            response.setResult("success");
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            response.setCode(500);
+            response.setMessage("Lỗi khi đặt làm ảnh chính: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(response);
+        }
+    }
+
+    @PutMapping("/{productId}/update-timestamp")
+    public ResponseEntity<ApiResponse<String>> updateProductTimestamp(
+        @PathVariable Long productId
+    ) {
+        ApiResponse<String> response = new ApiResponse<>();
+        
+        try {
+            // Kiểm tra product tồn tại
+            Optional<Product> productOpt = productService.findByIdOptional(productId);
+            if (productOpt.isEmpty()) {
+                response.setCode(404);
+                response.setMessage("Không tìm thấy sản phẩm");
+                return ResponseEntity.notFound().build();
+            }
+            
+            // Update timestamp
+            Product product = productOpt.get();
+            product.setUpdatedDate(LocalDateTime.now());
+            productService.save(product);
+            
+            response.setCode(200);
+            response.setMessage("Cập nhật thời gian thành công");
+            response.setResult("success");
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            response.setCode(500);
+            response.setMessage("Lỗi khi cập nhật thời gian: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(response);
+        }
+    }
+
+    @DeleteMapping("/{productId}/images/{imageId}")
+    public ResponseEntity<ApiResponse<String>> deleteImage(
+        @PathVariable Long productId,
+        @PathVariable Long imageId
+    ) {
+        ApiResponse<String> response = new ApiResponse<>();
+        
+        try {
+            // Kiểm tra product tồn tại
+            Optional<Product> productOpt = productService.findByIdOptional(productId);
+            if (productOpt.isEmpty()) {
+                response.setCode(404);
+                response.setMessage("Không tìm thấy sản phẩm");
+                return ResponseEntity.notFound().build();
+            }
+            
+            // Xóa ảnh
+            imageService.deleteImage(imageId);
+            
+            response.setCode(200);
+            response.setMessage("Xóa hình ảnh thành công");
+            response.setResult("success");
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            response.setCode(500);
+            response.setMessage("Lỗi khi xóa hình ảnh: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(response);
+        }
+    }
+
+    @PutMapping("/{id}/toggle-status")
+    public ResponseEntity<ApiResponse<String>> toggleProductStatus(@PathVariable Long id) {
+        ApiResponse<String> response = new ApiResponse<>();
+        
+        try {
+            // Lấy thông tin product hiện tại
+            ProductResponse productResponse = productService.findById(id);
+            if (productResponse == null) {
+                response.setCode(404);
+                response.setMessage("Không tìm thấy sản phẩm");
+                return ResponseEntity.notFound().build();
+            }
+            
+            // Toggle status dựa trên trạng thái hiện tại
+            if (productResponse.getIsActive()) {
+                // Nếu đang active → deactivate
+                productService.deactivateProduct(id);
+                response.setMessage("Tạm dừng sản phẩm thành công");
+            } else {
+                // Nếu đang inactive → activate
+                productService.activateProduct(id);
+                response.setMessage("Kích hoạt sản phẩm thành công");
+            }
+            
+            response.setCode(200);
+            response.setResult("success");
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            response.setCode(500);
+            response.setMessage("Lỗi khi thay đổi trạng thái: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(response);
         }
     }
 }
