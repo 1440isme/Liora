@@ -136,9 +136,23 @@ class ProductModalManager {
     async deleteProduct() {
         if (!this.currentProductId) return;
         
-        if (!confirm('Bạn có chắc chắn muốn xóa sản phẩm này?')) {
-            return;
+        // Use custom confirm dialog
+        if (window.notificationManager) {
+            window.notificationManager.showConfirm(
+                'Bạn có chắc chắn muốn xóa sản phẩm này?',
+                () => this.confirmDelete(),
+                () => console.log('Delete cancelled')
+            );
+        } else {
+            // Fallback to native confirm
+            if (!confirm('Bạn có chắc chắn muốn xóa sản phẩm này?')) {
+                return;
+            }
+            this.confirmDelete();
         }
+    }
+
+    async confirmDelete() {
 
         try {
             const response = await fetch(`/admin/api/products/${this.currentProductId}`, {
@@ -192,13 +206,23 @@ class ProductModalManager {
     }
 
     showSuccess(message) {
-        // You can implement your notification system here
-        alert('✅ ' + message);
+        // Use global notification manager
+        if (window.notificationManager) {
+            window.notificationManager.showSuccess(message);
+        } else {
+            // Fallback to alert if notification manager not loaded
+            alert('✅ ' + message);
+        }
     }
 
     showError(message) {
-        // You can implement your notification system here
-        alert('❌ ' + message);
+        // Use global notification manager
+        if (window.notificationManager) {
+            window.notificationManager.showError(message);
+        } else {
+            // Fallback to alert if notification manager not loaded
+            alert('❌ ' + message);
+        }
     }
 }
 
