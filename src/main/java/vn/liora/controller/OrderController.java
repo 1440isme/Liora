@@ -8,17 +8,19 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import vn.liora.dto.response.OrderProductResponse;
+import vn.liora.entity.Image;
 import vn.liora.entity.Order;
 import vn.liora.entity.OrderProduct;
 import vn.liora.mapper.OrderProductMapper;
 import vn.liora.repository.OrderProductRepository;
 import vn.liora.repository.OrderRepository;
+import vn.liora.service.IImageService;
 
 import java.util.List;
 import java.util.Optional;
 
-@Controller("adminOrderController")
-@RequestMapping("/admin")
+@Controller
+@RequestMapping
 public class OrderController {
 
     @Autowired
@@ -29,6 +31,9 @@ public class OrderController {
 
     @Autowired
     private OrderProductMapper orderProductMapper;
+
+    @Autowired
+    private IImageService imageService;
 
     @GetMapping("/orders")
     public String listOrders() {
@@ -54,8 +59,21 @@ public class OrderController {
             List<OrderProduct> orderProducts = orderProductRepository.findByOrder(order);
             List<OrderProductResponse> responses = orderProductMapper.toOrderProductResponseList(orderProducts);
 
+            // Set thông tin hình ảnh cho từng sản phẩm
+            responses.forEach(response -> {
+                try {
+                    Optional<Image> mainImage = imageService.findMainImageByProductId(response.getIdProduct());
+                    if (mainImage.isPresent()) {
+                        response.setMainImageUrl(mainImage.get().getImageUrl());
+                    }
+                } catch (Exception e) {
+                    System.err.println("Error loading image for product " + response.getIdProduct() + ": " + e.getMessage());
+                }
+            });
+
             return ResponseEntity.ok(responses);
         } catch (Exception e) {
+            System.err.println("Error loading order items: " + e.getMessage());
             return ResponseEntity.internalServerError().build();
         }
     }

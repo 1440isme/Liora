@@ -192,7 +192,7 @@ class OrderDetailManager {
 
     async loadOrderItems(orderId) {
         try {
-            const response = await fetch(`/admin/api/orders/${orderId}/items`);
+            const response = await fetch(`/api/orders/${orderId}/items`);
             if (response.ok) {
                 const items = await response.json();
                 console.log('Order items loaded:', items);
@@ -203,7 +203,7 @@ class OrderDetailManager {
                     // Nếu không có sản phẩm nào
                     $('#orderItemsTable').html(`
                         <tr>
-                            <td colspan="6" class="text-center py-4">
+                            <td colspan="5" class="text-center py-4">
                                 <i class="mdi mdi-package-variant-closed mdi-48px text-muted mb-3"></i>
                                 <p class="text-muted">Không có sản phẩm nào trong đơn hàng</p>
                             </td>
@@ -213,7 +213,7 @@ class OrderDetailManager {
             } else if (response.status === 404) {
                 $('#orderItemsTable').html(`
                     <tr>
-                        <td colspan="6" class="text-center py-4">
+                        <td colspan="5" class="text-center py-4">
                             <i class="mdi mdi-alert mdi-48px text-warning mb-3"></i>
                             <p class="text-muted">Không tìm thấy thông tin đơn hàng</p>
                         </td>
@@ -226,7 +226,7 @@ class OrderDetailManager {
             console.error('Error loading order items:', error);
             $('#orderItemsTable').html(`
                 <tr>
-                    <td colspan="6" class="text-center py-4">
+                    <td colspan="5" class="text-center py-4">
                         <i class="mdi mdi-alert mdi-48px text-danger mb-3"></i>
                         <p class="text-muted">Không thể tải danh sách sản phẩm: ${error.message}</p>
                     </td>
@@ -242,7 +242,7 @@ class OrderDetailManager {
         if (!items || items.length === 0) {
             tbody.append(`
                 <tr>
-                    <td colspan="6" class="text-center py-4">
+                    <td colspan="5" class="text-center py-4">
                         <i class="mdi mdi-package-variant-closed mdi-48px text-muted mb-3"></i>
                         <p class="text-muted">Không có sản phẩm nào trong đơn hàng</p>
                     </td>
@@ -256,36 +256,50 @@ class OrderDetailManager {
             const itemTotal = item.totalPrice || 0;
             subtotalFromItems += itemTotal;
 
+            // Hiển thị hình ảnh sản phẩm hoặc placeholder
+            const imageHtml = item.mainImageUrl ?
+                `<img src="${item.mainImageUrl}" alt="${item.productName || 'Sản phẩm'}" class="rounded" style="width: 60px; height: 60px; object-fit: cover;">` :
+                `<div class="d-flex align-items-center justify-content-center bg-light rounded" style="width: 60px; height: 60px;">
+                    <i class="mdi mdi-package-variant mdi-24px text-muted"></i>
+                </div>`;
+
             const row = `
                 <tr>
                     <td>
-                        <div class="d-flex align-items-center justify-content-center bg-light rounded" style="width: 60px; height: 60px;">
-                            <i class="mdi mdi-package-variant mdi-24px text-muted"></i>
-                        </div>
+                        ${imageHtml}
                     </td>
                     <td>
-                        <h6 class="mb-1">Sản phẩm #${item.idProduct}</h6>
+                        <h6 class="mb-1">${item.productName || `Sản phẩm #${item.idProduct}`}</h6>
+                        <small class="text-muted">
+                            ${item.brandName ? `${item.brandName}` : ''}
+                            ${item.brandName && item.categoryName ? ' • ' : ''}
+                            ${item.categoryName ? `${item.categoryName}` : ''}
+                        </small>
+                        <br>
                         <small class="text-muted">ID: ${item.idOrderProduct}</small>
                     </td>
                     <td class="fw-medium">
-                        ${item.totalPrice && item.quantity ? 
+                        ${item.productPrice ? 
                             new Intl.NumberFormat('vi-VN', {
                                 style: 'currency',
                                 currency: 'VND'
-                            }).format(item.totalPrice / item.quantity) : 'N/A'
+                            }).format(item.productPrice) : 
+                            (item.totalPrice && item.quantity ? 
+                                new Intl.NumberFormat('vi-VN', {
+                                    style: 'currency',
+                                    currency: 'VND'
+                                }).format(item.totalPrice / item.quantity) : 'N/A'
+                            )
                         }
                     </td>
                     <td>
-                        <span class="badge bg-light text-dark">${item.quantity || 0}</span>
+                        ${item.quantity || 0}
                     </td>
                     <td class="fw-bold text-primary">
                         ${new Intl.NumberFormat('vi-VN', {
                             style: 'currency',
                             currency: 'VND'
                         }).format(itemTotal)}
-                    </td>
-                    <td>
-                        <span class="badge bg-success">Có sẵn</span>
                     </td>
                 </tr>
             `;

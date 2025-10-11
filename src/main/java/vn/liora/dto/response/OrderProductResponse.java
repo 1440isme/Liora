@@ -16,4 +16,12 @@ public class OrderProductResponse {
     Long idOrder;
     Integer quantity;
     BigDecimal totalPrice;
+
+    // Thông tin chi tiết sản phẩm
+    String productName;
+    String productDescription;
+    BigDecimal productPrice;
+    String mainImageUrl;
+    String categoryName;
+    String brandName;
 }

@@ -76,4 +76,5 @@ public class AdminOrderController {
                 .map(user -> ResponseEntity.ok(orderService.getTotalRevenueByUser(user)))
                 .orElse(ResponseEntity.notFound().build());
     }
+
 }
