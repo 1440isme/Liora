@@ -1,22 +1,24 @@
 package vn.liora.controller.user;
 
-// removed unused import
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-// removed unused import
 import org.springframework.web.bind.annotation.RequestMapping;
-
-// removed unused import
+import vn.liora.service.ICategoryService;
 
 @Controller
 @RequestMapping({ "/", "/home" })
+@RequiredArgsConstructor
 public class HomeController {
+
+    private final ICategoryService categoryService;
 
     // Dashboard
     @GetMapping()
-    public String dashboard() {
+    public String dashboard(Model model) {
+        // Thêm danh mục cha với cây con vào model để sử dụng trong header
+        model.addAttribute("parentCategories", categoryService.getCategoryTree());
         return "user/index";
     }
 
@@ -27,8 +29,9 @@ public class HomeController {
     }
 
     @GetMapping("/info")
-    public String info() {
-
+    public String info(Model model) {
+        // Thêm danh mục cha với cây con vào model để sử dụng trong header
+        model.addAttribute("parentCategories", categoryService.getCategoryTree());
         return "user/user/info";
     }
 }

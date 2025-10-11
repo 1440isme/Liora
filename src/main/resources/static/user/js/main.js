@@ -47,6 +47,32 @@ class LioraApp {
             }
         });
 
+        // Categories dropdown events
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.category-item')) {
+                e.preventDefault();
+                const category = e.target.closest('.category-item').dataset.category;
+                if (category) {
+                    this.showPage(category);
+                }
+            }
+
+            if (e.target.closest('.subcategory-item, .brand-item')) {
+                e.preventDefault();
+                const item = e.target.closest('.subcategory-item, .brand-item');
+                this.handleCategoryItemClick(item.textContent.trim());
+            }
+
+            // Navigation link events
+            if (e.target.closest('.nav-link[data-category]')) {
+                e.preventDefault();
+                const category = e.target.closest('.nav-link').dataset.category;
+                if (category) {
+                    this.showPage(category);
+                }
+            }
+        });
+
         // Search functionality
         const searchInputs = document.querySelectorAll('.search-input');
         searchInputs.forEach(input => {
@@ -333,6 +359,13 @@ class LioraApp {
         this.showToast(`Found ${results.length} products for "${query}"`, 'info');
     }
 
+    handleCategoryItemClick(itemName) {
+        // Handle clicks on subcategory items and brand items
+        this.showToast(`Browsing: ${itemName}`, 'info');
+        // You can implement specific category filtering here
+        console.log('Category item clicked:', itemName);
+    }
+
     handleNewsletterSubscription(form) {
         const emailInput = form.querySelector('input[type="email"]');
         const email = emailInput.value.trim();
@@ -544,15 +577,16 @@ class LioraApp {
 
             const userHTML = `
                 <div class="dropdown">
-                    <button class="btn btn-link text-dark p-2 nav-icon-btn dropdown-toggle" type="button" id="userMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="fas fa-user-circle me-1"></i>${displayName}
+                    <button class="btn btn-user dropdown-toggle" type="button" id="userMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="mdi mdi-account-circle me-1"></i>
+                        <span>${displayName}</span>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenuButton">
                         <li class="dropdown-header">Xin chào, ${displayName}</li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="/info" onclick="app.openUserInfo()"><i class="fas fa-id-card me-2"></i>Thông tin cá nhân</a></li>
+                        <li><a class="dropdown-item" href="/info" onclick="app.openUserInfo()"><i class="mdi mdi-account me-2"></i>Thông tin cá nhân</a></li>
                         ${adminLink}
-                        <li><a class="dropdown-item" href="/home" onclick="app.signOut()"><i class="fas fa-sign-out-alt me-2"></i>Đăng xuất</a></li>
+                        <li><a class="dropdown-item" href="/home" onclick="app.signOut()"><i class="mdi mdi-logout me-2"></i>Đăng xuất</a></li>
                     </ul>
                 </div>
             `;
@@ -572,8 +606,9 @@ class LioraApp {
             if (mobileUserSection) mobileUserSection.innerHTML = mobileUserHTML;
         } else {
             const userHTML = `
-                <button class="btn btn-link text-dark p-2 nav-icon-btn" data-bs-toggle="modal" data-bs-target="#authModal">
-                    <i class="fas fa-user"></i>
+                <button class="btn btn-user" data-bs-toggle="modal" data-bs-target="#authModal">
+                    <i class="mdi mdi-account-circle me-1"></i>
+                    <span>Đăng nhập / Đăng ký Liora</span>
                 </button>
             `;
 
