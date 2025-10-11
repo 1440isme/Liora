@@ -38,6 +38,7 @@ public enum ErrorCode {
     PRODUCT_EXISTED(400, "Product existed", HttpStatus.BAD_REQUEST),
     PRODUCT_NOT_FOUND(404, "Product not found", HttpStatus.NOT_FOUND),
     PRODUCT_NAME_ALREADY_EXISTS(409, "Product name already exists", HttpStatus.CONFLICT),
+    PRODUCT_HAS_ORDERS(400, "Cannot delete product that has been sold", HttpStatus.BAD_REQUEST),
     
     // Validation errors
     VALIDATION_NAME_TOO_LONG(400, "Name must not exceed 255 characters", HttpStatus.BAD_REQUEST),
@@ -57,6 +58,12 @@ public enum ErrorCode {
     PRODUCT_STOCK_TOO_HIGH(400, "Product stock cannot exceed 999,999", HttpStatus.BAD_REQUEST),
     PRODUCT_SOLD_COUNT_INVALID(400, "Product stock cannot be negative", HttpStatus.BAD_REQUEST),
     PRODUCT_SOLD_COUNT_TOO_HIGH(400, "Sold count cannot exceed 999,999", HttpStatus.BAD_REQUEST),
+    // Thêm vào ErrorCode.java
+    IMAGE_NOT_FOUND(404, "Image not found", HttpStatus.NOT_FOUND),
+    INVALID_FILE_TYPE(400, "Invalid file type", HttpStatus.BAD_REQUEST),
+    TOO_MANY_IMAGES(400, "Too many images for this product", HttpStatus.BAD_REQUEST),
+    UPLOAD_FAILED(500, "Upload failed", HttpStatus.INTERNAL_SERVER_ERROR),
+    IMAGE_NOT_BELONG_TO_PRODUCT(400, "Image does not belong to this product", HttpStatus.BAD_REQUEST),
     // Hanh: 3000 - 3999
     // Thêm các error codes này vào enum ErrorCode
     ADDRESS_NOT_FOUND(3000, "Address not found", HttpStatus.NOT_FOUND),

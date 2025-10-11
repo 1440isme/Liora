@@ -205,7 +205,20 @@ public class CategoryServiceImpl implements ICategoryService {
 
     @Override
     public List<Category> findActiveCategories() {
-        return  categoryRepository.findByIsActiveTrue();
+        System.out.println("=== DEBUG: findActiveCategories called ===");
+        List<Category> allCategories = categoryRepository.findAll();
+        System.out.println("Total categories: " + allCategories.size());
+        allCategories.forEach(cat -> 
+            System.out.println("Category: " + cat.getName() + " - isActive: " + cat.getIsActive())
+        );
+        
+        List<Category> activeCategories = categoryRepository.findByIsActiveTrue();
+        System.out.println("Active categories: " + activeCategories.size());
+        activeCategories.forEach(cat -> 
+            System.out.println("Active Category: " + cat.getName())
+        );
+        
+        return activeCategories;
     }
 
     @Override

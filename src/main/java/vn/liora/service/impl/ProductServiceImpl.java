@@ -1,6 +1,5 @@
 package vn.liora.service.impl;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -63,6 +62,11 @@ public class ProductServiceImpl implements IProductService {
         product.setBrand(brand);
         product.setCategory(category);
         product.setCreatedDate(LocalDateTime.now());
+        
+        // Tự động set available dựa vào stock
+        if (request.getStock() != null) {
+            product.setAvailable(request.getStock() > 0);
+        }
 
         Product savedProduct = productRepository.save(product);
         return savedProduct; // ← Trả về Product thay vì ProductResponse
@@ -100,6 +104,12 @@ public class ProductServiceImpl implements IProductService {
         }
 
         productMapper.updateProduct(product, request);
+        
+        // Tự động set available dựa vào stock
+        if (request.getStock() != null) {
+            product.setAvailable(request.getStock() > 0);
+        }
+        
         product.setUpdatedDate(LocalDateTime.now());
         productRepository.save(product);
         return productMapper.toProductResponse(product);
@@ -357,6 +367,12 @@ public class ProductServiceImpl implements IProductService {
     public void setAvailable(Long id, Boolean available) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
+        
+        // Chỉ cho phép set available = true nếu stock > 0
+        if (available && product.getStock() != null && product.getStock() == 0) {
+            throw new AppException(ErrorCode.PRODUCT_OUT_OF_STOCK);
+        }
+        
         product.setAvailable(available);
         product.setUpdatedDate(LocalDateTime.now());
         productRepository.save(product);
@@ -415,6 +431,12 @@ public class ProductServiceImpl implements IProductService {
     @Override
     public Long countByBrand(Long brandId) {
         return productRepository.countByBrand(brandId);
+    }
+
+
+    @Override
+    public Product save(Product product) {
+        return productRepository.save(product);
     }
 
     @Override
