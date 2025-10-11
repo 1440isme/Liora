@@ -20,13 +20,13 @@ public class Cart {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "IdCart")
     Long idCart;
-    @Column(name = "Name")
-    String name;
+
     @Column(name = "CoutnProduct")
     Integer countProduct;
 
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "GuestId")
+
+
+    @Column(name = "IdGuest")
     String guestId;
 
     @OneToOne
