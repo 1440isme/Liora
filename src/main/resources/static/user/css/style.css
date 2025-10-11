@@ -972,3 +972,234 @@ header {
     padding: 0 15px;
     background: rgba(255, 255, 255, 0.95);
 }
+
+/* ========================================
+   BANNER SLIDER STYLES
+   ======================================== */
+
+.banner-slider-section {
+    position: relative;
+    width: 100%;
+    height: 500px;
+    overflow: hidden;
+    background: linear-gradient(135deg, var(--pink-soft) 0%, var(--pink-blush) 100%);
+}
+
+.banner-slider-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.banner-slider {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: grab;
+    user-select: none;
+    will-change: transform;
+}
+
+.banner-slider:active {
+    cursor: grabbing;
+}
+
+.banner-slide {
+    position: relative;
+    min-width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    overflow: hidden;
+}
+
+.banner-slide::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.1) 100%);
+    z-index: 1;
+}
+
+.banner-slide img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.banner-slide:hover img {
+    transform: scale(1.05);
+}
+
+.banner-content {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    color: white;
+    max-width: 800px;
+    padding: 0 20px;
+}
+
+.banner-title {
+    font-size: 3.5rem;
+    font-weight: 800;
+    margin-bottom: 1rem;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    line-height: 1.2;
+}
+
+.banner-subtitle {
+    font-size: 1.25rem;
+    margin-bottom: 2rem;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    opacity: 0.9;
+}
+
+.banner-btn {
+    display: inline-block;
+    padding: 15px 30px;
+    background: var(--pink-primary);
+    color: white;
+    text-decoration: none;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(232, 162, 176, 0.4);
+}
+
+.banner-btn:hover {
+    background: var(--pink-primary-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(232, 162, 176, 0.6);
+    color: white;
+}
+
+.slider-controls {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 20px;
+    z-index: 3;
+    pointer-events: none;
+}
+
+.slider-btn {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    color: var(--pink-primary);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    pointer-events: all;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.slider-btn:hover {
+    background: white;
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.slider-btn:active {
+    transform: scale(0.95);
+}
+
+.slider-dots {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+    z-index: 3;
+}
+
+.slider-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.slider-dot.active {
+    background: white;
+    transform: scale(1.2);
+}
+
+.slider-dot:hover {
+    background: rgba(255, 255, 255, 0.8);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .banner-slider-section {
+        height: 400px;
+    }
+
+    .banner-title {
+        font-size: 2.5rem;
+    }
+
+    .banner-subtitle {
+        font-size: 1.1rem;
+    }
+
+    .banner-btn {
+        padding: 12px 25px;
+        font-size: 1rem;
+    }
+
+    .slider-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 1rem;
+    }
+
+    .slider-controls {
+        padding: 0 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .banner-slider-section {
+        height: 300px;
+    }
+
+    .banner-title {
+        font-size: 2rem;
+    }
+
+    .banner-subtitle {
+        font-size: 1rem;
+    }
+
+    .banner-content {
+        padding: 0 15px;
+    }
+}
