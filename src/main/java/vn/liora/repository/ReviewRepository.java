@@ -34,6 +34,11 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     Long countByUserId(Long userId);
     Long countByRating(Integer rating);
     
+    // ====== VISIBILITY FILTERS ======
+    List<Review> findByProductIdAndIsVisibleTrue(Long productId);
+    Page<Review> findByProductIdAndIsVisibleTrue(Long productId, Pageable pageable);
+    long countByProductIdAndIsVisibleTrue(Long productId);
+    
     // ====== CUSTOM QUERIES ======
     @Query("SELECT AVG(r.rating) FROM Review r WHERE r.productId = :productId")
     Double getAverageRatingByProductId(@Param("productId") Long productId);

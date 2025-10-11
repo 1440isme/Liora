@@ -291,7 +291,6 @@ public class DiscountServiceImpl implements IDiscountService {
         }
         
         // Add discount to order (One-to-Many relationship)
-        order.setDiscountId(request.getDiscountId());
         order.setDiscount(discount);
         orderRepository.save(order);
         
@@ -309,7 +308,6 @@ public class DiscountServiceImpl implements IDiscountService {
                 .orElseThrow(() -> new AppException(ErrorCode.DISCOUNT_NOT_FOUND));
         
         // Remove discount from order
-        order.setDiscountId(null);
         order.setDiscount(null);
         orderRepository.save(order);
         

@@ -19,6 +19,7 @@ public interface OrderMapper {
     @Mapping(target = "user", ignore = true)
     @Mapping(target = "address", ignore = true)
     @Mapping(target = "orderStatus", ignore = true)
+    @Mapping(target = "discount", ignore = true)
     Order toOrder(OrderCreationRequest request);
     @Mapping(target = "idAddress", source = "address.idAddress")
     @Mapping(target = "userId", source = "user.userId")
@@ -31,5 +32,6 @@ public interface OrderMapper {
     List<OrderResponse> toOrderResponseList(List<Order> orders);
     @Mapping(target = "paymentStatus", source = "paymentStatus")
     @Mapping(target = "orderStatus", source = "orderStatus")
+    @Mapping(target = "discount", ignore = true)
     void updateOrder(@MappingTarget Order order, OrderUpdateRequest request);
 }

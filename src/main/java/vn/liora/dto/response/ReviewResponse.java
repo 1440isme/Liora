@@ -14,6 +14,7 @@ public class ReviewResponse {
     private String content;
     private Integer rating;
     private Boolean anonymous;
+    private boolean isVisible;
     private LocalDateTime createdAt;
     private LocalDateTime lastUpdate;
     
