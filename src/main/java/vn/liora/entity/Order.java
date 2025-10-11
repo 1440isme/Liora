@@ -52,11 +52,8 @@ public class Order {
     @JsonIgnore
     private User user;
 
-    @Column(name = "IdDiscount")
-    private Long discountId;
-
     @ManyToOne
-    @JoinColumn(name = "IdDiscount", insertable = false, updatable = false)
+    @JoinColumn(name = "IdDiscount")
     @JsonIgnore
     private Discount discount;
 }
