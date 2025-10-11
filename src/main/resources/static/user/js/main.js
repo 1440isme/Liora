@@ -715,6 +715,7 @@ class BannerSlider {
         this.currentSlide = 0;
         this.banners = [];
         this.isDragging = false;
+        this.hasMoved = false;
         this.startX = 0;
         this.currentX = 0;
         this.autoSlideInterval = null;
@@ -806,13 +807,15 @@ class BannerSlider {
             slide.className = 'banner-slide';
             slide.style.backgroundImage = `url(${banner.imageUrl})`;
 
-            slide.innerHTML = `
-                <div class="banner-content">
-                    <h1 class="banner-title">${banner.title}</h1>
-                    <p class="banner-subtitle">Khám phá vẻ đẹp Hàn Quốc chính hãng</p>
-                    <a href="${banner.targetLink}" class="banner-btn">Khám phá ngay</a>
-                </div>
-            `;
+            // Add click handler with drag detection
+            slide.addEventListener('click', (e) => {
+                // Only redirect if it's a click (not a drag)
+                if (!this.isDragging && !this.hasMoved) {
+                    if (banner.targetLink) {
+                        window.open(banner.targetLink, '_blank');
+                    }
+                }
+            });
 
             this.slider.appendChild(slide);
         });
@@ -871,6 +874,7 @@ class BannerSlider {
         if (!this.isInitialized) return;
 
         this.isDragging = true;
+        this.hasMoved = false;
         this.startX = e.type === 'mousedown' ? e.clientX : e.touches[0].clientX;
         this.slider.style.cursor = 'grabbing';
         this.stopAutoSlide();
@@ -882,6 +886,11 @@ class BannerSlider {
         e.preventDefault();
         this.currentX = e.type === 'mousemove' ? e.clientX : e.touches[0].clientX;
         const diffX = this.startX - this.currentX;
+
+        // Mark as moved if drag distance is significant
+        if (Math.abs(diffX) > 5) {
+            this.hasMoved = true;
+        }
 
         // Add visual feedback during drag
         this.slider.style.transform = `translateX(calc(-${this.currentSlide * 100}% - ${diffX * 0.1}px))`;
@@ -905,6 +914,11 @@ class BannerSlider {
         } else {
             this.goToSlide(this.currentSlide);
         }
+
+        // Reset hasMoved after a short delay to allow click detection
+        setTimeout(() => {
+            this.hasMoved = false;
+        }, 100);
 
         this.startAutoSlide();
     }

@@ -3,280 +3,6 @@
 
 <head th:replace="admin/fragments/admin-head :: admin-head('Quản lý Banner - Liora Admin')">
     <link href="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/admin/css/banner-management.css?v=1">
-    <style>
-        /* Additional styles if needed */
-        .sortable-ghost {
-            opacity: 0.4;
-            background: #e3f2fd;
-        }
-
-        .sortable-chosen {
-            transform: rotate(2deg);
-        }
-
-        /* FALLBACK CSS - Force apply if external CSS fails */
-        .banner-management-container {
-            border: none !important;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
-            border-radius: 12px !important;
-            overflow: hidden !important;
-            margin-top: 20px !important;
-        }
-
-        .banner-grid-container {
-            min-height: 500px !important;
-            max-height: none !important;
-            overflow-y: auto !important;
-            padding: 20px !important;
-            background: #f8f9fa !important;
-        }
-
-        .banner-grid {
-            display: grid !important;
-            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)) !important;
-            gap: 20px !important;
-            margin: 0 !important;
-        }
-
-        /* FORCE APPLY - Override any existing styles */
-        .banner-management-container {
-            border: none !important;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
-            border-radius: 12px !important;
-            overflow: hidden !important;
-            margin-top: 20px !important;
-        }
-
-        .banner-grid-container {
-            min-height: 500px !important;
-            max-height: none !important;
-            overflow-y: auto !important;
-            padding: 20px !important;
-            background: #f8f9fa !important;
-        }
-
-        .banner-grid {
-            display: grid !important;
-            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)) !important;
-            gap: 20px !important;
-            margin: 0 !important;
-        }
-
-        .banner-card {
-            transition: all 0.3s ease !important;
-            cursor: move !important;
-            background: white !important;
-            border-radius: 8px !important;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
-            border: 1px solid #e9ecef !important;
-            overflow: hidden !important;
-        }
-
-        .banner-card:hover {
-            transform: translateY(-2px) !important;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
-            border-color: #007bff !important;
-        }
-
-        .banner-thumbnail {
-            width: 100% !important;
-            height: 200px !important;
-            object-fit: cover !important;
-            border-radius: 8px 8px 0 0 !important;
-        }
-
-        .banner-info {
-            padding: 12px !important;
-            background: #f8f9fa !important;
-            border-top: 1px solid #e9ecef !important;
-            min-height: 120px !important;
-            display: flex !important;
-            flex-direction: column !important;
-            justify-content: space-between !important;
-        }
-
-        .banner-title {
-            font-size: 16px !important;
-            font-weight: 600 !important;
-            margin-bottom: 8px !important;
-            color: #333 !important;
-            line-height: 1.3 !important;
-        }
-
-        .banner-link {
-            font-size: 11px !important;
-            color: #6c757d !important;
-            margin-bottom: 8px !important;
-            word-break: break-all !important;
-            background: #e9ecef !important;
-            padding: 4px 8px !important;
-            border-radius: 4px !important;
-            font-family: monospace !important;
-            border-left: 3px solid #007bff !important;
-        }
-
-        .banner-details {
-            margin-bottom: 8px !important;
-            padding: 8px !important;
-            background: #ffffff !important;
-            border-radius: 6px !important;
-            border: 1px solid #e9ecef !important;
-        }
-
-        .detail-row {
-            display: flex !important;
-            justify-content: space-between !important;
-            align-items: center !important;
-            margin-bottom: 4px !important;
-            padding: 2px 0 !important;
-        }
-
-        .detail-label {
-            font-size: 10px !important;
-            font-weight: 500 !important;
-            color: #6c757d !important;
-            min-width: 60px !important;
-        }
-
-        .detail-value {
-            font-size: 10px !important;
-            color: #333 !important;
-            font-weight: 500 !important;
-            background: #f8f9fa !important;
-            padding: 1px 4px !important;
-            border-radius: 3px !important;
-            border: 1px solid #dee2e6 !important;
-        }
-
-        .banner-status {
-            display: flex !important;
-            justify-content: flex-end !important;
-            align-items: center !important;
-            margin-top: 8px !important;
-        }
-
-        .status-badge {
-            font-size: 12px !important;
-            padding: 6px 12px !important;
-            border-radius: 12px !important;
-            font-weight: 500 !important;
-        }
-
-        .status-active {
-            background: #d4edda !important;
-            color: #155724 !important;
-        }
-
-        .status-inactive {
-            background: #f8d7da !important;
-            color: #721c24 !important;
-        }
-
-        .status-toggle {
-            display: flex !important;
-            align-items: center !important;
-            justify-content: flex-end !important;
-        }
-
-        .status-toggle .form-check {
-            margin: 0 !important;
-        }
-
-        .status-toggle .form-check-input {
-            margin: 0 !important;
-        }
-
-        .banner-actions {
-            position: absolute !important;
-            top: 10px !important;
-            right: 10px !important;
-            z-index: 10 !important;
-            opacity: 0.9 !important;
-        }
-
-        .banner-actions .btn {
-            width: 32px !important;
-            height: 32px !important;
-            padding: 6px !important;
-            margin-bottom: 4px !important;
-            border-radius: 6px !important;
-            font-size: 14px !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            background: rgba(0, 0, 0, 0.7) !important;
-            border: 1px solid rgba(255, 255, 255, 0.3) !important;
-            color: white !important;
-            transition: all 0.2s ease !important;
-        }
-
-        .banner-actions .btn i {
-            color: white !important;
-            font-size: 12px !important;
-            display: inline-block !important;
-            width: 100% !important;
-            height: 100% !important;
-            line-height: 1 !important;
-            text-align: center !important;
-        }
-
-        .banner-actions .btn i:before {
-            color: white !important;
-            font-size: 12px !important;
-        }
-
-        .banner-actions .btn:hover {
-            background: rgba(0, 0, 0, 0.9) !important;
-            transform: scale(1.05) !important;
-        }
-
-        .banner-actions .btn:hover i {
-            color: white !important;
-        }
-
-        /* Force Font Awesome icons to display */
-        .banner-actions .btn i.fas,
-        .banner-actions .btn i.fa {
-            font-family: "Font Awesome 5 Free" !important;
-            font-weight: 900 !important;
-            color: white !important;
-            font-size: 12px !important;
-            display: inline-block !important;
-        }
-
-        /* Fallback for when Font Awesome is not loaded */
-        .banner-actions .btn i:empty {
-            display: none !important;
-        }
-
-        .banner-actions .btn i:not(:empty) {
-            font-family: Arial, sans-serif !important;
-            font-weight: normal !important;
-            color: white !important;
-            font-size: 14px !important;
-            display: inline-block !important;
-        }
-
-        .drag-handle {
-            cursor: grab !important;
-            font-size: 16px !important;
-        }
-
-        .sort-order-badge {
-            position: absolute !important;
-            top: 10px !important;
-            left: 10px !important;
-            background: rgba(0, 123, 255, 0.9) !important;
-            color: white !important;
-            padding: 4px 8px !important;
-            border-radius: 12px !important;
-            font-size: 12px !important;
-            font-weight: 600 !important;
-            z-index: 10 !important;
-        }
-    </style>
-
 </head>
 
 <body class="with-welcome-text">
@@ -305,15 +31,15 @@
                         <div class="col-12">
                             <div class="card">
                                 <div class="card-body">
-                                    <form method="get" class="row g-3">
-                                        <div class="col-md-4">
+                                    <form method="get" class="row g-3" id="filterForm">
+                                        <div class="col-md-5">
                                             <label class="form-label">Tìm kiếm</label>
-                                            <input type="text" class="form-control" name="search" th:value="${search}"
-                                                placeholder="Nhập tiêu đề banner...">
+                                            <input type="text" class="form-control" name="search" id="searchInput"
+                                                th:value="${search}" placeholder="Nhập tiêu đề banner...">
                                         </div>
-                                        <div class="col-md-3">
+                                        <div class="col-md-5">
                                             <label class="form-label">Trạng thái</label>
-                                            <select class="form-select" name="isActive">
+                                            <select class="form-select" name="isActive" id="statusSelect">
                                                 <option value="">Tất cả</option>
                                                 <option value="true" th:selected="${isActive == true}">Hoạt động
                                                 </option>
@@ -321,22 +47,12 @@
                                                 </option>
                                             </select>
                                         </div>
-                                        <div class="col-md-3">
-                                            <label class="form-label">Sắp xếp theo</label>
-                                            <select class="form-select" name="sortBy">
-                                                <option value="sortOrder" th:selected="${sortBy == 'sortOrder'}">Thứ tự
-                                                </option>
-                                                <option value="title" th:selected="${sortBy == 'title'}">Tiêu đề
-                                                </option>
-                                                <option value="createdAt" th:selected="${sortBy == 'createdAt'}">Ngày
-                                                    tạo</option>
-                                            </select>
-                                        </div>
                                         <div class="col-md-2">
                                             <label class="form-label">&nbsp;</label>
                                             <div class="d-grid">
-                                                <button type="submit" class="btn btn-outline-primary">
-                                                    <i class="fas fa-search me-1"></i>Tìm kiếm
+                                                <button type="button" class="btn btn-outline-secondary"
+                                                    id="clearFiltersBtn">
+                                                    <i class="fas fa-times me-1"></i>Xóa bộ lọc
                                                 </button>
                                             </div>
                                         </div>
@@ -347,7 +63,7 @@
                     </div>
 
                     <!-- Banner Management Container -->
-                    <div class="card banner-management-container">
+                    <div class="card banner-container">
                         <div class="card-header bg-white border-bottom">
                             <div class="d-flex justify-content-between align-items-center">
                                 <div class="d-flex align-items-center">
@@ -367,19 +83,6 @@
                         </div>
 
                         <div class="card-body p-0">
-                            <!-- Success/Error Messages -->
-                            <div th:if="${param.success}" class="alert alert-success alert-dismissible fade show m-3">
-                                <i class="fas fa-check-circle me-2"></i>
-                                <span th:if="${param.success[0] == 'add'}">Thêm banner thành công!</span>
-                                <span th:if="${param.success[0] == 'update'}">Cập nhật banner thành công!</span>
-                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                            </div>
-
-                            <div th:if="${param.error}" class="alert alert-danger alert-dismissible fade show m-3">
-                                <i class="fas fa-exclamation-circle me-2"></i>
-                                <span th:if="${param.error[0] == 'notfound'}">Không tìm thấy banner!</span>
-                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                            </div>
 
                             <!-- Banner Grid Container -->
                             <div class="banner-grid-container">
@@ -415,17 +118,21 @@
                                                 </div>
 
                                                 <div class="banner-details">
-                                                    <div class="detail-row" th:if="${banner.startDate != null}">
+                                                    <div class="detail-row">
                                                         <span class="detail-label">Bắt đầu:</span>
-                                                        <span class="detail-value"
+                                                        <span class="detail-value" th:if="${banner.startDate != null}"
                                                             th:text="${#temporals.format(banner.startDate, 'dd/MM/yyyy HH:mm')}">01/01/2025
                                                             00:00</span>
+                                                        <span class="detail-value detail-value-null"
+                                                            th:if="${banner.startDate == null}">--/--/---- --:--</span>
                                                     </div>
-                                                    <div class="detail-row" th:if="${banner.endDate != null}">
+                                                    <div class="detail-row">
                                                         <span class="detail-label">Kết thúc:</span>
-                                                        <span class="detail-value"
+                                                        <span class="detail-value" th:if="${banner.endDate != null}"
                                                             th:text="${#temporals.format(banner.endDate, 'dd/MM/yyyy HH:mm')}">31/12/2025
                                                             23:59</span>
+                                                        <span class="detail-value detail-value-null"
+                                                            th:if="${banner.endDate == null}">--/--/---- --:--</span>
                                                     </div>
                                                     <div class="detail-row">
                                                         <span class="detail-label">Hoạt động:</span>
@@ -515,520 +222,23 @@
         </div>
     </div>
 
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;">
+        <div id="bannerToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <i class="fas fa-check-circle text-success me-2"></i>
+                <strong class="me-auto">Thông báo</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                <!-- Toast message will be inserted here -->
+            </div>
+        </div>
+    </div>
+
     <div th:replace="admin/fragments/admin-scripts :: admin-scripts"></div>
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-    <script>
-        // Initialize drag and drop
-        const bannerList = document.getElementById('bannerList');
-        const saveOrderBtn = document.getElementById('saveOrderBtn');
-        let sortable;
-
-        if (bannerList) {
-            sortable = Sortable.create(bannerList, {
-                animation: 150,
-                ghostClass: 'sortable-ghost',
-                chosenClass: 'sortable-chosen',
-                handle: '.drag-handle',
-                onStart: function () {
-                    saveOrderBtn.style.display = 'inline-block';
-                },
-                onEnd: function () {
-                    updateSortOrderNumbers();
-                }
-            });
-        }
-
-        function updateSortOrderNumbers() {
-            const cards = document.querySelectorAll('.banner-card');
-            cards.forEach((card, index) => {
-                const badge = card.querySelector('.sort-order-badge');
-                if (badge) {
-                    badge.textContent = index;
-                }
-            });
-        }
-
-        // Save order
-        saveOrderBtn.addEventListener('click', function () {
-            const cards = document.querySelectorAll('.banner-card');
-            const bannerIds = Array.from(cards).map(card => card.dataset.id);
-
-            fetch('/admin/banners/reorder', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ bannerIds: bannerIds })
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        showAlert('success', 'Sắp xếp banner thành công!');
-                        saveOrderBtn.style.display = 'none';
-                    } else {
-                        showAlert('danger', 'Lỗi khi sắp xếp: ' + data.message);
-                    }
-                })
-                .catch(error => {
-                    showAlert('danger', 'Lỗi khi sắp xếp banner');
-                });
-        });
-
-        // Toggle active status
-        document.querySelectorAll('.toggle-active').forEach(toggle => {
-            toggle.addEventListener('change', function () {
-                const bannerId = this.dataset.id;
-                const isActive = this.checked;
-                const originalState = !isActive; // Store original state for potential revert
-
-                // Show loading state
-                this.disabled = true;
-
-                fetch(`/admin/banners/toggle-active/${bannerId}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            showAlert('success', 'Cập nhật trạng thái thành công!');
-                        } else {
-                            this.checked = originalState; // Revert toggle
-                            showAlert('danger', 'Lỗi khi cập nhật trạng thái: ' + data.message);
-                        }
-                    })
-                    .catch(error => {
-                        this.checked = originalState; // Revert toggle
-                        showAlert('danger', 'Lỗi khi cập nhật trạng thái');
-                    })
-                    .finally(() => {
-                        // Re-enable toggle
-                        this.disabled = false;
-                    });
-            });
-        });
-
-        // Delete banner
-        let deleteBannerId = null;
-        document.querySelectorAll('.delete-banner').forEach(btn => {
-            btn.addEventListener('click', function () {
-                deleteBannerId = this.dataset.id;
-                const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
-                modal.show();
-            });
-        });
-
-        document.getElementById('confirmDeleteBtn').addEventListener('click', function () {
-            if (deleteBannerId) {
-                fetch(`/admin/banners/delete/${deleteBannerId}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            showAlert('success', 'Xóa banner thành công!');
-                            // Remove the card from DOM
-                            const card = document.querySelector(`[data-id="${deleteBannerId}"]`);
-                            if (card) {
-                                card.closest('.banner-item').remove();
-                            }
-                            const modal = bootstrap.Modal.getInstance(document.getElementById('deleteModal'));
-                            modal.hide();
-                        } else {
-                            showAlert('danger', 'Lỗi khi xóa: ' + data.message);
-                        }
-                    })
-                    .catch(error => {
-                        showAlert('danger', 'Lỗi khi xóa banner');
-                    });
-            }
-        });
-
-        // Show alert function
-        function showAlert(type, message) {
-            const alertDiv = document.createElement('div');
-            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-            alertDiv.innerHTML = `
-                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            `;
-
-            const container = document.querySelector('.content-wrapper');
-            if (container) {
-                container.insertBefore(alertDiv, container.firstChild);
-            } else {
-                // Fallback: append to body
-                document.body.insertBefore(alertDiv, document.body.firstChild);
-            }
-
-            // Auto remove after 5 seconds
-            setTimeout(() => {
-                if (alertDiv.parentNode) {
-                    alertDiv.remove();
-                }
-            }, 5000);
-        }
-    </script>
-
-    <!-- BANNER MANAGEMENT DEBUG SCRIPT -->
-    <script>
-        console.log('=== BANNER MANAGEMENT DEBUG ===');
-        console.log('Page loaded, checking CSS...');
-        console.log('Current URL:', window.location.href);
-        console.log('Document ready state:', document.readyState);
-
-        // Check if CSS file is loaded
-        const cssLink = document.querySelector('link[href*="banner-management.css"]');
-        if (cssLink) {
-            console.log('✅ CSS file link found:', cssLink.href);
-            console.log('CSS link element:', cssLink);
-        } else {
-            console.log('❌ CSS file link NOT found!');
-            console.log('All CSS links:', document.querySelectorAll('link[rel="stylesheet"]'));
-        }
-
-        // Check if banner management container exists
-        const container = document.querySelector('.banner-management-container');
-        if (container) {
-            console.log('✅ Banner management container found');
-            console.log('Container classes:', container.className);
-        } else {
-            console.log('❌ Banner management container NOT found!');
-            console.log('Available containers:', document.querySelectorAll('[class*="banner"]'));
-        }
-
-        // Check if banner grid exists
-        const grid = document.querySelector('.banner-grid');
-        if (grid) {
-            console.log('✅ Banner grid found');
-            console.log('Grid classes:', grid.className);
-        } else {
-            console.log('❌ Banner grid NOT found!');
-            console.log('Available grids:', document.querySelectorAll('[class*="grid"]'));
-        }
-
-        // Check all banner cards
-        const cards = document.querySelectorAll('.banner-card');
-        console.log('Banner cards found:', cards.length);
-
-        // Check all banner items
-        const items = document.querySelectorAll('.banner-item');
-        console.log('Banner items found:', items.length);
-
-        // Check computed styles
-        setTimeout(() => {
-            console.log('📊 Checking computed styles...');
-
-            const testElement = document.querySelector('.banner-management-container');
-            if (testElement) {
-                const styles = window.getComputedStyle(testElement);
-                console.log('📊 Computed styles for banner-management-container:');
-                console.log('- border-radius:', styles.borderRadius);
-                console.log('- box-shadow:', styles.boxShadow);
-                console.log('- margin-top:', styles.marginTop);
-                console.log('- background:', styles.background);
-            }
-
-            const gridElement = document.querySelector('.banner-grid');
-            if (gridElement) {
-                const gridStyles = window.getComputedStyle(gridElement);
-                console.log('📊 Computed styles for banner-grid:');
-                console.log('- display:', gridStyles.display);
-                console.log('- grid-template-columns:', gridStyles.gridTemplateColumns);
-                console.log('- gap:', gridStyles.gap);
-                console.log('- background:', gridStyles.background);
-            }
-
-            // Check if CSS is working
-            const currentGridStyles = gridElement ? window.getComputedStyle(gridElement) : null;
-            if (gridElement && currentGridStyles && currentGridStyles.display === 'grid') {
-                console.log('✅ CSS is working! Grid display applied');
-            } else {
-                console.log('❌ CSS not working! Grid display not applied');
-                console.log('Current grid display:', currentGridStyles ? currentGridStyles.display : 'no element');
-                console.log('Applying CSS manually...');
-
-                // Force apply CSS manually
-                if (gridElement) {
-                    gridElement.style.display = 'grid';
-                    gridElement.style.gridTemplateColumns = 'repeat(auto-fill, minmax(400px, 1fr))';
-                    gridElement.style.gap = '20px';
-                    gridElement.style.margin = '0';
-                    console.log('✅ CSS applied manually');
-
-                    // Verify CSS was applied
-                    setTimeout(() => {
-                        const newStyles = window.getComputedStyle(gridElement);
-                        console.log('🔍 Verification - Grid display:', newStyles.display);
-                        console.log('🔍 Verification - Grid columns:', newStyles.gridTemplateColumns);
-                        console.log('🔍 Verification - Grid gap:', newStyles.gap);
-                    }, 100);
-                }
-
-                // Also apply to container
-                const containerElement = document.querySelector('.banner-management-container');
-                if (containerElement) {
-                    containerElement.style.border = 'none';
-                    containerElement.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.08)';
-                    containerElement.style.borderRadius = '12px';
-                    containerElement.style.overflow = 'hidden';
-                    containerElement.style.marginTop = '20px';
-                    console.log('✅ Container CSS applied manually');
-                }
-
-                // Apply to grid container
-                const gridContainer = document.querySelector('.banner-grid-container');
-                if (gridContainer) {
-                    gridContainer.style.minHeight = '500px';
-                    gridContainer.style.maxHeight = 'none';
-                    gridContainer.style.overflowY = 'auto';
-                    gridContainer.style.padding = '20px';
-                    gridContainer.style.background = '#f8f9fa';
-                    console.log('✅ Grid container CSS applied manually');
-                }
-
-                // Apply to banner cards
-                const bannerCards = document.querySelectorAll('.banner-card');
-                bannerCards.forEach((card, index) => {
-                    card.style.transition = 'all 0.3s ease';
-                    card.style.cursor = 'move';
-                    card.style.background = 'white';
-                    card.style.borderRadius = '8px';
-                    card.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.05)';
-                    card.style.border = '1px solid #e9ecef';
-                    card.style.overflow = 'hidden';
-                    console.log(`✅ Banner card ${index + 1} CSS applied manually`);
-                });
-
-                // Apply to banner thumbnails
-                const thumbnails = document.querySelectorAll('.banner-thumbnail');
-                thumbnails.forEach((thumb, index) => {
-                    thumb.style.width = '100%';
-                    thumb.style.height = '200px';
-                    thumb.style.objectFit = 'cover';
-                    thumb.style.borderRadius = '8px 8px 0 0';
-                    console.log(`✅ Banner thumbnail ${index + 1} CSS applied manually`);
-                });
-
-                // Apply to banner info
-                const bannerInfos = document.querySelectorAll('.banner-info');
-                bannerInfos.forEach((info, index) => {
-                    info.style.padding = '12px';
-                    info.style.background = '#f8f9fa';
-                    info.style.borderTop = '1px solid #e9ecef';
-                    info.style.minHeight = '120px';
-                    info.style.display = 'flex';
-                    info.style.flexDirection = 'column';
-                    info.style.justifyContent = 'space-between';
-                    console.log(`✅ Banner info ${index + 1} CSS applied manually`);
-                });
-
-                // Apply to banner details
-                const bannerDetails = document.querySelectorAll('.banner-details');
-                bannerDetails.forEach((detail, index) => {
-                    detail.style.marginBottom = '8px';
-                    detail.style.padding = '8px';
-                    detail.style.background = '#ffffff';
-                    detail.style.borderRadius = '6px';
-                    detail.style.border = '1px solid #e9ecef';
-                    console.log(`✅ Banner details ${index + 1} CSS applied manually`);
-                });
-
-                // Apply to detail rows
-                const detailRows = document.querySelectorAll('.detail-row');
-                detailRows.forEach((row, index) => {
-                    row.style.display = 'flex';
-                    row.style.justifyContent = 'space-between';
-                    row.style.alignItems = 'center';
-                    row.style.marginBottom = '4px';
-                    row.style.padding = '2px 0';
-                    console.log(`✅ Detail row ${index + 1} CSS applied manually`);
-                });
-
-                // Apply to detail labels
-                const detailLabels = document.querySelectorAll('.detail-label');
-                detailLabels.forEach((label, index) => {
-                    label.style.fontSize = '10px';
-                    label.style.fontWeight = '500';
-                    label.style.color = '#6c757d';
-                    label.style.minWidth = '60px';
-                    console.log(`✅ Detail label ${index + 1} CSS applied manually`);
-                });
-
-                // Apply to detail values
-                const detailValues = document.querySelectorAll('.detail-value');
-                detailValues.forEach((value, index) => {
-                    value.style.fontSize = '10px';
-                    value.style.color = '#333';
-                    value.style.fontWeight = '500';
-                    value.style.background = '#f8f9fa';
-                    value.style.padding = '1px 4px';
-                    value.style.borderRadius = '3px';
-                    value.style.border = '1px solid #dee2e6';
-                    console.log(`✅ Detail value ${index + 1} CSS applied manually`);
-                });
-
-                // Apply to banner titles
-                const bannerTitles = document.querySelectorAll('.banner-title');
-                bannerTitles.forEach((title, index) => {
-                    title.style.fontSize = '16px';
-                    title.style.fontWeight = '600';
-                    title.style.marginBottom = '8px';
-                    title.style.color = '#333';
-                    title.style.lineHeight = '1.3';
-                    console.log(`✅ Banner title ${index + 1} CSS applied manually`);
-                });
-
-                // Apply to banner links
-                const bannerLinks = document.querySelectorAll('.banner-link');
-                bannerLinks.forEach((link, index) => {
-                    link.style.fontSize = '11px';
-                    link.style.color = '#6c757d';
-                    link.style.marginBottom = '8px';
-                    link.style.wordBreak = 'break-all';
-                    link.style.background = '#e9ecef';
-                    link.style.padding = '4px 8px';
-                    link.style.borderRadius = '4px';
-                    link.style.fontFamily = 'monospace';
-                    link.style.borderLeft = '3px solid #007bff';
-                    console.log(`✅ Banner link ${index + 1} CSS applied manually`);
-                });
-
-                // Apply to banner status
-                const bannerStatuses = document.querySelectorAll('.banner-status');
-                bannerStatuses.forEach((status, index) => {
-                    status.style.display = 'flex';
-                    status.style.justifyContent = 'flex-end';
-                    status.style.alignItems = 'center';
-                    status.style.marginTop = '8px';
-                    console.log(`✅ Banner status ${index + 1} CSS applied manually`);
-                });
-
-                // Apply to status toggle
-                const statusToggles = document.querySelectorAll('.status-toggle');
-                statusToggles.forEach((toggle, index) => {
-                    toggle.style.display = 'flex';
-                    toggle.style.alignItems = 'center';
-                    toggle.style.justifyContent = 'flex-end';
-                    console.log(`✅ Status toggle ${index + 1} CSS applied manually`);
-                });
-
-                // Apply to form check in status toggle
-                const formChecks = document.querySelectorAll('.status-toggle .form-check');
-                formChecks.forEach((check, index) => {
-                    check.style.margin = '0';
-                    console.log(`✅ Form check ${index + 1} CSS applied manually`);
-                });
-
-                // Apply to form check input in status toggle
-                const formCheckInputs = document.querySelectorAll('.status-toggle .form-check-input');
-                formCheckInputs.forEach((input, index) => {
-                    input.style.margin = '0';
-                    console.log(`✅ Form check input ${index + 1} CSS applied manually`);
-                });
-
-                // Apply to banner actions
-                const bannerActions = document.querySelectorAll('.banner-actions');
-                bannerActions.forEach((action, index) => {
-                    action.style.position = 'absolute';
-                    action.style.top = '10px';
-                    action.style.right = '10px';
-                    action.style.zIndex = '10';
-                    action.style.opacity = '0.9';
-                    console.log(`✅ Banner actions ${index + 1} CSS applied manually`);
-                });
-
-                // Apply to action buttons
-                const actionButtons = document.querySelectorAll('.banner-actions .btn');
-                actionButtons.forEach((button, index) => {
-                    button.style.width = '32px';
-                    button.style.height = '32px';
-                    button.style.padding = '6px';
-                    button.style.marginBottom = '4px';
-                    button.style.borderRadius = '6px';
-                    button.style.fontSize = '14px';
-                    button.style.display = 'flex';
-                    button.style.alignItems = 'center';
-                    button.style.justifyContent = 'center';
-                    button.style.background = 'rgba(0, 0, 0, 0.7)';
-                    button.style.border = '1px solid rgba(255, 255, 255, 0.3)';
-                    button.style.color = 'white';
-                    button.style.transition = 'all 0.2s ease';
-                    console.log(`✅ Action button ${index + 1} CSS applied manually`);
-                });
-
-                // Apply to action button icons
-                const actionIcons = document.querySelectorAll('.banner-actions .btn i');
-                actionIcons.forEach((icon, index) => {
-                    icon.style.color = 'white';
-                    icon.style.fontSize = '12px';
-                    icon.style.display = 'inline-block';
-                    icon.style.width = '100%';
-                    icon.style.height = '100%';
-                    icon.style.lineHeight = '1';
-                    icon.style.textAlign = 'center';
-                    icon.style.fontFamily = '"Font Awesome 5 Free"';
-                    icon.style.fontWeight = '900';
-                    console.log(`✅ Action icon ${index + 1} CSS applied manually`);
-                });
-
-                // Apply to drag handle
-                const dragHandles = document.querySelectorAll('.drag-handle');
-                dragHandles.forEach((handle, index) => {
-                    handle.style.cursor = 'grab';
-                    handle.style.fontSize = '16px';
-                    console.log(`✅ Drag handle ${index + 1} CSS applied manually`);
-                });
-
-                // Apply to sort order badge
-                const sortOrderBadges = document.querySelectorAll('.sort-order-badge');
-                sortOrderBadges.forEach((badge, index) => {
-                    badge.style.position = 'absolute';
-                    badge.style.top = '10px';
-                    badge.style.left = '10px';
-                    badge.style.background = 'rgba(0, 123, 255, 0.9)';
-                    badge.style.color = 'white';
-                    badge.style.padding = '4px 8px';
-                    badge.style.borderRadius = '12px';
-                    badge.style.fontSize = '12px';
-                    badge.style.fontWeight = '600';
-                    badge.style.zIndex = '10';
-                    console.log(`✅ Sort order badge ${index + 1} CSS applied manually`);
-                });
-
-                // Final verification
-                setTimeout(() => {
-                    console.log('🎯 FINAL VERIFICATION:');
-                    const finalGrid = document.querySelector('.banner-grid');
-                    if (finalGrid) {
-                        const finalStyles = window.getComputedStyle(finalGrid);
-                        console.log('✅ Final grid display:', finalStyles.display);
-                        console.log('✅ Final grid columns:', finalStyles.gridTemplateColumns);
-                        console.log('✅ Final grid gap:', finalStyles.gap);
-                    }
-
-                    const finalContainer = document.querySelector('.banner-management-container');
-                    if (finalContainer) {
-                        const finalContainerStyles = window.getComputedStyle(finalContainer);
-                        console.log('✅ Final container box-shadow:', finalContainerStyles.boxShadow);
-                        console.log('✅ Final container border-radius:', finalContainerStyles.borderRadius);
-                    }
-                }, 500);
-            }
-
-            // Force reload CSS
-            console.log('🔄 Forcing CSS reload...');
-            if (cssLink) {
-                cssLink.href = cssLink.href + '?v=' + Date.now();
-            }
-        }, 2000);
-    </script>
+    <script src="/admin/js/banner.js"></script>
 </body>
 
 </html>
