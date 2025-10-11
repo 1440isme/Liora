@@ -142,15 +142,6 @@
                                 </div>
 
                                 <div class="col-md-2 mb-3">
-                                    <label class="form-label">Thanh toán</label>
-                                    <select class="form-select" id="filterPaymentStatus">
-                                        <option value="">Tất cả</option>
-                                        <option value="true">Đã thanh toán</option>
-                                        <option value="false">Chưa thanh toán</option>
-                                    </select>
-                                </div>
-
-                                <div class="col-md-2 mb-3">
                                     <label class="form-label">Trạng thái</label>
                                     <select class="form-select" id="filterOrderStatus">
                                         <option value="">Tất cả</option>
@@ -177,13 +168,12 @@
                                     <thead class="table-light">
                                         <tr>
                                             <th scope="col" width="5%">#</th>
-                                            <th scope="col" width="10%">Mã đơn hàng</th>
-                                            <th scope="col" width="12%">Thời gian đặt</th>
-                                            <th scope="col" width="18%">Khách hàng</th>
-                                            <th scope="col" width="15%">Tổng tiền</th>
-                                            <th scope="col" width="12%">Thanh toán</th>
-                                            <th scope="col" width="12%">Trạng thái</th>
-                                            <th scope="col" width="10%">Thao tác</th>
+                                            <th scope="col" width="12%">Mã đơn hàng</th>
+                                            <th scope="col" width="15%">Thời gian đặt</th>
+                                            <th scope="col" width="20%">Khách hàng</th>
+                                            <th scope="col" width="18%">Tổng tiền</th>
+                                            <th scope="col" width="18%">Trạng thái</th>
+                                            <th scope="col" width="12%">Thao tác</th>
                                         </tr>
                                     </thead>
                                     <tbody id="orderTableBody">
@@ -270,10 +260,6 @@
                                             <td class="fw-bold text-primary" id="modalTotalAmount"></td>
                                         </tr>
                                         <tr>
-                                            <td class="fw-medium">Thanh toán:</td>
-                                            <td id="modalPaymentStatus"></td>
-                                        </tr>
-                                        <tr>
                                             <td class="fw-medium">Trạng thái:</td>
                                             <td id="modalOrderStatus"></td>
                                         </tr>
@@ -320,13 +306,6 @@
                     <form id="updateStatusForm">
                         <input type="hidden" id="updateOrderId">
 
-                        <div class="mb-3">
-                            <label for="updatePaymentStatus" class="form-label">Trạng thái thanh toán</label>
-                            <select class="form-select" id="updatePaymentStatus" required>
-                                <option value="false">Chưa thanh toán</option>
-                                <option value="true">Đã thanh toán</option>
-                            </select>
-                        </div>
 
                         <div class="mb-3">
                             <label for="updateOrderStatus" class="form-label">Trạng thái đơn hàng</label>

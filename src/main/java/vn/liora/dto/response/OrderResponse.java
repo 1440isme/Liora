@@ -22,11 +22,9 @@ public class OrderResponse {
     LocalDateTime orderDate;
     String orderStatus;
     String paymentMethod;
-    Boolean paymentStatus;
-    BigDecimal shippingFee;
     BigDecimal totalDiscount;
     BigDecimal total;
     Long idAddress;
     Long userId;
-    String customerName; // Thêm field để hiển thị tên khách hàng
+    String customerName;
 }

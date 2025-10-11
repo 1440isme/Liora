@@ -16,5 +16,4 @@ public class OrderProductResponse {
     Long idOrder;
     Integer quantity;
     BigDecimal totalPrice;
-    Boolean isReturned;
 }

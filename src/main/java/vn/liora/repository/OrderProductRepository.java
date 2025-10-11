@@ -20,8 +20,6 @@ public interface OrderProductRepository extends JpaRepository<OrderProduct,Long>
     @Query("SELECT SUM(op.totalPrice) FROM OrderProduct op WHERE op.order = :order")
     BigDecimal getTotalPriceByOrder(@Param("order") Order order);
 
-    @Query("SELECT op FROM OrderProduct op WHERE op.order = :order AND op.isReturned = :isReturn")
-    List<OrderProduct> findProductsByReturnStatus(@Param("order") Order order, @Param("isReturn") boolean isReturn);
 
 
 

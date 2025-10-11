@@ -56,10 +56,6 @@ class OrderManager {
         });
 
         // Filter events
-        $('#filterPaymentStatus').on('change', () => {
-            this.filterOrders();
-        });
-
         $('#filterOrderStatus').on('change', () => {
             this.filterOrders();
         });
@@ -180,7 +176,7 @@ class OrderManager {
             const cancelledOrders = filteredOrdersForStats.filter(order => order.orderStatus === 'CANCELLED').length;
             const pendingOrders = filteredOrdersForStats.filter(order => order.orderStatus === 'PENDING').length;
             const totalRevenue = filteredOrdersForStats
-                .filter(order => order.paymentStatus === true)
+                .filter(order => order.orderStatus === 'COMPLETED')
                 .reduce((sum, order) => sum + (order.total || 0), 0);
 
             this.updateStatistics({
@@ -300,11 +296,6 @@ class OrderManager {
                         </span>
                     </td>
                     <td>
-                        <span class="badge ${this.getPaymentStatusClass(order.paymentStatus)}">
-                            ${this.getPaymentStatusText(order.paymentStatus)}
-                        </span>
-                    </td>
-                    <td>
                         <span class="badge ${this.getOrderStatusClass(order.orderStatus)}">
                             ${this.getOrderStatusText(order.orderStatus)}
                         </span>
@@ -398,7 +389,6 @@ class OrderManager {
                 style: 'currency',
                 currency: 'VND'
             }).format(order.total || 0));
-            $('#modalPaymentStatus').html(`<span class="badge ${this.getPaymentStatusClass(order.paymentStatus)}">${this.getPaymentStatusText(order.paymentStatus)}</span>`);
             $('#modalOrderStatus').html(`<span class="badge ${this.getOrderStatusClass(order.orderStatus)}">${this.getOrderStatusText(order.orderStatus)}</span>`);
             $('#modalShippingAddress').text(`Address ID: ${order.idAddress || 'N/A'}`);
             $('#modalNotes').text('Không có ghi chú');
@@ -462,7 +452,6 @@ class OrderManager {
 
             // Show update status modal với string values
             $('#updateOrderId').val(orderId);
-            $('#updatePaymentStatus').val(order.paymentStatus ? 'true' : 'false');
             $('#updateOrderStatus').val(order.orderStatus || 'PENDING'); // Set string value
             $('#updateStatusModal').modal('show');
 
@@ -475,7 +464,6 @@ class OrderManager {
     async saveOrderStatus() {
         try {
             const orderId = $('#updateOrderId').val();
-            const paymentStatus = $('#updatePaymentStatus').val() === 'true';
             const orderStatus = $('#updateOrderStatus').val(); // Keep as string
 
             const response = await fetch(`${this.baseUrl}/${orderId}`, {
@@ -484,8 +472,7 @@ class OrderManager {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    paymentStatus: paymentStatus,
-                    orderStatus: orderStatus // Send string value
+                    orderStatus: orderStatus // Send only order status
                 })
             });
 
@@ -534,18 +521,12 @@ class OrderManager {
     }
 
     filterOrders() {
-        const paymentStatus = $('#filterPaymentStatus').val();
         const orderStatus = $('#filterOrderStatus').val();
         const dateFrom = $('#filterDateFrom').val();
         const dateTo = $('#filterDateTo').val();
 
         this.filteredOrders = this.orders.filter(order => {
             let matches = true;
-
-            // Filter by payment status
-            if (paymentStatus !== '') {
-                matches = matches && (order.paymentStatus === (paymentStatus === 'true'));
-            }
 
             // Filter by order status - now supports string values
             if (orderStatus !== '') {
@@ -628,7 +609,6 @@ class OrderManager {
     async refreshData() {
         this.currentPage = 1;
         $('#searchOrder').val('');
-        $('#filterPaymentStatus').val('');
         $('#filterOrderStatus').val('');
 
         // Thiết lập lại thời gian mặc định thay vì xóa trống
@@ -659,14 +639,6 @@ class OrderManager {
             hour: '2-digit',
             minute: '2-digit'
         }).format(date);
-    }
-
-    getPaymentStatusClass(status) {
-        return status ? 'bg-success' : 'bg-warning';
-    }
-
-    getPaymentStatusText(status) {
-        return status ? 'Đã thanh toán' : 'Chưa thanh toán';
     }
 
     getOrderStatusClass(status) {

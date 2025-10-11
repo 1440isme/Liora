@@ -30,7 +30,6 @@ public interface OrderMapper {
 
     List<OrderResponse> toOrderResponseList(List<Order> orders);
 
-    @Mapping(target = "paymentStatus", source = "paymentStatus")
     @Mapping(target = "orderStatus", source = "orderStatus")
     void updateOrder(@MappingTarget Order order, OrderUpdateRequest request);
 
