@@ -2,12 +2,22 @@
 class UserInfoManager {
     constructor() {
         this.currentUser = null;
+        this.waveBearBase = '/api/location';
+        this.addAddressModalInstance = null;
+        // Cache system cho tối ưu hiệu năng
+        this.provincesCache = null;
+        this.wardsCacheByProvince = new Map();
+        this.cacheExpiry = 5 * 60 * 1000; // 5 phút
+        this.cacheTimestamp = new Map();
+        this.currentEditingAddressId = null;
         this.init();
     }
 
     init() {
         this.loadUserInfo();
         this.bindEvents();
+        // Dọn dẹp cache hết hạn mỗi 1 phút
+        setInterval(() => this.clearExpiredCache(), 60000);
     }
 
     async loadUserInfo() {
@@ -146,6 +156,58 @@ class UserInfoManager {
         tabButtons.forEach(button => {
             button.addEventListener('click', (e) => this.handleTabSwitch(e));
         });
+
+        // Add Address modal events - Custom modal không cần Bootstrap events
+        const addAddressModalEl = document.getElementById('addAddressModal');
+        if (addAddressModalEl) {
+            // Click outside để đóng modal
+            addAddressModalEl.addEventListener('click', (e) => {
+                if (e.target === addAddressModalEl) {
+                    closeAddressModal();
+                }
+            });
+        }
+
+        // Edit Address modal events
+        const editAddressModalEl = document.getElementById('editAddressModal');
+        if (editAddressModalEl) {
+            // Click outside để đóng modal
+            editAddressModalEl.addEventListener('click', (e) => {
+                if (e.target === editAddressModalEl) {
+                    this.closeEditAddressModal();
+                }
+            });
+        }
+
+        // Province change -> load wards
+        const provinceSelect = document.getElementById('addrProvince');
+        if (provinceSelect) {
+            provinceSelect.addEventListener('change', (e) => {
+                const provinceCode = e.target.value;
+                this.loadWards(provinceCode);
+            });
+        }
+
+        // Edit Province change -> load wards
+        const editProvinceSelect = document.getElementById('editAddrProvince');
+        if (editProvinceSelect) {
+            editProvinceSelect.addEventListener('change', (e) => {
+                const provinceCode = e.target.value;
+                this.loadEditWards(provinceCode);
+            });
+        }
+
+        // Submit add address
+        const submitAddBtn = document.getElementById('btnSubmitAddAddress');
+        if (submitAddBtn) {
+            submitAddBtn.addEventListener('click', () => this.submitAddAddress());
+        }
+
+        // Submit edit address
+        const submitEditBtn = document.getElementById('btnSubmitEditAddress');
+        if (submitEditBtn) {
+            submitEditBtn.addEventListener('click', () => this.submitEditAddress());
+        }
     }
 
     handleEditSubmit(e) {
@@ -243,17 +305,94 @@ class UserInfoManager {
     }
 
     async loadAddresses() {
-        // Mock data for now - replace with actual API call
         const addressContainer = document.getElementById('addressList');
         if (!addressContainer) return;
 
+        // Loading placeholder
         addressContainer.innerHTML = `
-            <div class="empty-state">
-                <i class="fas fa-map-marker-alt"></i>
-                <h5>Chưa có địa chỉ nào</h5>
-                <p>Hãy thêm địa chỉ giao hàng để mua sắm dễ dàng hơn</p>
-            </div>
-        `;
+			<div class="empty-state">
+				<i class="fas fa-spinner fa-spin"></i>
+				<h5>Đang tải địa chỉ...</h5>
+				<p>Vui lòng chờ trong giây lát</p>
+			</div>
+		`;
+
+        try {
+            const token = localStorage.getItem('access_token');
+            if (!token || !this.currentUser?.userId) {
+                addressContainer.innerHTML = `
+					<div class="empty-state">
+						<i class="fas fa-map-marker-alt"></i>
+						<h5>Chưa đăng nhập</h5>
+						<p>Vui lòng đăng nhập để quản lý địa chỉ</p>
+					</div>
+				`;
+                return;
+            }
+
+            const res = await fetch(`/addresses/${this.currentUser.userId}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            if (!res.ok) throw new Error('Không thể tải địa chỉ');
+            const addresses = await res.json();
+
+            if (!Array.isArray(addresses) || addresses.length === 0) {
+                addressContainer.innerHTML = `
+					<div class="empty-state">
+						<i class="fas fa-map-marker-alt"></i>
+						<h5>Chưa có địa chỉ nào</h5>
+						<p>Hãy thêm địa chỉ giao hàng để mua sắm dễ dàng hơn</p>
+					</div>
+				`;
+                return;
+            }
+
+            addressContainer.innerHTML = addresses.map(addr => this.renderAddressCard(addr)).join('');
+        } catch (e) {
+            console.error(e);
+            addressContainer.innerHTML = `
+				<div class="empty-state">
+					<i class="fas fa-exclamation-triangle"></i>
+					<h5>Lỗi khi tải địa chỉ</h5>
+					<p>Vui lòng thử lại sau</p>
+				</div>
+			`;
+        }
+    }
+
+    renderAddressCard(addr) {
+        const isDefault = addr?.isDefault ? '<span class="badge bg-success ms-2">Mặc định</span>' : '';
+        const fullAddress = [addr?.addressDetail, addr?.ward, addr?.province].filter(Boolean).join(', ');
+        return `
+			<div class="card mb-3">
+				<div class="card-body d-flex justify-content-between align-items-start flex-wrap">
+					<div class="me-3">
+						<h6 class="mb-1">${this.escapeHtml(addr?.name || '')} ${isDefault}</h6>
+						<div class="text-muted small mb-1"><i class="fas fa-phone me-1"></i>${this.escapeHtml(addr?.phone || '')}</div>
+						<div><i class="fas fa-location-dot me-1"></i>${this.escapeHtml(fullAddress)}</div>
+					</div>
+					<div class="d-flex gap-2 mt-2 mt-md-0">
+						<button class="btn btn-sm btn-outline-primary" onclick="editAddress(${addr?.idAddress})"><i class="fas fa-edit"></i></button>
+						<button class="btn btn-sm btn-outline-danger" onclick="deleteAddress(${addr?.idAddress})"><i class="fas fa-trash"></i></button>
+					</div>
+				</div>
+			</div>
+		`;
+    }
+
+    escapeHtml(str) {
+        try {
+            return String(str)
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#039;');
+        } catch (_) { return ''; }
     }
 
     // UI Helper Methods
@@ -287,18 +426,573 @@ class UserInfoManager {
         }
     }
 
-    addNewAddress() {
-        this.showToast('Chức năng thêm địa chỉ mới sẽ được triển khai', 'info');
+    async addNewAddress() {
+        const el = document.getElementById('addAddressModal');
+        if (!el) return;
+
+        // Reset form
+        this.resetAddAddressForm();
+
+        // Hiển thị modal ngay lập tức (zero flicker)
+        el.classList.add('show');
+
+        // Tải dữ liệu tỉnh/thành từ cache hoặc API
+        await this.loadProvinces();
+
+        // Focus vào input đầu tiên
+        setTimeout(() => {
+            const firstInput = el.querySelector('input, select');
+            if (firstInput) firstInput.focus();
+        }, 50);
     }
 
-    editAddress(id) {
-        this.showToast('Chức năng chỉnh sửa địa chỉ sẽ được triển khai', 'info');
-    }
+    async loadProvinces() {
+        const provinceSelect = document.getElementById('addrProvince');
+        if (!provinceSelect) return;
 
-    deleteAddress(id) {
-        if (confirm('Bạn có chắc chắn muốn xóa địa chỉ này?')) {
-            this.showToast('Địa chỉ đã được xóa', 'success');
+        // Kiểm tra cache trước
+        if (this.isCacheValid('provinces') && this.provincesCache) {
+            this.populateSelect(
+                provinceSelect,
+                this.provincesCache.map(p => ({ value: p.code, label: p.name })),
+                'Chọn Tỉnh/Thành phố'
+            );
+            return;
         }
+
+        provinceSelect.innerHTML = '<option value="">Đang tải tỉnh/thành...</option>';
+
+        try {
+            const res = await fetch(`${this.waveBearBase}/provider`);
+            if (!res.ok) throw new Error('Không thể tải tỉnh/thành');
+            const provinces = await res.json();
+
+            if (Array.isArray(provinces) && provinces.length > 0) {
+                // Lưu vào cache
+                this.provincesCache = provinces;
+                this.cacheTimestamp.set('provinces', Date.now());
+
+                this.populateSelect(
+                    provinceSelect,
+                    provinces.map(p => ({ value: p.code, label: p.name })),
+                    'Chọn Tỉnh/Thành phố'
+                );
+            } else {
+                throw new Error('Dữ liệu tỉnh/thành không hợp lệ');
+            }
+        } catch (e) {
+            console.error('Lỗi tải tỉnh/thành:', e);
+            provinceSelect.innerHTML = '<option value="">Không có dữ liệu tỉnh/thành</option>';
+        }
+    }
+
+    async editAddress(id) {
+        if (!id) return;
+
+        try {
+            const token = localStorage.getItem('access_token');
+            if (!token || !this.currentUser?.userId) {
+                this.showError('Vui lòng đăng nhập');
+                return;
+            }
+
+            // Load address details
+            const res = await fetch(`/addresses/${this.currentUser.userId}/${id}`, {
+                method: 'GET',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (!res.ok) throw new Error('Không thể tải thông tin địa chỉ');
+            const address = await res.json();
+
+            // Store current editing address ID
+            this.currentEditingAddressId = id;
+
+            // Populate edit form
+            this.populateEditForm(address);
+
+            // Show edit modal
+            this.showEditAddressModal();
+
+        } catch (e) {
+            console.error('Lỗi tải địa chỉ:', e);
+            this.showError('Không thể tải thông tin địa chỉ');
+        }
+    }
+
+    async deleteAddress(id) {
+        if (!id) return;
+        if (!confirm('Bạn có chắc chắn muốn xóa địa chỉ này?')) return;
+        try {
+            const token = localStorage.getItem('access_token');
+            if (!token || !this.currentUser?.userId) {
+                this.showError('Vui lòng đăng nhập');
+                return;
+            }
+
+            const res = await fetch(`/addresses/${this.currentUser.userId}/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (res.status === 204) {
+                this.showToast('Đã xóa địa chỉ', 'success');
+                this.loadAddresses();
+            } else if (res.status === 400) {
+                const errorData = await res.json().catch(() => ({}));
+                if (errorData.message && errorData.message.includes('default address')) {
+                    this.showError('Không thể xóa địa chỉ mặc định. Vui lòng chọn địa chỉ khác làm mặc định trước.');
+                } else {
+                    this.showError('Không thể xóa địa chỉ này');
+                }
+            } else if (res.status === 404) {
+                this.showError('Địa chỉ không tồn tại');
+            } else {
+                this.showError('Xóa địa chỉ thất bại');
+            }
+        } catch (e) {
+            console.error('Lỗi xóa địa chỉ:', e);
+            this.showError('Không thể xóa địa chỉ');
+        }
+    }
+
+    resetAddAddressForm() {
+        const form = document.getElementById('addAddressForm');
+        if (form) form.reset();
+        const wardSelect = document.getElementById('addrWard');
+        if (wardSelect) {
+            wardSelect.innerHTML = '<option value="">Chọn Tỉnh/Thành phố trước</option>';
+            wardSelect.disabled = true;
+        }
+        const provinceSelect = document.getElementById('addrProvince');
+        if (provinceSelect) {
+            provinceSelect.innerHTML = '<option value="">Chọn Tỉnh/Thành phố</option>';
+        }
+    }
+
+    closeAddressModal() {
+        const el = document.getElementById('addAddressModal');
+        if (!el) return;
+        el.classList.remove('show');
+    }
+
+    populateEditForm(address) {
+        document.getElementById('editAddrName').value = address?.name || '';
+        document.getElementById('editAddrPhone').value = address?.phone || '';
+        document.getElementById('editAddrDetail').value = address?.addressDetail || '';
+        document.getElementById('editAddrDefault').checked = address?.isDefault || false;
+
+        // Load provinces first, then find matching province code and load wards
+        this.loadEditProvincesWithMapping(address?.province, address?.ward);
+    }
+
+    async loadEditProvincesWithMapping(provinceName = null, wardName = null) {
+        const provinceSelect = document.getElementById('editAddrProvince');
+        if (!provinceSelect) return;
+
+
+        // Kiểm tra cache trước
+        if (this.isCacheValid('provinces') && this.provincesCache) {
+            this.populateSelect(
+                provinceSelect,
+                this.provincesCache.map(p => ({ value: p.code, label: p.name })),
+                'Chọn Tỉnh/Thành phố'
+            );
+
+            if (provinceName) {
+                // Tìm province code từ province name
+                const matchingProvince = this.provincesCache.find(p => p.name === provinceName);
+                if (matchingProvince) {
+                    provinceSelect.value = matchingProvince.code;
+                    this.loadEditWards(matchingProvince.code, wardName);
+                }
+            }
+            return;
+        }
+
+        provinceSelect.innerHTML = '<option value="">Đang tải tỉnh/thành...</option>';
+
+        try {
+            const res = await fetch(`${this.waveBearBase}/provider`);
+            if (!res.ok) throw new Error('Không thể tải tỉnh/thành');
+            const provinces = await res.json();
+
+            if (Array.isArray(provinces) && provinces.length > 0) {
+                this.provincesCache = provinces;
+                this.cacheTimestamp.set('provinces', Date.now());
+
+                this.populateSelect(
+                    provinceSelect,
+                    provinces.map(p => ({ value: p.code, label: p.name })),
+                    'Chọn Tỉnh/Thành phố'
+                );
+
+                if (provinceName) {
+                    // Tìm province code từ province name
+                    const matchingProvince = provinces.find(p => p.name === provinceName);
+                    if (matchingProvince) {
+                        provinceSelect.value = matchingProvince.code;
+                        this.loadEditWards(matchingProvince.code, wardName);
+                    }
+                }
+            } else {
+                throw new Error('Dữ liệu tỉnh/thành không hợp lệ');
+            }
+        } catch (e) {
+            console.error('Lỗi tải tỉnh/thành:', e);
+            provinceSelect.innerHTML = '<option value="">Không có dữ liệu tỉnh/thành</option>';
+        }
+    }
+
+    async loadEditProvinces(selectedProvince = null, selectedWard = null) {
+        const provinceSelect = document.getElementById('editAddrProvince');
+        if (!provinceSelect) return;
+
+        // Kiểm tra cache trước
+        if (this.isCacheValid('provinces') && this.provincesCache) {
+            this.populateSelect(
+                provinceSelect,
+                this.provincesCache.map(p => ({ value: p.code, label: p.name })),
+                'Chọn Tỉnh/Thành phố'
+            );
+
+            if (selectedProvince) {
+                provinceSelect.value = selectedProvince;
+                this.loadEditWards(selectedProvince, selectedWard);
+            }
+            return;
+        }
+
+        provinceSelect.innerHTML = '<option value="">Đang tải tỉnh/thành...</option>';
+
+        try {
+            const res = await fetch(`${this.waveBearBase}/provider`);
+            if (!res.ok) throw new Error('Không thể tải tỉnh/thành');
+            const provinces = await res.json();
+
+            if (Array.isArray(provinces) && provinces.length > 0) {
+                this.provincesCache = provinces;
+                this.cacheTimestamp.set('provinces', Date.now());
+
+                this.populateSelect(
+                    provinceSelect,
+                    provinces.map(p => ({ value: p.code, label: p.name })),
+                    'Chọn Tỉnh/Thành phố'
+                );
+
+                if (selectedProvince) {
+                    provinceSelect.value = selectedProvince;
+                    this.loadEditWards(selectedProvince, selectedWard);
+                }
+            } else {
+                throw new Error('Dữ liệu tỉnh/thành không hợp lệ');
+            }
+        } catch (e) {
+            console.error('Lỗi tải tỉnh/thành:', e);
+            provinceSelect.innerHTML = '<option value="">Không có dữ liệu tỉnh/thành</option>';
+        }
+    }
+
+    async loadEditWards(provinceCode, selectedWard = null) {
+        const wardSelect = document.getElementById('editAddrWard');
+        if (!provinceCode || !wardSelect) return;
+
+        // Kiểm tra cache trước
+        if (this.isCacheValid(`wards_${provinceCode}`) && this.wardsCacheByProvince.has(provinceCode)) {
+            const cachedWards = this.wardsCacheByProvince.get(provinceCode);
+            this.populateSelect(wardSelect, cachedWards.map(w => ({ value: w.name, label: w.name })), 'Chọn Phường/Xã');
+
+            if (selectedWard) {
+                wardSelect.value = selectedWard;
+            }
+            wardSelect.disabled = false;
+            return;
+        }
+
+        wardSelect.disabled = true;
+        wardSelect.innerHTML = '<option value="">Đang tải Phường/Xã...</option>';
+
+        try {
+            const res = await fetch(`${this.waveBearBase}/ward/${encodeURIComponent(provinceCode)}`);
+            if (!res.ok) throw new Error('Không thể tải phường/xã');
+            const wards = await res.json();
+
+            if (Array.isArray(wards) && wards.length > 0) {
+                this.wardsCacheByProvince.set(provinceCode, wards);
+                this.cacheTimestamp.set(`wards_${provinceCode}`, Date.now());
+
+                this.populateSelect(wardSelect, wards.map(w => ({ value: w.name, label: w.name })), 'Chọn Phường/Xã');
+
+                if (selectedWard) {
+                    wardSelect.value = selectedWard;
+                }
+            } else {
+                throw new Error('Dữ liệu phường/xã không hợp lệ');
+            }
+            wardSelect.disabled = false;
+        } catch (e) {
+            console.error('Lỗi tải phường/xã:', e);
+            wardSelect.innerHTML = '<option value="">Không có dữ liệu phường/xã</option>';
+        }
+    }
+
+    showEditAddressModal() {
+        const modal = document.getElementById('editAddressModal');
+        if (modal) {
+            modal.classList.add('show');
+            document.body.style.overflow = 'hidden';
+
+            // Focus vào input đầu tiên
+            setTimeout(() => {
+                const firstInput = modal.querySelector('input');
+                if (firstInput) firstInput.focus();
+            }, 100);
+        }
+    }
+
+    closeEditAddressModal() {
+        const modal = document.getElementById('editAddressModal');
+        if (modal) {
+            modal.classList.remove('show');
+            document.body.style.overflow = '';
+            this.resetEditAddressForm();
+        }
+    }
+
+    resetEditAddressForm() {
+        const form = document.getElementById('editAddressForm');
+        if (form) form.reset();
+        const wardSelect = document.getElementById('editAddrWard');
+        if (wardSelect) {
+            wardSelect.innerHTML = '<option value="">Chọn Tỉnh/Thành phố trước</option>';
+            wardSelect.disabled = true;
+        }
+        const provinceSelect = document.getElementById('editAddrProvince');
+        if (provinceSelect) {
+            provinceSelect.innerHTML = '<option value="">Chọn Tỉnh/Thành phố</option>';
+        }
+    }
+
+    async submitEditAddress() {
+        try {
+            const token = localStorage.getItem('access_token');
+            if (!token || !this.currentUser?.userId) {
+                this.showError('Vui lòng đăng nhập');
+                return;
+            }
+
+            const form = document.getElementById('editAddressForm');
+            if (!form) return;
+
+            const provinceCode = document.getElementById('editAddrProvince').value.trim();
+            const wardName = document.getElementById('editAddrWard').value.trim();
+
+            // Validation
+            if (!document.getElementById('editAddrName').value.trim() ||
+                !document.getElementById('editAddrPhone').value.trim() ||
+                !document.getElementById('editAddrDetail').value.trim() ||
+                !wardName || !provinceCode) {
+                this.showError('Vui lòng điền đầy đủ thông tin');
+                return;
+            }
+
+            // Map province code back to province name
+            let provinceName = '';
+            if (this.provincesCache) {
+                const matchingProvince = this.provincesCache.find(p => p.code === provinceCode);
+                if (matchingProvince) {
+                    provinceName = matchingProvince.name;
+                } else {
+                    this.showError('Không tìm thấy tên tỉnh/thành phố');
+                    return;
+                }
+            } else {
+                this.showError('Dữ liệu tỉnh/thành không khả dụng');
+                return;
+            }
+
+            const addressData = {
+                name: document.getElementById('editAddrName').value.trim(),
+                phone: document.getElementById('editAddrPhone').value.trim(),
+                addressDetail: document.getElementById('editAddrDetail').value.trim(),
+                ward: wardName,
+                province: provinceName, // Lưu province name thay vì code
+                isDefault: document.getElementById('editAddrDefault').checked
+            };
+
+            // Get address ID from current editing address
+            const currentAddressId = this.currentEditingAddressId;
+            if (!currentAddressId) {
+                this.showError('Không tìm thấy ID địa chỉ');
+                return;
+            }
+
+            const res = await fetch(`/addresses/${this.currentUser.userId}/${currentAddressId}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(addressData)
+            });
+
+            if (res.ok) {
+                this.showToast('Cập nhật địa chỉ thành công', 'success');
+                this.closeEditAddressModal();
+                await this.loadAddresses();
+            } else {
+                const errorData = await res.json().catch(() => ({}));
+                this.showError(errorData.message || 'Cập nhật địa chỉ thất bại');
+            }
+        } catch (e) {
+            console.error('Lỗi cập nhật địa chỉ:', e);
+            this.showError('Không thể cập nhật địa chỉ');
+        }
+    }
+
+    async submitAddAddress() {
+        // Prevent double submission
+        const submitBtn = document.getElementById('btnSubmitAddAddress');
+        if (submitBtn.disabled) return;
+
+        try {
+            // Disable submit button to prevent double submission
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang lưu...';
+
+            const token = localStorage.getItem('access_token');
+            if (!token || !this.currentUser?.userId) {
+                this.showError('Vui lòng đăng nhập');
+                return;
+            }
+            const name = document.getElementById('addrName')?.value?.trim();
+            const phone = document.getElementById('addrPhone')?.value?.trim();
+            const addressDetail = document.getElementById('addrDetail')?.value?.trim();
+            const provinceCode = document.getElementById('addrProvince')?.value;
+            const wardName = document.getElementById('addrWard')?.value;
+            const isDefault = document.getElementById('addrDefault')?.checked || false;
+
+            if (!name || !phone || !addressDetail || !provinceCode || !wardName) {
+                this.showError('Vui lòng điền đầy đủ thông tin địa chỉ');
+                return;
+            }
+
+            // Province text for storage
+            const provinceText = document.querySelector('#addrProvince option:checked')?.textContent?.trim() || '';
+
+            const payload = {
+                name,
+                phone,
+                addressDetail,
+                ward: wardName,
+                province: provinceText,
+                isDefault
+            };
+
+            const res = await fetch(`/addresses/${this.currentUser.userId}`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+            if (!res.ok) {
+                let msg = 'Không thể lưu địa chỉ';
+                try { const err = await res.json(); msg = err?.message || msg; } catch (_) { }
+                throw new Error(msg);
+            }
+
+            this.showToast('Đã lưu địa chỉ thành công', 'success');
+
+            // Close modal properly using CSS class
+            this.closeAddressModal();
+
+            // Reset form
+            this.resetAddAddressForm();
+
+            // Reload addresses
+            this.loadAddresses();
+        } catch (e) {
+            console.error(e);
+            this.showError(e?.message || 'Không thể lưu địa chỉ');
+        } finally {
+            // Re-enable submit button
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-save"></i> Lưu địa chỉ';
+        }
+    }
+
+
+    // Kiểm tra cache có còn hiệu lực không
+    isCacheValid(key) {
+        const timestamp = this.cacheTimestamp.get(key);
+        if (!timestamp) return false;
+        return (Date.now() - timestamp) < this.cacheExpiry;
+    }
+
+    // Xóa cache hết hạn
+    clearExpiredCache() {
+        const now = Date.now();
+        for (const [key, timestamp] of this.cacheTimestamp.entries()) {
+            if (now - timestamp >= this.cacheExpiry) {
+                this.cacheTimestamp.delete(key);
+                if (key === 'provinces') {
+                    this.provincesCache = null;
+                } else if (key.startsWith('wards_')) {
+                    const provinceCode = key.replace('wards_', '');
+                    this.wardsCacheByProvince.delete(provinceCode);
+                }
+            }
+        }
+    }
+
+    async loadWards(provinceCode) {
+        const wardSelect = document.getElementById('addrWard');
+        if (!wardSelect) return;
+        if (!provinceCode) {
+            wardSelect.innerHTML = '<option value="">Chọn Tỉnh/Thành phố trước</option>';
+            wardSelect.disabled = true;
+            return;
+        }
+
+        // Kiểm tra cache trước
+        if (this.isCacheValid(`wards_${provinceCode}`) && this.wardsCacheByProvince.has(provinceCode)) {
+            const cachedWards = this.wardsCacheByProvince.get(provinceCode);
+            this.populateSelect(wardSelect, cachedWards.map(w => ({ value: w.name, label: w.name })), 'Chọn Phường/Xã');
+            wardSelect.disabled = false;
+            return;
+        }
+
+        try {
+            wardSelect.disabled = true;
+            wardSelect.innerHTML = '<option value="">Đang tải Phường/Xã...</option>';
+
+            const res = await fetch(`${this.waveBearBase}/ward/${encodeURIComponent(provinceCode)}`);
+            if (!res.ok) throw new Error('Không thể tải phường/xã');
+            const wards = await res.json();
+
+            if (Array.isArray(wards) && wards.length > 0) {
+                // Lưu vào cache
+                this.wardsCacheByProvince.set(provinceCode, wards);
+                this.cacheTimestamp.set(`wards_${provinceCode}`, Date.now());
+
+                this.populateSelect(wardSelect, wards.map(w => ({ value: w.name, label: w.name })), 'Chọn Phường/Xã');
+            } else {
+                throw new Error('Dữ liệu phường/xã không hợp lệ');
+            }
+            wardSelect.disabled = false;
+        } catch (e) {
+            console.error('Lỗi tải phường/xã:', e);
+            wardSelect.innerHTML = '<option value="">Không có dữ liệu phường/xã</option>';
+            wardSelect.disabled = true;
+        }
+    }
+
+    populateSelect(selectEl, options, placeholder) {
+        const opts = [`<option value="">${this.escapeHtml(placeholder || 'Chọn')}</option>`]
+            .concat(options.map(o => `<option value="${this.escapeHtml(o.value)}">${this.escapeHtml(o.label)}</option>`));
+        selectEl.innerHTML = opts.join('');
     }
 
     changePassword() {
@@ -452,6 +1146,12 @@ function deleteAddress(id) {
     }
 }
 
+function closeEditAddressModal() {
+    if (window.userInfoManager) {
+        window.userInfoManager.closeEditAddressModal();
+    }
+}
+
 function changePassword() {
     if (window.userInfoManager) {
         window.userInfoManager.changePassword();
@@ -480,6 +1180,17 @@ function uploadAvatar(e) {
     const file = e && e.target && e.target.files && e.target.files[0];
     if (window.userInfoManager && file) {
         window.userInfoManager.uploadAvatarFile(file);
+    }
+}
+
+// Đóng modal địa chỉ - CSS only (zero flicker)
+function closeAddressModal() {
+    if (window.userInfoManager) {
+        window.userInfoManager.closeAddressModal();
+    } else {
+        const el = document.getElementById('addAddressModal');
+        if (!el) return;
+        el.classList.remove('show');
     }
 }
 

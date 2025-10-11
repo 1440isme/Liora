@@ -35,6 +35,14 @@ public class ApplicationInitConfig {
                                     .build();
                             return roleRepository.save(r);
                         });
+                roleRepository.findById(Role.USER.name())
+                        .orElseGet(() -> {
+                            var r = vn.liora.entity.Role.builder()
+                                    .name(Role.USER.name())
+                                    .description("User")
+                                    .build();
+                            return roleRepository.save(r);
+                        });
                 User user = User.builder()
                         .username("admin")
                         .password(passwordEncoder.encode("admin"))

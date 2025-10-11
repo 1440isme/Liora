@@ -18,6 +18,10 @@ import org.springframework.security.oauth2.server.resource.web.DefaultBearerToke
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.CorsFilter;
+
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -72,6 +76,19 @@ public class SecurityConfig {
 
                 httpSecurity.csrf(AbstractHttpConfigurer::disable);
                 return httpSecurity.build();
+        }
+
+        @Bean
+        public CorsFilter corsFilter() {
+                CorsConfiguration corsConfiguration = new CorsConfiguration();
+                corsConfiguration.addAllowedOrigin("*");
+                corsConfiguration.addAllowedMethod("*");
+                corsConfiguration.addAllowedHeader("*");
+
+                UrlBasedCorsConfigurationSource urlBasedCorsConfigurationSource = new UrlBasedCorsConfigurationSource();
+                urlBasedCorsConfigurationSource.registerCorsConfiguration("/**", corsConfiguration);
+                return new CorsFilter(urlBasedCorsConfigurationSource);
+
         }
 
         @Bean

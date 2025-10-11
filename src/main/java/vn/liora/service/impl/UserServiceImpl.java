@@ -6,11 +6,12 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+
+import jakarta.transaction.Transactional;
 import vn.liora.dto.request.UserCreationRequest;
 import vn.liora.dto.request.UserUpdateRequest;
 import vn.liora.dto.response.UserResponse;
@@ -40,17 +41,20 @@ public class UserServiceImpl implements IUserService {
     PasswordEncoder passwordEncoder;
 
     @Override
+    @Transactional
     public void deleteAll() {
         userRepository.deleteAll();
     }
 
     @Override
+    @Transactional
     public void delete(User user) {
         userRepository.delete(user);
     }
 
     // @PreAuthorize("hasRole('ADMIN')")
     @Override
+    @Transactional
     public void deleteById(Long id) {
         userRepository.deleteById(id);
     }
@@ -61,6 +65,7 @@ public class UserServiceImpl implements IUserService {
     }
 
     @Override
+    @Transactional
     public UserResponse createUser(UserCreationRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new AppException(ErrorCode.USER_EXISTED);
@@ -79,14 +84,17 @@ public class UserServiceImpl implements IUserService {
             user.setActive(true);
         }
 
-        var defaultRole = roleRepository.findById(Role.USER.name())
+        // Set role based on request or default to USER
+        String roleName = request.getRole() != null ? request.getRole() : Role.USER.name();
+        var selectedRole = roleRepository.findById(roleName)
                 .orElseThrow(() -> new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION));
-        user.setRoles(Set.of(defaultRole));
+        user.setRoles(Set.of(selectedRole));
 
         return userMapper.toUserResponse(save(user));
     }
 
     @Override
+    @Transactional
     public UserResponse updateUser(Long userId, UserUpdateRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));

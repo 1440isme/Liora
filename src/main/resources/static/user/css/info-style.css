@@ -5,6 +5,11 @@
     padding: 2rem 0;
 }
 
+/* Tránh layout shift khi mở modal (ẩn/hiện scrollbar) */
+html {
+    scrollbar-gutter: stable both-edges;
+}
+
 .user-profile-card {
     background: white;
     border-radius: 2rem;
@@ -369,6 +374,73 @@
     to {
         transform: rotate(360deg);
     }
+}
+
+/* Custom Modal - Zero Flicker */
+.address-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    z-index: 9999;
+    opacity: 0;
+    transition: opacity 0.15s ease-in-out;
+}
+
+.address-modal.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 1;
+}
+
+.address-modal-content {
+    background: white;
+    border-radius: 1rem;
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    transform: scale(0.9);
+    transition: transform 0.15s ease-in-out;
+    position: relative;
+    z-index: 10000;
+}
+
+.address-modal.show .address-modal-content {
+    transform: scale(1);
+}
+
+.address-modal-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid #dee2e6;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.address-modal-body {
+    padding: 1.5rem;
+}
+
+.address-modal-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #dee2e6;
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
+
+/* Disable Bootstrap modal animations */
+.modal.fade .modal-dialog {
+    transition: none;
+}
+
+.modal.fade {
+    transition: none;
 }
 
 @media (max-width: 768px) {
