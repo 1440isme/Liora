@@ -46,7 +46,7 @@ public class AdminProductController {
         @RequestParam("stock") Integer stock,
         @RequestParam("description") String description,
         @RequestParam(value = "isActive", defaultValue = "true") Boolean isActive,
-        @RequestParam(value = "productImages", required = false) MultipartFile[] productImages
+        @RequestParam(value = "productImages", required = true) MultipartFile[] productImages
     )  
     {
         ApiResponse<ProductResponse> response = new ApiResponse<>();
@@ -61,6 +61,13 @@ public class AdminProductController {
             if (stock < 0) {
                 response.setCode(400);
                 response.setMessage("Số lượng tồn kho không được âm");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // Validation: Kiểm tra bắt buộc phải có ít nhất 1 ảnh
+            if (productImages == null || productImages.length == 0) {
+                response.setCode(400);
+                response.setMessage("Vui lòng chọn ít nhất một hình ảnh cho sản phẩm");
                 return ResponseEntity.badRequest().body(response);
             }
 

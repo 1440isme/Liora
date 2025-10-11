@@ -136,6 +136,16 @@ class ProductAddManager {
             isValid = false;
         }
 
+        // Image validation - bắt buộc phải có ít nhất 1 ảnh
+        const productImages = document.getElementById('productImages');
+        if (!productImages || productImages.files.length === 0) {
+            productImages.classList.add('is-invalid');
+            errors.push('Hình ảnh sản phẩm là bắt buộc');
+            isValid = false;
+        } else {
+            productImages.classList.remove('is-invalid');
+        }
+
         if (!isValid) {
             this.showError('Vui lòng kiểm tra lại thông tin: ' + errors.join(', '));
         }
