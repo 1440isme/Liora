@@ -7,6 +7,12 @@ import java.util.List;
 
 public interface IPermissionService {
     PermissionResponse create(PermissionRequest request);
+
     List<PermissionResponse> getAll();
+
+    PermissionResponse getById(String name);
+
+    PermissionResponse update(String name, PermissionRequest request);
+
     void delete(String permission);
 }

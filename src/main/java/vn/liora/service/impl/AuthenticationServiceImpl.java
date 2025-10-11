@@ -45,7 +45,7 @@ public class AuthenticationServiceImpl implements IAuthenticationService {
     protected String SIGNER_KEY;
 
     @Value("${jwt.valid-duration}")
-     protected long VALID_DURATION;
+    protected long VALID_DURATION;
 
     @Value("${jwt.refreshable-duration}")
     protected long REFRESHABLE_DURATION;
@@ -54,11 +54,11 @@ public class AuthenticationServiceImpl implements IAuthenticationService {
     public IntrospectResponse introspect(IntrospectRequest request) throws JOSEException, ParseException {
         var token = request.getToken();
         boolean isValid = true;
-       try {
-           verifyToken(token, false);
-       } catch (AppException e) {
-             isValid = false;
-       }
+        try {
+            verifyToken(token, false);
+        } catch (AppException e) {
+            isValid = false;
+        }
         return IntrospectResponse.builder()
                 .valid(isValid)
                 .build();
@@ -67,9 +67,13 @@ public class AuthenticationServiceImpl implements IAuthenticationService {
 
     @Override
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
-        PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10) {};
+        PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10) {
+        };
         var user = userRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+        if (Boolean.FALSE.equals(user.getActive())) {
+            throw new AppException(ErrorCode.ACCOUNT_LOCKED);
+        }
         boolean authenticated = passwordEncoder.matches(request.getPassword(), user.getPassword());
         if (!authenticated) {
             throw new AppException(ErrorCode.UNAUTHENTICATED);
@@ -90,7 +94,6 @@ public class AuthenticationServiceImpl implements IAuthenticationService {
     public void logout(LogoutRequest request) throws ParseException, JOSEException {
         try {
 
-
             var signToken = verifyToken(request.getToken(), true);
             String jit = signToken.getJWTClaimsSet().getJWTID();
             Date expiryTime = signToken.getJWTClaimsSet().getExpirationTime();
@@ -100,8 +103,7 @@ public class AuthenticationServiceImpl implements IAuthenticationService {
                     .expiryTime(expiryTime)
                     .build();
             invalidatedTokenRepository.save(invalidatedToken);
-        }catch (AppException exception)
-        {
+        } catch (AppException exception) {
             // do nothing
         }
     }
@@ -121,7 +123,7 @@ public class AuthenticationServiceImpl implements IAuthenticationService {
         var username = signJWT.getJWTClaimsSet().getSubject();
         var user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new AppException(ErrorCode.UNAUTHENTICATED));
-        var  token = generateToken(user);
+        var token = generateToken(user);
         return AuthenticationResponse.builder()
                 .token(token)
                 .authenticated(true)
@@ -132,29 +134,32 @@ public class AuthenticationServiceImpl implements IAuthenticationService {
         JWSVerifier verifier = new MACVerifier(SIGNER_KEY.getBytes());
         SignedJWT signedJWT = SignedJWT.parse(token);
         Date expirationTime = (isRefresh)
-            ? new Date(signedJWT.getJWTClaimsSet().getIssueTime()
-                .toInstant().plus(REFRESHABLE_DURATION, ChronoUnit.SECONDS).toEpochMilli())
-            : signedJWT.getJWTClaimsSet().getExpirationTime();
+                ? new Date(signedJWT.getJWTClaimsSet().getIssueTime()
+                        .toInstant().plus(REFRESHABLE_DURATION, ChronoUnit.SECONDS).toEpochMilli())
+                : signedJWT.getJWTClaimsSet().getExpirationTime();
         var verified = signedJWT.verify(verifier);
         if (!verified && expirationTime.after(new Date()))
             throw new AppException(ErrorCode.UNAUTHENTICATED);
         if (invalidatedTokenRepository.existsById(signedJWT.getJWTClaimsSet().getJWTID()))
             throw new AppException(ErrorCode.UNAUTHENTICATED);
-        return  signedJWT;
+        return signedJWT;
     }
-
 
     private String generateToken(User user) throws JOSEException {
         JWSHeader header = new JWSHeader(JWSAlgorithm.HS512);
+        String fullName = ((user.getFirstname() != null ? user.getFirstname() : "") + " "
+                + (user.getLastname() != null ? user.getLastname() : "")).trim();
         JWTClaimsSet jwtClaimsSet = new JWTClaimsSet.Builder()
                 .subject(user.getUsername())
                 .issuer("liora.com")
                 .issueTime(new Date())
                 .expirationTime(new Date(
-                        Instant.now().plus(VALID_DURATION, ChronoUnit.SECONDS).toEpochMilli()
-                ))
+                        Instant.now().plus(VALID_DURATION, ChronoUnit.SECONDS).toEpochMilli()))
                 .jwtID(UUID.randomUUID().toString())
                 .claim("scope", buildScope(user))
+                .claim("name", fullName)
+                .claim("email", user.getEmail())
+                .claim("avatar", user.getAvatar())
                 .build();
 
         Payload payload = new Payload(jwtClaimsSet.toJSONObject());
@@ -164,7 +169,7 @@ public class AuthenticationServiceImpl implements IAuthenticationService {
         return jwsObject.serialize();
     }
 
-    private String buildScope(User user){
+    private String buildScope(User user) {
         StringJoiner stringJoiner = new StringJoiner(" ");
 
         if (!CollectionUtils.isEmpty(user.getRoles()))
@@ -178,4 +183,8 @@ public class AuthenticationServiceImpl implements IAuthenticationService {
         return stringJoiner.toString();
     }
 
+    @Override
+    public String generateTokenForOAuth2User(User user) throws JOSEException {
+        return generateToken(user);
+    }
 }

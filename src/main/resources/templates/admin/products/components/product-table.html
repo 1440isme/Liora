@@ -13,76 +13,28 @@
         <table class="table table-bordered" id="productsTable" width="100%" cellspacing="0">
             <thead>
                 <tr>
+                    <th>STT</th>
                     <th>Hình ảnh</th>
                     <th>Tên sản phẩm</th>
-                    <th>SKU</th>
                     <th>Danh mục</th>
                     <th>Thương hiệu</th>
                     <th>Giá</th>
                     <th>Kho</th>
+                    <th>Đã bán</th>
+                    <th>Còn hàng</th>
                     <th>Trạng thái</th>
                     <th>Ngày tạo</th>
                     <th>Thao tác</th>
                 </tr>
             </thead>
-            <tbody>
-                <tr th:each="product : ${products}">
-                    <td>
-                        <img th:src="${product.imageUrl != null ? product.imageUrl : '/admin/images/products/placeholder.jpg'}"
-                            th:alt="${product.name}" class="img-thumbnail" width="50" height="50"
-                            style="object-fit: cover;">
-                    </td>
-                    <td>
-                        <div class="fw-bold" th:text="${product.name}">iPhone 15 Pro Max</div>
-                        <small class="text-muted" th:text="${product.shortDescription}">Mô tả ngắn</small>
-                    </td>
-                    <td th:text="${product.sku}">IP15PM-256</td>
-                    <td th:text="${product.categoryName}">Điện thoại</td>
-                    <td th:text="${product.brandName}">Apple</td>
-                    <td>
-                        <div class="fw-bold"
-                            th:text="${#numbers.formatDecimal(product.price, 0, 'COMMA', 0, 'POINT')} + ' ₫'">25,000,000
-                            ₫</div>
-                        <small class="text-muted"
-                            th:if="${product.originalPrice != null and product.originalPrice > product.price}">
-                            <s
-                                th:text="${#numbers.formatDecimal(product.originalPrice, 0, 'COMMA', 0, 'POINT')} + ' ₫'">30,000,000
-                                ₫</s>
-                        </small>
-                    </td>
-                    <td>
-                        <span th:classappend="${product.stockQuantity <= 10} ? 'text-danger fw-bold' : ''"
-                            th:text="${product.stockQuantity}">50</span>
-                        <small class="text-muted" th:if="${product.stockQuantity <= 10}"> (Sắp hết)</small>
-                    </td>
-                    <td>
-                        <span class="badge" th:classappend="${product.status == 'ACTIVE'} ? 'bg-success' : 
-                                             (${product.status == 'INACTIVE'} ? 'bg-secondary' : 'bg-danger')" th:text="${product.status == 'ACTIVE'} ? 'Hoạt động' : 
-                                       (${product.status == 'INACTIVE'} ? 'Ngừng bán' : 'Hết hàng')">Hoạt động</span>
-                    </td>
-                    <td th:text="${#temporals.format(product.createdAt, 'dd/MM/yyyy')}">15/12/2024</td>
-                    <td>
-                        <div class="btn-group" role="group">
-                            <a th:href="@{/admin/products/{id}(id=${product.id})}" class="btn btn-sm btn-info"
-                                title="Xem chi tiết">
-                                <i class="fas fa-eye"></i>
-                            </a>
-                            <a th:href="@{/admin/products/{id}/edit(id=${product.id})}" class="btn btn-sm btn-warning"
-                                title="Chỉnh sửa">
-                                <i class="fas fa-edit"></i>
-                            </a>
-                            <button type="button" class="btn btn-sm btn-danger"
-                                th:onclick="'deleteProduct(' + ${product.id} + ')'" title="Xóa">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-                <tr th:if="${#lists.isEmpty(products)}">
+            <tbody id="productsTableBody">
+                <!-- Data will be loaded here via AJAX -->
+                <tr>
                     <td colspan="10" class="text-center text-muted py-4">
-                        <i class="fas fa-box fa-3x mb-3"></i>
-                        <p>Không có sản phẩm nào</p>
-                        <a href="/admin/products/add" class="btn btn-primary">Thêm sản phẩm đầu tiên</a>
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Đang tải...</span>
+                        </div>
+                        <p class="mt-2">Đang tải dữ liệu...</p>
                     </td>
                 </tr>
             </tbody>
@@ -90,35 +42,14 @@
     </div>
 
     <!-- Pagination -->
-    <div th:if="${totalPages > 1}" class="d-flex justify-content-between align-items-center mt-3">
-        <div class="text-muted">
-            Hiển thị <span th:text="${pageNumber * pageSize + 1}">1</span> đến
-            <span th:text="${Math.min((pageNumber + 1) * pageSize, totalElements)}">10</span>
-            trong tổng số <span th:text="${totalElements}">100</span> sản phẩm
+    <div id="paginationContainer" class="d-flex justify-content-between align-items-center mt-3" style="display: none;">
+        <div class="text-muted" id="paginationInfo">
+            <!-- Pagination info will be loaded here -->
         </div>
 
         <nav>
-            <ul class="pagination mb-0">
-                <li class="page-item" th:classappend="${pageNumber == 0} ? 'disabled'">
-                    <a class="page-link"
-                        th:href="@{/admin/products(page=${pageNumber - 1}, size=${pageSize}, search=${param.search}, category=${param.category}, brand=${param.brand}, status=${param.status})}">
-                        <i class="fas fa-chevron-left"></i>
-                    </a>
-                </li>
-
-                <li th:each="i : ${#numbers.sequence(0, totalPages - 1)}" class="page-item"
-                    th:classappend="${i == pageNumber} ? 'active'">
-                    <a class="page-link"
-                        th:href="@{/admin/products(page=${i}, size=${pageSize}, search=${param.search}, category=${param.category}, brand=${param.brand}, status=${param.status})}"
-                        th:text="${i + 1}">1</a>
-                </li>
-
-                <li class="page-item" th:classappend="${pageNumber == totalPages - 1} ? 'disabled'">
-                    <a class="page-link"
-                        th:href="@{/admin/products(page=${pageNumber + 1}, size=${pageSize}, search=${param.search}, category=${param.category}, brand=${param.brand}, status=${param.status})}">
-                        <i class="fas fa-chevron-right"></i>
-                    </a>
-                </li>
+            <ul class="pagination mb-0" id="paginationNav">
+                <!-- Pagination links will be loaded here -->
             </ul>
         </nav>
     </div>
@@ -133,39 +64,18 @@
                 </div>
                 <div class="modal-body">
                     <p>Bạn có chắc chắn muốn xóa sản phẩm này?</p>
-                    <p class="text-danger">Hành động này không thể hoàn tác!</p>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy bỏ</button>
-                    <form id="deleteForm" method="post" class="d-inline">
-                        <input type="hidden" name="_method" value="DELETE">
-                        <button type="submit" class="btn btn-danger">Xóa sản phẩm</button>
-                    </form>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Xóa sản phẩm</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <script>
-        function deleteProduct(productId) {
-            document.getElementById('deleteForm').action = '/admin/products/' + productId;
-            new bootstrap.Modal(document.getElementById('deleteModal')).show();
-        }
-
-        // Initialize DataTable
-        $(document).ready(function () {
-            $('#productsTable').DataTable({
-                "language": {
-                    "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/vi.json"
-                },
-                "pageLength": 25,
-                "order": [[8, "desc"]], // Sort by created date
-                "columnDefs": [
-                    { "orderable": false, "targets": [0, 9] } // Disable sorting for image and actions columns
-                ]
-            });
-        });
-    </script>
+    <!-- Include JavaScript files -->
+    <script src="/admin/js/admin/products/product-modal.js"></script>
+    <script src="/admin/js/admin/products/product-table.js"></script>
 </body>
 
 </html>

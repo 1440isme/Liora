@@ -16,6 +16,8 @@ public class BrandCreationRequest {
     @Size(max = 255, message = "VALIDATION_NAME_TOO_LONG")
     private String name;
 
+    private String logoUrl;
+
     @Builder.Default
     private Boolean isActive = true;
 }

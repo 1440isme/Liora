@@ -3,222 +3,121 @@
 
 <head th:replace="admin/fragments/admin-head :: admin-head('Danh sách thương hiệu - Liora Admin')"></head>
 
-<body class="with-welcome-text">
-    <div class="container-scroller">
-        <div class="container-fluid page-body-wrapper">
-            <div th:replace="admin/layout/admin-navbar"></div>
-            <div th:replace="admin/layout/admin-sidebar"></div>
+<body class="with-welcome-text brands-page">
+<div class="container-scroller">
+    <div class="container-fluid page-body-wrapper">
+        <div th:replace="admin/layout/admin-navbar"></div>
+        <div th:replace="admin/layout/admin-sidebar"></div>
 
-            <div class="main-panel">
-                <div class="content-wrapper">
-                    <div class="d-sm-flex align-items-center justify-content-between border-bottom mb-3">
-                        <h1 class="h3 mb-0">Quản lý thương hiệu</h1>
-                        <div class="btn-wrapper">
-                            <a href="/admin/brands/add" class="btn btn-primary text-white me-2"><i
-                                    class="mdi mdi-plus"></i> Thêm thương hiệu</a>
-                            <button type="button" class="btn btn-otline-dark"><i class="mdi mdi-file-excel"></i> Xuất
-                                Excel</button>
-                        </div>
+        <div class="main-panel">
+            <div class="content-wrapper">
+                <div class="d-sm-flex align-items-center justify-content-between border-bottom mb-3">
+                    <h1 class="h3 mb-0">Quản lý thương hiệu</h1>
+                    <div class="btn-wrapper">
+                        <a href="/admin/brands/add" class="btn btn-primary text-white me-2">
+                            <i class="mdi mdi-plus"></i> Thêm thương hiệu
+                        </a>
+                        <button type="button" class="btn btn-otline-dark">
+                            <i class="mdi mdi-file-excel"></i> Xuất Excel
+                        </button>
                     </div>
+                </div>
 
-                    <div class="card card-rounded mb-4">
-                        <div class="card-body">
-                            <h4 class="card-title card-title-dash">Bộ lọc</h4>
-                            <form method="get" action="/admin/brands">
-                                <div class="row">
-                                    <div class="col-md-4">
-                                        <label for="search" class="form-label">Tìm kiếm</label>
-                                        <input type="text" class="form-control" id="search" name="search"
-                                            th:value="${param.search}" placeholder="Tên thương hiệu...">
-                                    </div>
-                                    <div class="col-md-3">
-                                        <label for="status" class="form-label">Trạng thái</label>
-                                        <select class="form-select" id="status" name="status">
-                                            <option value="">Tất cả trạng thái</option>
-                                            <option value="ACTIVE" th:selected="${param.status == 'ACTIVE'}">Hoạt động
-                                            </option>
-                                            <option value="INACTIVE" th:selected="${param.status == 'INACTIVE'}">Ngừng
-                                                hoạt
-                                                động</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <label for="sortBy" class="form-label">Sắp xếp theo</label>
-                                        <select class="form-select" id="sortBy" name="sortBy">
-                                            <option value="name" th:selected="${param.sortBy == 'name'}">Tên A-Z
-                                            </option>
-                                            <option value="name_desc" th:selected="${param.sortBy == 'name_desc'}">Tên
-                                                Z-A
-                                            </option>
-                                            <option value="created_at" th:selected="${param.sortBy == 'created_at'}">Mới
-                                                nhất</option>
-                                            <option value="product_count"
-                                                th:selected="${param.sortBy == 'product_count'}">
-                                                Số sản phẩm</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-2 d-flex align-items-end">
-                                        <button type="submit" class="btn btn-primary text-white me-2"><i
-                                                class="mdi mdi-magnify"></i> Tìm kiếm</button>
-                                        <a href="/admin/brands" class="btn btn-otline-dark"><i
-                                                class="mdi mdi-close"></i> Xóa bộ lọc</a>
-                                    </div>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-
-                    <div class="card card-rounded mb-4">
-                        <div class="card-body">
-                            <h4 class="card-title card-title-dash">Danh sách thương hiệu</h4>
-                            <div th:if="${#lists.isEmpty(brands)}" class="text-center text-muted py-5">
-                                <i class="mdi mdi-seal-variant mdi-48px mb-3"></i>
-                                <p>Chưa có thương hiệu nào</p>
-                                <a href="/admin/brands/add" class="btn btn-primary text-white">Thêm thương hiệu đầu
-                                    tiên</a>
+                <!-- Filter Section -->
+                <div class="card card-rounded mb-4">
+                    <div class="card-body">
+                        <h4 class="card-title card-title-dash">Bộ lọc</h4>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label for="search" class="form-label">Tìm kiếm</label>
+                                <input type="text" class="form-control" id="search" name="search"
+                                       placeholder="Tên thương hiệu...">
                             </div>
-
-                            <div th:if="${!#lists.isEmpty(brands)}" class="row">
-                                <div th:each="brand : ${brands}" class="col-lg-3 col-md-4 col-sm-6 mb-4">
-                                    <div class="card h-100 brand-card">
-                                        <div class="card-body text-center">
-                                            <!-- Brand Logo -->
-                                            <div class="mb-3">
-                                                <img th:src="${brand.logoUrl != null ? brand.logoUrl : '/admin/images/brands/placeholder.jpg'}"
-                                                    th:alt="${brand.name}" class="img-fluid rounded-circle"
-                                                    style="width: 80px; height: 80px; object-fit: cover;">
-                                            </div>
-
-                                            <!-- Brand Name -->
-                                            <h5 class="card-title" th:text="${brand.name}">Tên thương hiệu</h5>
-
-                                            <!-- Brand Description -->
-                                            <p class="card-text text-muted small" th:text="${brand.description}">Mô tả
-                                                thương hiệu</p>
-
-                                            <!-- Brand Stats -->
-                                            <div class="row text-center mb-3">
-                                                <div class="col-6">
-                                                    <div class="fw-bold text-primary" th:text="${brand.productCount}">0
-                                                    </div>
-                                                    <small class="text-muted">Sản phẩm</small>
-                                                </div>
-                                                <div class="col-6">
-                                                    <div class="fw-bold text-success" th:text="${brand.totalSales}">0
-                                                    </div>
-                                                    <small class="text-muted">Đã bán</small>
-                                                </div>
-                                            </div>
-
-                                            <!-- Brand Status -->
-                                            <div class="mb-3">
-                                                <span class="badge"
-                                                    th:classappend="${brand.status == 'ACTIVE'} ? 'bg-success' : 'bg-secondary'"
-                                                    th:text="${brand.status == 'ACTIVE'} ? 'Hoạt động' : 'Ngừng hoạt động'">Hoạt
-                                                    động</span>
-                                            </div>
-
-                                            <!-- Actions -->
-                                            <div class="btn-group w-100" role="group">
-                                                <a th:href="@{/admin/brands/{id}(id=${brand.id})}"
-                                                    class="btn btn-sm btn-outline-info" title="Xem chi tiết">
-                                                    <i class="mdi mdi-eye-outline"></i>
-                                                </a>
-                                                <a th:href="@{/admin/brands/{id}/edit(id=${brand.id})}"
-                                                    class="btn btn-sm btn-outline-warning" title="Chỉnh sửa">
-                                                    <i class="mdi mdi-pencil-outline"></i>
-                                                </a>
-                                                <button type="button" class="btn btn-sm btn-outline-danger"
-                                                    th:onclick="'deleteBrand(' + ${brand.id} + ', \'' + ${brand.name} + '\')'"
-                                                    title="Xóa">
-                                                    <i class="mdi mdi-delete-outline"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                            <div class="col-md-3">
+                                <label for="status" class="form-label">Trạng thái</label>
+                                <select class="form-select" id="status" name="status">
+                                    <option value="">Tất cả trạng thái</option>
+                                    <option value="ACTIVE">Hoạt động</option>
+                                    <option value="INACTIVE">Ngừng hoạt động</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="sortBy" class="form-label">Sắp xếp theo</label>
+                                <select class="form-select" id="sortBy" name="sortBy">
+                                    <option value="name">Tên A-Z</option>
+                                    <option value="name_desc">Tên Z-A</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <button type="button" class="btn btn-primary text-white me-2" onclick="location.reload()">
+                                    <i class="mdi mdi-refresh"></i> Làm mới
+                                </button>
                             </div>
                         </div>
                     </div>
-
-                    <!-- Pagination -->
-                    <div th:if="${totalPages > 1}" class="d-flex justify-content-between align-items-center">
-                        <div class="text-muted">
-                            Hiển thị <span th:text="${pageNumber * pageSize + 1}">1</span> đến
-                            <span th:text="${Math.min((pageNumber + 1) * pageSize, totalElements)}">10</span>
-                            trong tổng số <span th:text="${totalElements}">100</span> thương hiệu
-                        </div>
-
-                        <nav>
-                            <ul class="pagination mb-0">
-                                <li class="page-item" th:classappend="${pageNumber == 0} ? 'disabled'">
-                                    <a class="page-link"
-                                        th:href="@{/admin/brands(page=${pageNumber - 1}, size=${pageSize}, search=${param.search}, status=${param.status}, sortBy=${param.sortBy})}">
-                                        <i class="mdi mdi-chevron-left"></i>
-                                    </a>
-                                </li>
-
-                                <li th:each="i : ${#numbers.sequence(0, totalPages - 1)}" class="page-item"
-                                    th:classappend="${i == pageNumber} ? 'active'">
-                                    <a class="page-link"
-                                        th:href="@{/admin/brands(page=${i}, size=${pageSize}, search=${param.search}, status=${param.status}, sortBy=${param.sortBy})}"
-                                        th:text="${i + 1}">1</a>
-                                </li>
-
-                                <li class="page-item" th:classappend="${pageNumber == totalPages - 1} ? 'disabled'">
-                                    <a class="page-link"
-                                        th:href="@{/admin/brands(page=${pageNumber + 1}, size=${pageSize}, search=${param.search}, status=${param.status}, sortBy=${param.sortBy})}">
-                                        <i class="mdi mdi-chevron-right"></i>
-                                    </a>
-                                </li>
-                            </ul>
-                        </nav>
-                    </div>
-                    <div th:replace="admin/layout/admin-footer"></div>
                 </div>
-            </div>
-        </div>
 
-        <!-- Delete Confirmation Modal -->
-        <div class="modal fade" id="deleteModal" tabindex="-1">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Xác nhận xóa thương hiệu</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <p>Bạn có chắc chắn muốn xóa thương hiệu <strong id="deleteBrandName">Tên thương hiệu</strong>?
-                        </p>
-                        <div class="alert alert-warning">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            <strong>Cảnh báo:</strong> Nếu thương hiệu có sản phẩm, chúng sẽ được chuyển về thương hiệu
-                            mặc
-                            định.
+                <!-- Brands List -->
+                <div class="card card-rounded mb-4">
+                    <div class="card-body">
+                        <h4 class="card-title card-title-dash">Danh sách thương hiệu</h4>
+                        <div class="brands-container row">
+                            <!-- Brands will be loaded here via JavaScript -->
                         </div>
-                        <p class="text-danger">Hành động này không thể hoàn tác!</p>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy bỏ</button>
-                        <form id="deleteForm" method="post" class="d-inline">
-                            <input type="hidden" name="_method" value="DELETE">
-                            <button type="submit" class="btn btn-danger">Xóa thương hiệu</button>
-                        </form>
                     </div>
                 </div>
+
+                <!-- Pagination -->
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="text-muted">
+                        <!-- Pagination info will be updated via JavaScript -->
+                    </div>
+                    <nav>
+                        <ul class="pagination mb-0" id="pagination">
+                            <!-- Pagination will be generated via JavaScript -->
+                        </ul>
+                    </nav>
+                </div>
+
+                <div th:replace="admin/layout/admin-footer"></div>
             </div>
         </div>
+    </div>
+</div>
 
-        <div th:replace="admin/fragments/admin-scripts :: admin-scripts"></div>
-        <script src="/admin/js/admin/brands.js"></script>
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Xác nhận xóa thương hiệu</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Bạn có chắc chắn muốn xóa thương hiệu <strong id="deleteBrandName">Tên thương hiệu</strong>?</p>
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Cảnh báo:</strong> Hành động này không thể hoàn tác!
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy bỏ</button>
+                <button type="button" class="btn btn-danger" id="confirmDelete">Xóa thương hiệu</button>
+            </div>
+        </div>
+    </div>
+</div>
 
-        <script>
-            function deleteBrand(brandId, brandName) {
-                document.getElementById('deleteBrandName').textContent = brandName;
-                document.getElementById('deleteForm').action = '/admin/brands/' + brandId;
-                new bootstrap.Modal(document.getElementById('deleteModal')).show();
-            }
-        </script>
+<div th:replace="admin/fragments/admin-scripts :: admin-scripts"></div>
+<script src="/admin/js/admin/brands.js"></script>
+
+    <script>
+        function deleteBrand(brandId, brandName) {
+            document.getElementById('deleteBrandName').textContent = brandName;
+            document.getElementById('deleteForm').action = '/admin/brands/' + brandId;
+            new bootstrap.Modal(document.getElementById('deleteModal')).show();
+        }
+    </script>
 </body>
 
 </html>

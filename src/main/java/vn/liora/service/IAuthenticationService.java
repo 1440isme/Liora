@@ -7,6 +7,7 @@ import vn.liora.dto.request.LogoutRequest;
 import vn.liora.dto.request.RefreshRequest;
 import vn.liora.dto.response.AuthenticationResponse;
 import vn.liora.dto.response.IntrospectResponse;
+import vn.liora.entity.User;
 
 import java.text.ParseException;
 
@@ -16,5 +17,8 @@ public interface IAuthenticationService {
     AuthenticationResponse authenticate(AuthenticationRequest request);
 
     void logout(LogoutRequest request) throws ParseException, JOSEException;
+
     AuthenticationResponse refreshToken(RefreshRequest request) throws ParseException, JOSEException;
+
+    String generateTokenForOAuth2User(User user) throws JOSEException;
 }
