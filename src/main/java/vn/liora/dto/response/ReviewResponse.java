@@ -11,7 +11,6 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 public class ReviewResponse {
     private Long reviewId;
-//    private String title;
     private String content;
     private Integer rating;
     private Boolean anonymous;

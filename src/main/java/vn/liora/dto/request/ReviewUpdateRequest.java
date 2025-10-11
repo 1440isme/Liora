@@ -9,11 +9,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ReviewUpdateRequest {
-    
-//    @NotBlank(message = "VALIDATION_REQUIRED_FIELD")
-//    @Size(max = 100, message = "VALIDATION_TITLE_TOO_LONG")
-//    private String title;
-    
+
     @Size(max = 255, message = "VALIDATION_CONTENT_TOO_LONG")
     private String content;
     
