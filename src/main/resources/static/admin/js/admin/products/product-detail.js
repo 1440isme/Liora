@@ -20,25 +20,17 @@ class ProductDetailManager {
     setupEventListeners() {
         // Edit button
         const editBtn = document.getElementById('editProductBtn');
-        const quickEditBtn = document.getElementById('quickEditBtn');
         if (editBtn) {
             editBtn.addEventListener('click', () => this.editProduct());
         }
-        if (quickEditBtn) {
-            quickEditBtn.addEventListener('click', () => this.editProduct());
-        }
 
-        // Toggle status buttons
+        // Toggle status button
         const toggleBtn = document.getElementById('toggleStatusBtn');
-        const quickToggleBtn = document.getElementById('quickToggleBtn');
         if (toggleBtn) {
             toggleBtn.addEventListener('click', () => this.toggleStatus());
         }
-        if (quickToggleBtn) {
-            quickToggleBtn.addEventListener('click', () => this.toggleStatus());
-        }
 
-        // Delete buttons
+        // Delete button
         const deleteBtn = document.getElementById('deleteProductBtn');
         if (deleteBtn) {
             deleteBtn.addEventListener('click', () => this.deleteProduct());
@@ -189,7 +181,6 @@ class ProductDetailManager {
 
     updateActionButtons(isActive) {
         const toggleBtn = document.getElementById('toggleStatusBtn');
-        const quickToggleBtn = document.getElementById('quickToggleBtn');
         
         if (toggleBtn) {
             if (isActive) {
@@ -198,16 +189,6 @@ class ProductDetailManager {
             } else {
                 toggleBtn.innerHTML = '<i class="mdi mdi-play"></i> Kích hoạt';
                 toggleBtn.className = 'btn btn-success';
-            }
-        }
-        
-        if (quickToggleBtn) {
-            if (isActive) {
-                quickToggleBtn.innerHTML = '<i class="mdi mdi-pause"></i> Tạm dừng';
-                quickToggleBtn.className = 'btn btn-warning';
-            } else {
-                quickToggleBtn.innerHTML = '<i class="mdi mdi-play"></i> Kích hoạt';
-                quickToggleBtn.className = 'btn btn-success';
             }
         }
     }

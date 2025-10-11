@@ -196,8 +196,13 @@ class ProductFormManager {
     }
 
     showNotification(message, type = 'info') {
-        // You can implement your notification system here
-        alert(message);
+        // Use global notification manager
+        if (window.notificationManager) {
+            window.notificationManager.showNotification(message, type);
+        } else {
+            // Fallback to alert if notification manager not loaded
+            alert(message);
+        }
     }
 }
 

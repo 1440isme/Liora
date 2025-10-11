@@ -136,6 +136,16 @@ class ProductAddManager {
             isValid = false;
         }
 
+        // Image validation - bắt buộc phải có ít nhất 1 ảnh
+        const productImages = document.getElementById('productImages');
+        if (!productImages || productImages.files.length === 0) {
+            productImages.classList.add('is-invalid');
+            errors.push('Hình ảnh sản phẩm là bắt buộc');
+            isValid = false;
+        } else {
+            productImages.classList.remove('is-invalid');
+        }
+
         if (!isValid) {
             this.showError('Vui lòng kiểm tra lại thông tin: ' + errors.join(', '));
         }
@@ -270,8 +280,33 @@ class ProductAddManager {
     // Reset form
     resetForm() {
         console.log('Reset form called'); // Debug log
+        
+        // Reset form fields
         document.getElementById('productForm').reset();
-        document.getElementById('imagePreview').innerHTML = '<p class="text-muted">Chọn hình ảnh để xem trước</p>';
+        
+        // Clear image preview and reset file input
+        const imagePreview = document.getElementById('imagePreview');
+        const productImages = document.getElementById('productImages');
+        
+        if (imagePreview) {
+            imagePreview.innerHTML = `
+                <div class="text-center text-muted">
+                    <i class="mdi mdi-image-multiple mdi-48px"></i>
+                    <p class="mt-2">Hình ảnh sẽ hiển thị ở đây</p>
+                </div>
+            `;
+        }
+        
+        if (productImages) {
+            productImages.value = '';
+            productImages.classList.remove('is-invalid');
+        }
+        
+        // Clear any validation states
+        document.querySelectorAll('.is-invalid').forEach(el => {
+            el.classList.remove('is-invalid');
+        });
+        
         console.log('Form reset completed'); // Debug log
     }
 

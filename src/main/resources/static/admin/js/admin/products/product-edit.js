@@ -264,9 +264,23 @@ class ProductEditManager {
 
     // Delete image
     async deleteImage(imageId) {
-        if (!confirm('Bạn có chắc chắn muốn xóa hình ảnh này?')) {
-            return;
+        // Use custom confirm dialog
+        if (window.notificationManager) {
+            window.notificationManager.showConfirm(
+                'Bạn có chắc chắn muốn xóa hình ảnh này?',
+                () => this.confirmDeleteImage(imageId),
+                () => console.log('Delete image cancelled')
+            );
+        } else {
+            // Fallback to native confirm
+            if (!confirm('Bạn có chắc chắn muốn xóa hình ảnh này?')) {
+                return;
+            }
+            this.confirmDeleteImage(imageId);
         }
+    }
+
+    async confirmDeleteImage(imageId) {
         
         try {
             const response = await fetch(`/admin/api/products/${this.productId}/images/${imageId}`, {
@@ -423,23 +437,38 @@ class ProductEditManager {
     }
 
     showError(message) {
-        // You can implement your notification system here
-        alert('❌ ' + message);
+        // Use global notification manager
+        if (window.notificationManager) {
+            window.notificationManager.showError(message);
+        } else {
+            // Fallback to alert if notification manager not loaded
+            alert('❌ ' + message);
+        }
     }
 
     showSuccess(message) {
-        // You can implement your notification system here
-        alert('✅ ' + message);
+        // Use global notification manager
+        if (window.notificationManager) {
+            window.notificationManager.showSuccess(message);
+        } else {
+            // Fallback to alert if notification manager not loaded
+            alert('✅ ' + message);
+        }
     }
 
     showNotification(message, type) {
-        // Simple notification - có thể thay bằng toast library
-        if (type === 'success') {
-            alert('✅ ' + message);
-        } else if (type === 'error') {
-            alert('❌ ' + message);
-        } else if (type === 'warning') {
-            alert('⚠️ ' + message);
+        // Use global notification manager
+        if (window.notificationManager) {
+            window.notificationManager.showNotification(message, type);
+        } else {
+            // Fallback to alert if notification manager not loaded
+            if (type === 'success') {
+                alert('✅ ' + message);
+            } else if (type === 'error') {
+                alert('❌ ' + message);
+            } else if (type === 'warning') {
+                alert('⚠️ ' + message);
+            }
         }
     }
     // Update product timestamp
