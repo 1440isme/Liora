@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
-@RequestMapping("/order/")
+@RequestMapping("/admin/api/orders")
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Slf4j
@@ -43,7 +43,7 @@ public class AdminOrderController {
 
     // Lấy đơn hàng theo trạng thái đơn hàng
     @GetMapping("/order-status")
-    public ResponseEntity<List<OrderResponse>> getOrdersByOrderStatus(@RequestParam Boolean orderStatus) {
+    public ResponseEntity<List<OrderResponse>> getOrdersByOrderStatus(@RequestParam String orderStatus) {
         List<OrderResponse> orders = orderService.getOrdersByOrderStatus(orderStatus);
         return ResponseEntity.ok(orders);
     }

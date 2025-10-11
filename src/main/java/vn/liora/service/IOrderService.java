@@ -16,7 +16,7 @@ public interface IOrderService {
     List<OrderResponse> getMyOrders(Long userId);
     List<OrderResponse> getAllOrders();
     List<OrderResponse> getOrdersByPaymentStatus(Boolean paymentStatus);
-    List<OrderResponse> getOrdersByOrderStatus(Boolean orderStatus);
+    List<OrderResponse> getOrdersByOrderStatus(String orderStatus);
     List<OrderResponse> getOrdersByDateRange(LocalDateTime start, LocalDateTime end);
     Long countByPaymentStatus(Boolean paymentStatus);
     Long countByUser(User user);

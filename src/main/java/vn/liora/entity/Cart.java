@@ -20,13 +20,17 @@ public class Cart {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "IdCart")
     Long idCart;
-    @Column(name = "Name")
-    String name;
+
     @Column(name = "CoutnProduct")
     Integer countProduct;
 
+
+
+    @Column(name = "IdGuest")
+    String guestId;
+
     @OneToOne
-    @JoinColumn(name = "IdUser")
+    @JoinColumn(name = "IdUser", nullable = true)
     @JsonIgnore
     private User user;
 

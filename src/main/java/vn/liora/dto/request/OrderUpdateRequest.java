@@ -14,5 +14,5 @@ import jakarta.validation.constraints.NotBlank;
 public class OrderUpdateRequest {
 
     Boolean paymentStatus;
-    Boolean orderStatus;
+    String orderStatus;
 }

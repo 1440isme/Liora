@@ -15,4 +15,6 @@ import lombok.experimental.FieldDefaults;
 public class OrderProductUpdateRequest {
 
     Boolean isReturned;
+
+    Boolean isRefunded;
 }

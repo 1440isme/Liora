@@ -57,9 +57,8 @@ public class OrderServiceImpl implements IOrderService {
             order.setAddress(address);
             order.setUser(user);
             order.setOrderDate(LocalDateTime.now());
-            order.setOrderStatus(true);
+            order.setOrderStatus("Pending");
             order.setPaymentStatus(true);
-            order.setShippingFee(new BigDecimal("18000"));
             order.setTotalDiscount(new BigDecimal("10000"));
             order.setTotal(new BigDecimal("0"));
              final Order savedOrder = orderRepository.save(order);
@@ -77,7 +76,6 @@ public class OrderServiceImpl implements IOrderService {
                     .map(OrderProduct::getTotalPrice)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
             BigDecimal total = subtotal
-                    .add(order.getShippingFee())
                     .subtract(order.getTotalDiscount());
             order.setTotal(total);
 
@@ -129,8 +127,7 @@ public class OrderServiceImpl implements IOrderService {
     }
 
     @Override
-    public List<OrderResponse> getOrdersByOrderStatus(Boolean orderStatus) {
-        // Lấy danh sách đơn hàng theo trạng thái đơn hàng
+    public List<OrderResponse> getOrdersByOrderStatus(String orderStatus) {
         List<Order> orders = orderRepository.findByOrderStatus(orderStatus);
         return orderMapper.toOrderResponseList(orders);
     }
