@@ -29,12 +29,10 @@
                         <div class="col-md-8">
                             <div class="row">
                                 <div class="col-md-6">
-                                    <h4 id="productName">Tên sản phẩm</h4>
-                                    <p class="text-muted" id="productSku">SKU: ABC123</p>
+                                    <h4 id="productName">Đang tải...</h4>
                                 </div>
                                 <div class="col-md-6 text-end">
-                                    <h3 class="text-primary" id="productPrice">25,000,000 ₫</h3>
-                                    <p class="text-muted" id="productOriginalPrice"></p>
+                                    <h3 class="text-primary" id="productPrice">Đang tải...</h3>
                                 </div>
                             </div>
 
@@ -46,40 +44,44 @@
                                     <table class="table table-sm">
                                         <tr>
                                             <td><strong>Danh mục:</strong></td>
-                                            <td id="productCategory">Điện thoại</td>
+                                            <td id="productCategory">Đang tải...</td>
                                         </tr>
                                         <tr>
                                             <td><strong>Thương hiệu:</strong></td>
-                                            <td id="productBrand">Apple</td>
+                                            <td id="productBrand">Đang tải...</td>
                                         </tr>
                                         <tr>
                                             <td><strong>Trạng thái:</strong></td>
-                                            <td id="productStatus">Hoạt động</td>
+                                            <td id="productStatus">Đang tải...</td>
                                         </tr>
                                         <tr>
                                             <td><strong>Tồn kho:</strong></td>
-                                            <td id="productStock">50</td>
+                                            <td id="productStock">Đang tải...</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Còn hàng:</strong></td>
+                                            <td id="productAvailable">Đang tải...</td>
                                         </tr>
                                     </table>
                                 </div>
                                 <div class="col-md-6">
-                                    <h6>Thông tin bổ sung</h6>
+                                    <h6>Thống kê</h6>
                                     <table class="table table-sm">
                                         <tr>
-                                            <td><strong>Trọng lượng:</strong></td>
-                                            <td id="productWeight">200g</td>
+                                            <td><strong>Đã bán:</strong></td>
+                                            <td id="productSoldCount">Đang tải...</td>
                                         </tr>
                                         <tr>
-                                            <td><strong>Kích thước:</strong></td>
-                                            <td id="productDimensions">15 x 8 x 1 cm</td>
+                                            <td><strong>Đánh giá:</strong></td>
+                                            <td id="productRating">Đang tải...</td>
                                         </tr>
                                         <tr>
-                                            <td><strong>Bảo hành:</strong></td>
-                                            <td id="productWarranty">12 tháng</td>
+                                            <td><strong>Ngày tạo:</strong></td>
+                                            <td id="productCreatedDate">Đang tải...</td>
                                         </tr>
                                         <tr>
-                                            <td><strong>Tags:</strong></td>
-                                            <td id="productTags">smartphone, apple, ios</td>
+                                            <td><strong>Ngày cập nhật:</strong></td>
+                                            <td id="productUpdatedDate">Đang tải...</td>
                                         </tr>
                                     </table>
                                 </div>
@@ -88,37 +90,8 @@
                             <hr>
 
                             <div class="mb-3">
-                                <h6>Mô tả ngắn</h6>
-                                <p id="productShortDescription" class="text-muted">Mô tả ngắn về sản phẩm</p>
-                            </div>
-
-                            <div class="mb-3">
                                 <h6>Mô tả chi tiết</h6>
-                                <div id="productDescription">Mô tả chi tiết về sản phẩm</div>
-                            </div>
-
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <h6>Thống kê</h6>
-                                    <table class="table table-sm">
-                                        <tr>
-                                            <td><strong>Lượt xem:</strong></td>
-                                            <td id="productViewCount">1,234</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Đã bán:</strong></td>
-                                            <td id="productSoldQuantity">56</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Đánh giá:</strong></td>
-                                            <td id="productRating">4.5/5</td>
-                                        </tr>
-                                        <tr>
-                                            <td><strong>Ngày tạo:</strong></td>
-                                            <td id="productCreatedAt">15/12/2024</td>
-                                        </tr>
-                                    </table>
-                                </div>
+                                <div id="productDescription">Đang tải...</div>
                             </div>
                         </div>
                     </div>
@@ -164,17 +137,26 @@
 
                         <div class="mb-3">
                             <label for="quickEditStock" class="form-label">Số lượng tồn kho</label>
-                            <input type="number" class="form-control" id="quickEditStock" name="stockQuantity" min="0"
+                            <input type="number" class="form-control" id="quickEditStock" name="stock" min="0"
                                 required>
                         </div>
 
                         <div class="mb-3">
-                            <label for="quickEditStatus" class="form-label">Trạng thái</label>
-                            <select class="form-select" id="quickEditStatus" name="status">
-                                <option value="ACTIVE">Hoạt động</option>
-                                <option value="INACTIVE">Ngừng bán</option>
-                                <option value="OUT_OF_STOCK">Hết hàng</option>
-                            </select>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="quickEditAvailable" name="available">
+                                <label class="form-check-label" for="quickEditAvailable">
+                                    Còn hàng
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="quickEditIsActive" name="isActive">
+                                <label class="form-check-label" for="quickEditIsActive">
+                                    Kích hoạt sản phẩm
+                                </label>
+                            </div>
                         </div>
                     </form>
                 </div>
@@ -186,93 +168,8 @@
         </div>
     </div>
 
-    <script>
-        // Product Modal Functions
-        function showProductModal(productId) {
-            // Load product data via AJAX
-            fetch('/admin/api/products/' + productId)
-                .then(response => response.json())
-                .then(data => {
-                    // Populate modal with product data
-                    document.getElementById('productName').textContent = data.name;
-                    document.getElementById('productSku').textContent = 'SKU: ' + data.sku;
-                    document.getElementById('productPrice').textContent = formatCurrency(data.price);
-                    document.getElementById('productCategory').textContent = data.categoryName;
-                    document.getElementById('productBrand').textContent = data.brandName;
-                    document.getElementById('productStock').textContent = data.stockQuantity;
-                    document.getElementById('productViewCount').textContent = data.viewCount;
-                    document.getElementById('productSoldQuantity').textContent = data.soldQuantity;
-                    document.getElementById('productCreatedAt').textContent = formatDate(data.createdAt);
-
-                    // Set edit button href
-                    document.getElementById('editProductBtn').href = '/admin/products/' + productId + '/edit';
-
-                    // Show modal
-                    new bootstrap.Modal(document.getElementById('productModal')).show();
-                })
-                .catch(error => {
-                    console.error('Error loading product:', error);
-                    alert('Không thể tải thông tin sản phẩm');
-                });
-        }
-
-        function showQuickEditModal(productId) {
-            // Load product data for quick edit
-            fetch('/admin/api/products/' + productId)
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('quickEditProductId').value = data.id;
-                    document.getElementById('quickEditName').value = data.name;
-                    document.getElementById('quickEditPrice').value = data.price;
-                    document.getElementById('quickEditStock').value = data.stockQuantity;
-                    document.getElementById('quickEditStatus').value = data.status;
-
-                    // Show modal
-                    new bootstrap.Modal(document.getElementById('quickEditModal')).show();
-                })
-                .catch(error => {
-                    console.error('Error loading product:', error);
-                    alert('Không thể tải thông tin sản phẩm');
-                });
-        }
-
-        // Save quick edit
-        document.getElementById('saveQuickEditBtn').addEventListener('click', function () {
-            const formData = new FormData(document.getElementById('quickEditForm'));
-            const productId = formData.get('id');
-
-            fetch('/admin/api/products/' + productId + '/quick-edit', {
-                method: 'PUT',
-                body: formData
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Close modal and reload page
-                        bootstrap.Modal.getInstance(document.getElementById('quickEditModal')).hide();
-                        location.reload();
-                    } else {
-                        alert('Có lỗi xảy ra: ' + data.message);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error updating product:', error);
-                    alert('Không thể cập nhật sản phẩm');
-                });
-        });
-
-        // Utility functions
-        function formatCurrency(amount) {
-            return new Intl.NumberFormat('vi-VN', {
-                style: 'currency',
-                currency: 'VND'
-            }).format(amount);
-        }
-
-        function formatDate(dateString) {
-            return new Date(dateString).toLocaleDateString('vi-VN');
-        }
-    </script>
+    <!-- Include JavaScript file -->
+    <script src="/admin/js/admin/products/product-modal.js"></script>
 </body>
 
 </html>

@@ -6,11 +6,12 @@ import lombok.experimental.FieldDefaults;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
+
+import jakarta.transaction.Transactional;
 import vn.liora.dto.request.UserCreationRequest;
 import vn.liora.dto.request.UserUpdateRequest;
 import vn.liora.dto.response.UserResponse;
@@ -23,6 +24,7 @@ import vn.liora.repository.RoleRepository;
 import vn.liora.repository.UserRepository;
 import vn.liora.service.IUserService;
 
+import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.List;
@@ -39,17 +41,20 @@ public class UserServiceImpl implements IUserService {
     PasswordEncoder passwordEncoder;
 
     @Override
+    @Transactional
     public void deleteAll() {
         userRepository.deleteAll();
     }
 
     @Override
+    @Transactional
     public void delete(User user) {
         userRepository.delete(user);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    // @PreAuthorize("hasRole('ADMIN')")
     @Override
+    @Transactional
     public void deleteById(Long id) {
         userRepository.deleteById(id);
     }
@@ -60,32 +65,62 @@ public class UserServiceImpl implements IUserService {
     }
 
     @Override
+    @Transactional
     public UserResponse createUser(UserCreationRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new AppException(ErrorCode.USER_EXISTED);
         }
+        if (request.getEmail() != null && userRepository.existsByEmail(request.getEmail())) {
+            throw new AppException(ErrorCode.EMAIL_EXISTED);
+        }
         User user = userMapper.toUser(request);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
 
-        var defaultRole = roleRepository.findById(Role.USER.name())
+        // Defaults
+        if (user.getCreatedDate() == null) {
+            user.setCreatedDate(LocalDate.now());
+        }
+        if (user.getActive() == null) {
+            user.setActive(true);
+        }
+
+        // Set role based on request or default to USER
+        String roleName = request.getRole() != null ? request.getRole() : Role.USER.name();
+        var selectedRole = roleRepository.findById(roleName)
                 .orElseThrow(() -> new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION));
-        user.setRoles(Set.of(defaultRole));
+        user.setRoles(Set.of(selectedRole));
 
         return userMapper.toUserResponse(save(user));
     }
 
     @Override
+    @Transactional
     public UserResponse updateUser(Long userId, UserUpdateRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        // Preserve current password unless a new one is provided
+        String currentHashedPassword = user.getPassword();
+        // Preserve created date
+        LocalDate currentCreatedDate = user.getCreatedDate();
+
         userMapper.updateUser(user, request);
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-        var roles = roleRepository.findAllById(request.getRoles());
-        user.setRoles(new HashSet<>(roles));
+
+        if (StringUtils.hasText(request.getPassword())) {
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
+        } else {
+            // Keep previous password to avoid NULL updates
+            user.setPassword(currentHashedPassword);
+        }
+        // Always keep original created date
+        user.setCreatedDate(currentCreatedDate);
+        if (request.getRoles() != null) {
+            var roles = roleRepository.findAllById(request.getRoles());
+            user.setRoles(new HashSet<>(roles));
+        }
         return userMapper.toUserResponse(save(user));
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    // @PreAuthorize("hasRole('ADMIN')")
     @Override
     public UserResponse findById(Long id) {
         return userMapper.toUserResponse(userRepository.findById(id)
@@ -123,7 +158,7 @@ public class UserServiceImpl implements IUserService {
         return userRepository.findAll(pageable);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    // @PreAuthorize("hasRole('ADMIN')")
     @Override
     public List<UserResponse> findAll() {
         return userRepository.findAll().stream().map(userMapper::toUserResponse).toList();
@@ -131,17 +166,7 @@ public class UserServiceImpl implements IUserService {
 
     @Override
     public <S extends User> S save(S entity) {
-        if (entity.getUserId() == null) {
-            return userRepository.save(entity);
-        } else {
-            Optional<User> opt = findByIdOptional(entity.getUserId());
-            if (opt.isPresent()) {
-                if (StringUtils.hasText(entity.getAvatar()))
-                    entity.setAvatar(opt.get().getAvatar());
-            } else
-                entity.setAvatar(entity.getAvatar());
-            return userRepository.save(entity);
-        }
+        return userRepository.save(entity);
     }
 
     @Override

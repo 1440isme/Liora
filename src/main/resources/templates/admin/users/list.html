@@ -32,8 +32,7 @@
                                             <div class="text-xs fw-bold text-primary text-uppercase mb-1">
                                                 Tổng người dùng
                                             </div>
-                                            <div class="h5 mb-0 fw-bold" th:text="${totalUsers}">0
-                                            </div>
+                                            <div class="h5 mb-0 fw-bold" id="totalUsers">0</div>
                                         </div>
                                         <div class="col-auto">
                                             <i class="mdi mdi-account-group-outline mdi-36px text-muted"></i>
@@ -51,8 +50,7 @@
                                             <div class="text-xs fw-bold text-success text-uppercase mb-1">
                                                 Người dùng mới
                                             </div>
-                                            <div class="h5 mb-0 fw-bold" th:text="${newUsers}">0
-                                            </div>
+                                            <div class="h5 mb-0 fw-bold" id="newUsers">0</div>
                                         </div>
                                         <div class="col-auto">
                                             <i class="mdi mdi-account-plus-outline mdi-36px text-muted"></i>
@@ -70,8 +68,7 @@
                                             <div class="text-xs fw-bold text-warning text-uppercase mb-1">
                                                 Người dùng hoạt động
                                             </div>
-                                            <div class="h5 mb-0 fw-bold" th:text="${activeUsers}">0
-                                            </div>
+                                            <div class="h5 mb-0 fw-bold" id="activeUsers">0</div>
                                         </div>
                                         <div class="col-auto">
                                             <i class="mdi mdi-account-check-outline mdi-36px text-muted"></i>
@@ -89,8 +86,7 @@
                                             <div class="text-xs fw-bold text-info text-uppercase mb-1">
                                                 Admin
                                             </div>
-                                            <div class="h5 mb-0 fw-bold" th:text="${adminUsers}">0
-                                            </div>
+                                            <div class="h5 mb-0 fw-bold" id="adminUsers">0</div>
                                         </div>
                                         <div class="col-auto">
                                             <i class="mdi mdi-shield-account-outline mdi-36px text-muted"></i>
@@ -148,8 +144,8 @@
                                             th:value="${param.dateTo}">
                                     </div>
                                     <div class="col-md-1 d-flex align-items-end">
-                                        <button type="submit" class="btn btn-primary text-white"><i
-                                                class="mdi mdi-magnify"></i></button>
+                                        <button type="button" class="btn btn-outline-secondary" id="clearFilters"><i
+                                                class="mdi mdi-filter-remove"></i> Xóa bộ lọc</button>
                                     </div>
                                 </div>
                             </form>
@@ -164,83 +160,22 @@
                                 <table class="table table-bordered" id="usersTable" width="100%" cellspacing="0">
                                     <thead>
                                         <tr>
+                                            <th width="50">STT</th>
                                             <th>Avatar</th>
                                             <th>Thông tin</th>
                                             <th>Vai trò</th>
                                             <th>Trạng thái</th>
-                                            <th>Đăng ký</th>
-                                            <th>Hoạt động cuối</th>
+                                            <th>Ngày tạo</th>
                                             <th>Thao tác</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
-                                        <tr th:each="user : ${users}">
-                                            <td>
-                                                <img th:src="${user.avatarUrl != null ? user.avatarUrl : '/admin/images/users/placeholder.jpg'}"
-                                                    th:alt="${user.fullName}" class="img-thumbnail rounded-circle"
-                                                    width="50" height="50" style="object-fit: cover;">
-                                            </td>
-                                            <td>
-                                                <div>
-                                                    <div class="fw-bold" th:text="${user.fullName}">Nguyễn Văn A</div>
-                                                    <small class="text-muted"
-                                                        th:text="${user.email}">user@example.com</small>
-                                                    <div th:if="${user.phone != null}">
-                                                        <small class="text-muted"
-                                                            th:text="${user.phone}">0123456789</small>
-                                                    </div>
+                                    <tbody class="users-container">
+                                        <tr>
+                                            <td colspan="7" class="text-center py-5">
+                                                <div class="spinner-border text-primary" role="status">
+                                                    <span class="visually-hidden">Đang tải...</span>
                                                 </div>
-                                            </td>
-                                            <td>
-                                                <span class="badge"
-                                                    th:classappend="${user.role == 'ADMIN'} ? 'bg-danger' : 
-                                                                 (${user.role == 'MODERATOR'} ? 'bg-warning' : 'bg-primary')"
-                                                    th:text="${user.role == 'ADMIN'} ? 'Admin' : 
-                                                           (${user.role == 'MODERATOR'} ? 'Moderator' : 'User')">User</span>
-                                            </td>
-                                            <td>
-                                                <span class="badge"
-                                                    th:classappend="${user.status == 'ACTIVE'} ? 'bg-success' : 
-                                                                 (${user.status == 'INACTIVE'} ? 'bg-secondary' : 'bg-danger')"
-                                                    th:text="${user.status == 'ACTIVE'} ? 'Hoạt động' : 
-                                                           (${user.status == 'INACTIVE'} ? 'Không hoạt động' : 'Bị cấm')">Hoạt
-                                                    động</span>
-                                            </td>
-                                            <td>
-                                                <div th:text="${#temporals.format(user.createdAt, 'dd/MM/yyyy')}">
-                                                    15/12/2024
-                                                </div>
-                                                <small class="text-muted"
-                                                    th:text="${#temporals.format(user.createdAt, 'HH:mm')}">10:30</small>
-                                            </td>
-                                            <td>
-                                                <div th:if="${user.lastLoginAt != null}"
-                                                    th:text="${#temporals.format(user.lastLoginAt, 'dd/MM/yyyy HH:mm')}">
-                                                    16/12/2024 14:30</div>
-                                                <div th:if="${user.lastLoginAt == null}" class="text-muted">Chưa đăng
-                                                    nhập
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div class="btn-group" role="group">
-                                                    <a th:href="@{/admin/users/{id}(id=${user.id})}"
-                                                        class="btn btn-sm btn-outline-info" title="Xem chi tiết"><i
-                                                            class="mdi mdi-eye-outline"></i></a>
-                                                    <a th:href="@{/admin/users/{id}/edit(id=${user.id})}"
-                                                        class="btn btn-sm btn-outline-warning" title="Chỉnh sửa"><i
-                                                            class="mdi mdi-pencil-outline"></i></a>
-                                                    <button type="button" class="btn btn-sm btn-outline-danger"
-                                                        th:onclick="'deleteUser(' + ${user.id} + ', \'' + ${user.fullName} + '\')'"
-                                                        title="Xóa"><i class="mdi mdi-delete-outline"></i></button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        <tr th:if="${#lists.isEmpty(users)}">
-                                            <td colspan="7" class="text-center text-muted py-4">
-                                                <i class="mdi mdi-account-group-outline mdi-48px mb-3"></i>
-                                                <p>Không có người dùng nào</p>
-                                                <a href="/admin/users/add" class="btn btn-primary text-white">Thêm người
-                                                    dùng đầu tiên</a>
+                                                <p class="mt-3 text-muted">Đang tải danh sách người dùng...</p>
                                             </td>
                                         </tr>
                                     </tbody>
@@ -288,63 +223,45 @@
                 <div th:replace="admin/layout/admin-footer"></div>
             </div>
         </div>
+    </div>
 
-        <!-- Delete Confirmation Modal -->
-        <div class="modal fade" id="deleteModal" tabindex="-1">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Xác nhận xóa người dùng</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Xác nhận xóa người dùng</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Bạn có chắc chắn muốn xóa người dùng <strong id="deleteUserName">Tên người dùng</strong>?</p>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Cảnh báo:</strong> Hành động này sẽ xóa vĩnh viễn tài khoản và tất cả dữ liệu liên quan.
                     </div>
-                    <div class="modal-body">
-                        <p>Bạn có chắc chắn muốn xóa người dùng <strong id="deleteUserName">Tên người dùng</strong>?</p>
-                        <div class="alert alert-warning">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            <strong>Cảnh báo:</strong> Hành động này sẽ xóa vĩnh viễn tài khoản và tất cả dữ liệu liên
-                            quan.
-                        </div>
-                        <p class="text-danger">Hành động này không thể hoàn tác!</p>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy bỏ</button>
-                        <form id="deleteForm" method="post" class="d-inline">
-                            <input type="hidden" name="_method" value="DELETE">
-                            <button type="submit" class="btn btn-danger">Xóa người dùng</button>
-                        </form>
-                    </div>
+                    <p class="text-danger">Hành động này không thể hoàn tác!</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy bỏ</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteUser">Xóa người dùng</button>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Scripts -->
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-        <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-        <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-        <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-        <script src="/admin/js/admin/users.js"></script>
+    <!-- Scripts -->
+    <div th:replace="~{admin/fragments/admin-scripts :: admin-scripts}"></div>
 
-        <script>
-            function deleteUser(userId, userName) {
-                document.getElementById('deleteUserName').textContent = userName;
-                document.getElementById('deleteForm').action = '/admin/users/' + userId;
-                new bootstrap.Modal(document.getElementById('deleteModal')).show();
-            }
+    <script src="/admin/js/admin/users.js"></script>
 
-            // Initialize DataTable
-            $(document).ready(function () {
-                $('#usersTable').DataTable({
-                    "language": {
-                        "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/vi.json"
-                    },
-                    "pageLength": 25,
-                    "order": [[4, "desc"]], // Sort by created date
-                    "columnDefs": [
-                        { "orderable": false, "targets": [0, 6] } // Disable sorting for avatar and actions columns
-                    ]
-                });
-            });
-        </script>
+    <script>
+        let deleteUserId = null;
+        function deleteUser(userId, userName) {
+            deleteUserId = userId;
+            document.getElementById('deleteUserName').textContent = userName;
+            new bootstrap.Modal(document.getElementById('deleteModal')).show();
+        }
+    </script>
 </body>
 
 </html>

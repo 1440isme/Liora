@@ -30379,4 +30379,40 @@ dl li {
   background-color: darkgrey;
   outline: 1px solid slategrey;
 }
+
+/* ===== AUTO-RESIZE TEXTAREA ===== */
+.auto-resize {
+  resize: none;
+  overflow: hidden;
+  min-height: 100px;
+  max-height: 300px;
+  transition: height 0.2s ease;
+}
+
+.auto-resize:focus {
+  outline: none;
+  border-color: #80bdff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* ===== OPTIMIZED TABLE HOVER ===== */
+.categories-page .table tbody tr {
+  will-change: background-color;
+  transition: background-color 0.15s ease;
+  transform: translateZ(0); /* Force hardware acceleration */
+}
+
+.categories-page .table tbody tr:hover {
+  background-color: #f8f9fa !important;
+  transform: translateZ(0);
+}
+
+/* Optimize table performance */
+.categories-page .table {
+  contain: layout style paint;
+}
+
+.categories-page .table tbody tr {
+  contain: layout style;
+}
 /*# sourceMappingURL=maps/style.css.map */

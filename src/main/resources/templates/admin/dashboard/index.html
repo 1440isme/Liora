@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 
-<head th:replace="admin/fragments/admin-head :: admin-head('Dashboard - Liora Admin')"></head>
+<head th:replace="~{admin/fragments/admin-head :: admin-head('Dashboard - Liora Admin')}"></head>
 
 <body class="with-welcome-text">
     <div class="container-scroller">
         <div class="container-fluid page-body-wrapper">
-            <div th:replace="admin/layout/admin-navbar"></div>
-            <div th:replace="admin/layout/admin-sidebar"></div>
+            <div th:replace="~{admin/layout/admin-navbar}"></div>
+            <div th:replace="~{admin/layout/admin-sidebar}"></div>
 
             <div class="main-panel">
                 <div class="content-wrapper">
@@ -26,7 +26,7 @@
                                 <div class="tab-content tab-content-basic">
                                     <div class="tab-pane fade show active" id="overview" role="tabpanel"
                                         aria-labelledby="overview">
-                                        <div th:replace="admin/dashboard/components/statistics-cards"></div>
+                                        <div th:replace="~{admin/dashboard/components/statistics-cards}"></div>
                                         <div class="row">
                                             <div class="col-xl-8 col-lg-7">
                                                 <div class="card card-rounded">
@@ -49,10 +49,10 @@
                                         </div>
                                         <div class="row">
                                             <div class="col-lg-6 mb-4">
-                                                <div th:replace="admin/dashboard/components/recent-orders"></div>
+                                                <div th:replace="~{admin/dashboard/components/recent-orders}"></div>
                                             </div>
                                             <div class="col-lg-6 mb-4">
-                                                <div th:replace="admin/dashboard/components/top-products"></div>
+                                                <div th:replace="~{admin/dashboard/components/top-products}"></div>
                                             </div>
                                         </div>
                                     </div>
@@ -61,13 +61,14 @@
                         </div>
                     </div>
                 </div>
-                <div th:replace="admin/layout/admin-footer"></div>
+                <div th:replace="~{admin/layout/admin-footer}"></div>
             </div>
         </div>
     </div>
 
-    <div th:replace="admin/fragments/admin-scripts :: admin-scripts"></div>
+    <div th:replace="~{admin/fragments/admin-scripts :: admin-scripts}"></div>
     <script src="/admin/js/admin/admin-dashboard.js"></script>
+
 </body>
 
 </html>

@@ -13,6 +13,6 @@ import lombok.NoArgsConstructor;
 public class BrandUpdateRequest {
     @Size(max = 255, message = "VALIDATION_NAME_TOO_LONG")
     private String name;
-
+    private String logoUrl;
     private Boolean isActive;
 }

@@ -23,6 +23,9 @@ public class Brand {
     @Column(name = "Name", nullable = false, columnDefinition = "NVARCHAR(255)")
     private String name;
 
+    @Column(name = "LogoUrl", columnDefinition = "NVARCHAR(500)")
+    private String logoUrl;
+
     @Column(name = "IsActive")
     private Boolean isActive = true;
 
