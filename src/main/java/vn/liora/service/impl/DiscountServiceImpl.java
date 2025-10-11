@@ -228,16 +228,21 @@ public class DiscountServiceImpl implements IDiscountService {
     public BigDecimal calculateDiscountAmount(Long discountId, BigDecimal orderTotal) {
         Discount discount = discountRepository.findById(discountId)
                 .orElseThrow(() -> new AppException(ErrorCode.DISCOUNT_NOT_FOUND));
-        
+
+        // ✅ THÊM: Check if discount is active
+        if (!isDiscountActive(discountId)) {
+            throw new AppException(ErrorCode.DISCOUNT_CANNOT_BE_APPLIED);
+        }
+
         if (orderTotal == null || orderTotal.compareTo(BigDecimal.ZERO) <= 0) {
             return BigDecimal.ZERO;
         }
-        
+
         // Check minimum order value
         if (discount.getMinOrderValue() != null && orderTotal.compareTo(discount.getMinOrderValue()) < 0) {
             return BigDecimal.ZERO;
         }
-        
+
         // Calculate discount based on type
         BigDecimal discountAmount = orderTotal.multiply(discount.getDiscountValue()).divide(new BigDecimal("100"));
 

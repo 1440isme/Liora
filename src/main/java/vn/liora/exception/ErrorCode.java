@@ -79,14 +79,14 @@ public enum ErrorCode {
     NO_SELECTED_PRODUCT(400, "No selected product", HttpStatus.BAD_REQUEST),
     CANNOT_REMOVE_DEFAULT_ADDRESS(400,  "Cannot remove default address", HttpStatus.BAD_REQUEST),
     // Khoi: 4000 - 4999 (Review & Discount)
-    REVIEW_NOT_FOUND(4000, "Review not found", HttpStatus.NOT_FOUND),
-    REVIEW_NOT_ALLOWED(4001, "User is not allowed to review this product", HttpStatus.BAD_REQUEST),
-    REVIEW_ALREADY_EXISTS(4002, "Review already exists for this order product", HttpStatus.BAD_REQUEST),
-    DISCOUNT_NOT_FOUND(4003, "Discount not found", HttpStatus.NOT_FOUND),
-    DISCOUNT_NAME_ALREADY_EXISTS(4004, "Discount name already exists", HttpStatus.BAD_REQUEST),
-    INVALID_DATE_RANGE(4005, "Invalid date range", HttpStatus.BAD_REQUEST),
-    DISCOUNT_CANNOT_BE_APPLIED(4006, "Discount cannot be applied", HttpStatus.BAD_REQUEST),
-    VALIDATION_DISCOUNT_TYPE_TOO_LONG(4007, "Discount type must not exceed 50 characters", HttpStatus.BAD_REQUEST),
+    REVIEW_NOT_FOUND(400, "Review not found", HttpStatus.NOT_FOUND),
+    REVIEW_NOT_ALLOWED(401, "User is not allowed to review this product", HttpStatus.BAD_REQUEST),
+    REVIEW_ALREADY_EXISTS(402, "Review already exists for this order product", HttpStatus.BAD_REQUEST),
+    DISCOUNT_NOT_FOUND(403, "Discount not found", HttpStatus.NOT_FOUND),
+    DISCOUNT_NAME_ALREADY_EXISTS(404, "Discount name already exists", HttpStatus.BAD_REQUEST),
+    INVALID_DATE_RANGE(405, "Invalid date range", HttpStatus.BAD_REQUEST),
+    DISCOUNT_CANNOT_BE_APPLIED(406, "Discount cannot be applied", HttpStatus.BAD_REQUEST),
+    VALIDATION_DISCOUNT_TYPE_TOO_LONG(407, "Discount type must not exceed 50 characters", HttpStatus.BAD_REQUEST),
 
     ;
 
