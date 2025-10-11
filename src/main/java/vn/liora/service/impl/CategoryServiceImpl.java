@@ -29,20 +29,21 @@ public class CategoryServiceImpl implements ICategoryService {
     private ProductRepository productRepository;
     @Autowired
     private CategoryMapper categoryMapper;
+
     @Override
     public Category createCategory(CategoryCreationRequest request) {
         if (categoryRepository.existsByName(request.getName())) {
             throw new AppException(ErrorCode.CATEGORY_EXISTED);
         }
         Category category = categoryMapper.toCategory(request);
-        
+
         // Xử lý parentCategoryId
         if (request.getParentCategoryId() != null) {
             Category parentCategory = categoryRepository.findById(request.getParentCategoryId())
                     .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
             category.setParentCategory(parentCategory);
         }
-        
+
         return categoryRepository.save(category);
     }
 
@@ -72,11 +73,12 @@ public class CategoryServiceImpl implements ICategoryService {
             throw new AppException(ErrorCode.CATEGORY_CIRCULAR_REFERENCE);
         }
 
-        // 4. Kiểm tra circular reference - danh mục không thể là cha của danh mục cha của nó
+        // 4. Kiểm tra circular reference - danh mục không thể là cha của danh mục cha
+        // của nó
         if (request.getParentCategoryId() != null) {
             Category parentCategory = categoryRepository.findById(request.getParentCategoryId())
                     .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
-            
+
             // Kiểm tra nếu danh mục cha có parent là danh mục hiện tại (tạo vòng lặp)
             if (isCircularReference(category, parentCategory)) {
                 throw new AppException(ErrorCode.CATEGORY_CIRCULAR_REFERENCE);
@@ -85,7 +87,7 @@ public class CategoryServiceImpl implements ICategoryService {
 
         // 5. Cập nhật thông tin từ mapper
         categoryMapper.updateCategory(category, request);
-        
+
         // 6. Xử lý parentCategoryId - LOGIC ĐÃ SỬA
         if (request.getParentCategoryId() != null) {
             // Có parentCategoryId → gán parent
@@ -96,7 +98,7 @@ public class CategoryServiceImpl implements ICategoryService {
             // parentCategoryId = null → xóa parent (bất kể có name hay không)
             category.setParentCategory(null);
         }
-        
+
         // 7. Lưu vào database
         categoryRepository.save(category);
 
@@ -208,22 +210,19 @@ public class CategoryServiceImpl implements ICategoryService {
         System.out.println("=== DEBUG: findActiveCategories called ===");
         List<Category> allCategories = categoryRepository.findAll();
         System.out.println("Total categories: " + allCategories.size());
-        allCategories.forEach(cat -> 
-            System.out.println("Category: " + cat.getName() + " - isActive: " + cat.getIsActive())
-        );
-        
+        allCategories
+                .forEach(cat -> System.out.println("Category: " + cat.getName() + " - isActive: " + cat.getIsActive()));
+
         List<Category> activeCategories = categoryRepository.findByIsActiveTrue();
         System.out.println("Active categories: " + activeCategories.size());
-        activeCategories.forEach(cat -> 
-            System.out.println("Active Category: " + cat.getName())
-        );
-        
+        activeCategories.forEach(cat -> System.out.println("Active Category: " + cat.getName()));
+
         return activeCategories;
     }
 
     @Override
     public List<Category> findInactiveCategories() {
-        return  categoryRepository.findByIsActiveFalse();
+        return categoryRepository.findByIsActiveFalse();
     }
 
     @Override
@@ -243,10 +242,10 @@ public class CategoryServiceImpl implements ICategoryService {
 
         // Lưu thông tin parent trước khi deactivate (có thể sử dụng sau này)
         // Category parentCategory = category.getParentCategory();
-        
+
         category.setIsActive(false);
         categoryRepository.save(category);
-        
+
         // Cascade deactivate all children
         List<Category> children = categoryRepository.findChildCategories(id);
         for (Category child : children) {
@@ -265,7 +264,7 @@ public class CategoryServiceImpl implements ICategoryService {
     public void activateCategory(Long id) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
-        
+
         // Kiểm tra nếu có parent và parent bị deactivate thì không thể activate
         if (category.getParentCategory() != null && !category.getParentCategory().getIsActive()) {
             throw new AppException(ErrorCode.CATEGORY_PARENT_INACTIVE);
@@ -279,10 +278,10 @@ public class CategoryServiceImpl implements ICategoryService {
                 throw new AppException(ErrorCode.CATEGORY_PARENT_INACTIVE);
             }
         }
-        
+
         category.setIsActive(true);
         categoryRepository.save(category);
-        
+
         // Cascade activate all children
         List<Category> children = categoryRepository.findChildCategories(id);
         for (Category child : children) {
@@ -297,17 +296,41 @@ public class CategoryServiceImpl implements ICategoryService {
         }
     }
 
+    @Override
+    public List<CategoryResponse> getCategoryTree() {
+        List<Category> rootCategories = categoryRepository.findActiveRootCategories();
+        return rootCategories.stream()
+                .map(this::buildCategoryTree)
+                .toList();
+    }
+
+    private CategoryResponse buildCategoryTree(Category category) {
+        CategoryResponse response = categoryMapper.toCategoryResponse(category);
+
+        // Lấy danh mục con active
+        List<Category> children = categoryRepository.findActiveChildCategoriesByParentId(category.getCategoryId());
+        if (!children.isEmpty()) {
+            List<CategoryResponse> childResponses = children.stream()
+                    .map(this::buildCategoryTree)
+                    .toList();
+            response.setChildren(childResponses);
+        }
+
+        return response;
+    }
+
     // Thêm method mới để khôi phục parent category (có thể sử dụng sau này)
     // private void restoreParentCategory(Category category) {
-    //     if (category.getParentCategory() != null) {
-    //         // Kiểm tra parent category còn tồn tại không
-    //         Category parentCategory = categoryRepository.findById(category.getParentCategory().getCategoryId())
-    //                 .orElse(null);
-    //         if (parentCategory == null || !parentCategory.getIsActive()) {
-    //             // Nếu parent không tồn tại hoặc inactive, xóa parent
-    //             category.setParentCategory(null);
-    //             categoryRepository.save(category);
-    //         }
-    //     }
+    // if (category.getParentCategory() != null) {
+    // // Kiểm tra parent category còn tồn tại không
+    // Category parentCategory =
+    // categoryRepository.findById(category.getParentCategory().getCategoryId())
+    // .orElse(null);
+    // if (parentCategory == null || !parentCategory.getIsActive()) {
+    // // Nếu parent không tồn tại hoặc inactive, xóa parent
+    // category.setParentCategory(null);
+    // categoryRepository.save(category);
+    // }
+    // }
     // }
 }

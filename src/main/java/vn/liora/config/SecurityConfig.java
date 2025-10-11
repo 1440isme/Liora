@@ -56,24 +56,26 @@ public class SecurityConfig {
 
         @Bean
         public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
-        httpSecurity
-                .authorizeHttpRequests(auth -> auth
-                .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
-                .requestMatchers("/info").permitAll()
-                .anyRequest().permitAll())
-                .oauth2Login(oauth2 -> oauth2
-                        .loginPage("/login")
-                        .defaultSuccessUrl("/authenticate", true)
-                        .userInfoEndpoint(userInfo -> userInfo
-                        .userService(customOAuth2UserService)))
-                        .oauth2ResourceServer(oauth2 -> oauth2
-                        .bearerTokenResolver(bearerTokenResolver())
-                        .jwt(jwtConfigurer -> jwtConfigurer.decoder(customJwtDecoder)
-                        .jwtAuthenticationConverter(jwtAuthenticationConverter()))
-                        .authenticationEntryPoint(new JwtAuthenticationEntryPoint()));
+                httpSecurity
+                                .authorizeHttpRequests(auth -> auth
+                                                .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
+                                                .requestMatchers("/info").permitAll()
+                                                .requestMatchers("/users/myInfo").authenticated()
+                                                .anyRequest().permitAll())
+                                .oauth2Login(oauth2 -> oauth2
+                                                .loginPage("/login")
+                                                .defaultSuccessUrl("/authenticate", true)
+                                                .userInfoEndpoint(userInfo -> userInfo
+                                                                .userService(customOAuth2UserService)))
+                                .oauth2ResourceServer(oauth2 -> oauth2
+                                                .bearerTokenResolver(bearerTokenResolver())
+                                                .jwt(jwtConfigurer -> jwtConfigurer.decoder(customJwtDecoder)
+                                                                .jwtAuthenticationConverter(
+                                                                                jwtAuthenticationConverter()))
+                                                .authenticationEntryPoint(new JwtAuthenticationEntryPoint()));
 
-        httpSecurity.csrf(AbstractHttpConfigurer::disable);
-        return httpSecurity.build();
+                httpSecurity.csrf(AbstractHttpConfigurer::disable);
+                return httpSecurity.build();
         }
 
         @Bean
