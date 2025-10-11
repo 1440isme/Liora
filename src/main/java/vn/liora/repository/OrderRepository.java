@@ -21,9 +21,9 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     List<Order> findByPaymentStatus(Boolean paymentStatus);
 
-    List<Order> findByOrderStatus(Boolean orderStatus);
+    List<Order> findByOrderStatus(String orderStatus);
 
-    List<Order> findByUserAndOrderStatus(User user, Boolean orderStatus);
+    List<Order> findByUserAndOrderStatus(User user, String orderStatus);
 
     List<Order> findByOrderDateBetween(LocalDateTime start, LocalDateTime end);
 

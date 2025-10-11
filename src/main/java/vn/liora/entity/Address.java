@@ -19,7 +19,7 @@ public class Address {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "IdAddress")
     Long idAddress;
-    @Column(name = "Name", nullable = false)
+    @Column(name = "Name", nullable = false, columnDefinition = "NVARCHAR(255)")
     String name;
     @Column(name = "Phone", nullable = false)
     String phone;
@@ -31,12 +31,6 @@ public class Address {
     String province;
     @Column(name = "IsDefault")
     Boolean isDefault = false;
-
-    @Column(name = "IsActive")
-    Boolean isActive = true;
-
-
-
 
     @OneToMany(mappedBy = "address", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnore

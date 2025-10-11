@@ -101,54 +101,10 @@ public class AdminPageController {
         return "admin/orders/list";
     }
 
-    @GetMapping("/orders/{id}")
-    public String ordersDetail(@PathVariable("id") Long id, Model model) {
+    @GetMapping("/orders/detail/{id}")
+    public String ordersDetail(@PathVariable Long id, Model model) {
         addCurrentUserToModel(model);
+        model.addAttribute("orderId", id);
         return "admin/orders/detail";
-    }
-
-    // Users
-    @GetMapping("/users")
-    public String usersList(Model model) {
-        addCurrentUserToModel(model);
-        return "admin/users/list";
-    }
-
-    @GetMapping("/users/add")
-    public String usersAdd(Model model) {
-        addCurrentUserToModel(model);
-        return "admin/users/add";
-    }
-
-    @GetMapping("/users/{id}/edit")
-    public String usersEdit(@PathVariable("id") Long id, Model model) {
-        addCurrentUserToModel(model);
-        return "admin/users/edit";
-    }
-
-    // Permissions
-    @GetMapping("/permissions")
-    public String permissionsList(Model model) {
-        addCurrentUserToModel(model);
-        return "admin/permissions/list";
-    }
-
-    @GetMapping("/permissions/manage")
-    public String permissionsManage(Model model) {
-        addCurrentUserToModel(model);
-        return "admin/permissions/manage";
-    }
-
-    // Roles
-    @GetMapping("/roles")
-    public String rolesList(Model model) {
-        addCurrentUserToModel(model);
-        return "admin/roles/list";
-    }
-
-    @GetMapping("/roles/manage")
-    public String rolesManage(Model model) {
-        addCurrentUserToModel(model);
-        return "admin/roles/manage";
     }
 }

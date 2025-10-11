@@ -14,7 +14,6 @@ import lombok.experimental.FieldDefaults;
 public class OrderProductCreationRequest {
     @NotNull(message = "VALIDATION_REQUIRED_FIELD")
     Long idProduct;
-
     @NotNull(message = "VALIDATION_REQUIRED_FIELD")
     @Min(value = 1, message = "VALIDATION_QUANTITY_MIN_ONE")
     Integer quantity;

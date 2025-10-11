@@ -144,8 +144,8 @@
                                             th:value="${param.dateTo}">
                                     </div>
                                     <div class="col-md-1 d-flex align-items-end">
-                                        <button type="submit" class="btn btn-primary text-white"><i
-                                                class="mdi mdi-magnify"></i></button>
+                                        <button type="button" class="btn btn-outline-secondary" id="clearFilters"><i
+                                                class="mdi mdi-filter-remove"></i> Xóa bộ lọc</button>
                                     </div>
                                 </div>
                             </form>
@@ -160,6 +160,7 @@
                                 <table class="table table-bordered" id="usersTable" width="100%" cellspacing="0">
                                     <thead>
                                         <tr>
+                                            <th width="50">STT</th>
                                             <th>Avatar</th>
                                             <th>Thông tin</th>
                                             <th>Vai trò</th>
@@ -170,7 +171,7 @@
                                     </thead>
                                     <tbody class="users-container">
                                         <tr>
-                                            <td colspan="6" class="text-center py-5">
+                                            <td colspan="7" class="text-center py-5">
                                                 <div class="spinner-border text-primary" role="status">
                                                     <span class="visually-hidden">Đang tải...</span>
                                                 </div>

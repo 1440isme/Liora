@@ -33,4 +33,5 @@ public class UserCreationRequest {
     private String avatar;
     private Boolean active;
     private LocalDate createdDate;
+    private String role;
 }

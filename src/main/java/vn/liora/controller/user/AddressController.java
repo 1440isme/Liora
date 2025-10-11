@@ -41,14 +41,13 @@ public class AddressController {
 
     }
 
-
     /**
      * Cập nhật địa chỉ
      */
     @PutMapping("/{id}")
     public ResponseEntity<AddressResponse> updateAddress(
             @PathVariable("id") Long id,
-            @PathVariable("userId")  Long idUser,
+            @PathVariable("userId") Long idUser,
             @Valid @RequestBody AddressUpdateRequest request) {
         AddressResponse response = addressService.updateAddress(idUser, id, request);
         return ResponseEntity.ok(response);
@@ -58,21 +57,27 @@ public class AddressController {
      * Xoá (ẩn) địa chỉ
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteAddress(@PathVariable("userId") Long userId,@PathVariable("id") Long id) {
-        addressService.deleteAddress(userId,id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<Void> deleteAddress(@PathVariable("userId") Long userId, @PathVariable("id") Long id) {
+        try {
+            log.info("Attempting to delete address: userId={}, addressId={}", userId, id);
+            addressService.deleteAddress(userId, id);
+            log.info("Successfully deleted address: userId={}, addressId={}", userId, id);
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            log.error("Error deleting address: userId={}, addressId={}, error={}", userId, id, e.getMessage());
+            throw e;
+        }
     }
 
     /**
      * Lấy thông tin 1 địa chỉ theo ID
      */
     @GetMapping("/{id}")
-    public ResponseEntity<AddressResponse> getAddressById(@PathVariable("userId") Long userId,@PathVariable("id") Long id) {
-        AddressResponse response = addressService.getAddressById(userId,id);
+    public ResponseEntity<AddressResponse> getAddressById(@PathVariable("userId") Long userId,
+            @PathVariable("id") Long id) {
+        AddressResponse response = addressService.getAddressById(userId, id);
         return ResponseEntity.ok(response);
     }
-
-
 
     /**
      * Lấy địa chỉ mặc định của user

@@ -17,6 +17,4 @@ public class CartProductCreationRequest {
     Long idProduct;
     @Min(value = 1, message = "VALIDATION_QUANTITY_MIN_ONE")
     Integer quantity;
-
-
 }

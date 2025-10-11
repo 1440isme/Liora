@@ -30,6 +30,7 @@ public interface OrderProductMapper {
     @Mapping(target = "order", ignore = true)
     @Mapping(target = "product", ignore = true)
     @Mapping(target = "isReturned", source = "isReturned")
+    @Mapping(target = "isRefunded", source = "isRefunded")
 
     void updateOrderProduct( @MappingTarget OrderProduct orderProduct,OrderProductUpdateRequest request);
 }
