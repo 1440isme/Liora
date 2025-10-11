@@ -15,9 +15,32 @@ class OrderManager {
     }
 
     init() {
-        this.loadOrders();
+        this.setDefaultDateRange();
         this.bindEvents();
-        this.loadStatistics();
+        this.loadOrders();
+    }
+
+    setDefaultDateRange() {
+        const today = new Date();
+        const currentYear = today.getFullYear();
+        const currentMonth = today.getMonth(); // 0-based (0 = January)
+
+        // Đầu tháng hiện tại
+        const startOfMonth = new Date(currentYear, currentMonth, 1);
+        // Cuối tháng hiện tại
+        const endOfMonth = new Date(currentYear, currentMonth + 1, 0);
+
+        // Format thành YYYY-MM-DD cho input date
+        const formatDate = (date) => {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
+
+        // Set giá trị mặc định
+        $('#filterDateFrom').val(formatDate(startOfMonth));
+        $('#filterDateTo').val(formatDate(endOfMonth));
     }
 
     bindEvents() {
@@ -76,8 +99,15 @@ class OrderManager {
 
             this.orders = await response.json();
             this.filteredOrders = [...this.orders];
+
+            // Áp dụng filter theo thời gian mặc định ngay sau khi load
+            this.filterOrders();
+
             this.renderOrderTable();
             this.updatePagination();
+
+            // Load statistics sau khi đã có dữ liệu
+            this.loadStatistics();
 
         } catch (error) {
             console.error('Error loading orders:', error);
@@ -89,37 +119,92 @@ class OrderManager {
 
     async loadStatistics() {
         try {
-            // Load total orders count
-            const totalResponse = await fetch(this.baseUrl);
-            const allOrders = await totalResponse.json();
+            // Lấy thời gian filter hiện tại
+            const dateFrom = $('#filterDateFrom').val();
+            const dateTo = $('#filterDateTo').val();
 
-            // Load paid orders count
-            const paidResponse = await fetch(`${this.baseUrl}/payment-status?paymentStatus=true`);
-            const paidOrders = await paidResponse.json();
+            // Tạo query parameters cho API với thời gian filter
+            const queryParams = new URLSearchParams();
+            if (dateFrom) queryParams.append('dateFrom', dateFrom);
+            if (dateTo) queryParams.append('dateTo', dateTo);
 
-            // Load pending orders count
-            const pendingResponse = await fetch(`${this.baseUrl}/order-status?orderStatus=false`);
-            const pendingOrders = await pendingResponse.json();
+            // Load statistics với filter thời gian
+            const statsResponse = await fetch(`${this.baseUrl}/statistics?${queryParams.toString()}`);
 
-            // Load total revenue
-            const revenueResponse = await fetch(`${this.baseUrl}/revenue`);
-            const totalRevenue = await revenueResponse.json();
+            if (statsResponse.ok) {
+                const stats = await statsResponse.json();
+                this.updateStatistics(stats);
+            } else {
+                // Fallback: tính toán từ dữ liệu đã load và filter theo thời gian
+                this.calculateStatisticsFromFilteredData();
+            }
+
+        } catch (error) {
+            console.error('Error loading statistics:', error);
+            // Fallback: tính toán từ dữ liệu đã load
+            this.calculateStatisticsFromFilteredData();
+        }
+    }
+
+    calculateStatisticsFromFilteredData() {
+        try {
+            // Lấy thời gian filter hiện tại
+            const dateFrom = $('#filterDateFrom').val();
+            const dateTo = $('#filterDateTo').val();
+
+            // Filter orders theo thời gian
+            let filteredOrdersForStats = this.orders;
+
+            if (dateFrom || dateTo) {
+                filteredOrdersForStats = this.orders.filter(order => {
+                    const orderDate = new Date(order.orderDate);
+                    let matches = true;
+
+                    if (dateFrom) {
+                        const fromDate = new Date(dateFrom);
+                        matches = matches && (orderDate >= fromDate);
+                    }
+
+                    if (dateTo) {
+                        const toDate = new Date(dateTo);
+                        toDate.setHours(23, 59, 59, 999);
+                        matches = matches && (orderDate <= toDate);
+                    }
+
+                    return matches;
+                });
+            }
+
+            // Tính toán thống kê từ dữ liệu đã filter
+            const totalOrders = filteredOrdersForStats.length;
+            const cancelledOrders = filteredOrdersForStats.filter(order => order.orderStatus === 'CANCELLED').length;
+            const pendingOrders = filteredOrdersForStats.filter(order => order.orderStatus === 'PENDING').length;
+            const totalRevenue = filteredOrdersForStats
+                .filter(order => order.paymentStatus === true)
+                .reduce((sum, order) => sum + (order.total || 0), 0);
 
             this.updateStatistics({
-                total: allOrders.length,
-                paid: paidOrders.length,
-                pending: pendingOrders.length,
+                total: totalOrders,
+                cancelled: cancelledOrders,
+                pending: pendingOrders,
                 revenue: totalRevenue
             });
 
         } catch (error) {
-            console.error('Error loading statistics:', error);
+            console.error('Error calculating statistics:', error);
+            // Set default values nếu có lỗi
+            this.updateStatistics({
+                total: 0,
+                cancelled: 0,
+                pending: 0,
+                revenue: 0
+            });
         }
     }
 
     updateStatistics(stats) {
         $('#totalOrders').text(stats.total.toLocaleString());
-        $('#paidOrders').text(stats.paid.toLocaleString());
+        $('#paidOrders').text((stats.cancelled || 0).toLocaleString());
         $('#pendingOrders').text(stats.pending.toLocaleString());
         $('#totalRevenue').text(new Intl.NumberFormat('vi-VN', {
             style: 'currency',
@@ -487,6 +572,9 @@ class OrderManager {
         this.currentPage = 1;
         this.renderOrderTable();
         this.updatePagination();
+
+        // Cập nhật statistics theo filter hiện tại
+        this.calculateStatisticsFromFilteredData();
     }
 
     updatePagination() {
@@ -542,8 +630,9 @@ class OrderManager {
         $('#searchOrder').val('');
         $('#filterPaymentStatus').val('');
         $('#filterOrderStatus').val('');
-        $('#filterDateFrom').val('');
-        $('#filterDateTo').val('');
+
+        // Thiết lập lại thời gian mặc định thay vì xóa trống
+        this.setDefaultDateRange();
 
         await this.loadOrders();
         await this.loadStatistics();
