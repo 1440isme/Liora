@@ -38,11 +38,6 @@ public class OrderServiceImpl implements IOrderService {
     CartProductRepository cartProductRepository;
     OrderMapper orderMapper;
 
-    private void recalculateOrderTotal(Order order) {
-        // This method is not needed anymore since calculation is done in DiscountServiceImpl
-        // Keep it for potential future use but it's currently redundant
-    }
-
     @Override
     @Transactional
     public OrderResponse createOrder(Long userId,OrderCreationRequest request) {
