@@ -2,19 +2,24 @@ package vn.liora.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import vn.liora.dto.request.ApiResponse;
 import vn.liora.dto.request.ProductCreationRequest;
 import vn.liora.dto.request.ProductUpdateRequest;
 import vn.liora.dto.response.ProductResponse;
+import vn.liora.dto.response.ReviewResponse;
 import vn.liora.entity.Product;
 import vn.liora.mapper.ProductMapper;
+import vn.liora.service.IReviewService;
 import vn.liora.service.impl.ProductServiceImpl;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/products")
@@ -24,6 +29,9 @@ public class ProductController {
 
     @Autowired
     private ProductMapper productMapper;
+    
+    @Autowired
+    private IReviewService reviewService;
 
     // ========== BASIC CRUD ==========
     @PostMapping
@@ -381,6 +389,50 @@ public class ProductController {
     ApiResponse<Long> getProductsCountByCategory(@PathVariable Long categoryId) {
         ApiResponse<Long> apiResponse = new ApiResponse<>();
         apiResponse.setResult(productService.countByCategory(categoryId));
+        return apiResponse;
+    }
+
+    // ========== REVIEW ENDPOINTS ==========
+    
+    /**
+     * Lấy review của sản phẩm (chỉ review hiển thị)
+     * RESTful: /products/{productId}/reviews
+     */
+    @GetMapping("/{productId}/reviews")
+    ApiResponse<List<ReviewResponse>> getProductReviews(
+            @PathVariable Long productId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+        
+        Sort sort = sortDir.equalsIgnoreCase("desc") ? 
+            Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+        
+        Page<ReviewResponse> reviewPage = reviewService.findVisibleReviewsByProductId(productId, pageable);
+        
+        ApiResponse<List<ReviewResponse>> apiResponse = new ApiResponse<>();
+        apiResponse.setResult(reviewPage.getContent());
+        return apiResponse;
+    }
+    
+    /**
+     * Lấy thống kê review của sản phẩm
+     * RESTful: /products/{productId}/reviews/stats
+     */
+    @GetMapping("/{productId}/reviews/stats")
+    ApiResponse<Map<String, Object>> getProductReviewStats(@PathVariable Long productId) {
+        Double averageRating = reviewService.getAverageRatingByProductId(productId);
+        Long reviewCount = reviewService.getReviewCountByProductId(productId);
+        
+        Map<String, Object> stats = Map.of(
+            "averageRating", averageRating != null ? averageRating : 0.0,
+            "reviewCount", reviewCount != null ? reviewCount : 0L
+        );
+        
+        ApiResponse<Map<String, Object>> apiResponse = new ApiResponse<>();
+        apiResponse.setResult(stats);
         return apiResponse;
     }
 }

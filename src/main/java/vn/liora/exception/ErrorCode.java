@@ -82,11 +82,14 @@ public enum ErrorCode {
     REVIEW_NOT_FOUND(400, "Review not found", HttpStatus.NOT_FOUND),
     REVIEW_NOT_ALLOWED(401, "User is not allowed to review this product", HttpStatus.BAD_REQUEST),
     REVIEW_ALREADY_EXISTS(402, "Review already exists for this order product", HttpStatus.BAD_REQUEST),
-    DISCOUNT_NOT_FOUND(403, "Discount not found", HttpStatus.NOT_FOUND),
-    DISCOUNT_NAME_ALREADY_EXISTS(404, "Discount name already exists", HttpStatus.BAD_REQUEST),
-    INVALID_DATE_RANGE(405, "Invalid date range", HttpStatus.BAD_REQUEST),
-    DISCOUNT_CANNOT_BE_APPLIED(406, "Discount cannot be applied", HttpStatus.BAD_REQUEST),
-    VALIDATION_DISCOUNT_TYPE_TOO_LONG(407, "Discount type must not exceed 50 characters", HttpStatus.BAD_REQUEST),
+    REVIEW_ACCESS_DENIED(403, "Access denied to this review", HttpStatus.FORBIDDEN),
+    ORDER_NOT_PAID(404, "Order has not been paid yet", HttpStatus.BAD_REQUEST),
+    ORDER_INVALID(405, "Order is invalid or cancelled", HttpStatus.BAD_REQUEST),
+    DISCOUNT_NOT_FOUND(406, "Discount not found", HttpStatus.NOT_FOUND),
+    DISCOUNT_NAME_ALREADY_EXISTS(407, "Discount name already exists", HttpStatus.BAD_REQUEST),
+    INVALID_DATE_RANGE(408, "Invalid date range", HttpStatus.BAD_REQUEST),
+    DISCOUNT_CANNOT_BE_APPLIED(409, "Discount cannot be applied", HttpStatus.BAD_REQUEST),
+    VALIDATION_DISCOUNT_TYPE_TOO_LONG(410, "Discount type must not exceed 50 characters", HttpStatus.BAD_REQUEST),
 
     ;
 

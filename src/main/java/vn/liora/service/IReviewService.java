@@ -13,7 +13,7 @@ import java.util.Optional;
 public interface IReviewService {
     
     // ========== BASIC CRUD ==========
-    Review createReview(ReviewCreationRequest request);
+    ReviewResponse createReview(ReviewCreationRequest request, Long userId);
     ReviewResponse findById(Long id);
     ReviewResponse updateReview(Long id, ReviewUpdateRequest request);
     void deleteById(Long id);
@@ -22,35 +22,37 @@ public interface IReviewService {
     // ========== FIND ALL ==========
     List<Review> findAll();
     Page<Review> findAll(Pageable pageable);
-    Optional<Review> findByIdOptional(Long id);
+    List<ReviewResponse> findAllAsResponse();
+    Page<ReviewResponse> findAllAsResponse(Pageable pageable);
     
     // ========== BY PRODUCT ==========
-    List<Review> findByProductId(Long productId);
-    Page<Review> findByProductId(Long productId, Pageable pageable);
-    List<Review> findByProductIdAndRating(Long productId, Integer rating);
+    List<ReviewResponse> findVisibleReviewsByProductId(Long productId);
+    Page<ReviewResponse> findVisibleReviewsByProductId(Long productId, Pageable pageable);
     
     // ========== BY USER ==========
-    List<Review> findByUserId(Long userId);
-    Page<Review> findByUserId(Long userId, Pageable pageable);
+    List<ReviewResponse> findByUserId(Long userId);
+    Page<ReviewResponse> findByUserId(Long userId, Pageable pageable);
+    List<ReviewResponse> findVisibleReviewsByUserId(Long userId);
+    Page<ReviewResponse> findVisibleReviewsByUserId(Long userId, Pageable pageable);
     
-    // ========== BY ORDER PRODUCT (1-1) ==========
+    // ========== BY ORDER PRODUCT ==========
     Optional<Review> findByOrderProductId(Long orderProductId);
     boolean existsByOrderProductId(Long orderProductId);
-    
-    // ========== FILTERS ==========
-    List<Review> findByRating(Integer rating);
-    List<Review> findByRatingBetween(Integer minRating, Integer maxRating);
-    
-    // ========== COUNT QUERIES ==========
-    Long countByProductId(Long productId);
-    Long countByUserId(Long userId);
-    Long countByRating(Integer rating);
     
     // ========== STATISTICS ==========
     Double getAverageRatingByProductId(Long productId);
     Long getReviewCountByProductId(Long productId);
     
-    // ========== VALIDATION ==========
-    boolean canUserReviewProduct(Long userId, Long productId, Long orderProductId);
-    boolean hasUserPurchasedProduct(Long userId, Long productId);
+    // ========== ADMIN FUNCTIONS ==========
+    List<ReviewResponse> findAllReviewsForAdmin();
+    Page<ReviewResponse> findAllReviewsForAdmin(Pageable pageable);
+    List<ReviewResponse> searchReviewsByContent(String keyword);
+    Page<ReviewResponse> searchReviewsByContent(String keyword, Pageable pageable);
+    List<ReviewResponse> findReviewsByUserForAdmin(Long userId);
+    Page<ReviewResponse> findReviewsByUserForAdmin(Long userId, Pageable pageable);
+    List<ReviewResponse> findReviewsByProductForAdmin(Long productId);
+    Page<ReviewResponse> findReviewsByProductForAdmin(Long productId, Pageable pageable);
+    ReviewResponse toggleReviewVisibility(Long reviewId);
+    ReviewResponse hideReview(Long reviewId);
+    ReviewResponse showReview(Long reviewId);
 }

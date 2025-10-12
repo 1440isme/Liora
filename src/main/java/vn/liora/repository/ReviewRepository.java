@@ -24,25 +24,34 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     Optional<Review> findByOrderProduct_IdOrderProduct(Long idOrderProduct);
     boolean existsByOrderProduct_IdOrderProduct(Long idOrderProduct);
     
-    // ====== FILTERS ======
-    List<Review> findByRating(Integer rating);
-    List<Review> findByRatingBetween(Integer minRating, Integer maxRating);
-    List<Review> findByProductIdAndRating(Long productId, Integer rating);
-    
-    // ====== COUNT QUERIES ======
-    Long countByProductId(Long productId);
-    Long countByUserId(Long userId);
-    Long countByRating(Integer rating);
-    
     // ====== VISIBILITY FILTERS ======
     List<Review> findByProductIdAndIsVisibleTrue(Long productId);
     Page<Review> findByProductIdAndIsVisibleTrue(Long productId, Pageable pageable);
     long countByProductIdAndIsVisibleTrue(Long productId);
     
+    // User visibility filters
+    List<Review> findByUserIdAndIsVisibleTrue(Long userId);
+    Page<Review> findByUserIdAndIsVisibleTrue(Long userId, Pageable pageable);
+    
     // ====== CUSTOM QUERIES ======
-    @Query("SELECT AVG(r.rating) FROM Review r WHERE r.productId = :productId")
+    @Query("SELECT AVG(r.rating) FROM Review r WHERE r.productId = :productId AND r.isVisible = true")
     Double getAverageRatingByProductId(@Param("productId") Long productId);
     
-    @Query("SELECT COUNT(r) FROM Review r WHERE r.productId = :productId")
+    @Query("SELECT COUNT(r) FROM Review r WHERE r.productId = :productId AND r.isVisible = true")
     Long getReviewCountByProductId(@Param("productId") Long productId);
+    
+    // ====== ADMIN QUERIES ======
+    // Tìm tất cả review (bao gồm cả ẩn) - không có ORDER BY để tránh conflict
+    List<Review> findAll();
+    Page<Review> findAll(Pageable pageable);
+    
+    // Tìm review theo nội dung (search) - không có ORDER BY để tránh conflict
+    @Query("SELECT r FROM Review r WHERE LOWER(r.content) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+    List<Review> findByContentContainingIgnoreCase(@Param("keyword") String keyword);
+    
+    @Query("SELECT r FROM Review r WHERE LOWER(r.content) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+    Page<Review> findByContentContainingIgnoreCase(@Param("keyword") String keyword, Pageable pageable);
+    
+    // Note: findByUserId và findByProductId đã được khai báo ở trên (dòng 18-21)
+    // Admin có thể sử dụng các method đó để xem tất cả review (bao gồm cả ẩn)
 }
