@@ -270,15 +270,8 @@ class OrderDetailManager {
                     </td>
                     <td>
                         <h6 class="mb-1">${item.productName || `Sản phẩm #${item.idProduct}`}</h6>
-                        <small class="text-muted">
-                            ${item.brandName ? `${item.brandName}` : ''}
-                            ${item.brandName && item.categoryName ? ' • ' : ''}
-                            ${item.categoryName ? `${item.categoryName}` : ''}
-                        </small>
-                        <br>
-                        <small class="text-muted">ID: ${item.idOrderProduct}</small>
                     </td>
-                    <td class="fw-medium text-end">
+                    <td class="text-center">
                         ${item.productPrice ? 
                             new Intl.NumberFormat('vi-VN', {
                                 style: 'currency',
@@ -317,23 +310,23 @@ class OrderDetailManager {
 
     updateTimeline() {
         const order = this.orderData;
-        
+
         // Reset timeline
         $('.timeline-item').removeClass('active');
-        
+
         // Always show ordered
         $('#timelineOrdered').addClass('active');
         $('#timelineOrderedDate').text(this.formatDate(order.orderDate));
-        
+
         // Update based on order status
         if (order.orderStatus) {
             $('#timelineConfirmed').addClass('active');
             $('#timelineConfirmedDate').text('Đã xác nhận');
-            
+
             if (order.paymentStatus) {
                 $('#timelinePaid').addClass('active');
                 $('#timelinePaidDate').text('Đã thanh toán');
-                
+
                 // If both confirmed and paid, assume shipped
                 $('#timelineShipped').addClass('active');
                 $('#timelineShippedDate').text('Đã giao hàng');
@@ -344,19 +337,35 @@ class OrderDetailManager {
     showUpdateStatusModal() {
         if (!this.orderData) return;
         
-        $('#updateOrderId').val(this.orderData.idOrder); // Sử dụng idOrder
-        $('#updatePaymentStatus').val(this.orderData.paymentStatus ? 'true' : 'false');
-        $('#updateOrderStatus').val(this.orderData.orderStatus ? 'true' : 'false');
-        $('#updateNotes').val('');
-        
+        $('#updateOrderId').val(this.orderData.idOrder);
+
+        // Map trạng thái hiện tại sang format chuẩn
+        const currentStatus = this.mapOrderStatusToStandard(this.orderData.orderStatus);
+        $('#updateOrderStatus').val(currentStatus);
+
         $('#updateStatusModal').modal('show');
     }
 
-    async saveOrderStatusDetail() {
+    // Map trạng thái từ backend sang format chuẩn
+    mapOrderStatusToStandard(status) {
+        if (typeof status === 'boolean') {
+            return status ? 'COMPLETED' : 'PENDING';
+        }
+
+        if (typeof status === 'string') {
+            const upperStatus = status.toUpperCase();
+            if (['PENDING', 'COMPLETED', 'CANCELLED'].includes(upperStatus)) {
+                return upperStatus;
+            }
+        }
+
+        return 'PENDING'; // Default
+    }
+
+    async saveOrderStatus() {
         try {
             const orderId = $('#updateOrderId').val();
-            const paymentStatus = $('#updatePaymentStatus').val() === 'true';
-            const orderStatus = $('#updateOrderStatus').val() === 'true';
+            const orderStatus = $('#updateOrderStatus').val();
 
             const response = await fetch(`${this.baseUrl}/${orderId}`, {
                 method: 'PUT',
@@ -364,7 +373,6 @@ class OrderDetailManager {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    paymentStatus: paymentStatus,
                     orderStatus: orderStatus
                 })
             });
@@ -466,16 +474,28 @@ class OrderDetailManager {
         return status ? 'bg-success' : 'bg-warning';
     }
 
-    getPaymentStatusText(status) {
-        return status ? 'Đã thanh toán' : 'Chưa thanh toán';
-    }
 
-    getOrderStatusClass(status) {
-        return status ? 'bg-primary' : 'bg-secondary';
-    }
 
+    // Map text trạng thái để hiển thị
     getOrderStatusText(status) {
-        return status ? 'Đã xử lý' : 'Chờ xử lý';
+        const mappedStatus = this.mapOrderStatusToStandard(status);
+        switch (mappedStatus) {
+            case 'PENDING': return 'Chờ xử lý';
+            case 'COMPLETED': return 'Hoàn tất';
+            case 'CANCELLED': return 'Đã hủy';
+            default: return 'Chờ xử lý';
+        }
+    }
+
+    // Map class cho badge trạng thái
+    getOrderStatusClass(status) {
+        const mappedStatus = this.mapOrderStatusToStandard(status);
+        switch (mappedStatus) {
+            case 'PENDING': return 'bg-warning';
+            case 'COMPLETED': return 'bg-success';
+            case 'CANCELLED': return 'bg-danger';
+            default: return 'bg-secondary';
+        }
     }
 
     showLoading() {
@@ -519,7 +539,9 @@ $(document).ready(function() {
     window.orderDetailManager = new OrderDetailManager();
 });
 
-// Save order status function for modal
-function saveOrderStatusDetail() {
-    orderDetailManager.saveOrderStatusDetail();
+// Save order status function for modal - giống như trang quản lý đơn hàng
+function saveOrderStatus() {
+    if (window.orderDetailManager) {
+        window.orderDetailManager.saveOrderStatus();
+    }
 }

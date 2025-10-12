@@ -46,7 +46,7 @@
                             <div class="card card-rounded mb-4">
                                 <div class="card-body">
                                     <h4 class="card-title card-title-dash mb-4">
-                                        <i class="mdi mdi-account-outline me-2"></i>Thông tin khách hàng
+                                        <i class="mdi mdi-account-outline me-2"></i>Thông tin giao hàng
                                     </h4>
                                     <div class="row">
                                         <div class="col-md-12">
@@ -87,9 +87,9 @@
                                                 <tr>
                                                     <th scope="col" width="10%">Hình ảnh</th>
                                                     <th scope="col" width="35%">Tên sản phẩm</th>
-                                                    <th scope="col" width="20%" class="text-end">Đơn giá</th>
+                                                    <th scope="col" width="20%" class="text-center">Đơn giá</th>
                                                     <th scope="col" width="15%" class="text-center">Số lượng</th>
-                                                    <th scope="col" width="20%" class="text-end">Thành tiền</th>
+                                                    <th scope="col" width="20%" class="text-center">Thành tiền</th>
                                                 </tr>
                                             </thead>
                                             <tbody id="orderItemsTable">
@@ -194,26 +194,22 @@
                     <form id="updateStatusForm">
                         <input type="hidden" id="updateOrderId" />
 
-
-
                         <div class="mb-3">
                             <label for="updateOrderStatus" class="form-label">Trạng thái đơn hàng</label>
                             <select class="form-select" id="updateOrderStatus" required>
                                 <option value="PENDING">Chờ xử lý</option>
+                                <option value="COMPLETED">Hoàn tất</option>
                                 <option value="CANCELLED">Đã hủy</option>
-                                <option value="COMPLETED">Đã Hoàn tất </option>
                             </select>
                         </div>
-
-
                     </form>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                         <i class="mdi mdi-close me-1"></i>Hủy
                     </button>
-                    <button type="button" class="btn btn-primary" onclick="saveOrderStatusDetail()">
-                        <i class="mdi mdi-check me-1"></i>Lưu thay đổi
+                    <button type="button" class="btn btn-primary" onclick="saveOrderStatus()">
+                        <i class="mdi mdi-content-save me-2"></i>Lưu thay đổi
                     </button>
                 </div>
             </div>

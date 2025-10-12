@@ -595,7 +595,7 @@ class OrderManager {
             case 'CANCELLED':
                 return 'Đã hủy';
             case 'COMPLETED':
-                return 'Hoàn thành';
+                return 'Hoàn tất';
             default:
                 return 'Không xác định';
         }
