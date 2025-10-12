@@ -290,7 +290,7 @@ public class DiscountServiceImpl implements IDiscountService {
         Discount discount = discountRepository.findById(request.getDiscountId())
                 .orElseThrow(() -> new AppException(ErrorCode.DISCOUNT_NOT_FOUND));
 
-        BigDecimal subTotal = order.getTotal().add(order.getTotalDiscount()).subtract(order.getShippingFee());
+        BigDecimal subTotal = order.getTotal().add(order.getTotalDiscount());
         
         // Check if discount can be applied
         if (!canApplyDiscount(request.getDiscountId(), order.getUser().getUserId(), subTotal)) {
@@ -302,7 +302,7 @@ public class DiscountServiceImpl implements IDiscountService {
         order.setDiscount(discount);
         order.setTotalDiscount(discountAmount);
 
-        BigDecimal newTotal = subTotal.add(order.getShippingFee()).subtract(discountAmount);
+        BigDecimal newTotal = subTotal.subtract(discountAmount);
         order.setTotal(newTotal);
 
         orderRepository.save(order);
@@ -321,13 +321,13 @@ public class DiscountServiceImpl implements IDiscountService {
                 .orElseThrow(() -> new AppException(ErrorCode.DISCOUNT_NOT_FOUND));
         
         // Remove discount from order
-        BigDecimal subTotal = order.getTotal().add(order.getTotalDiscount()).subtract(order.getShippingFee());
+        BigDecimal subTotal = order.getTotal().add(order.getTotalDiscount());
 
         // Remove discount from order and update totals
         order.setDiscount(null);
         order.setTotalDiscount(BigDecimal.ZERO);
 
-        BigDecimal newTotal = subTotal.add(order.getShippingFee());
+        BigDecimal newTotal = subTotal;
         order.setTotal(newTotal);
         
         orderRepository.save(order);

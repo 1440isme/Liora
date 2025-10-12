@@ -60,9 +60,7 @@ public class OrderServiceImpl implements IOrderService {
             order.setAddress(address);
             order.setUser(user);
             order.setOrderDate(LocalDateTime.now());
-            order.setOrderStatus(true);
-            order.setPaymentStatus(true);
-            order.setShippingFee(new BigDecimal("18000"));
+            order.setOrderStatus("Pending");
             order.setTotalDiscount(new BigDecimal("10000"));
             order.setTotal(new BigDecimal("0"));
              final Order savedOrder = orderRepository.save(order);
