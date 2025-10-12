@@ -38,7 +38,7 @@ public class SecurityConfig {
                         "/admin/api/upload/**", "/uploads/**",
                         // admin pages - CHỈ CHO PHÉP TRUY CẬP TRANG ADMIN, KHÔNG BAO GỒM STATIC
                         "/admin", "/admin/dashboard", "/admin/brands/**", "/admin/categories/**", "/admin/products/**",
-                        "/admin/orders/**", "/admin/users/**",
+                        "/admin/orders/**", "/admin/users/**", "/admin/discounts/**", "/admin/reviews/**",
                         // API endpoints - CHO PHÉP TRUY CẬP KHÔNG CẦN XÁC THỰC
                         "/admin/api/**",
                         "/oauth2/**", "/login/oauth2/**", "/authenticate", "/auth/google/**"
