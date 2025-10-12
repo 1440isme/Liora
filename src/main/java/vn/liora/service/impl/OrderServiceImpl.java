@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.liora.dto.request.OrderCreationRequest;
 import vn.liora.dto.request.OrderUpdateRequest;
+import vn.liora.dto.response.OrderProductResponse;
 import vn.liora.dto.response.OrderResponse;
 import vn.liora.entity.*;
 import vn.liora.exception.AppException;
@@ -16,6 +17,7 @@ import vn.liora.exception.ErrorCode;
 import vn.liora.mapper.OrderMapper;
 import vn.liora.mapper.OrderProductMapper;
 import vn.liora.repository.*;
+import vn.liora.service.IImageService;
 import vn.liora.service.IOrderService;
 
 import java.math.BigDecimal;
@@ -37,52 +39,48 @@ public class OrderServiceImpl implements IOrderService {
     OrderProductMapper orderProductMapper;
     CartProductRepository cartProductRepository;
     OrderMapper orderMapper;
+    IImageService imageService;
 
     @Override
     @Transactional
+    public OrderResponse createOrder(Long idCart, OrderCreationRequest request) {
+        Cart cart = cartRepository.findById(idCart)
+            .orElseThrow(() -> new AppException(ErrorCode.CART_NOT_FOUND));
+        User user = cart.getUser();
+        List<CartProduct> selected = cartProductRepository.findByCartAndChooseTrue(cart);
+        if (selected.isEmpty())
+            throw new AppException(ErrorCode.NO_SELECTED_PRODUCT);
 
-    public OrderResponse createOrder(Long userId,OrderCreationRequest request) {
+        Order order = orderMapper.toOrder(request);
+        Address address = addressRepository.findById(request.getIdAddress())
+                .orElseThrow(() -> new AppException(ErrorCode.ADDRESS_NOT_FOUND));
+        order.setAddress(address);
+        order.setUser(user);
+        order.setOrderDate(LocalDateTime.now());
+        order.setOrderStatus("Pending");
+        order.setTotalDiscount(new BigDecimal("10000"));
+        order.setTotal(new BigDecimal("0"));
+         final Order savedOrder = orderRepository.save(order);
 
-            User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
-            Cart cart = cartRepository.findByUser(user)
-                    .orElseThrow(() -> new AppException(ErrorCode.CART_NOT_FOUND));
-            List<CartProduct> selected = cartProductRepository.findByCartAndChooseTrue(cart);
-            if (selected.isEmpty())
-                throw new AppException(ErrorCode.NO_SELECTED_PRODUCT);
+        List<OrderProduct> orderProducts = selected.stream()
+                .map(cp -> {
+                    OrderProduct op = orderProductMapper.toOrderProduct(cp);
+                    op.setOrder(savedOrder);
+                    return op;
+                })
+                .collect(Collectors.toList());
 
-            Order order = orderMapper.toOrder(request);
-            Address address = addressRepository.findById(request.getIdAddress())
-                    .orElseThrow(() -> new AppException(ErrorCode.ADDRESS_NOT_FOUND));
-            order.setAddress(address);
-            order.setUser(user);
-            order.setOrderDate(LocalDateTime.now());
-            order.setOrderStatus("Pending");
-            order.setPaymentStatus(true);
-            order.setTotalDiscount(new BigDecimal("10000"));
-            order.setTotal(new BigDecimal("0"));
-             final Order savedOrder = orderRepository.save(order);
+        BigDecimal subtotal = orderProducts.stream()
+                .map(OrderProduct::getTotalPrice)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal total = subtotal
+                .subtract(order.getTotalDiscount());
+        order.setTotal(total);
 
-            List<OrderProduct> orderProducts = selected.stream()
-                    .map(cp -> {
-                        OrderProduct op = orderProductMapper.toOrderProduct(cp);
-                        op.setOrder(savedOrder);
-                        op.setIsReturned(false);
-                        return op;
-                    })
-                    .collect(Collectors.toList());
-
-            BigDecimal subtotal = orderProducts.stream()
-                    .map(OrderProduct::getTotalPrice)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-            BigDecimal total = subtotal
-                    .subtract(order.getTotalDiscount());
-            order.setTotal(total);
-
-            order = orderRepository.save(order);
-            orderProductRepository.saveAll(orderProducts);
-            cartProductRepository.deleteAll(selected);
-            return orderMapper.toOrderResponse(order);
+        order = orderRepository.save(order);
+        orderProductRepository.saveAll(orderProducts);
+        cartProductRepository.deleteAll(selected);
+        return orderMapper.toOrderResponse(order);
     }
 
     @Override
@@ -120,13 +118,6 @@ public class OrderServiceImpl implements IOrderService {
     }
 
     @Override
-    public List<OrderResponse> getOrdersByPaymentStatus(Boolean paymentStatus) {
-        // Lấy danh sách đơn hàng theo trạng thái thanh toán
-        List<Order> orders = orderRepository.findByPaymentStatus(paymentStatus);
-        return orderMapper.toOrderResponseList(orders);
-    }
-
-    @Override
     public List<OrderResponse> getOrdersByOrderStatus(String orderStatus) {
         List<Order> orders = orderRepository.findByOrderStatus(orderStatus);
         return orderMapper.toOrderResponseList(orders);
@@ -140,9 +131,19 @@ public class OrderServiceImpl implements IOrderService {
     }
 
     @Override
-    public Long countByPaymentStatus(Boolean paymentStatus) {
-        // Đếm số lượng đơn hàng theo trạng thái thanh toán
-        return orderRepository.countByPaymentStatus(paymentStatus);
+    public List<OrderProductResponse> getProductsByOrderId(Long idOrder) {
+        Order order = orderRepository.findById(idOrder)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+        List<OrderProduct> orderProducts = orderProductRepository.findByOrder(order);
+        List<OrderProductResponse> responses = orderProducts.stream().map(op -> {
+            OrderProductResponse resp = orderProductMapper.toOrderProductResponse(op);
+            String mainImageUrl = imageService.findMainImageByProductId(op.getProduct().getProductId())
+                    .map(Image::getImageUrl)
+                    .orElse(null);
+            resp.setMainImageUrl(mainImageUrl);
+            return resp;
+        }).collect(Collectors.toList());
+        return responses;
     }
 
     @Override
@@ -153,17 +154,15 @@ public class OrderServiceImpl implements IOrderService {
 
     @Override
     public BigDecimal getTotalRevenue() {
-        // Tính tổng doanh thu từ các đơn hàng đã thanh toán
+        // Tính tổng doanh thu từ tất cả các đơn hàng
         BigDecimal total = orderRepository.getTotalRevenue();
         return total != null ? total : BigDecimal.ZERO;
     }
 
     @Override
     public BigDecimal getTotalRevenueByUser(User user) {
-        // Tính tổng doanh thu từ các đơn hàng đã thanh toán của một người dùng
+        // Tính tổng doanh thu từ các đơn hàng của một người dùng
         BigDecimal total = orderRepository.getTotalRevenueByUser(user);
         return total != null ? total : BigDecimal.ZERO;
     }
-
-
 }

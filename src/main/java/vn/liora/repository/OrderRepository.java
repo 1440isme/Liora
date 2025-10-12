@@ -13,13 +13,8 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-
 public interface OrderRepository extends JpaRepository<Order, Long> {
     List<Order> findByUser(User user);
-
-    List<Order> findByUserAndPaymentStatus(User user, Boolean paymentStatus);
-
-    List<Order> findByPaymentStatus(Boolean paymentStatus);
 
     List<Order> findByOrderStatus(String orderStatus);
 
@@ -27,31 +22,15 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     List<Order> findByOrderDateBetween(LocalDateTime start, LocalDateTime end);
 
-    Long countByPaymentStatus(Boolean paymentStatus);
-
-    long countByUserAndPaymentStatus(User user, Boolean paymentStatus);
-
     long countByUser(User user);
 
     List<Order> findByUserOrderByOrderDateDesc(User user);
 
     List<Order> findByOrderByOrderDateDesc();
 
-    @Query("SELECT SUM(o.total) FROM Order o WHERE o.paymentStatus = true")
+    @Query("SELECT SUM(o.total) FROM Order o")
     BigDecimal getTotalRevenue();
 
-    @Query("SELECT SUM(o.total) FROM Order o WHERE o.user = :user AND o.paymentStatus = true")
+    @Query("SELECT SUM(o.total) FROM Order o WHERE o.user = :user")
     BigDecimal getTotalRevenueByUser(@Param("user") User user);
-
-
-
-
-
-
-
-
-
-
-
-
 }
