@@ -6,18 +6,21 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import vn.liora.dto.request.ApiResponse;
 import vn.liora.dto.response.ProductResponse;
+import vn.liora.dto.response.CategoryResponse;
 import vn.liora.entity.Image;
 import vn.liora.entity.Product;
 import vn.liora.exception.AppException;
 import vn.liora.mapper.ProductMapper;
 import vn.liora.repository.ImageRepository;
 import vn.liora.service.IProductService;
+import vn.liora.service.ICategoryService;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/products")
@@ -28,6 +31,7 @@ public class UserProductController {
     private final IProductService productService;
     private final ProductMapper productMapper;
     private final ImageRepository imageRepository;
+    private final ICategoryService categoryService;
 
     // ========== PRODUCT SEARCH & FILTERING ==========
     @GetMapping("/search")
@@ -527,6 +531,37 @@ public class UserProductController {
         }
     }
 
+    @GetMapping("/categories/{categoryId}/brands-with-count")
+    public ResponseEntity<ApiResponse<Map<String, Long>>> getBrandsWithCount(@PathVariable Long categoryId) {
+        ApiResponse<Map<String, Long>> response = new ApiResponse<>();
+        try {
+            if (categoryId <= 0) {
+                response.setCode(400);
+                response.setMessage("ID danh mục không hợp lệ");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            List<Product> allProducts = productService.findAll();
+            List<Product> categoryProducts = allProducts.stream()
+                    .filter(product -> product.getCategory().getCategoryId().equals(categoryId))
+                    .toList();
+            
+            Map<String, Long> brandCounts = categoryProducts.stream()
+                    .collect(Collectors.groupingBy(
+                        product -> product.getBrand().getName(),
+                        Collectors.counting()
+                    ));
+
+            response.setResult(brandCounts);
+            response.setMessage("Lấy danh sách thương hiệu với số sản phẩm thành công");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.setCode(500);
+            response.setMessage("Lỗi khi lấy danh sách thương hiệu: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(response);
+        }
+    }
+
     // ========== HELPER METHODS ==========
     private Pageable createSortedPageable(Pageable pageable, String sortBy, String sortDir) {
         if (sortBy == null || sortBy.trim().isEmpty()) {
@@ -587,5 +622,28 @@ public class UserProductController {
                     }
                 })
                 .toList();
+    }
+
+    // ========== CATEGORY INFO ==========
+    @GetMapping("/categories/{categoryId}")
+    public ResponseEntity<ApiResponse<CategoryResponse>> getCategoryInfo(@PathVariable Long categoryId) {
+        ApiResponse<CategoryResponse> response = new ApiResponse<>();
+        try {
+            if (categoryId <= 0) {
+                response.setCode(400);
+                response.setMessage("ID danh mục không hợp lệ");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            CategoryResponse categoryResponse = categoryService.findById(categoryId);
+            
+            response.setResult(categoryResponse);
+            response.setMessage("Lấy thông tin danh mục thành công");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.setCode(500);
+            response.setMessage("Lỗi khi lấy thông tin danh mục: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(response);
+        }
     }
 }

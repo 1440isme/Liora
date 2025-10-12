@@ -28,6 +28,7 @@ class CategoryProductsManager {
             console.log('getCategoryIdFromUrl completed');
         this.bindEvents();
             console.log('bindEvents completed');
+        this.loadCategoryInfo();
         this.loadProducts();
             console.log('loadProducts called');
         } catch (error) {
@@ -37,7 +38,7 @@ class CategoryProductsManager {
 
     getCategoryIdFromUrl() {
         const path = window.location.pathname;
-        const match = path.match(/\/products\/category\/(\d+)/);
+        const match = path.match(/\/products\/view\/category\/(\d+)/);
         this.currentCategoryId = match ? parseInt(match[1]) : null;
         console.log('Category ID from URL:', this.currentCategoryId);
         
@@ -50,11 +51,42 @@ class CategoryProductsManager {
         
         if (!this.currentCategoryId) {
             console.error('Category ID not found in URL');
-            this.showError('Danh mục không hợp lệ');
+            this.showLoading(false);
+            this.showEmptyState('Danh mục không tồn tại');
             return;
         }
         
         console.log('Category ID:', this.currentCategoryId);
+    }
+
+    async loadCategoryInfo() {
+        try {
+            console.log('Loading category info for ID:', this.currentCategoryId);
+            const response = await fetch(`/api/products/categories/${this.currentCategoryId}`);
+            
+            if (!response.ok) {
+                console.warn('Failed to load category info');
+                return;
+            }
+            
+            const data = await response.json();
+            console.log('Category info response:', data);
+            
+            if (data.code === 1000 && data.result) {
+                this.displayCategoryTitle(data.result.name);
+            }
+        } catch (error) {
+            console.error('Error loading category info:', error);
+        }
+    }
+
+    displayCategoryTitle(categoryName) {
+        const categoryTitle = document.getElementById('categoryTitle');
+        if (categoryTitle) {
+            categoryTitle.textContent = categoryName;
+            categoryTitle.style.display = 'block';
+            console.log('Category title displayed:', categoryName);
+        }
     }
 
     bindEvents() {
@@ -160,18 +192,22 @@ class CategoryProductsManager {
                 this.totalElements = data.result.totalElements || 0;
                 this.totalPages = data.result.totalPages || 0;
                 console.log('Products loaded:', this.products.length, 'Total:', this.totalElements);
+                
+                // Hide loading spinner
+                this.showLoading(false);
             } else {
                 console.log('API error:', data.message);
-                this.showError(data.message || 'Lỗi khi tải sản phẩm');
+                this.showLoading(false);
+                this.showEmptyState('Chưa có sản phẩm nào trong danh mục này');
             }
         } catch (error) {
             console.error('Error loading products:', error);
-            this.showNotification(`Lỗi khi tải sản phẩm: ${error.message}`, 'error');
+            this.showLoading(false);
+            this.showEmptyState('Không thể tải sản phẩm. Vui lòng thử lại sau.');
             this.products = [];
             this.totalElements = 0;
             this.totalPages = 0;
         } finally {
-            this.showLoading(false);
             console.log('Finally block - rendering products:', this.products.length);
             this.renderProducts();
             this.updateResultsInfo();
@@ -315,9 +351,9 @@ class CategoryProductsManager {
                             ${productStatus === 'out_of_stock' ? 'Hết hàng' : 
                               productStatus === 'deactivated' ? 'Ngừng kinh doanh' : 'Thêm vào giỏ'}
                             </button>
+                        </div>
                     </div>
                 </div>
-            </div>
         `;
     }
 
@@ -392,10 +428,10 @@ class CategoryProductsManager {
                 <div class="alert alert-warning text-center">
                     <i class="fas fa-exclamation-triangle me-2"></i>
                     Sản phẩm đã ngừng kinh doanh
-                </div>
-            `;
-        }
-        
+            </div>
+        `;
+    }
+
         if (status === 'out_of_stock') {
             return `
                 <div class="alert alert-danger text-center">
@@ -787,18 +823,41 @@ class CategoryProductsManager {
     async loadBrands() {
         console.log('loadBrands called, categoryId:', this.currentCategoryId);
         try {
-            const response = await fetch(`/api/products/categories/${this.currentCategoryId}/brands`);
-            console.log('Brands API response status:', response.status);
+            // Try to load brands with count first
+            const response = await fetch(`/api/products/categories/${this.currentCategoryId}/brands-with-count`);
+            console.log('Brands with count API response status:', response.status);
             if (response.ok) {
                 const data = await response.json();
-                console.log('Brands API data:', data);
+                console.log('Brands with count API data:', data);
+                if (data.code === 1000 && data.result) {
+                    this.renderBrandFiltersWithCount(data.result);
+                    return;
+                }
+            }
+            
+            // Fallback to simple brands
+            console.log('Falling back to simple brands');
+            await this.loadBrandsSimple();
+        } catch (error) {
+            console.log('Error loading brands with count:', error);
+            await this.loadBrandsSimple();
+        }
+    }
+
+    async loadBrandsSimple() {
+        try {
+            const response = await fetch(`/api/products/categories/${this.currentCategoryId}/brands`);
+            console.log('Simple brands API response status:', response.status);
+            if (response.ok) {
+                const data = await response.json();
+                console.log('Simple brands API data:', data);
                 this.renderBrandFilters(data.result || []);
             } else {
-                console.log('Could not load brands, using fallback');
+                console.log('Could not load simple brands, using fallback');
                 this.renderBrandFilters([]);
             }
         } catch (error) {
-            console.log('Error loading brands:', error);
+            console.log('Error loading simple brands:', error);
             this.renderBrandFilters([]);
         }
     }
@@ -816,6 +875,27 @@ class CategoryProductsManager {
             <div class="form-check">
                 <input class="form-check-input" type="checkbox" value="${brand}" id="brand${index + 1}">
                 <label class="form-check-label" for="brand${index + 1}">${brand}</label>
+            </div>
+        `).join('');
+    }
+
+    renderBrandFiltersWithCount(brandsWithCount) {
+        const brandFiltersContainer = document.getElementById('brandFilters');
+        if (!brandFiltersContainer) return;
+
+        if (Object.keys(brandsWithCount).length === 0) {
+            brandFiltersContainer.innerHTML = '<p class="text-muted">Không có thương hiệu nào</p>';
+            return;
+        }
+
+        // Sort brands by name
+        const sortedBrands = Object.entries(brandsWithCount)
+            .sort(([a], [b]) => a.localeCompare(b));
+
+        brandFiltersContainer.innerHTML = sortedBrands.map(([brandName, count], index) => `
+            <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" value="${brandName}" id="brand-${brandName}">
+                <label class="form-check-label" for="brand-${brandName}">${brandName} (${count})</label>
             </div>
         `).join('');
     }
@@ -951,6 +1031,27 @@ class CategoryProductsManager {
             emptyState.innerHTML = `
                 <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
                 <h4>Lỗi</h4>
+                <p class="text-muted">${message}</p>
+            `;
+        }
+    }
+
+    showEmptyState(message) {
+        const grid = document.getElementById('productsGrid');
+        const emptyState = document.getElementById('emptyState');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        
+        // Hide loading spinner
+        if (loadingSpinner) {
+            loadingSpinner.style.display = 'none';
+        }
+        
+        if (grid) grid.style.display = 'none';
+        if (emptyState) {
+            emptyState.style.display = 'block';
+            emptyState.innerHTML = `
+                <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+                <h4>Chưa có sản phẩm</h4>
                 <p class="text-muted">${message}</p>
             `;
         }

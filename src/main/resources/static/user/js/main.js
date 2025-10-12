@@ -567,13 +567,13 @@ class LioraApp {
                 this.renderHeaderCategories(data.result);
             } else {
                 console.warn('No categories found in API response');
-                // Try to load fallback data
-                this.loadFallbackCategories();
+                // Show empty state instead of fallback data
+                this.renderEmptyCategories();
             }
         } catch (error) {
             console.error('Error loading header categories:', error);
-            // Try fallback first, then show error
-            this.loadFallbackCategories();
+            // Show empty state instead of fallback data
+            this.renderEmptyCategories();
         }
     }
 
@@ -832,7 +832,7 @@ class LioraApp {
 
                 // Add click handler
                 level3Item.addEventListener('click', () => {
-                    window.location.href = `/products/category/${level3Category.categoryId}`;
+                    window.location.href = `/products/view/category/${level3Category.categoryId}`;
                 });
 
                 column.appendChild(level3Item);
@@ -900,7 +900,7 @@ class LioraApp {
 
                 // Add click handler
                 level3Item.addEventListener('click', () => {
-                    window.location.href = `/products/category/${level3Category.categoryId}`;
+                    window.location.href = `/products/view/category/${level3Category.categoryId}`;
                 });
 
                 column.appendChild(level3Item);
@@ -941,30 +941,17 @@ class LioraApp {
         }
     }
 
-    // Load fallback categories when API fails
-    loadFallbackCategories() {
-        console.log('Loading fallback categories...');
-        const fallbackCategories = [
-            {
-                categoryId: 1,
-                name: 'Mỹ phẩm',
-                children: [
-                    { categoryId: 2, name: 'Chăm sóc da mặt' },
-                    { categoryId: 3, name: 'Trang điểm' },
-                    { categoryId: 4, name: 'Chăm sóc cơ thể' }
-                ]
-            },
-            {
-                categoryId: 5,
-                name: 'Thực phẩm chức năng',
-                children: [
-                    { categoryId: 6, name: 'Vitamin' },
-                    { categoryId: 7, name: 'Collagen' }
-                ]
-            }
-        ];
-        
-        this.renderHeaderCategories(fallbackCategories);
+    // Render empty state when no categories are available
+    renderEmptyCategories() {
+        console.log('No categories available - showing empty state');
+        const categoriesContainer = document.getElementById('categoriesMenu');
+        if (categoriesContainer) {
+            categoriesContainer.innerHTML = `
+                <div class="text-center py-4">
+                    <p class="text-muted mb-0">Chưa có danh mục sản phẩm</p>
+                </div>
+            `;
+        }
     }
 
     checkAuthState() {

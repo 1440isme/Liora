@@ -15,7 +15,7 @@ public class ProductViewController {
 
     private final ICategoryService categoryService;
 
-    @GetMapping("/category/{categoryId}")
+    @GetMapping("/view/category/{categoryId}")
     public String getProductsByCategory(@PathVariable Long categoryId, Model model) {
         try {
             // Get category info for display
