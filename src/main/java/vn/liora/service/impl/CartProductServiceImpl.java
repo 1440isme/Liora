@@ -127,8 +127,35 @@ public class CartProductServiceImpl implements ICartProductService {
         // Map sang DTO
         return cartProductMapper.toCartProductResponseList(selectedProducts);
     }
+
+    @Override
+    public double getCartTotal(Long cartId) {
+        Cart cart = cartRepository.findById(cartId)
+                .orElseThrow(() -> new AppException(ErrorCode.CART_NOT_FOUND));
+
+        List<CartProduct> cartProducts = cartProductRepository.findByCart(cart);
+        return cartProducts.stream()
+                .mapToDouble(cp -> cp.getTotalPrice().doubleValue())
+                .sum();
+    }
+
+    @Override
+    public int getCartItemCount(Long cartId) {
+        Cart cart = cartRepository.findById(cartId)
+                .orElseThrow(() -> new AppException(ErrorCode.CART_NOT_FOUND));
+
+        List<CartProduct> cartProducts = cartProductRepository.findByCart(cart);
+        return cartProducts.stream()
+                .mapToInt(CartProduct::getQuantity)
+                .sum();
+    }
+
+    @Override
+    public List<CartProductResponse> getAllProductsInCart(Long cartId) {
+        Cart cart = cartRepository.findById(cartId)
+                .orElseThrow(() -> new AppException(ErrorCode.CART_NOT_FOUND));
+
+        List<CartProduct> cartProducts = cartProductRepository.findByCart(cart);
+        return cartProductMapper.toCartProductResponseList(cartProducts);
+    }
 }
-
-
-
-

@@ -15,4 +15,9 @@ public interface ICartProductService {
     CartProductResponse getCartProductById(Long idCartProduct);
     List<CartProductResponse> getSelectedProducts(Long idCart);
 
+    double getCartTotal(Long cartId);
+
+    int getCartItemCount(Long cartId);
+
+    List<CartProductResponse> getAllProductsInCart(Long cartId);
 }
