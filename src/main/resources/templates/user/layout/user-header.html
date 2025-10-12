@@ -52,16 +52,16 @@
         </div>
 
         <!-- Bottom Header - Tầng dưới -->
-        <div class="bottom-header">
+        <div class="bottom-header" id="dynamic-bottom-header">
             <div class="container">
                 <div class="row align-items-center">
                     <!-- Categories Button -->
                     <div class="col-auto">
                         <div class="dropdown categories-dropdown">
                             <button class="btn btn-categories" type="button" data-bs-toggle="dropdown"
-                                aria-expanded="false">
+                                aria-expanded="false" id="categories-button">
                                 <i class="mdi mdi-menu"></i>
-                                <span>Danh Mục Sản Phẩm</span>
+                                <span id="categories-button-text">Danh Mục Sản Phẩm</span>
                             </button>
                             <div class="dropdown-menu categories-menu">
                                 <div class="container-fluid">
@@ -91,8 +91,6 @@
                                                 </div>
                                             </div>
                                         </div>
-
-
                                     </div>
                                 </div>
                             </div>
@@ -100,27 +98,157 @@
                     </div>
 
                     <!-- Main Navigation -->
-                    <div class="col">
+
+
+                    <!-- Dynamic Navigation Items -->
+                    <div class="col" id="main-navigation">
                         <nav class="main-nav">
                             <ul class="nav-list">
-                                <li class="nav-item" th:each="category : ${parentCategories}">
-                                    <a href="#" class="nav-link" th:data-category="${category.name}"
-                                        th:text="${category.name}"></a>
-                                </li>
+                                <!-- Navigation items will be loaded dynamically -->
                             </ul>
                         </nav>
-                    </div>
-
-                    <!-- About Us Button -->
-                    <div class="col-auto">
-                        <a href="#" class="btn btn-about" onclick="showPage('about')">
-                            <i class="mdi mdi-information-outline"></i>
-                            <span>Về Chúng Tôi</span>
-                        </a>
                     </div>
                 </div>
             </div>
         </div>
+
+        <!-- Header Bottom Loading Script -->
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                loadHeaderNavigationContent();
+            });
+
+            async function loadHeaderNavigationContent() {
+                try {
+                    const response = await fetch('/content/api/header-bottom');
+                    const data = await response.json();
+
+                    // Update navigation items
+                    if (data.navigationItems && data.navigationItems.length > 0) {
+                        const navList = document.querySelector('#main-navigation .nav-list');
+                        navList.innerHTML = '';
+
+                        // Load sub-items for each parent item
+                        for (let i = 0; i < data.navigationItems.length; i++) {
+                            const item = data.navigationItems[i];
+                            if (item.id) {
+                                try {
+                                    const subResponse = await fetch(`/content/api/header-bottom/sub-items/${item.id}`);
+                                    const subData = await subResponse.json();
+                                    item.subItems = subData || [];
+                                } catch (subError) {
+                                    console.error('Error loading sub-items for', item.title, ':', subError);
+                                    item.subItems = [];
+                                }
+                            }
+                        }
+
+                        data.navigationItems.forEach(item => {
+                            const navItem = document.createElement('li');
+                            navItem.className = 'nav-item';
+
+                            if (item.linkType === 'CATEGORY' || item.isCategoryParent) {
+                                // Create dropdown for categories
+                                const dropdownId = `category-dropdown-${Math.random().toString(36).substr(2, 9)}`;
+                                navItem.innerHTML = `
+                                    <div class="nav-dropdown">
+                                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" id="${dropdownId}">
+                                            ${item.title.toUpperCase()}
+                                            <i class="mdi mdi-chevron-down dropdown-arrow"></i>
+                                        </a>
+                                        <ul class="dropdown-menu category-dropdown-menu" aria-labelledby="${dropdownId}">
+                                            <li><a class="dropdown-item" href="#">Đang tải danh mục con...</a></li>
+                                        </ul>
+                                    </div>
+                                `;
+
+                                // Load sub-categories for this category
+                                loadSubCategories(navItem, item);
+                            } else {
+                                // Create regular button for other items
+                                const navLink = document.createElement('a');
+
+                                // Determine URL based on link type
+                                let href = '#';
+                                if (item.linkType === 'EXTERNAL') {
+                                    href = item.url || '#';
+                                } else if (item.linkType === 'INTERNAL' || item.linkType === 'PAGE') {
+                                    href = item.url || '#';
+                                }
+
+                                navLink.href = href;
+                                navLink.className = 'nav-link nav-button';
+                                navLink.textContent = item.title.toUpperCase();
+
+                                // Add click handler
+                                navLink.addEventListener('click', function (e) {
+                                    if (item.linkType === 'EXTERNAL') {
+                                        // External links open in new tab
+                                        e.preventDefault();
+                                        window.open(href, '_blank');
+                                    }
+                                });
+
+                                navItem.appendChild(navLink);
+                            }
+
+                            navList.appendChild(navItem);
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error loading header bottom content:', error);
+                }
+            }
+
+            // Load sub-categories for a category dropdown
+            async function loadSubCategories(navItem, parentItem) {
+                try {
+                    const dropdownMenu = navItem.querySelector('.category-dropdown-menu');
+                    dropdownMenu.innerHTML = '';
+
+                    // Use sub-items from parentItem if available
+                    if (parentItem.subItems && parentItem.subItems.length > 0) {
+                        parentItem.subItems.forEach(subItem => {
+                            const li = document.createElement('li');
+                            const a = document.createElement('a');
+                            a.className = 'dropdown-item';
+                            a.href = subItem.url || '#';
+                            a.textContent = subItem.title;
+                            li.appendChild(a);
+                            dropdownMenu.appendChild(li);
+                        });
+                    } else {
+                        // Fallback: Load from API
+                        try {
+                            const response = await fetch(`/content/api/header-bottom/sub-items/${parentItem.id}`);
+                            const data = await response.json();
+
+                            if (data && data.length > 0) {
+                                data.forEach(subItem => {
+                                    const li = document.createElement('li');
+                                    const a = document.createElement('a');
+                                    a.className = 'dropdown-item';
+                                    a.href = subItem.url || '#';
+                                    a.textContent = subItem.title;
+                                    li.appendChild(a);
+                                    dropdownMenu.appendChild(li);
+                                });
+                            } else {
+                                dropdownMenu.innerHTML = '<li><a class="dropdown-item" href="#">Không có danh mục con</a></li>';
+                            }
+                        } catch (apiError) {
+                            console.error('Error loading sub-items from API:', apiError);
+                            dropdownMenu.innerHTML = '<li><a class="dropdown-item" href="#">Lỗi tải danh mục</a></li>';
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error loading sub-categories:', error);
+                    const dropdownMenu = navItem.querySelector('.category-dropdown-menu');
+                    dropdownMenu.innerHTML = '<li><a class="dropdown-item" href="#">Lỗi tải danh mục</a></li>';
+                }
+            }
+        </script>
+
     </header>
     <!-- Header End -->
 </body>

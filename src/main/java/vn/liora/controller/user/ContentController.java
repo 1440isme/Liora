@@ -11,7 +11,7 @@ import vn.liora.entity.*;
 import vn.liora.service.BannerService;
 import vn.liora.service.StaticPageService;
 import vn.liora.service.FooterService;
-import vn.liora.service.HeaderBottomService;
+import vn.liora.service.HeaderNavigationService;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -32,7 +32,7 @@ public class ContentController {
     private FooterService footerService;
 
     @Autowired
-    private HeaderBottomService headerBottomService;
+    private HeaderNavigationService headerNavigationService;
 
     // Trang hiển thị static page theo slug
     @GetMapping("/page/{slug}")
@@ -176,19 +176,30 @@ public class ContentController {
     // API lấy thông tin header tầng dưới
     @GetMapping("/api/header-bottom")
     @ResponseBody
-    public ResponseEntity<Map<String, Object>> getHeaderBottomContent() {
+    public ResponseEntity<Map<String, Object>> getHeaderNavigationContent() {
         Map<String, Object> headerContent = new HashMap<>();
 
         try {
-            HeaderBottom headerBottom = headerBottomService.getActiveHeaderBottom();
-            if (headerBottom != null) {
-                headerContent.put("headerBottom", headerBottom);
-                headerContent.put("navigationItems",
-                        headerBottomService.getActiveNavigationItems(headerBottom.getId()));
-            }
+            List<HeaderNavigationItem> navigationItems = headerNavigationService.getAllActiveItems();
+            headerContent.put("navigationItems", navigationItems);
             return ResponseEntity.ok(headerContent);
         } catch (Exception e) {
+            System.err.println("Error loading header navigation content: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.ok(headerContent);
+        }
+    }
+
+    @GetMapping("/api/header-bottom/sub-items/{parentId}")
+    @ResponseBody
+    public ResponseEntity<List<HeaderNavigationItem>> getSubItems(@PathVariable Long parentId) {
+        try {
+            List<HeaderNavigationItem> subItems = headerNavigationService.getSubItemsByParentId(parentId);
+            return ResponseEntity.ok(subItems);
+        } catch (Exception e) {
+            System.err.println("Error loading sub-items: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.ok(new ArrayList<>());
         }
     }
 }
