@@ -14,7 +14,6 @@ public class DiscountResponse {
     private Long discountId;
     private String name;
     private String description;
-    private String discountType;
     private BigDecimal discountValue;
     private BigDecimal minOrderValue;
     private BigDecimal maxDiscountAmount;

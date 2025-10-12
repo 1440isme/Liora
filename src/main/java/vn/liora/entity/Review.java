@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -15,16 +16,14 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @Entity
 @Table(name = "Reviews")
+@Builder
 public class Review {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "IdReview")
     private Long reviewId;
 
-//    @Column(name = "Title", columnDefinition = "NVARCHAR(100)")
-//    private String title;
-
-    @Column(name = "Content", columnDefinition = "NVARCHAR(255)")
+    @Column(name = "Content", columnDefinition = "NVARCHAR(MAX)", nullable = true)
     private String content;
 
     @Column(name = "Rating", nullable = false)
@@ -34,6 +33,11 @@ public class Review {
 
     @Column(name = "Anonymous", nullable = false)
     private Boolean anonymous = false;
+
+    // Thêm field để admin ẩn/hiện review
+    @Column(name = "IsVisible", nullable = false)
+    @Builder.Default
+    private Boolean isVisible = true; // Mặc định hiển thị
 
     @Column(name = "CreatedAt", nullable = false, columnDefinition = "DATETIME")
     private LocalDateTime createdAt;
