@@ -681,13 +681,13 @@ class CategoriesManager {
     async loadParentCategories() {
         try {
             console.log('Loading parent categories for dropdown...');
-            // Sử dụng API để lấy tất cả categories thay vì chỉ tree
-            const response = await this.ajax.get('/categories');
+            // Sử dụng API /all để lấy tất cả categories (không phân trang)
+            const response = await this.ajax.get('/categories/all');
             console.log('Parent categories API response:', response);
             
             if (response.result) {
-                // Check if it's paginated response or direct array
-                const allCategories = response.result.content || response.result;
+                // API /all trả về List<CategoryResponse> trực tiếp
+                const allCategories = response.result;
                 console.log('🔍 All categories from API:', allCategories);
                 await this.populateParentDropdown(allCategories);
                 return Promise.resolve();
@@ -703,13 +703,13 @@ class CategoriesManager {
     async loadParentCategoriesForEdit() {
         try {
             console.log('Loading parent categories for edit page...');
-            // Sử dụng API để lấy tất cả categories thay vì chỉ tree
-            const response = await this.ajax.get('/categories');
+            // Sử dụng API /all để lấy tất cả categories (không phân trang)
+            const response = await this.ajax.get('/categories/all');
             console.log('Edit page parent categories API response:', response);
             
             if (response.result) {
-                // Check if it's paginated response or direct array
-                const allCategories = response.result.content || response.result;
+                // API /all trả về List<CategoryResponse> trực tiếp
+                const allCategories = response.result;
                 console.log('All categories from API for edit:', allCategories);
                 await this.populateParentDropdown(allCategories);
                 return Promise.resolve();
@@ -1156,7 +1156,7 @@ class CategoriesManager {
             console.log('Category ID from path:', categoryId);
             if (categoryId) {
                 try {
-                    const response = await this.ajax.get(`/admin/api/categories/${categoryId}`);
+                    const response = await this.ajax.get(`/categories/${categoryId}`);
                     console.log('API Response:', response);
                     console.log('Category data:', response.result);
                     console.log('Parent Category ID:', response.result?.parentCategoryId);

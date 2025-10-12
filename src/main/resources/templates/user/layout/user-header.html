@@ -69,30 +69,38 @@
                                         <!-- Cột 1: Danh mục chính -->
                                         <div class="col-md-3">
                                             <div class="category-column">
-                                                <div class="category-item" th:each="category : ${parentCategories}"
-                                                    th:data-category="${category.name}">
-                                                    <span th:text="${category.name}"></span>
-                                                    <i class="mdi mdi-chevron-right"></i>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- Cột 2: Danh mục con -->
-                                        <div class="col-md-3">
-                                            <div class="category-column">
-                                                <h6 class="column-title">DANH MỤC CON</h6>
-                                                <div class="subcategory-list">
-                                                    <div th:each="category : ${parentCategories}"
-                                                        th:if="${category.children != null and !category.children.isEmpty()}">
-                                                        <div th:each="child : ${category.children}"
-                                                            th:data-category="${child.name}" th:text="${child.name}"
-                                                            class="subcategory-item"></div>
+                                                <div class="category-list">
+                                                    <div class="category-loading">
+                                                        <i class="mdi mdi-loading"></i>
+                                                        Đang tải danh mục...
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
 
+                                        <!-- Cột 2: Danh mục cấp 2 & 3 (trái) -->
+                                        <div class="col-md-4">
+                                            <div class="category-column">
+                                                <div class="subcategory-list">
+                                                    <div class="category-loading">
+                                                        <i class="mdi mdi-loading"></i>
+                                                        Chọn danh mục để xem...
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
 
+                                        <!-- Cột 3: Danh mục cấp 2 & 3 (phải) -->
+                                        <div class="col-md-5">
+                                            <div class="category-column">
+                                                <div class="product-list">
+                                                    <div class="category-loading">
+                                                        <i class="mdi mdi-loading"></i>
+                                                        Chọn danh mục để xem sản phẩm...
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
