@@ -7,9 +7,13 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import vn.liora.dto.response.BannerResponse;
 import vn.liora.dto.response.StaticPageResponse;
+import vn.liora.entity.*;
 import vn.liora.service.BannerService;
 import vn.liora.service.StaticPageService;
+import vn.liora.service.FooterService;
+import vn.liora.service.HeaderBottomService;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +27,12 @@ public class ContentController {
 
     @Autowired
     private StaticPageService staticPageService;
+
+    @Autowired
+    private FooterService footerService;
+
+    @Autowired
+    private HeaderBottomService headerBottomService;
 
     // Trang hiển thị static page theo slug
     @GetMapping("/page/{slug}")
@@ -87,5 +97,98 @@ public class ContentController {
         homeContent.put("staticPages", staticPages);
 
         return ResponseEntity.ok(homeContent);
+    }
+
+    // API lấy thông tin footer
+    @GetMapping("/api/footer")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> getFooterContent() {
+        Map<String, Object> footerContent = new HashMap<>();
+
+        try {
+            Footer footer = footerService.getActiveFooter();
+            System.out.println("Footer found: " + (footer != null ? "Yes" : "No"));
+            if (footer != null) {
+                System.out.println("Footer ID: " + footer.getId());
+                System.out.println("Brand Name: " + footer.getBrandName());
+
+                // Tạo Map cho footer thay vì trả về object trực tiếp
+                Map<String, Object> footerData = new HashMap<>();
+                footerData.put("id", footer.getId());
+                footerData.put("brandName", footer.getBrandName());
+                footerData.put("brandDescription", footer.getBrandDescription());
+                footerData.put("isActive", footer.getIsActive());
+
+                footerContent.put("footer", footerData);
+
+                // Tạo DTO cho columns để tránh circular reference
+                List<Map<String, Object>> columnsData = new ArrayList<>();
+                List<FooterColumn> columns = footerService.getActiveColumns(footer.getId());
+                System.out.println("Columns count: " + columns.size());
+                for (FooterColumn column : columns) {
+                    Map<String, Object> columnData = new HashMap<>();
+                    columnData.put("id", column.getId());
+                    columnData.put("title", column.getTitle());
+                    columnData.put("sortOrder", column.getColumnOrder());
+
+                    // Tạo DTO cho items
+                    List<Map<String, Object>> itemsData = new ArrayList<>();
+                    if (column.getItems() != null) {
+                        for (FooterItem item : column.getItems()) {
+                            Map<String, Object> itemData = new HashMap<>();
+                            itemData.put("id", item.getId());
+                            itemData.put("title", item.getTitle());
+                            itemData.put("url", item.getUrl());
+                            itemData.put("linkType", item.getLinkType().toString());
+                            itemData.put("sortOrder", item.getItemOrder());
+                            itemsData.add(itemData);
+                        }
+                    }
+                    columnData.put("items", itemsData);
+                    columnsData.add(columnData);
+                }
+                footerContent.put("columns", columnsData);
+
+                // Tạo DTO cho social links
+                List<Map<String, Object>> socialLinksData = new ArrayList<>();
+                List<FooterSocialLink> socialLinks = footerService.getActiveSocialLinks(footer.getId());
+                System.out.println("Social links count: " + socialLinks.size());
+                for (FooterSocialLink link : socialLinks) {
+                    Map<String, Object> linkData = new HashMap<>();
+                    linkData.put("id", link.getId());
+                    linkData.put("platform", link.getPlatform());
+                    linkData.put("url", link.getUrl());
+                    linkData.put("iconClass", link.getIconClass());
+                    linkData.put("sortOrder", link.getDisplayOrder());
+                    socialLinksData.add(linkData);
+                }
+                footerContent.put("socialLinks", socialLinksData);
+
+            }
+            return ResponseEntity.ok(footerContent);
+        } catch (Exception e) {
+            System.err.println("Error loading footer content: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.ok(footerContent);
+        }
+    }
+
+    // API lấy thông tin header tầng dưới
+    @GetMapping("/api/header-bottom")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> getHeaderBottomContent() {
+        Map<String, Object> headerContent = new HashMap<>();
+
+        try {
+            HeaderBottom headerBottom = headerBottomService.getActiveHeaderBottom();
+            if (headerBottom != null) {
+                headerContent.put("headerBottom", headerBottom);
+                headerContent.put("navigationItems",
+                        headerBottomService.getActiveNavigationItems(headerBottom.getId()));
+            }
+            return ResponseEntity.ok(headerContent);
+        } catch (Exception e) {
+            return ResponseEntity.ok(headerContent);
+        }
     }
 }

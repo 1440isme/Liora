@@ -1,5 +1,5 @@
 <!-- StarAdmin Sidebar -->
-<nav class="sidebar sidebar-offcanvas" id="sidebar">
+<nav class="sidebar sidebar-offcanvas" id="sidebar" th:fragment="sidebar">
     <ul class="nav">
         <li class="nav-item">
             <a class="nav-link" href="/admin/dashboard">
@@ -117,6 +117,20 @@
                 <ul class="nav flex-column sub-menu">
                     <li class="nav-item"> <a class="nav-link" href="/admin/static-pages">Danh sách</a></li>
                     <li class="nav-item"> <a class="nav-link" href="/admin/static-pages/add">Tạo mới</a></li>
+                </ul>
+            </div>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" data-bs-toggle="collapse" href="#layout-menu" role="button" aria-expanded="false"
+                aria-controls="layout-menu">
+                <i class="menu-icon mdi mdi-palette"></i>
+                <span class="menu-title">Giao diện</span>
+                <i class="menu-arrow"></i>
+            </a>
+            <div class="collapse" id="layout-menu">
+                <ul class="nav flex-column sub-menu">
+                    <li class="nav-item"> <a class="nav-link" href="/admin/footer">Footer</a></li>
+                    <li class="nav-item"> <a class="nav-link" href="/admin/header-bottom">Header tầng dưới</a></li>
                 </ul>
             </div>
         </li>
