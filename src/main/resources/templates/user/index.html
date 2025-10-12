@@ -18,6 +18,9 @@
     <!-- Font Awesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
+    <!-- Material Design Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/css/materialdesignicons.min.css">
+
     <!-- Custom CSS -->
     <link rel="stylesheet" th:href="@{/user/css/style.css}">
 </head>
@@ -30,6 +33,26 @@
     <main id="main-content">
         <!-- Home Page -->
         <div id="home-page" class="page active">
+            <!-- Banner Slider Section -->
+            <section class="banner-slider-section">
+                <div class="banner-slider-container">
+                    <div class="banner-slider" id="bannerSlider">
+                        <!-- Banners will be loaded here -->
+                    </div>
+                    <div class="slider-controls">
+                        <button class="slider-btn prev-btn" id="prevBtn">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <button class="slider-btn next-btn" id="nextBtn">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                    <div class="slider-dots" id="sliderDots">
+                        <!-- Dots will be generated here -->
+                    </div>
+                </div>
+            </section>
+
             <!-- Hero Section -->
             <section class="hero-section">
                 <div class="container">
@@ -231,6 +254,16 @@
     <script th:src="@{/user/js/products.js}"></script>
     <script th:src="@{/user/js/reviews.js}"></script>
     <script th:src="@{/user/js/auth.js}"></script>
+
+    <!-- Initialize Banner Slider -->
+    <script>
+        // Initialize banner slider when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.BannerSlider) {
+                new BannerSlider();
+            }
+        });
+    </script>
 </body>
 
 </html>

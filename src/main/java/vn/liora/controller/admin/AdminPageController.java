@@ -1,5 +1,6 @@
 package vn.liora.controller.admin;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
@@ -7,10 +8,16 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import vn.liora.service.IBrandService;
+import vn.liora.service.ICategoryService;
 
 @Controller
 @RequestMapping("/admin")
+@RequiredArgsConstructor
 public class AdminPageController {
+
+    private final ICategoryService categoryService;
+    private final IBrandService brandService;
 
     private void addCurrentUserToModel(Model model) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -48,7 +55,16 @@ public class AdminPageController {
     @GetMapping("/products/add")
     public String productsAdd(Model model) {
         addCurrentUserToModel(model);
+        // Thêm dữ liệu categories và brands vào model
+        model.addAttribute("categories", categoryService.findActiveCategories());
+        model.addAttribute("brands", brandService.findActiveBrands());
         return "admin/products/add";
+    }
+
+    @GetMapping("/products/{id}")
+    public String productsDetail(@PathVariable("id") Long id, Model model) {
+        addCurrentUserToModel(model);
+        return "admin/products/detail";
     }
 
     @GetMapping("/products/{id}/edit")
@@ -85,9 +101,10 @@ public class AdminPageController {
         return "admin/orders/list";
     }
 
-    @GetMapping("/orders/{id}")
-    public String ordersDetail(@PathVariable("id") Long id, Model model) {
+    @GetMapping("/orders/detail/{id}")
+    public String ordersDetail(@PathVariable Long id, Model model) {
         addCurrentUserToModel(model);
+        model.addAttribute("orderId", id);
         return "admin/orders/detail";
     }
 
@@ -107,20 +124,8 @@ public class AdminPageController {
     @GetMapping("/users/{id}/edit")
     public String usersEdit(@PathVariable("id") Long id, Model model) {
         addCurrentUserToModel(model);
+        model.addAttribute("userId", id);
         return "admin/users/edit";
-    }
-
-    // Permissions
-    @GetMapping("/permissions")
-    public String permissionsList(Model model) {
-        addCurrentUserToModel(model);
-        return "admin/permissions/list";
-    }
-
-    @GetMapping("/permissions/manage")
-    public String permissionsManage(Model model) {
-        addCurrentUserToModel(model);
-        return "admin/permissions/manage";
     }
 
     // Roles
@@ -134,5 +139,18 @@ public class AdminPageController {
     public String rolesManage(Model model) {
         addCurrentUserToModel(model);
         return "admin/roles/manage";
+    }
+
+    // Permissions
+    @GetMapping("/permissions")
+    public String permissionsList(Model model) {
+        addCurrentUserToModel(model);
+        return "admin/permissions/list";
+    }
+
+    @GetMapping("/permissions/manage")
+    public String permissionsManage(Model model) {
+        addCurrentUserToModel(model);
+        return "admin/permissions/manage";
     }
 }

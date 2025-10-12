@@ -40,6 +40,8 @@ public class UploadFileController {
     @Autowired
     private IDirectoryStructureService directoryStructureService;
 
+    
+
     // Cấu hình kích thước và chất lượng mặc định
     private static final int MAX_WIDTH = 1200;
     private static final int MAX_HEIGHT = 1200;

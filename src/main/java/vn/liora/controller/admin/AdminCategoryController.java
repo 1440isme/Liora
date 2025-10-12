@@ -15,6 +15,7 @@ import vn.liora.mapper.CategoryMapper;
 import vn.liora.service.ICategoryService;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/admin/api/categories")
@@ -89,6 +90,24 @@ public class AdminCategoryController {
         } catch (Exception e) {
             response.setCode(500);
             response.setMessage("Lỗi khi lấy danh sách danh mục: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(response);
+        }
+    }
+    @GetMapping("/all")
+    public ResponseEntity<ApiResponse<List<CategoryResponse>>> getAllActiveCategories() {
+        ApiResponse<List<CategoryResponse>> response = new ApiResponse<>();
+        try {
+            List<Category> activeCategories = categoryService.findActiveCategories();
+            List<CategoryResponse> categoryResponses = activeCategories.stream()
+                    .map(categoryMapper::toCategoryResponse)
+                    .collect(Collectors.toList());
+            
+            response.setResult(categoryResponses);
+            response.setMessage("Lấy danh sách danh mục thành công");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.setCode(500);
+            response.setMessage("Lỗi hệ thống: " + e.getMessage());
             return ResponseEntity.internalServerError().body(response);
         }
     }

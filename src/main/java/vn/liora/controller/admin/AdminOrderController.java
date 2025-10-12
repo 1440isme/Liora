@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
-@RequestMapping("/order/")
+@RequestMapping("/admin/api/orders")
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Slf4j
@@ -35,15 +35,10 @@ public class AdminOrderController {
         List<OrderResponse> orders = orderService.getAllOrders();
         return ResponseEntity.ok(orders);
     }
-    @GetMapping("/payment-status")
-    public ResponseEntity<List<OrderResponse>> getOrdersByPaymentStatus(@RequestParam Boolean paymentStatus) {
-        List<OrderResponse> orders = orderService.getOrdersByPaymentStatus(paymentStatus);
-        return ResponseEntity.ok(orders);
-    }
 
     // Lấy đơn hàng theo trạng thái đơn hàng
     @GetMapping("/order-status")
-    public ResponseEntity<List<OrderResponse>> getOrdersByOrderStatus(@RequestParam Boolean orderStatus) {
+    public ResponseEntity<List<OrderResponse>> getOrdersByOrderStatus(@RequestParam String orderStatus) {
         List<OrderResponse> orders = orderService.getOrdersByOrderStatus(orderStatus);
         return ResponseEntity.ok(orders);
     }
@@ -57,13 +52,6 @@ public class AdminOrderController {
         LocalDateTime endDate = LocalDateTime.parse(end);
         List<OrderResponse> orders = orderService.getOrdersByDateRange(startDate,endDate);
         return ResponseEntity.ok(orders);
-    }
-
-    // Lấy tổng số đơn hàng theo trạng thái thanh toán
-    @GetMapping("/count/payment-status")
-    public ResponseEntity<Long> countByPaymentStatus(@RequestParam Boolean paymentStatus) {
-        Long count = orderService.countByPaymentStatus(paymentStatus);
-        return ResponseEntity.ok(count);
     }
 
     // Lấy tổng số đơn hàng của một user
@@ -88,4 +76,5 @@ public class AdminOrderController {
                 .map(user -> ResponseEntity.ok(orderService.getTotalRevenueByUser(user)))
                 .orElse(ResponseEntity.notFound().build());
     }
+
 }

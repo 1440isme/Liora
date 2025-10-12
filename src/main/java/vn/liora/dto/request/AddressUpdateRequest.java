@@ -29,6 +29,5 @@ public class AddressUpdateRequest {
     String province;
 
     Boolean isDefault;
-    Boolean isActive ;
 
 }

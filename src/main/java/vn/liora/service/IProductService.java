@@ -25,6 +25,7 @@ public interface IProductService {
     Page<Product> findAll(Pageable pageable);
     List<Product> findAllById(Iterable<Long> ids);
     Optional<Product> findByIdOptional(Long id);
+    Product save(Product product);
 
     // ========== SEARCH ==========
     List<Product> findByNameContaining(String name);

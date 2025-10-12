@@ -4,7 +4,6 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.liora.dto.request.AddressCreateRequest;
@@ -39,9 +38,8 @@ public class AddressServiceImpl implements IAddressService {
         Address address = addressMapper.toAddress(request);
 
         address.setUser(user);
-        address.setIsActive(true);
 
-        List<Address> existingAddresses = addressRepository.findByUserAndIsActiveTrue(user);
+        List<Address> existingAddresses = addressRepository.findByUser(user);
 
         if (existingAddresses.isEmpty()) {
             address.setIsDefault(true);
@@ -60,7 +58,7 @@ public class AddressServiceImpl implements IAddressService {
     @Transactional
     public AddressResponse updateAddress(Long userId, Long idAddress, AddressUpdateRequest request) {
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
         Address address = addressRepository.findById(idAddress)
                 .orElseThrow(() -> new AppException(ErrorCode.ADDRESS_NOT_FOUND));
@@ -68,18 +66,20 @@ public class AddressServiceImpl implements IAddressService {
         if (Boolean.TRUE.equals(request.getIsDefault())) {
             addressRepository.clearDefaultByUser(userId);
             address.setIsDefault(true);
-          }
+        }
         if (Boolean.FALSE.equals(request.getIsDefault()) && Boolean.TRUE.equals(address.getIsDefault())) {
             throw new AppException(ErrorCode.CANNOT_REMOVE_DEFAULT_ADDRESS);
         }
+
         addressMapper.updateAddress(address, request);
         address = addressRepository.save(address);
+
         return addressMapper.toAddressResponse(address);
     }
 
     @Override
     @Transactional
-    public void deleteAddress(Long userId,Long idAddress) {
+    public void deleteAddress(Long userId, Long idAddress) {
 
         Address address = addressRepository.findByIdAddress(idAddress)
                 .orElseThrow(() -> new AppException(ErrorCode.ADDRESS_NOT_FOUND));
@@ -91,14 +91,11 @@ public class AddressServiceImpl implements IAddressService {
             throw new AppException(ErrorCode.CANNOT_DELETE_DEFAULT_ADDRESS);
         }
 
-        address.setIsActive(false);
-        addressRepository.save(address);
+        addressRepository.deleteById(idAddress);
     }
 
-
-
     @Override
-    public AddressResponse getAddressById(Long userId,Long idAddress) {
+    public AddressResponse getAddressById(Long userId, Long idAddress) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
         Address address = addressRepository.findByIdAddress(idAddress)
@@ -111,8 +108,7 @@ public class AddressServiceImpl implements IAddressService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
-
-        List<Address> addresses = addressRepository.findByUserAndIsActiveTrue(user);
+        List<Address> addresses = addressRepository.findByUser(user);
         return addressMapper.toAddressResponseList(addresses);
     }
 

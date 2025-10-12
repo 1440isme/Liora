@@ -34,4 +34,7 @@ public class ProductResponse {
     private BigDecimal averageRating;
     private Integer ratingCount;
     private Boolean isActive;
+
+    // Thêm field này
+    private String mainImageUrl;
 }

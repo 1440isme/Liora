@@ -241,6 +241,7 @@
                                             <p>Vui lòng chờ trong giây lát</p>
                                         </div>
                                     </div>
+
                                 </div>
 
                                 <!-- Orders Tab -->
@@ -323,6 +324,132 @@
 
     <!-- Footer -->
     <div th:replace="user/layout/user-footer :: footer"></div>
+
+    <!-- Add Address Modal - Outside all containers for full viewport coverage -->
+    <div class="address-modal" id="addAddressModal">
+        <div class="address-modal-content">
+            <div class="address-modal-header">
+                <h5 class="mb-0"><i class="fas fa-plus-circle me-2"></i>Thêm địa chỉ mới</h5>
+                <button type="button" class="btn-close" onclick="closeAddressModal()" aria-label="Close"></button>
+            </div>
+            <div class="address-modal-body">
+                <form id="addAddressForm">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="addrName" placeholder="Họ và tên người nhận"
+                                    required>
+                                <label for="addrName">Họ và tên người nhận</label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-floating">
+                                <input type="tel" class="form-control" id="addrPhone" placeholder="Số điện thoại"
+                                    required>
+                                <label for="addrPhone">Số điện thoại</label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="addrDetail"
+                                    placeholder="Địa chỉ cụ thể (số nhà, đường...)" required>
+                                <label for="addrDetail">Địa chỉ cụ thể</label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-floating">
+                                <select class="form-select" id="addrProvince" required>
+                                    <option value="">Chọn Tỉnh/Thành phố</option>
+                                </select>
+                                <label for="addrProvince">Tỉnh/Thành phố</label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-floating">
+                                <select class="form-select" id="addrWard" required disabled>
+                                    <option value="">Chọn Tỉnh/Thành phố trước</option>
+                                </select>
+                                <label for="addrWard">Phường/Xã</label>
+                            </div>
+                        </div>
+                        <div class="col-12 d-flex align-items-center">
+                            <input class="form-check-input me-2" type="checkbox" id="addrDefault">
+                            <label class="form-check-label" for="addrDefault">Đặt làm địa chỉ mặc định</label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="address-modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeAddressModal()">Hủy</button>
+                <button type="button" class="btn btn-pink-primary" id="btnSubmitAddAddress">
+                    <i class="fas fa-save"></i> Lưu địa chỉ
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Address Modal -->
+    <div class="address-modal" id="editAddressModal">
+        <div class="address-modal-content">
+            <div class="address-modal-header">
+                <h5 class="address-modal-title">Chỉnh sửa địa chỉ</h5>
+                <button type="button" class="btn-close" onclick="closeEditAddressModal()"></button>
+            </div>
+            <div class="address-modal-body">
+                <form id="editAddressForm">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="editAddrName" placeholder="Tên người nhận"
+                                    required>
+                                <label for="editAddrName">Tên người nhận</label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-floating">
+                                <input type="tel" class="form-control" id="editAddrPhone" placeholder="Số điện thoại"
+                                    required>
+                                <label for="editAddrPhone">Số điện thoại</label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="editAddrDetail"
+                                    placeholder="Địa chỉ cụ thể (số nhà, đường...)" required>
+                                <label for="editAddrDetail">Địa chỉ cụ thể</label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-floating">
+                                <select class="form-select" id="editAddrProvince" required>
+                                    <option value="">Chọn Tỉnh/Thành phố</option>
+                                </select>
+                                <label for="editAddrProvince">Tỉnh/Thành phố</label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="form-floating">
+                                <select class="form-select" id="editAddrWard" required disabled>
+                                    <option value="">Chọn Tỉnh/Thành phố trước</option>
+                                </select>
+                                <label for="editAddrWard">Phường/Xã</label>
+                            </div>
+                        </div>
+                        <div class="col-12 d-flex align-items-center">
+                            <input class="form-check-input me-2" type="checkbox" id="editAddrDefault">
+                            <label class="form-check-label" for="editAddrDefault">Đặt làm địa chỉ mặc định</label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="address-modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeEditAddressModal()">Hủy</button>
+                <button type="button" class="btn btn-pink-primary" id="btnSubmitEditAddress">
+                    <i class="fas fa-save"></i> Cập nhật địa chỉ
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>

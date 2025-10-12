@@ -1,71 +1,51 @@
 package vn.liora.controller.user;
 
-import jakarta.validation.Valid;
-import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
-import lombok.experimental.FieldDefaults;
-import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import vn.liora.dto.request.ApiResponse;
-import vn.liora.dto.request.UserCreationRequest;
-import vn.liora.dto.request.UserUpdateRequest;
 import vn.liora.dto.response.UserResponse;
 import vn.liora.entity.User;
-import vn.liora.service.IUserService;
-
-import java.time.LocalDate;
-import java.util.List;
-
+import vn.liora.exception.AppException;
+import vn.liora.exception.ErrorCode;
+import vn.liora.repository.UserRepository;
+import vn.liora.mapper.UserMapper;
 
 @RestController
 @RequestMapping("/users")
 @RequiredArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-@Slf4j
 public class UserController {
-    IUserService userService;
 
-    @PostMapping
-    ApiResponse<UserResponse> createUser(@RequestBody @Valid UserCreationRequest request) {
-        return ApiResponse.<UserResponse>builder()
-                .result(userService.createUser(request))
-                .build();
-    }
+    private final UserRepository userRepository;
+    private final UserMapper userMapper;
 
-    @GetMapping
-    ApiResponse<List<UserResponse>> getUsers() {
-        var authentication = SecurityContextHolder.getContext().getAuthentication();
-        log.info("Username: {}", authentication.getName());
-        return ApiResponse.<List<UserResponse>>builder()
-                .result(userService.findAll())
-                .build();
-    }
-
-    @GetMapping("/{userId}")
-    ApiResponse<UserResponse> getUser(@PathVariable("userId") Long userId) {
-        return ApiResponse.<UserResponse>builder()
-                .result(userService.findById(userId))
-                .build();
-    }
     @GetMapping("/myInfo")
-    ApiResponse<UserResponse> getMyInfo() {
-        return ApiResponse.<UserResponse>builder()
-                .result(userService.getMyInfo())
-                .build();
-    }
+    public ResponseEntity<ApiResponse<UserResponse>> getMyInfo() {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated()) {
+                throw new AppException(ErrorCode.UNAUTHENTICATED);
+            }
 
+            String username = authentication.getName();
+            User user = userRepository.findByUsername(username)
+                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
-    @DeleteMapping("/{userId}")
-    ApiResponse<String> deleteUser(@PathVariable Long userId) {
-        userService.deleteById(userId);
-        return ApiResponse.<String>builder().result("User has been deleted").build();
-    }
+            UserResponse userResponse = userMapper.toUserResponse(user);
 
-    @PutMapping("/{userId}")
-    ApiResponse<UserResponse> updateUser(@PathVariable Long userId, @RequestBody UserUpdateRequest request) {
-        return ApiResponse.<UserResponse>builder()
-                .result(userService.updateUser(userId, request))
-                .build();
+            ApiResponse<UserResponse> response = new ApiResponse<>();
+            response.setResult(userResponse);
+            response.setMessage("Lấy thông tin người dùng thành công");
+
+            return ResponseEntity.ok(response);
+        } catch (AppException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        }
     }
 }

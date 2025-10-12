@@ -24,4 +24,12 @@ public class Image {
     @JoinColumn(name = "IdProduct")
     private Product product;
 
+    // Thêm field này để phân biệt ảnh chính
+    @Column(name = "IsMain", nullable = false)
+    private Boolean isMain = false;
+
+    // Thêm field thứ tự hiển thị
+    @Column(name = "DisplayOrder")
+    private Integer displayOrder = 0;
+
 }

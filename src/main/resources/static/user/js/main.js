@@ -47,6 +47,32 @@ class LioraApp {
             }
         });
 
+        // Categories dropdown events
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.category-item')) {
+                e.preventDefault();
+                const category = e.target.closest('.category-item').dataset.category;
+                if (category) {
+                    this.showPage(category);
+                }
+            }
+
+            if (e.target.closest('.subcategory-item, .brand-item')) {
+                e.preventDefault();
+                const item = e.target.closest('.subcategory-item, .brand-item');
+                this.handleCategoryItemClick(item.textContent.trim());
+            }
+
+            // Navigation link events
+            if (e.target.closest('.nav-link[data-category]')) {
+                e.preventDefault();
+                const category = e.target.closest('.nav-link').dataset.category;
+                if (category) {
+                    this.showPage(category);
+                }
+            }
+        });
+
         // Search functionality
         const searchInputs = document.querySelectorAll('.search-input');
         searchInputs.forEach(input => {
@@ -333,6 +359,13 @@ class LioraApp {
         this.showToast(`Found ${results.length} products for "${query}"`, 'info');
     }
 
+    handleCategoryItemClick(itemName) {
+        // Handle clicks on subcategory items and brand items
+        this.showToast(`Browsing: ${itemName}`, 'info');
+        // You can implement specific category filtering here
+        console.log('Category item clicked:', itemName);
+    }
+
     handleNewsletterSubscription(form) {
         const emailInput = form.querySelector('input[type="email"]');
         const email = emailInput.value.trim();
@@ -544,15 +577,16 @@ class LioraApp {
 
             const userHTML = `
                 <div class="dropdown">
-                    <button class="btn btn-link text-dark p-2 nav-icon-btn dropdown-toggle" type="button" id="userMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="fas fa-user-circle me-1"></i>${displayName}
+                    <button class="btn btn-user dropdown-toggle" type="button" id="userMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="mdi mdi-account-circle me-1"></i>
+                        <span>${displayName}</span>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenuButton">
                         <li class="dropdown-header">Xin chào, ${displayName}</li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="/info" onclick="app.openUserInfo()"><i class="fas fa-id-card me-2"></i>Thông tin cá nhân</a></li>
+                        <li><a class="dropdown-item" href="/info" onclick="app.openUserInfo()"><i class="mdi mdi-account me-2"></i>Thông tin cá nhân</a></li>
                         ${adminLink}
-                        <li><a class="dropdown-item" href="/home" onclick="app.signOut()"><i class="fas fa-sign-out-alt me-2"></i>Đăng xuất</a></li>
+                        <li><a class="dropdown-item" href="/home" onclick="app.signOut()"><i class="mdi mdi-logout me-2"></i>Đăng xuất</a></li>
                     </ul>
                 </div>
             `;
@@ -572,8 +606,9 @@ class LioraApp {
             if (mobileUserSection) mobileUserSection.innerHTML = mobileUserHTML;
         } else {
             const userHTML = `
-                <button class="btn btn-link text-dark p-2 nav-icon-btn" data-bs-toggle="modal" data-bs-target="#authModal">
-                    <i class="fas fa-user"></i>
+                <button class="btn btn-user" data-bs-toggle="modal" data-bs-target="#authModal">
+                    <i class="mdi mdi-account-circle me-1"></i>
+                    <span>Đăng nhập / Đăng ký Liora</span>
                 </button>
             `;
 
@@ -667,3 +702,279 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Export for use in other scripts
 window.LioraApp = LioraApp;
+
+// ========================================
+// BANNER SLIDER CLASS
+// ========================================
+class BannerSlider {
+    constructor() {
+        this.slider = document.getElementById('bannerSlider');
+        this.prevBtn = document.getElementById('prevBtn');
+        this.nextBtn = document.getElementById('nextBtn');
+        this.dotsContainer = document.getElementById('sliderDots');
+        this.currentSlide = 0;
+        this.banners = [];
+        this.isDragging = false;
+        this.hasMoved = false;
+        this.startX = 0;
+        this.currentX = 0;
+        this.autoSlideInterval = null;
+        this.isInitialized = false;
+
+        // Only initialize if elements exist (on home page)
+        if (this.slider && this.prevBtn && this.nextBtn && this.dotsContainer) {
+            this.init();
+        }
+    }
+
+    async init() {
+        try {
+            await this.loadBanners();
+            this.renderSlides();
+            this.renderDots();
+            this.bindEvents();
+            this.startAutoSlide();
+            this.isInitialized = true;
+            console.log('Banner slider initialized with', this.banners.length, 'banners');
+        } catch (error) {
+            console.error('Error initializing banner slider:', error);
+        }
+    }
+
+    async loadBanners() {
+        try {
+            console.log('Fetching banners from API...');
+            const response = await fetch('/admin/banners/api/active', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            console.log('API Response status:', response.status);
+            console.log('API Response headers:', response.headers);
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log('Raw API response:', data);
+
+            // Handle different response formats
+            if (Array.isArray(data)) {
+                this.banners = data;
+            } else if (data && Array.isArray(data.value)) {
+                this.banners = data.value;
+            } else if (data && Array.isArray(data.data)) {
+                this.banners = data.data;
+            } else {
+                this.banners = [];
+            }
+
+            console.log('Processed banners:', this.banners);
+
+            // If no banners, show default content
+            if (this.banners.length === 0) {
+                this.banners = [{
+                    id: 1,
+                    title: "Chào mừng đến với Liora",
+                    imageUrl: "https://placehold.co/1200x600",
+                    targetLink: "#"
+                }];
+                console.log('No banners found, using default content');
+            }
+        } catch (error) {
+            console.error('Error loading banners:', error);
+            console.error('Error details:', error.message);
+            // Fallback content
+            this.banners = [{
+                id: 1,
+                title: "Chào mừng đến với Liora",
+                imageUrl: "https://placehold.co/1200x600",
+                targetLink: "#"
+            }];
+        }
+    }
+
+    renderSlides() {
+        if (!this.slider) return;
+
+        this.slider.innerHTML = '';
+
+        this.banners.forEach((banner, index) => {
+            const slide = document.createElement('div');
+            slide.className = 'banner-slide';
+            slide.style.backgroundImage = `url(${banner.imageUrl})`;
+
+            // Add click handler with drag detection
+            slide.addEventListener('click', (e) => {
+                // Only redirect if it's a click (not a drag)
+                if (!this.isDragging && !this.hasMoved) {
+                    if (banner.targetLink) {
+                        window.open(banner.targetLink, '_blank');
+                    }
+                }
+            });
+
+            this.slider.appendChild(slide);
+        });
+
+        // Set initial position
+        this.slider.style.transform = 'translateX(0%)';
+    }
+
+    renderDots() {
+        if (!this.dotsContainer) return;
+
+        this.dotsContainer.innerHTML = '';
+
+        this.banners.forEach((_, index) => {
+            const dot = document.createElement('button');
+            dot.className = `slider-dot ${index === 0 ? 'active' : ''}`;
+            dot.addEventListener('click', () => this.goToSlide(index));
+            this.dotsContainer.appendChild(dot);
+        });
+    }
+
+    bindEvents() {
+        if (!this.slider || !this.prevBtn || !this.nextBtn) return;
+
+        // Navigation buttons
+        this.prevBtn.addEventListener('click', () => this.prevSlide());
+        this.nextBtn.addEventListener('click', () => this.nextSlide());
+
+        // Touch/Mouse events for dragging
+        this.slider.addEventListener('mousedown', (e) => this.startDrag(e));
+        this.slider.addEventListener('touchstart', (e) => this.startDrag(e));
+
+        document.addEventListener('mousemove', (e) => this.drag(e));
+        document.addEventListener('touchmove', (e) => this.drag(e));
+
+        document.addEventListener('mouseup', () => this.endDrag());
+        document.addEventListener('touchend', () => this.endDrag());
+
+        // Pause auto-slide on hover
+        this.slider.addEventListener('mouseenter', () => this.stopAutoSlide());
+        this.slider.addEventListener('mouseleave', () => this.startAutoSlide());
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                this.prevSlide();
+            } else if (e.key === 'ArrowRight') {
+                e.preventDefault();
+                this.nextSlide();
+            }
+        });
+    }
+
+    startDrag(e) {
+        if (!this.isInitialized) return;
+
+        this.isDragging = true;
+        this.hasMoved = false;
+        this.startX = e.type === 'mousedown' ? e.clientX : e.touches[0].clientX;
+        this.slider.style.cursor = 'grabbing';
+        this.stopAutoSlide();
+    }
+
+    drag(e) {
+        if (!this.isDragging || !this.isInitialized) return;
+
+        e.preventDefault();
+        this.currentX = e.type === 'mousemove' ? e.clientX : e.touches[0].clientX;
+        const diffX = this.startX - this.currentX;
+
+        // Mark as moved if drag distance is significant
+        if (Math.abs(diffX) > 5) {
+            this.hasMoved = true;
+        }
+
+        // Add visual feedback during drag
+        this.slider.style.transform = `translateX(calc(-${this.currentSlide * 100}% - ${diffX * 0.1}px))`;
+    }
+
+    endDrag() {
+        if (!this.isDragging || !this.isInitialized) return;
+
+        this.isDragging = false;
+        this.slider.style.cursor = 'grab';
+
+        const diffX = this.startX - this.currentX;
+        const threshold = 50;
+
+        if (Math.abs(diffX) > threshold) {
+            if (diffX > 0) {
+                this.nextSlide();
+            } else {
+                this.prevSlide();
+            }
+        } else {
+            this.goToSlide(this.currentSlide);
+        }
+
+        // Reset hasMoved after a short delay to allow click detection
+        setTimeout(() => {
+            this.hasMoved = false;
+        }, 100);
+
+        this.startAutoSlide();
+    }
+
+    goToSlide(index) {
+        if (!this.isInitialized) return;
+
+        this.currentSlide = index;
+        this.slider.style.transform = `translateX(-${index * 100}%)`;
+        this.updateDots();
+    }
+
+    nextSlide() {
+        if (!this.isInitialized || this.banners.length <= 1) return;
+
+        this.currentSlide = (this.currentSlide + 1) % this.banners.length;
+        this.goToSlide(this.currentSlide);
+    }
+
+    prevSlide() {
+        if (!this.isInitialized || this.banners.length <= 1) return;
+
+        this.currentSlide = this.currentSlide === 0 ? this.banners.length - 1 : this.currentSlide - 1;
+        this.goToSlide(this.currentSlide);
+    }
+
+    updateDots() {
+        if (!this.dotsContainer) return;
+
+        const dots = this.dotsContainer.querySelectorAll('.slider-dot');
+        dots.forEach((dot, index) => {
+            dot.classList.toggle('active', index === this.currentSlide);
+        });
+    }
+
+    startAutoSlide() {
+        if (!this.isInitialized || this.banners.length <= 1) return;
+
+        this.stopAutoSlide();
+        this.autoSlideInterval = setInterval(() => {
+            this.nextSlide();
+        }, 5000); // Auto slide every 5 seconds
+    }
+
+    stopAutoSlide() {
+        if (this.autoSlideInterval) {
+            clearInterval(this.autoSlideInterval);
+            this.autoSlideInterval = null;
+        }
+    }
+
+    destroy() {
+        this.stopAutoSlide();
+        this.isInitialized = false;
+    }
+}
+
+// Export for use in other scripts
+window.BannerSlider = BannerSlider;

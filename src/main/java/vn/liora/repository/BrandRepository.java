@@ -16,6 +16,7 @@ public interface BrandRepository extends JpaRepository<Brand, Long> {
     Page<Brand> findByNameContaining(String name, Pageable pageable);
     Optional<Brand> findByName(String name);
     boolean existsByName(String name);
+    List<Brand> findByIsActiveTrue();
     Page<Brand> findByIsActiveTrue(Pageable pageable);
     Page<Brand> findByIsActiveFalse(Pageable pageable);
     boolean existsByNameAndIsActiveTrue(String name);
