@@ -289,14 +289,22 @@ public class DiscountServiceImpl implements IDiscountService {
         
         Discount discount = discountRepository.findById(request.getDiscountId())
                 .orElseThrow(() -> new AppException(ErrorCode.DISCOUNT_NOT_FOUND));
+
+        BigDecimal subTotal = order.getTotal().add(order.getTotalDiscount()).subtract(order.getShippingFee());
         
         // Check if discount can be applied
-        if (!canApplyDiscount(request.getDiscountId(), order.getUser().getUserId(), order.getTotal())) {
+        if (!canApplyDiscount(request.getDiscountId(), order.getUser().getUserId(), subTotal)) {
             throw new AppException(ErrorCode.DISCOUNT_CANNOT_BE_APPLIED);
         }
         
         // Add discount to order (One-to-Many relationship)
+        BigDecimal discountAmount = calculateDiscountAmount(request.getDiscountId(), subTotal);
         order.setDiscount(discount);
+        order.setTotalDiscount(discountAmount);
+
+        BigDecimal newTotal = subTotal.add(order.getShippingFee()).subtract(discountAmount);
+        order.setTotal(newTotal);
+
         orderRepository.save(order);
         
         // Increment usage count
@@ -313,7 +321,15 @@ public class DiscountServiceImpl implements IDiscountService {
                 .orElseThrow(() -> new AppException(ErrorCode.DISCOUNT_NOT_FOUND));
         
         // Remove discount from order
+        BigDecimal subTotal = order.getTotal().add(order.getTotalDiscount()).subtract(order.getShippingFee());
+
+        // Remove discount from order and update totals
         order.setDiscount(null);
+        order.setTotalDiscount(BigDecimal.ZERO);
+
+        BigDecimal newTotal = subTotal.add(order.getShippingFee());
+        order.setTotal(newTotal);
+        
         orderRepository.save(order);
         
         // Decrement usage count

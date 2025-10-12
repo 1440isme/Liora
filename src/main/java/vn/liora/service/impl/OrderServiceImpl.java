@@ -4,7 +4,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.context.SecurityContextHolder;
+// import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.liora.dto.request.OrderCreationRequest;
@@ -38,9 +38,13 @@ public class OrderServiceImpl implements IOrderService {
     CartProductRepository cartProductRepository;
     OrderMapper orderMapper;
 
+    private void recalculateOrderTotal(Order order) {
+        // This method is not needed anymore since calculation is done in DiscountServiceImpl
+        // Keep it for potential future use but it's currently redundant
+    }
+
     @Override
     @Transactional
-
     public OrderResponse createOrder(Long userId,OrderCreationRequest request) {
 
             User user = userRepository.findById(userId)
@@ -60,7 +64,8 @@ public class OrderServiceImpl implements IOrderService {
             order.setOrderStatus(true);
             order.setPaymentStatus(true);
             order.setShippingFee(new BigDecimal("18000"));
-            order.setTotalDiscount(new BigDecimal("10000"));
+            // order.setTotalDiscount(new BigDecimal("10000"));
+            order.setTotalDiscount(BigDecimal.ZERO);
             order.setTotal(new BigDecimal("0"));
              final Order savedOrder = orderRepository.save(order);
 
