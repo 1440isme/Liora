@@ -368,7 +368,7 @@ public class ProductServiceImpl implements IProductService {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
         
-        // Chỉ cho phép set available = true nếu stock > 0
+        // Không cho phép set available = true nếu stock = 0
         if (available && product.getStock() != null && product.getStock() == 0) {
             throw new AppException(ErrorCode.PRODUCT_OUT_OF_STOCK);
         }
@@ -390,8 +390,11 @@ public class ProductServiceImpl implements IProductService {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
         product.setStock(stock);
+        // Tự động set available dựa vào stock
         if (stock == 0) {
-            product.setAvailable(false); // Tự động set hết hàng khi stock = 0
+            product.setAvailable(false);
+        } else {
+            product.setAvailable(true);
         }
         product.setUpdatedDate(LocalDateTime.now());
         productRepository.save(product);
