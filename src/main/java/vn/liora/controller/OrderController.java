@@ -8,32 +8,16 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import vn.liora.dto.response.OrderProductResponse;
-import vn.liora.entity.Image;
-import vn.liora.entity.Order;
-import vn.liora.entity.OrderProduct;
-import vn.liora.mapper.OrderProductMapper;
-import vn.liora.repository.OrderProductRepository;
-import vn.liora.repository.OrderRepository;
-import vn.liora.service.IImageService;
+import vn.liora.service.IOrderService;
 
 import java.util.List;
-import java.util.Optional;
 
 @Controller
 @RequestMapping
 public class OrderController {
 
     @Autowired
-    private OrderRepository orderRepository;
-
-    @Autowired
-    private OrderProductRepository orderProductRepository;
-
-    @Autowired
-    private OrderProductMapper orderProductMapper;
-
-    @Autowired
-    private IImageService imageService;
+    private IOrderService orderService;
 
     @GetMapping("/orders")
     public String listOrders() {
@@ -50,27 +34,7 @@ public class OrderController {
     @GetMapping("/api/orders/{orderId}/items")
     public ResponseEntity<List<OrderProductResponse>> getOrderItems(@PathVariable Long orderId) {
         try {
-            Optional<Order> orderOpt = orderRepository.findById(orderId);
-            if (orderOpt.isEmpty()) {
-                return ResponseEntity.notFound().build();
-            }
-
-            Order order = orderOpt.get();
-            List<OrderProduct> orderProducts = orderProductRepository.findByOrder(order);
-            List<OrderProductResponse> responses = orderProductMapper.toOrderProductResponseList(orderProducts);
-
-            // Set thông tin hình ảnh cho từng sản phẩm
-            responses.forEach(response -> {
-                try {
-                    Optional<Image> mainImage = imageService.findMainImageByProductId(response.getIdProduct());
-                    if (mainImage.isPresent()) {
-                        response.setMainImageUrl(mainImage.get().getImageUrl());
-                    }
-                } catch (Exception e) {
-                    System.err.println("Error loading image for product " + response.getIdProduct() + ": " + e.getMessage());
-                }
-            });
-
+            List<OrderProductResponse> responses = orderService.getProductsByOrderId(orderId);
             return ResponseEntity.ok(responses);
         } catch (Exception e) {
             System.err.println("Error loading order items: " + e.getMessage());

@@ -87,9 +87,9 @@
                                                 <tr>
                                                     <th scope="col" width="10%">Hình ảnh</th>
                                                     <th scope="col" width="35%">Tên sản phẩm</th>
-                                                    <th scope="col" width="20%">Đơn giá</th>
-                                                    <th scope="col" width="15%">Số lượng</th>
-                                                    <th scope="col" width="20%">Thành tiền</th>
+                                                    <th scope="col" width="20%" class="text-end">Đơn giá</th>
+                                                    <th scope="col" width="15%" class="text-center">Số lượng</th>
+                                                    <th scope="col" width="20%" class="text-end">Thành tiền</th>
                                                 </tr>
                                             </thead>
                                             <tbody id="orderItemsTable">
@@ -194,27 +194,18 @@
                     <form id="updateStatusForm">
                         <input type="hidden" id="updateOrderId" />
 
-                        <div class="mb-3">
-                            <label for="updatePaymentStatus" class="form-label">Trạng thái thanh toán</label>
-                            <select class="form-select" id="updatePaymentStatus" required>
-                                <option value="false">Chưa thanh toán</option>
-                                <option value="true">Đã thanh toán</option>
-                            </select>
-                        </div>
+
 
                         <div class="mb-3">
                             <label for="updateOrderStatus" class="form-label">Trạng thái đơn hàng</label>
                             <select class="form-select" id="updateOrderStatus" required>
-                                <option value="false">Chờ xử lý</option>
-                                <option value="true">Đã xử lý</option>
+                                <option value="PENDING">Chờ xử lý</option>
+                                <option value="CANCELLED">Đã hủy</option>
+                                <option value="COMPLETED">Đã Hoàn tất </option>
                             </select>
                         </div>
 
-                        <div class="mb-3">
-                            <label for="updateNotes" class="form-label">Ghi chú</label>
-                            <textarea class="form-control" id="updateNotes" rows="3"
-                                      placeholder="Nhập ghi chú về việc cập nhật trạng thái..."></textarea>
-                        </div>
+
                     </form>
                 </div>
                 <div class="modal-footer">

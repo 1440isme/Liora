@@ -278,7 +278,7 @@ class OrderDetailManager {
                         <br>
                         <small class="text-muted">ID: ${item.idOrderProduct}</small>
                     </td>
-                    <td class="fw-medium">
+                    <td class="fw-medium text-end">
                         ${item.productPrice ? 
                             new Intl.NumberFormat('vi-VN', {
                                 style: 'currency',
@@ -292,10 +292,10 @@ class OrderDetailManager {
                             )
                         }
                     </td>
-                    <td>
+                    <td class="text-center">
                         ${item.quantity || 0}
                     </td>
-                    <td class="fw-bold text-primary">
+                    <td class="fw-bold text-primary text-end">
                         ${new Intl.NumberFormat('vi-VN', {
                             style: 'currency',
                             currency: 'VND'

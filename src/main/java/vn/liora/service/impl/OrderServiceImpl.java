@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.liora.dto.request.OrderCreationRequest;
 import vn.liora.dto.request.OrderUpdateRequest;
+import vn.liora.dto.response.OrderProductResponse;
 import vn.liora.dto.response.OrderResponse;
 import vn.liora.entity.*;
 import vn.liora.exception.AppException;
@@ -16,6 +17,7 @@ import vn.liora.exception.ErrorCode;
 import vn.liora.mapper.OrderMapper;
 import vn.liora.mapper.OrderProductMapper;
 import vn.liora.repository.*;
+import vn.liora.service.IImageService;
 import vn.liora.service.IOrderService;
 
 import java.math.BigDecimal;
@@ -37,6 +39,7 @@ public class OrderServiceImpl implements IOrderService {
     OrderProductMapper orderProductMapper;
     CartProductRepository cartProductRepository;
     OrderMapper orderMapper;
+    IImageService imageService;
 
     @Override
     @Transactional
@@ -125,6 +128,22 @@ public class OrderServiceImpl implements IOrderService {
         // Lấy danh sách đơn hàng theo khoảng thời gian
         List<Order> orders = orderRepository.findByOrderDateBetween(start, end);
         return orderMapper.toOrderResponseList(orders);
+    }
+
+    @Override
+    public List<OrderProductResponse> getProductsByOrderId(Long idOrder) {
+        Order order = orderRepository.findById(idOrder)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+        List<OrderProduct> orderProducts = orderProductRepository.findByOrder(order);
+        List<OrderProductResponse> responses = orderProducts.stream().map(op -> {
+            OrderProductResponse resp = orderProductMapper.toOrderProductResponse(op);
+            String mainImageUrl = imageService.findMainImageByProductId(op.getProduct().getProductId())
+                    .map(Image::getImageUrl)
+                    .orElse(null);
+            resp.setMainImageUrl(mainImageUrl);
+            return resp;
+        }).collect(Collectors.toList());
+        return responses;
     }
 
     @Override
