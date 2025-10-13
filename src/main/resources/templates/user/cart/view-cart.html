@@ -54,11 +54,10 @@
     <!-- Cart Content -->
     <section class="cart-content ">
         <div class="container">
-            <!-- Cart Items -->
-            <div class="row">
-                <div class="col-lg-8">
-                    <!-- Empty Cart State -->
-                    <div id="cart-empty" class="cart-empty-state">
+            <!-- Empty Cart State - Căn giữa màn hình -->
+            <div class="row" id="cart-empty-row" style="display: none;">
+                <div class="col-lg-8 offset-lg-2 col-md-8 offset-md-2">
+                    <div id="cart-empty" class="cart-empty-state text-center mb-0">
                         <div class="empty-cart-icon">
                             <i class="mdi mdi-cart-outline"></i>
                         </div>
@@ -70,9 +69,14 @@
                             Tiếp tục mua sắm
                         </a>
                     </div>
+                </div>
+            </div>
 
-                    <!-- Cart Items Container (Hidden when empty) -->
-                    <div id="cart-items-container" class="cart-items-container" style="display: none;">
+            <!-- Cart Items - Ẩn khi giỏ hàng trống -->
+            <div class="row" id="cart-items-row" style="display: none;">
+                <div class="col-lg-8">
+                    <!-- Cart Items Container -->
+                    <div id="cart-items-container" class="cart-items-container">
                         <!-- Cart Title and Select All Row -->
                         <div class="d-flex justify-content-between align-items-center mb-4">
                             <h1 class="cart-title-inline mb-0">
@@ -182,7 +186,7 @@
 
                 <!-- Cart Summary -->
                 <div class="col-lg-4">
-                    <div id="cart-summary" class="cart-summary" style="display: none;">
+                    <div id="cart-summary" class="cart-summary">
                         <div class="card">
                             <div class="card-header">
                                 <h5 class="card-title mb-0 fw-bold">
@@ -247,7 +251,7 @@
             </div>
 
             <!-- Suggested Products Section -->
-            <div class="row mt-5">
+            <div class="row mt-0">
                 <div class="col-12">
                     <div class="suggested-products">
                         <h3 class="suggested-title mb-4">
@@ -600,25 +604,14 @@
             window.location.href = '/cart';
         });
 
-        // Show cart with items for demo
-        $('#cart-empty').hide();
-        $('#cart-items-container, #cart-summary').show();
+        // Show cart with items for demo - Sửa lại để hiển thị cấu trúc mới
+        $('#cart-empty-row').hide();
+        $('#cart-items-row').show();
 
         // Always show suggested products section
         $('.suggested-products').show();
 
-        // Demo interactions
-        $('.quantity-btn').click(function() {
-            const action = $(this).data('action');
-            const input = $(this).siblings('.quantity-input');
-            let value = parseInt(input.val());
-
-            if (action === 'increase') {
-                input.val(value + 1);
-            } else if (action === 'decrease' && value > 1) {
-                input.val(value - 1);
-            }
-        });
+        // Event handling cho quantity buttons được xử lý trong cart.js
 
         // Demo checkbox interactions
         $('#selectAllItems').change(function() {

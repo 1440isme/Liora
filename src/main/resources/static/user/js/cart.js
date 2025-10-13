@@ -13,16 +13,31 @@ class CartPage {
     init() {
         this.bindEvents();
         this.initDemoData();
+        // Kiểm tra trạng thái giỏ hàng trống khi trang được tải
+        this.checkIfCartEmpty();
     }
 
     bindEvents() {
-        // Quantity controls
         $(document).on('click', '.quantity-btn', (e) => {
             this.handleQuantityChange(e);
         });
 
         // Quantity input direct change
         $(document).on('change', '.quantity-input', (e) => {
+            this.handleQuantityInputChange(e);
+        });
+
+        // Xử lý phím Enter trong ô nhập số lượng
+        $(document).on('keypress', '.quantity-input', (e) => {
+            if (e.which === 13) { // Enter key
+                e.preventDefault();
+                $(e.target).blur(); // Thoát khỏi ô input để trigger change event
+                this.handleQuantityInputChange(e);
+            }
+        });
+
+        // Xử lý khi ra khỏi ô input (blur event)
+        $(document).on('blur', '.quantity-input', (e) => {
             this.handleQuantityInputChange(e);
         });
 
@@ -55,15 +70,6 @@ class CartPage {
         $(document).on('click', '#applyPromoBtn', () => {
             this.handleApplyPromo();
         });
-
-        // Hover effects for cart items
-        $(document).on('mouseenter', '.cart-item', function() {
-            $(this).addClass('shadow-lg');
-        });
-
-        $(document).on('mouseleave', '.cart-item', function() {
-            $(this).removeClass('shadow-lg');
-        });
     }
 
     initDemoData() {
@@ -85,7 +91,6 @@ class CartPage {
         }
 
         input.val(value);
-        this.updateQuantityAnimation(input);
         this.updateCartSummary();
     }
 
@@ -101,15 +106,8 @@ class CartPage {
             input.val(value);
         }
 
-        this.updateQuantityAnimation(input);
+        // Bỏ hoàn toàn animation - chỉ cập nhật tổng tiền
         this.updateCartSummary();
-    }
-
-    updateQuantityAnimation(input) {
-        input.addClass('quantity-updated');
-        setTimeout(() => {
-            input.removeClass('quantity-updated');
-        }, 300);
     }
 
     handleSelectAll(isChecked) {
@@ -201,15 +199,15 @@ class CartPage {
     }
 
     showEmptyCart() {
-        $('#cart-items-container, #cart-summary').fadeOut(300, () => {
-            $('#cart-empty').fadeIn(300);
+        $('#cart-items-row').fadeOut(300, () => {
+            $('#cart-empty-row').fadeIn(300);
         });
     }
 
     showCartWithItems() {
-        $('#cart-empty').hide();
-        $('#cart-items-container, #cart-summary').show();
-        $('#total-items').text($('.cart-item').length);
+        $('#cart-empty-row').fadeOut(300, () => {
+            $('#cart-items-row').fadeIn(300);
+        });
     }
 
     updateCartSummary() {
@@ -374,32 +372,4 @@ class CartPage {
 // Initialize cart page when DOM is ready
 $(document).ready(() => {
     window.cartPage = new CartPage();
-
-    // Add some additional CSS for animations
-    const additionalCSS = `
-        <style>
-        .quantity-updated {
-            background: var(--pink-soft) !important;
-            transform: scale(1.1);
-            transition: all 0.3s ease;
-        }
-        
-        .cart-item.removing {
-            transform: scale(0.95);
-            opacity: 0.7;
-            transition: all 0.2s ease;
-        }
-        
-        .cart-item.selected {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(232, 162, 176, 0.3) !important;
-        }
-        
-        #loading-overlay {
-            backdrop-filter: blur(10px);
-        }
-        </style>
-    `;
-
-    $('head').append(additionalCSS);
 });
