@@ -24,6 +24,20 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="/user/css/style.css" rel="stylesheet">
     <style>
+        html,
+        body {
+            height: 100%;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .main-content {
+            flex: 1;
+        }
+
         .page-header {
             background: none;
             color: #000;
@@ -157,42 +171,41 @@
     <!-- Header -->
     <div th:replace="~{user/layout/user-header :: header}"></div>
 
-    <!-- Page Header -->
-    <div class="page-header">
-        <div class="container">
-            <div class="row">
-                <div class="col-12">
-                    <div class="breadcrumb-line text-uppercase">
-                        <a th:href="@{/}" class="text-decoration-none text-reset">Trang chủ</a>
-                        <span class="mx-1">/</span>
-                        <span th:text="${staticPage.title}">Trang nội dung</span>
-                    </div>
-                    <h1 class="h2 fw-normal mb-1 mt-2" th:text="${staticPage.title}">Tiêu đề trang</h1>
-                    <div class="text-muted small mb-2">
-                        <span
-                            th:text="${staticPage.publishedAt != null ? #temporals.format(staticPage.publishedAt, 'dd/MM/yyyy') : (#temporals.format(staticPage.createdAt, 'dd/MM/yyyy'))}">11/12/2023</span>
-                    </div>
-                    <p class="mb-0 text-body" th:if="${staticPage.seoDescription}"
-                        th:text="${staticPage.seoDescription}">Mô tả trang</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Page Content -->
-    <div class="page-content">
-        <div class="container">
-            <div class="col-lg-12">
-                <div class="page-content-body">
-                    <div th:utext="${staticPage.content}">
-                        <p>Nội dung trang sẽ hiển thị ở đây...</p>
+    <div class="main-content">
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="container">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="breadcrumb-line text-uppercase">
+                            <a th:href="@{/}" class="text-decoration-none text-reset">Trang chủ</a>
+                            <span class="mx-1">/</span>
+                            <span th:text="${staticPage.title}">Trang nội dung</span>
+                        </div>
+                        <h1 class="h2 fw-normal mb-1 mt-2" th:text="${staticPage.title}">Tiêu đề trang</h1>
+                        <div class="text-muted small mb-2">
+                            <span
+                                th:text="${staticPage.publishedAt != null ? #temporals.format(staticPage.publishedAt, 'dd/MM/yyyy') : (#temporals.format(staticPage.createdAt, 'dd/MM/yyyy'))}">11/12/2023</span>
+                        </div>
+                        <p class="mb-0 text-body" th:if="${staticPage.seoDescription}"
+                            th:text="${staticPage.seoDescription}">Mô tả trang</p>
                     </div>
                 </div>
             </div>
-
-
         </div>
-    </div>
+
+        <!-- Page Content -->
+        <div class="page-content">
+            <div class="container">
+                <div class="col-lg-12">
+                    <div class="page-content-body">
+                        <div th:utext="${staticPage.content}">
+                            <p>Nội dung trang sẽ hiển thị ở đây...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Footer -->

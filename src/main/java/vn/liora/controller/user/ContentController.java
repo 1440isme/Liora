@@ -5,7 +5,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import vn.liora.dto.response.BannerResponse;
 import vn.liora.dto.response.StaticPageResponse;
 import vn.liora.entity.*;
@@ -15,8 +14,6 @@ import vn.liora.service.FooterService;
 import vn.liora.service.HeaderNavigationService;
 
 import jakarta.servlet.http.HttpServletRequest;
-import vn.liora.repository.UserRepository;
-import vn.liora.entity.User;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -47,6 +44,45 @@ public class ContentController {
         } catch (Exception e) {
             return "error/404";
         }
+    }
+
+    // Trang tổng hợp các trang tĩnh theo sectionSlug
+    @GetMapping("/list/{sectionSlug}")
+    public String listStaticPagesBySection(@PathVariable String sectionSlug, Model model) {
+        List<StaticPageResponse> pages = staticPageService.getPublishedPagesBySection(sectionSlug);
+        model.addAttribute("sectionSlug", sectionSlug);
+        model.addAttribute("pages", pages);
+
+        // Tìm header nav item tương ứng với sectionSlug
+        try {
+            List<HeaderNavigationItem> allItems = headerNavigationService.getAllActiveItems();
+            for (HeaderNavigationItem item : allItems) {
+                if (item.getLinkType() == vn.liora.enums.FooterLinkType.PAGE_LIST) {
+                    String itemUrl = item.getUrl();
+                    if (itemUrl != null && itemUrl.contains("/content/list/" + sectionSlug)) {
+                        model.addAttribute("navItemTitle", item.getTitle());
+                        break;
+                    }
+                }
+                // Kiểm tra sub-items
+                if (item.getSubItems() != null) {
+                    for (HeaderNavigationItem subItem : item.getSubItems()) {
+                        if (subItem.getLinkType() == vn.liora.enums.FooterLinkType.PAGE_LIST) {
+                            String subItemUrl = subItem.getUrl();
+                            if (subItemUrl != null && subItemUrl.contains("/content/list/" + sectionSlug)) {
+                                model.addAttribute("navItemTitle", subItem.getTitle());
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // Nếu không tìm thấy, sử dụng sectionSlug làm title mặc định
+            model.addAttribute("navItemTitle", sectionSlug);
+        }
+
+        return "user/static-page-list";
     }
 
     // API lấy danh sách banner active

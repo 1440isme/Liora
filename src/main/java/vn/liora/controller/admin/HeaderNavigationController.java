@@ -7,13 +7,10 @@ import org.springframework.web.bind.annotation.*;
 import vn.liora.dto.request.HeaderNavigationItemRequest;
 import vn.liora.dto.response.StaticPageResponse;
 import vn.liora.entity.HeaderNavigationItem;
-import vn.liora.entity.Category;
-import vn.liora.entity.StaticPage;
 import vn.liora.enums.FooterLinkType;
 import vn.liora.mapper.HeaderNavigationItemMapper;
 import vn.liora.service.HeaderNavigationService;
 import vn.liora.service.StaticPageService;
-import vn.liora.service.ICategoryService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
@@ -31,20 +28,15 @@ public class HeaderNavigationController {
     private StaticPageService staticPageService;
 
     @Autowired
-    private ICategoryService categoryService;
-
-    @Autowired
     private HeaderNavigationItemMapper headerNavigationItemMapper;
 
     @GetMapping
     public String headerBottomManagement(Model model) {
         List<HeaderNavigationItem> navigationItems = headerNavigationService.getAllActiveItems();
         List<StaticPageResponse> staticPages = staticPageService.getActiveStaticPages();
-        List<Category> parentCategories = categoryService.findActiveRootCategories();
 
         model.addAttribute("navigationItems", navigationItems);
         model.addAttribute("staticPages", staticPages);
-        model.addAttribute("parentCategories", parentCategories);
         model.addAttribute("headerNavigationRequest", new HeaderNavigationItemRequest());
 
         return "admin/header-bottom/manage";
@@ -82,7 +74,6 @@ public class HeaderNavigationController {
                     item.setUrl(request.getParameter("navigationItems[" + i + "].url"));
                     item.setItemOrder(parseInt(request.getParameter("navigationItems[" + i + "].itemOrder"), 0));
                     item.setLinkType(parseLinkType(request.getParameter("navigationItems[" + i + "].linkType")));
-                    item.setCategoryId(parseLong(request.getParameter("navigationItems[" + i + "].categoryId")));
                     item.setStaticPageId(parseLong(request.getParameter("navigationItems[" + i + "].staticPageId")));
                     item.setIsCategoryParent(
                             parseBoolean(request.getParameter("navigationItems[" + i + "].isCategoryParent"), false));
@@ -202,8 +193,6 @@ public class HeaderNavigationController {
                         j + 1));
                 subItem.setLinkType(parseLinkType(
                         request.getParameter("navigationItems[" + parentIndex + "].subItems[" + j + "].linkType")));
-                subItem.setCategoryId(parseLong(
-                        request.getParameter("navigationItems[" + parentIndex + "].subItems[" + j + "].categoryId")));
                 subItem.setStaticPageId(parseLong(
                         request.getParameter("navigationItems[" + parentIndex + "].subItems[" + j + "].staticPageId")));
                 subItem.setIsCategoryParent(false);

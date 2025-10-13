@@ -19,6 +19,7 @@ public class StaticPageResponse {
     private String seoTitle;
     private String seoDescription;
     private String seoKeywords;
+    private String sectionSlug;
     private Boolean isActive;
     private Boolean isPublished;
     private LocalDateTime publishedAt;
@@ -34,6 +35,7 @@ public class StaticPageResponse {
         this.seoTitle = staticPage.getSeoTitle();
         this.seoDescription = staticPage.getSeoDescription();
         this.seoKeywords = staticPage.getSeoKeywords();
+        this.sectionSlug = staticPage.getSectionSlug();
         this.isActive = staticPage.getIsActive();
         this.isPublished = staticPage.getIsPublished();
         this.publishedAt = staticPage.getPublishedAt();

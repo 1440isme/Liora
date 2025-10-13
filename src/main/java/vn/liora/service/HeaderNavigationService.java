@@ -3,10 +3,8 @@ package vn.liora.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import vn.liora.entity.Category;
 import vn.liora.entity.HeaderNavigationItem;
 import vn.liora.entity.StaticPage;
-import vn.liora.repository.CategoryRepository;
 import vn.liora.repository.HeaderNavigationItemRepository;
 import vn.liora.repository.StaticPageRepository;
 
@@ -17,9 +15,6 @@ public class HeaderNavigationService {
 
     @Autowired
     private HeaderNavigationItemRepository headerNavigationItemRepository;
-
-    @Autowired
-    private CategoryRepository categoryRepository;
 
     @Autowired
     private StaticPageRepository staticPageRepository;
@@ -53,12 +48,6 @@ public class HeaderNavigationService {
                 continue;
             }
 
-            // Set category reference if it's a category link
-            if (item.getCategory() != null && item.getCategory().getCategoryId() != null) {
-                Optional<Category> category = categoryRepository.findById(item.getCategory().getCategoryId());
-                category.ifPresent(item::setCategory);
-            }
-
             // Set static page reference if it's an internal/page link and normalize URL
             if (item.getStaticPage() != null && item.getStaticPage().getId() != null) {
                 Optional<StaticPage> staticPage = staticPageRepository.findById(item.getStaticPage().getId());
@@ -68,6 +57,15 @@ public class HeaderNavigationService {
                         item.setUrl("/content/page/" + sp.getSlug());
                     }
                 });
+            }
+
+            // Normalize PAGE_LIST: interpret current url as sectionSlug and build canonical
+            // URL
+            if (item.getLinkType() == vn.liora.enums.FooterLinkType.PAGE_LIST) {
+                String sectionSlug = item.getUrl(); // admin nhập vào ô URL = sectionSlug
+                if (sectionSlug != null && !sectionSlug.trim().isEmpty()) {
+                    item.setUrl("/content/list/" + sectionSlug.trim());
+                }
             }
 
             // Save parent item
@@ -91,13 +89,6 @@ public class HeaderNavigationService {
                         subItem.setParentItemId(parentId);
                         subItem.setIsCategoryParent(false);
 
-                        // Set category reference if it's a category link
-                        if (subItem.getCategory() != null && subItem.getCategory().getCategoryId() != null) {
-                            Optional<Category> category = categoryRepository
-                                    .findById(subItem.getCategory().getCategoryId());
-                            category.ifPresent(subItem::setCategory);
-                        }
-
                         // Set static page reference if it's an internal/page link and normalize URL
                         if (subItem.getStaticPage() != null && subItem.getStaticPage().getId() != null) {
                             Optional<StaticPage> staticPage = staticPageRepository
@@ -109,6 +100,15 @@ public class HeaderNavigationService {
                                     subItem.setUrl("/content/page/" + sp.getSlug());
                                 }
                             });
+                        }
+
+                        // Normalize PAGE_LIST for sub-items
+                        if (subItem.getLinkType() == vn.liora.enums.FooterLinkType.PAGE_LIST) {
+                            String sectionSlug = subItem.getUrl();
+                            if (sectionSlug != null && !sectionSlug.trim().isEmpty()) {
+                                subItem.setUrl("/content/list/" + sectionSlug.trim());
+                            }
+
                         }
 
                         headerNavigationItemRepository.save(subItem);

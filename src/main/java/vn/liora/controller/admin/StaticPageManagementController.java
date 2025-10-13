@@ -117,6 +117,7 @@ public class StaticPageManagementController {
             staticPageRequest.setSeoTitle(staticPage.getSeoTitle());
             staticPageRequest.setSeoDescription(staticPage.getSeoDescription());
             staticPageRequest.setSeoKeywords(staticPage.getSeoKeywords());
+            staticPageRequest.setSectionSlug(staticPage.getSectionSlug());
             staticPageRequest.setIsActive(staticPage.getIsActive());
             staticPageRequest.setIsPublished(staticPage.getIsPublished());
 

@@ -53,12 +53,6 @@ public class HeaderNavigationItem {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    // Reference to category if it's a category link
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id")
-    @JsonIgnore
-    private Category category;
-
     // Reference to static page if it's an internal link
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "static_page_id")

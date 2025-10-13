@@ -185,9 +185,9 @@ public class FooterService {
             shopColumn = footerColumnRepository.save(shopColumn);
 
             FooterItem skincare = new FooterItem(shopColumn, "Skincare", "/products?category=skincare",
-                    FooterLinkType.CATEGORY, 1);
+                    FooterLinkType.PAGE, 1);
             FooterItem makeup = new FooterItem(shopColumn, "Makeup", "/products?category=makeup",
-                    FooterLinkType.CATEGORY, 2);
+                    FooterLinkType.PAGE, 2);
             FooterItem bestsellers = new FooterItem(shopColumn, "Bestsellers", "/products?sort=bestsellers",
                     FooterLinkType.PAGE, 3);
             FooterItem newArrivals = new FooterItem(shopColumn, "New Arrivals", "/products?sort=newest",

@@ -197,8 +197,8 @@
                                                                 name="navigationItems[0].linkType"
                                                                 onchange="toggleLinkOptions(0)"
                                                                 style="opacity: 1 !important; background-color: #fff !important; border: 1px solid #ced4da !important;">
-                                                                <option value="CATEGORY" selected>Danh mục</option>
                                                                 <option value="PAGE">Trang tĩnh</option>
+                                                                <option value="PAGE_LIST">Danh sách trang tĩnh</option>
                                                                 <option value="EXTERNAL">Link bên ngoài
                                                                 </option>
                                                             </select>
@@ -218,7 +218,7 @@
                                                     <input type="hidden" name="navigationItems[0].parentItemId"
                                                         value="">
 
-                                                    <!-- Sub-items container for CATEGORY -->
+                                                    <!-- Sub-items container for PARENT_CATEGORY -->
                                                     <div class="row mt-3" id="sub-items-0" style="display: block;">
                                                         <div class="col-12">
                                                             <div class="border rounded p-3"
@@ -389,10 +389,20 @@
                                 const titleInput = lastSubItem.querySelector('input[name*="title"]');
                                 const urlInput = lastSubItem.querySelector('input[name*="url"]');
                                 const orderInput = lastSubItem.querySelector('input[name*="itemOrder"]');
+                                const linkTypeSelect = lastSubItem.querySelector('select[name*="linkType"]');
+                                const staticPageSelect = lastSubItem.querySelector('select[name*="staticPageId"]');
 
                                 if (titleInput) titleInput.value = subItem.title || '';
                                 if (urlInput) urlInput.value = subItem.url || '';
                                 if (orderInput) orderInput.value = subItem.itemOrder || (subIndex + 1);
+                                if (linkTypeSelect) {
+                                    linkTypeSelect.value = subItem.linkType || 'PAGE';
+                                    // Trigger change event to update input fields
+                                    toggleSubItemLinkOptions(currentIndex, subItems.length - 1);
+                                }
+                                if (staticPageSelect && subItem.staticPage) {
+                                    staticPageSelect.value = subItem.staticPage.id || '';
+                                }
 
                             }
                         });
@@ -463,7 +473,7 @@
                         url: url || '#',
                         linkType: linkType || 'INTERNAL',
                         itemOrder: parseInt(itemOrder) || 0,
-                        isCategoryParent: linkType === 'CATEGORY',
+                        isCategoryParent: linkType === 'PARENT_CATEGORY',
                         subItems: []
                     };
 
@@ -475,12 +485,16 @@
                             const subTitle = subItem.querySelector(`input[name*="title"]`)?.value;
                             const subUrl = subItem.querySelector(`input[name*="url"]`)?.value;
                             const subOrder = subItem.querySelector(`input[name*="itemOrder"]`)?.value;
+                            const subLinkType = subItem.querySelector(`select[name*="linkType"]`)?.value;
+                            const subStaticPageId = subItem.querySelector(`select[name*="staticPageId"]`)?.value;
 
                             if (subTitle && subTitle.trim() !== '') {
                                 navItem.subItems.push({
                                     title: subTitle,
                                     url: subUrl || '#',
-                                    itemOrder: parseInt(subOrder) || (subIndex + 1)
+                                    linkType: subLinkType || 'PAGE',
+                                    itemOrder: parseInt(subOrder) || (subIndex + 1),
+                                    staticPageId: subStaticPageId || null
                                 });
                             }
                         });
@@ -527,7 +541,7 @@
 
             if (data.navigationItems && data.navigationItems.length > 0) {
                 data.navigationItems.forEach(item => {
-                    if (item.linkType === 'CATEGORY' || item.isCategoryParent) {
+                    if (item.linkType === 'PARENT_CATEGORY' || item.isCategoryParent) {
                         // Create dropdown for categories
                         const dropdownId = `preview-category-dropdown-${Math.random().toString(36).substr(2, 9)}`;
                         previewHtml += `
@@ -574,7 +588,7 @@
                         let href = '#';
                         if (item.linkType === 'EXTERNAL') {
                             href = item.url || '#';
-                        } else if (item.linkType === 'INTERNAL' || item.linkType === 'PAGE') {
+                        } else if (item.linkType === 'INTERNAL' || item.linkType === 'PAGE' || item.linkType === 'PAGE_LIST') {
                             href = item.url || '#';
                         }
 
@@ -645,7 +659,7 @@
 
             if (data.navigationItems && data.navigationItems.length > 0) {
                 data.navigationItems.forEach(item => {
-                    if (item.linkType === 'CATEGORY' || item.isCategoryParent) {
+                    if (item.linkType === 'PARENT_CATEGORY' || item.isCategoryParent) {
                         // Create dropdown for categories
                         const dropdownId = `modal-category-dropdown-${Math.random().toString(36).substr(2, 9)}`;
                         previewHtml += `
@@ -692,7 +706,7 @@
                         let href = '#';
                         if (item.linkType === 'EXTERNAL') {
                             href = item.url || '#';
-                        } else if (item.linkType === 'INTERNAL' || item.linkType === 'PAGE') {
+                        } else if (item.linkType === 'INTERNAL' || item.linkType === 'PAGE' || item.linkType === 'PAGE_LIST') {
                             href = item.url || '#';
                         }
 
@@ -830,11 +844,11 @@
         }
 
         // Add navigation item function - ensure global scope
-        window.addNavigationItem = function (title = '', url = '', linkType = 'CATEGORY', itemOrder = null, categoryId = '', staticPageId = '') {
+        window.addNavigationItem = function (title = '', url = '', linkType = 'PARENT_CATEGORY', itemOrder = null, categoryId = '', staticPageId = '') {
             // Set default values
             title = title || '';
             url = url || '';
-            linkType = linkType || 'CATEGORY';
+            linkType = linkType || 'PARENT_CATEGORY';
             itemOrder = itemOrder || (navItemIndex + 1);
             categoryId = categoryId || '';
             staticPageId = staticPageId || '';
@@ -866,7 +880,7 @@
             let initialInput = `<input type="text" class="form-control" name="navigationItems[${currentIndex}].url" 
                 value="${url}" placeholder="https://example.com">`;
 
-            if (linkType === 'CATEGORY') {
+            if (linkType === 'PARENT_CATEGORY') {
                 initialLabel = 'Danh mục';
                 initialInput = `<select class="form-select" name="navigationItems[${currentIndex}].categoryId" style="opacity: 1 !important; background-color: #fff !important; border: 1px solid #ced4da !important;">
                     ${categoryOptions}
@@ -900,8 +914,8 @@
                             <label class="form-label">Loại link</label>
                             <select class="form-select" name="navigationItems[${currentIndex}].linkType" onchange="toggleLinkOptions(${currentIndex})" style="opacity: 1 !important; background-color: #fff !important; border: 1px solid #ced4da !important;">
                                 <option value="PARENT_CATEGORY" ${linkType === 'PARENT_CATEGORY' ? 'selected' : ''}>Danh mục cha</option>
-                                <option value="CATEGORY" ${linkType === 'CATEGORY' ? 'selected' : ''}>Danh mục sản phẩm</option>
                                 <option value="PAGE" ${linkType === 'PAGE' ? 'selected' : ''}>Trang tĩnh</option>
+                                <option value="PAGE_LIST" ${linkType === 'PAGE_LIST' ? 'selected' : ''}>Danh sách trang tĩnh</option>
                                 <option value="EXTERNAL" ${linkType === 'EXTERNAL' ? 'selected' : ''}>Link bên ngoài</option>
                             </select>
                             <input type="hidden" name="navigationItems[${currentIndex}].isCategoryParent" id="is-parent-${currentIndex}" value="${linkType === 'PARENT_CATEGORY'}">
@@ -917,7 +931,7 @@
                             </button>
                         </div>
                     </div>
-                    <div class="row mt-3" id="sub-items-${currentIndex}" style="display: ${linkType === 'CATEGORY' ? 'block' : 'none'};">
+                    <div class="row mt-3" id="sub-items-${currentIndex}" style="display: ${linkType === 'PARENT_CATEGORY' ? 'block' : 'none'};">
                         <div class="col-12">
                             <div class="border rounded p-3" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
                                 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -1000,20 +1014,41 @@
             const container = document.getElementById(`sub-items-container-${parentIndex}`);
             const subItemIndex = container.children.length;
 
+            // Generate static page options
+            let staticPageOptions = '<option value="">Chọn trang tĩnh</option>';
+            if (staticPages && staticPages.length > 0) {
+                staticPages.forEach(function (page) {
+                    staticPageOptions += `<option value="${page.id}">${page.title}</option>`;
+                });
+            }
+
             const subItemHtml = `
                 <div class="sub-item mb-2 p-2 border rounded bg-white" style="border-left: 4px solid #e91e63 !important; border-radius: 6px; background: linear-gradient(135deg, #fff5f5 0%, #ffe8e8 100%) !important;">
                     <div class="row align-items-end">
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label class="form-label">Tiêu đề</label>
                             <input type="text" class="form-control" name="navigationItems[${parentIndex}].subItems[${subItemIndex}].title" 
                                    placeholder="Tên danh mục con">
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label">Link/Đường dẫn</label>
-                            <input type="text" class="form-control" name="navigationItems[${parentIndex}].subItems[${subItemIndex}].url" 
-                                   placeholder="/slug-trang-tinh hoặc /danh-muc">
+                        <div class="col-md-2">
+                            <label class="form-label">Loại link</label>
+                            <select class="form-select" name="navigationItems[${parentIndex}].subItems[${subItemIndex}].linkType" 
+                                    onchange="toggleSubItemLinkOptions(${parentIndex}, ${subItemIndex})" 
+                                    style="opacity: 1 !important; background-color: #fff !important; border: 1px solid #ced4da !important;">
+                                <option value="PAGE">Trang tĩnh</option>
+                                <option value="PAGE_LIST">Danh sách trang tĩnh</option>
+                                <option value="EXTERNAL">Link bên ngoài</option>
+                            </select>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-md-4" id="sub-item-input-${parentIndex}-${subItemIndex}">
+                            <label class="form-label" id="sub-item-label-${parentIndex}-${subItemIndex}">Trang tĩnh</label>
+                            <select class="form-select" name="navigationItems[${parentIndex}].subItems[${subItemIndex}].staticPageId" 
+                                    style="opacity: 1 !important; background-color: #fff !important; border: 1px solid #ced4da !important;">
+                                <option value="">Chọn trang tĩnh</option>
+                                ${staticPageOptions}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
                             <label class="form-label">Thứ tự</label>
                             <input type="number" class="form-control" name="navigationItems[${parentIndex}].subItems[${subItemIndex}].itemOrder" 
                                    value="${subItemIndex + 1}">
@@ -1060,8 +1095,8 @@
             let newLabel = '';
             let newInput = '';
 
-            if (linkType === 'PARENT_CATEGORY' || linkType === 'CATEGORY') {
-                newLabel = linkType === 'PARENT_CATEGORY' ? 'Danh mục cha' : 'Danh mục sản phẩm';
+            if (linkType === 'PARENT_CATEGORY') {
+                newLabel = 'Danh mục cha';
                 newInput = `<select class="form-select" name="navigationItems[${index}].categoryId" onchange="onParentCategoryChange(${index}, this.value)" style="opacity: 1 !important; background-color: #fff !important; border: 1px solid #ced4da !important;">
                     ${categoryOptions}
                 </select>`;
@@ -1070,6 +1105,10 @@
                 newInput = `<select class="form-select" name="navigationItems[${index}].staticPageId" style="opacity: 1 !important; background-color: #fff !important; border: 1px solid #ced4da !important;">
                     ${staticPageOptions}
                 </select>`;
+            } else if (linkType === 'PAGE_LIST') {
+                newLabel = 'Section slug';
+                newInput = `<input type="text" class="form-control" name="navigationItems[${index}].url" 
+                    placeholder="nhom-bai">`;
             } else if (linkType === 'EXTERNAL') {
                 newLabel = 'URL';
                 newInput = `<input type="text" class="form-control" name="navigationItems[${index}].url" 
@@ -1097,6 +1136,49 @@
             }
         };
 
+        // Toggle sub-item link options function
+        window.toggleSubItemLinkOptions = function (parentIndex, subItemIndex) {
+            const linkTypeSelect = document.querySelector(`select[name="navigationItems[${parentIndex}].subItems[${subItemIndex}].linkType"]`);
+            const inputContainer = document.getElementById(`sub-item-input-${parentIndex}-${subItemIndex}`);
+            const labelElement = document.getElementById(`sub-item-label-${parentIndex}-${subItemIndex}`);
+
+            if (!linkTypeSelect || !inputContainer || !labelElement) return;
+
+            const linkType = linkTypeSelect.value;
+            let newLabel = '';
+            let newInput = '';
+
+            if (linkType === 'PAGE') {
+                // Generate static page options
+                let staticPageOptions = '<option value="">Chọn trang tĩnh</option>';
+                if (staticPages && staticPages.length > 0) {
+                    staticPages.forEach(function (page) {
+                        staticPageOptions += `<option value="${page.id}">${page.title}</option>`;
+                    });
+                }
+
+                newLabel = 'Trang tĩnh';
+                newInput = `<select class="form-select" name="navigationItems[${parentIndex}].subItems[${subItemIndex}].staticPageId" style="opacity: 1 !important; background-color: #fff !important; border: 1px solid #ced4da !important;">
+                    ${staticPageOptions}
+                </select>`;
+            } else if (linkType === 'PAGE_LIST') {
+                newLabel = 'Section slug';
+                newInput = `<input type="text" class="form-control" name="navigationItems[${parentIndex}].subItems[${subItemIndex}].url" 
+                    placeholder="nhom-bai">`;
+            } else if (linkType === 'EXTERNAL') {
+                newLabel = 'URL';
+                newInput = `<input type="text" class="form-control" name="navigationItems[${parentIndex}].subItems[${subItemIndex}].url" 
+                    placeholder="https://example.com">`;
+            } else {
+                newLabel = 'URL';
+                newInput = `<input type="text" class="form-control" name="navigationItems[${parentIndex}].subItems[${subItemIndex}].url" 
+                    placeholder="https://example.com">`;
+            }
+
+            // Update label and input
+            labelElement.textContent = newLabel;
+            inputContainer.innerHTML = newInput;
+        };
 
         // Form validation function
         window.validateForm = function () {

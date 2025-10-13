@@ -161,6 +161,21 @@
                                                     </div>
                                                 </div>
 
+                                                <!-- Group Settings -->
+                                                <div class="form-section">
+                                                    <h6 class="section-title">Nhóm bài (tùy chọn)</h6>
+                                                    <div class="mb-3">
+                                                        <label for="sectionSlug" class="form-label">Section slug</label>
+                                                        <input type="text" class="form-control" id="sectionSlug"
+                                                            name="sectionSlug"
+                                                            th:value="${staticPageRequest?.sectionSlug}"
+                                                            placeholder="ví dụ: blog-tips">
+                                                        <div class="form-text">Dùng để gom nhiều trang tĩnh vào một
+                                                            nhóm. Trang tổng hợp sẽ là /content/list/{sectionSlug}.
+                                                        </div>
+                                                    </div>
+                                                </div>
+
                                                 <!-- SEO Settings -->
                                                 <div class="form-section">
                                                     <h6 class="section-title">SEO</h6>

@@ -35,6 +35,7 @@ public class StaticPageService {
         staticPage.setSeoTitle(request.getSeoTitle());
         staticPage.setSeoDescription(request.getSeoDescription());
         staticPage.setSeoKeywords(request.getSeoKeywords());
+        staticPage.setSectionSlug(request.getSectionSlug());
         staticPage.setIsActive(request.getIsActive());
         staticPage.setIsPublished(request.getIsPublished());
 
@@ -63,6 +64,7 @@ public class StaticPageService {
         staticPage.setSeoTitle(request.getSeoTitle());
         staticPage.setSeoDescription(request.getSeoDescription());
         staticPage.setSeoKeywords(request.getSeoKeywords());
+        staticPage.setSectionSlug(request.getSectionSlug());
         staticPage.setIsActive(request.getIsActive());
 
         // Nếu chuyển từ chưa publish sang publish
@@ -95,6 +97,15 @@ public class StaticPageService {
         return staticPages.stream()
                 .map(StaticPageResponse::new)
                 .collect(Collectors.toList());
+    }
+
+    // Lấy các trang đã publish theo sectionSlug (cho listing)
+    public List<StaticPageResponse> getPublishedPagesBySection(String sectionSlug) {
+        if (sectionSlug == null || sectionSlug.trim().isEmpty())
+            return List.of();
+        List<StaticPage> staticPages = staticPageRepository
+                .findByIsActiveTrueAndIsPublishedTrueAndSectionSlugOrderByPublishedAtDesc(sectionSlug.trim());
+        return staticPages.stream().map(StaticPageResponse::new).collect(Collectors.toList());
     }
 
     // Lấy tất cả static page với phân trang

@@ -16,7 +16,6 @@ public class HeaderNavigationItemRequest {
     private String url;
     private FooterLinkType linkType;
     private Integer itemOrder;
-    private Long categoryId;
     private Long staticPageId;
     private Boolean isCategoryParent = false;
     private Long parentItemId;

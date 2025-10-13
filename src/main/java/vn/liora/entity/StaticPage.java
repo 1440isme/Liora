@@ -29,6 +29,9 @@ public class StaticPage {
     @Column(name = "content", columnDefinition = "NVARCHAR(MAX)")
     private String content;
 
+    @Column(name = "section_slug", columnDefinition = "NVARCHAR(255)")
+    private String sectionSlug;
+
     @Column(name = "seo_title", length = 255, columnDefinition = "NVARCHAR(255)")
     private String seoTitle;
 
