@@ -278,7 +278,7 @@
 
     <th:block th:replace="admin/fragments/admin-scripts :: admin-scripts"></th:block>
 
-    <script>
+    <script th:inline="javascript">
         // Global variables
         let navItemIndex = 0;
         let currentHeaderData = null;
@@ -899,10 +899,12 @@
                         <div class="col-md-3">
                             <label class="form-label">Loại link</label>
                             <select class="form-select" name="navigationItems[${currentIndex}].linkType" onchange="toggleLinkOptions(${currentIndex})" style="opacity: 1 !important; background-color: #fff !important; border: 1px solid #ced4da !important;">
-                                <option value="CATEGORY" ${linkType === 'CATEGORY' ? 'selected' : ''}>Danh mục</option>
+                                <option value="PARENT_CATEGORY" ${linkType === 'PARENT_CATEGORY' ? 'selected' : ''}>Danh mục cha</option>
+                                <option value="CATEGORY" ${linkType === 'CATEGORY' ? 'selected' : ''}>Danh mục sản phẩm</option>
                                 <option value="PAGE" ${linkType === 'PAGE' ? 'selected' : ''}>Trang tĩnh</option>
                                 <option value="EXTERNAL" ${linkType === 'EXTERNAL' ? 'selected' : ''}>Link bên ngoài</option>
                             </select>
+                            <input type="hidden" name="navigationItems[${currentIndex}].isCategoryParent" id="is-parent-${currentIndex}" value="${linkType === 'PARENT_CATEGORY'}">
                         </div>
                         <div class="col-md-2">
                             <label class="form-label">Thứ tự</label>
@@ -944,6 +946,55 @@
             button.closest('.navigation-item').remove();
         };
 
+        // Load child categories when selecting a parent category
+        window.onParentCategoryChange = async function (index, parentId) {
+            const container = document.getElementById(`sub-items-container-${index}`);
+            const section = document.getElementById(`sub-items-${index}`);
+            if (!container || !section) return;
+            // Only show sub items when parent category mode
+            const linkType = document.querySelector(`select[name="navigationItems[${index}].linkType"]`)?.value;
+            if (linkType !== 'PARENT_CATEGORY') {
+                section.style.display = 'none';
+                return;
+            }
+            section.style.display = 'block';
+            container.innerHTML = '<div class="text-muted">Đang tải danh mục con...</div>';
+
+            try {
+                const res = await fetch(`/api/categories/children/${parentId}`);
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const children = await res.json();
+                if (!Array.isArray(children) || children.length === 0) {
+                    container.innerHTML = '<div class="text-muted">Không có danh mục con</div>';
+                    return;
+                }
+                container.innerHTML = '';
+                children.forEach((cat, idx) => {
+                    const subItemHtml = `
+                        <div class=\"sub-item mb-2 p-2 border rounded bg-white\" style=\"border-left: 4px solid #e91e63 !important; border-radius: 6px; background: linear-gradient(135deg, #fff5f5 0%, #ffe8e8 100%) !important;\">
+                            <div class=\"row align-items-end\">
+                                <div class=\"col-md-6\">
+                                    <label class=\"form-label\">Danh mục con</label>
+                                    <input type=\"text\" class=\"form-control\" value=\"${cat.name}\" readonly>
+                                    <input type=\"hidden\" name=\"navigationItems[${index}].subItems[${idx}].title\" value=\"${cat.name}\">
+                                    <input type=\"hidden\" name=\"navigationItems[${index}].subItems[${idx}].categoryId\" value=\"${cat.categoryId}\">
+                                </div>
+                                <div class=\"col-md-3\">
+                                    <label class=\"form-label\">Thứ tự</label>
+                                    <input type=\"number\" class=\"form-control\" name=\"navigationItems[${index}].subItems[${idx}].itemOrder\" value=\"${idx + 1}\">
+                                </div>
+                                <div class=\"col-md-3\">
+                                    <label class=\"form-label\">URL</label>
+                                    <input type=\"text\" class=\"form-control\" name=\"navigationItems[${index}].subItems[${idx}].url\" value=\"/categories/${cat.categoryId}\">
+                                </div>
+                            </div>
+                        </div>`;
+                    container.insertAdjacentHTML('beforeend', subItemHtml);
+                });
+            } catch (e) {
+                container.innerHTML = '<div class="text-danger">Lỗi tải danh mục con</div>';
+            }
+        }
         // Add sub item function - ensure global scope
         window.addSubItem = function (parentIndex) {
             const container = document.getElementById(`sub-items-container-${parentIndex}`);
@@ -1009,9 +1060,9 @@
             let newLabel = '';
             let newInput = '';
 
-            if (linkType === 'CATEGORY') {
-                newLabel = 'Danh mục';
-                newInput = `<select class="form-select" name="navigationItems[${index}].categoryId" style="opacity: 1 !important; background-color: #fff !important; border: 1px solid #ced4da !important;">
+            if (linkType === 'PARENT_CATEGORY' || linkType === 'CATEGORY') {
+                newLabel = linkType === 'PARENT_CATEGORY' ? 'Danh mục cha' : 'Danh mục sản phẩm';
+                newInput = `<select class="form-select" name="navigationItems[${index}].categoryId" onchange="onParentCategoryChange(${index}, this.value)" style="opacity: 1 !important; background-color: #fff !important; border: 1px solid #ced4da !important;">
                     ${categoryOptions}
                 </select>`;
             } else if (linkType === 'PAGE') {
@@ -1036,7 +1087,9 @@
             // Show/hide sub-items section based on link type
             const subItemsSection = document.getElementById(`sub-items-${index}`);
             if (subItemsSection) {
-                if (linkType === 'CATEGORY') {
+                // Only PARENT_CATEGORY shows sub-items section
+                document.getElementById(`is-parent-${index}`)?.setAttribute('value', linkType === 'PARENT_CATEGORY');
+                if (linkType === 'PARENT_CATEGORY') {
                     subItemsSection.style.display = 'block';
                 } else {
                     subItemsSection.style.display = 'none';

@@ -59,10 +59,15 @@ public class HeaderNavigationService {
                 category.ifPresent(item::setCategory);
             }
 
-            // Set static page reference if it's an internal link
+            // Set static page reference if it's an internal/page link and normalize URL
             if (item.getStaticPage() != null && item.getStaticPage().getId() != null) {
                 Optional<StaticPage> staticPage = staticPageRepository.findById(item.getStaticPage().getId());
-                staticPage.ifPresent(item::setStaticPage);
+                staticPage.ifPresent(sp -> {
+                    item.setStaticPage(sp);
+                    if (item.getLinkType() == vn.liora.enums.FooterLinkType.PAGE && sp.getSlug() != null) {
+                        item.setUrl("/content/page/" + sp.getSlug());
+                    }
+                });
             }
 
             // Save parent item
@@ -93,11 +98,17 @@ public class HeaderNavigationService {
                             category.ifPresent(subItem::setCategory);
                         }
 
-                        // Set static page reference if it's an internal link
+                        // Set static page reference if it's an internal/page link and normalize URL
                         if (subItem.getStaticPage() != null && subItem.getStaticPage().getId() != null) {
                             Optional<StaticPage> staticPage = staticPageRepository
                                     .findById(subItem.getStaticPage().getId());
-                            staticPage.ifPresent(subItem::setStaticPage);
+                            staticPage.ifPresent(sp -> {
+                                subItem.setStaticPage(sp);
+                                if (subItem.getLinkType() == vn.liora.enums.FooterLinkType.PAGE
+                                        && sp.getSlug() != null) {
+                                    subItem.setUrl("/content/page/" + sp.getSlug());
+                                }
+                            });
                         }
 
                         headerNavigationItemRepository.save(subItem);

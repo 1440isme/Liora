@@ -124,9 +124,19 @@
 
         <!-- Header Bottom Loading Script -->
         <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                loadHeaderNavigationContent();
-            });
+            function initHeaderBottom() {
+                try {
+                    loadHeaderNavigationContent();
+                } catch (e) {
+                    console.error('Header init error:', e);
+                }
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initHeaderBottom);
+            } else {
+                initHeaderBottom();
+            }
 
             async function loadHeaderNavigationContent() {
                 try {
@@ -182,7 +192,14 @@
                                 let href = '#';
                                 if (item.linkType === 'EXTERNAL') {
                                     href = item.url || '#';
-                                } else if (item.linkType === 'INTERNAL' || item.linkType === 'PAGE') {
+                                } else if (item.linkType === 'PAGE') {
+                                    // Normalize to /content/page/{slug}
+                                    const raw = (item.url || '').toString();
+                                    const slug = raw
+                                        .replace(/^\/content\/page\//, '')
+                                        .replace(/^\//, '');
+                                    href = slug ? `/content/page/${slug}` : '#';
+                                } else if (item.linkType === 'INTERNAL') {
                                     href = item.url || '#';
                                 }
 

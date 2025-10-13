@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import vn.liora.dto.response.BannerResponse;
 import vn.liora.dto.response.StaticPageResponse;
 import vn.liora.entity.*;
@@ -13,6 +14,9 @@ import vn.liora.service.StaticPageService;
 import vn.liora.service.FooterService;
 import vn.liora.service.HeaderNavigationService;
 
+import jakarta.servlet.http.HttpServletRequest;
+import vn.liora.repository.UserRepository;
+import vn.liora.entity.User;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -34,9 +38,8 @@ public class ContentController {
     @Autowired
     private HeaderNavigationService headerNavigationService;
 
-    // Trang hiển thị static page theo slug
     @GetMapping("/page/{slug}")
-    public String viewStaticPage(@PathVariable String slug, Model model) {
+    public String viewStaticPage(@PathVariable String slug, Model model, HttpServletRequest request) {
         try {
             StaticPageResponse staticPage = staticPageService.getStaticPageBySlug(slug);
             model.addAttribute("staticPage", staticPage);

@@ -46,9 +46,19 @@
 
     <!-- Footer Loading Script -->
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            loadFooterContent();
-        });
+        function initFooter() {
+            try {
+                loadFooterContent();
+            } catch (e) {
+                console.error('Footer init error:', e);
+            }
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initFooter);
+        } else {
+            initFooter();
+        }
 
         async function loadFooterContent() {
             try {

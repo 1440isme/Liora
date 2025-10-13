@@ -18,6 +18,7 @@ import vn.liora.service.StaticPageService;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.text.Normalizer;
 
 @Controller
 @RequestMapping("/admin/static-pages")
@@ -41,17 +42,8 @@ public class StaticPageManagementController {
         Sort sort = sortDir.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
         Pageable pageable = PageRequest.of(page, size, sort);
 
-        Page<StaticPageResponse> staticPages;
-
-        if (search != null && !search.trim().isEmpty()) {
-            staticPages = staticPageService.searchStaticPagesByTitle(search, pageable);
-        } else if (isActive != null && isPublished != null) {
-            staticPages = staticPageService.getStaticPagesByPublishedStatus(isPublished, pageable);
-        } else if (isActive != null) {
-            staticPages = staticPageService.getStaticPagesByActiveStatus(isActive, pageable);
-        } else {
-            staticPages = staticPageService.getAllStaticPages(pageable);
-        }
+        Page<StaticPageResponse> staticPages = staticPageService.getStaticPages(search, isActive, isPublished,
+                pageable);
 
         model.addAttribute("staticPages", staticPages);
         model.addAttribute("currentPage", page);
@@ -82,9 +74,32 @@ public class StaticPageManagementController {
         }
 
         try {
+            // Defensive defaults
+            if (staticPageRequest.getIsActive() == null) {
+                staticPageRequest.setIsActive(false);
+            }
+            if (staticPageRequest.getIsPublished() == null) {
+                staticPageRequest.setIsPublished(false);
+            }
+            if (staticPageRequest.getSlug() == null || staticPageRequest.getSlug().isBlank()) {
+                if (staticPageRequest.getTitle() != null) {
+                    String slug = Normalizer.normalize(staticPageRequest.getTitle().toLowerCase(), Normalizer.Form.NFD)
+                            .replaceAll("[\\u0300-\\u036f]", "")
+                            .replaceAll("[^a-z0-9\\s-]", "")
+                            .replaceAll("\\s+", "-")
+                            .replaceAll("-+", "-")
+                            .trim();
+                    staticPageRequest.setSlug(slug);
+                }
+            }
+            if (staticPageRequest.getContent() == null) {
+                staticPageRequest.setContent("");
+            }
+
             staticPageService.createStaticPage(staticPageRequest);
             return "redirect:/admin/static-pages?success=add";
         } catch (Exception e) {
+            e.printStackTrace();
             model.addAttribute("error", "Lỗi khi thêm trang: " + e.getMessage());
             return "admin/static-pages/add";
         }
@@ -107,6 +122,7 @@ public class StaticPageManagementController {
 
             model.addAttribute("staticPageRequest", staticPageRequest);
             model.addAttribute("staticPageId", id);
+            model.addAttribute("staticPage", staticPage);
             return "admin/static-pages/edit";
         } catch (Exception e) {
             return "redirect:/admin/static-pages?error=notfound";
@@ -124,6 +140,13 @@ public class StaticPageManagementController {
         }
 
         try {
+            // Defensive defaults for booleans to avoid null => false issues from form
+            if (staticPageRequest.getIsActive() == null) {
+                staticPageRequest.setIsActive(false);
+            }
+            if (staticPageRequest.getIsPublished() == null) {
+                staticPageRequest.setIsPublished(false);
+            }
             staticPageService.updateStaticPage(id, staticPageRequest);
             return "redirect:/admin/static-pages?success=update";
         } catch (Exception e) {

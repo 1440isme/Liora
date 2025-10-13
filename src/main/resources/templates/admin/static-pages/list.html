@@ -59,15 +59,16 @@
                         <div class="col-12">
                             <div class="card">
                                 <div class="card-body">
-                                    <form method="get" class="row g-3">
+                                    <form method="get" class="row g-3" id="filterForm">
                                         <div class="col-md-4">
-                                            <label class="form-label">Tìm kiếm</label>
+                                            <label class="form-label">Tìm kiếm <span class="text-muted small">(tự áp
+                                                    dụng)</span></label>
                                             <input type="text" class="form-control" name="search" th:value="${search}"
-                                                placeholder="Nhập tiêu đề trang...">
+                                                placeholder="Nhập tiêu đề trang..." id="searchInput">
                                         </div>
                                         <div class="col-md-2">
                                             <label class="form-label">Trạng thái</label>
-                                            <select class="form-select" name="isActive">
+                                            <select class="form-select" name="isActive" id="isActiveSelect">
                                                 <option value="">Tất cả</option>
                                                 <option value="true" th:selected="${isActive == true}">Hoạt động
                                                 </option>
@@ -77,7 +78,7 @@
                                         </div>
                                         <div class="col-md-2">
                                             <label class="form-label">Xuất bản</label>
-                                            <select class="form-select" name="isPublished">
+                                            <select class="form-select" name="isPublished" id="isPublishedSelect">
                                                 <option value="">Tất cả</option>
                                                 <option value="true" th:selected="${isPublished == true}">Đã xuất bản
                                                 </option>
@@ -87,7 +88,7 @@
                                         </div>
                                         <div class="col-md-2">
                                             <label class="form-label">Sắp xếp</label>
-                                            <select class="form-select" name="sortBy">
+                                            <select class="form-select" name="sortBy" id="sortBySelect">
                                                 <option value="title" th:selected="${sortBy == 'title'}">Tiêu đề
                                                 </option>
                                                 <option value="createdAt" th:selected="${sortBy == 'createdAt'}">Ngày
@@ -99,8 +100,9 @@
                                         <div class="col-md-2">
                                             <label class="form-label">&nbsp;</label>
                                             <div class="d-grid">
-                                                <button type="submit" class="btn btn-outline-primary">
-                                                    <i class="fas fa-search me-1"></i>Tìm kiếm
+                                                <button type="button" class="btn btn-outline-secondary"
+                                                    id="clearFilters">
+                                                    <i class="fas fa-eraser me-1"></i>Xóa bộ lọc
                                                 </button>
                                             </div>
                                         </div>
@@ -122,109 +124,57 @@
                                     </h5>
                                 </div>
                                 <div class="card-body">
-                                    <!-- Success/Error Messages -->
-                                    <div th:if="${param.success}"
-                                        class="alert alert-success alert-dismissible fade show">
-                                        <i class="fas fa-check-circle me-2"></i>
-                                        <span th:if="${param.success[0] == 'add'}">Tạo trang thành công!</span>
-                                        <span th:if="${param.success[0] == 'update'}">Cập nhật trang thành công!</span>
-                                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                                    </div>
+                                    <!-- Success/Error Messages will be shown via toast -->
 
-                                    <div th:if="${param.error}" class="alert alert-danger alert-dismissible fade show">
-                                        <i class="fas fa-exclamation-circle me-2"></i>
-                                        <span th:if="${param.error[0] == 'notfound'}">Không tìm thấy trang!</span>
-                                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                                    </div>
-
-                                    <!-- Static Pages Cards -->
-                                    <div th:if="${staticPages.content.size() > 0}" class="row">
-                                        <div th:each="page : ${staticPages.content}" class="col-lg-6 col-xl-4 mb-4">
-                                            <div class="card page-card h-100">
-                                                <div class="card-body">
-                                                    <div class="d-flex justify-content-between align-items-start mb-3">
-                                                        <h6 class="card-title mb-0" th:text="${page.title}">Tiêu đề
-                                                            trang</h6>
-                                                        <div class="dropdown">
-                                                            <button class="btn btn-sm btn-outline-secondary"
-                                                                type="button" data-bs-toggle="dropdown">
-                                                                <i class="fas fa-ellipsis-v"></i>
-                                                            </button>
-                                                            <ul class="dropdown-menu">
-                                                                <li>
-                                                                    <a class="dropdown-item"
-                                                                        th:href="@{/admin/static-pages/edit/{id}(id=${page.id})}">
-                                                                        <i class="fas fa-edit me-2"></i>Chỉnh sửa
-                                                                    </a>
-                                                                </li>
-                                                                <li>
-                                                                    <a class="dropdown-item"
-                                                                        th:href="@{/content/page/{slug}(slug=${page.slug})}"
-                                                                        target="_blank">
-                                                                        <i class="fas fa-external-link-alt me-2"></i>Xem
-                                                                        trang
-                                                                    </a>
-                                                                </li>
-                                                                <li>
-                                                                    <hr class="dropdown-divider">
-                                                                </li>
-                                                                <li>
-                                                                    <button
-                                                                        class="dropdown-item text-danger delete-page"
-                                                                        th:data-id="${page.id}">
-                                                                        <i class="fas fa-trash me-2"></i>Xóa
-                                                                    </button>
-                                                                </li>
-                                                            </ul>
-                                                        </div>
-                                                    </div>
-
-                                                    <div class="mb-3">
-                                                        <span class="badge slug-badge"
-                                                            th:text="'/' + ${page.slug}">/slug</span>
-                                                    </div>
-
-                                                    <div class="content-preview mb-3" th:utext="${page.content}">
-                                                        Nội dung trang...
-                                                    </div>
-
-                                                    <div class="d-flex justify-content-between align-items-center">
-                                                        <div class="d-flex gap-2">
-                                                            <span class="badge status-badge"
-                                                                th:classappend="${page.isActive} ? 'bg-success' : 'bg-secondary'"
-                                                                th:text="${page.isActive ? 'Hoạt động' : 'Tạm dừng'}">Trạng
-                                                                thái</span>
-                                                            <span class="badge status-badge"
+                                    <!-- Static Pages List (table-like) -->
+                                    <div th:if="${staticPages.content.size() > 0}">
+                                        <div class="table-responsive">
+                                            <table class="table align-middle">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Tiêu đề</th>
+                                                        <th>Ngày xuất bản</th>
+                                                        <th>Trạng thái</th>
+                                                        <th class="text-end">Hành động</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr th:each="page : ${staticPages.content}">
+                                                        <td>
+                                                            <div class="fw-semibold" th:text="${page.title}">Tiêu đề
+                                                            </div>
+                                                            <div class="text-muted small" th:text="'/' + ${page.slug}">
+                                                                /slug</div>
+                                                        </td>
+                                                        <td>
+                                                            <span
+                                                                th:text="${page.publishedAt != null ? #temporals.format(page.publishedAt, 'dd/MM/yyyy HH:mm') : '-'}">-</span>
+                                                        </td>
+                                                        <td>
+                                                            <span class="badge status-badge me-1"
                                                                 th:classappend="${page.isPublished} ? 'bg-primary' : 'bg-warning'"
                                                                 th:text="${page.isPublished ? 'Đã xuất bản' : 'Bản nháp'}">Xuất
                                                                 bản</span>
-                                                        </div>
-                                                        <small class="text-muted"
-                                                            th:text="${#temporals.format(page.updatedAt, 'dd/MM/yyyy')}">Cập
-                                                            nhật</small>
-                                                    </div>
-                                                </div>
-                                                <div class="card-footer bg-transparent">
-                                                    <div class="d-flex justify-content-between align-items-center">
-                                                        <div class="form-check form-switch">
-                                                            <input class="form-check-input toggle-active"
-                                                                type="checkbox" th:data-id="${page.id}"
-                                                                th:checked="${page.isActive}">
-                                                            <label class="form-check-label small">
-                                                                Hoạt động
-                                                            </label>
-                                                        </div>
-                                                        <div class="form-check form-switch">
-                                                            <input class="form-check-input toggle-published"
-                                                                type="checkbox" th:data-id="${page.id}"
-                                                                th:checked="${page.isPublished}">
-                                                            <label class="form-check-label small">
-                                                                Xuất bản
-                                                            </label>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
+                                                            <span class="badge status-badge"
+                                                                th:classappend="${page.isActive} ? 'bg-success' : 'bg-secondary'"
+                                                                th:text="${page.isActive ? 'Hoạt động' : 'Tạm dừng'}">Hoạt
+                                                                động</span>
+                                                        </td>
+                                                        <td class="text-end">
+                                                            <a class="btn btn-sm btn-outline-secondary me-2"
+                                                                th:href="@{/admin/static-pages/edit/{id}(id=${page.id})}"><i
+                                                                    class="fas fa-edit me-1"></i>Chỉnh sửa</a>
+                                                            <a class="btn btn-sm btn-outline-primary me-2"
+                                                                th:href="@{/content/page/{slug}(slug=${page.slug})}"
+                                                                target="_blank"><i
+                                                                    class="fas fa-external-link-alt me-1"></i>Xem</a>
+                                                            <button class="btn btn-sm btn-outline-danger delete-page"
+                                                                th:data-id="${page.id}"><i
+                                                                    class="fas fa-trash me-1"></i>Xóa</button>
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
                                         </div>
                                     </div>
 
@@ -299,8 +249,63 @@
         </div>
     </div>
 
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1055;">
+        <div id="listToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header">
+                <i class="fas fa-info-circle text-primary me-2"></i>
+                <strong class="me-auto">Thông báo</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body"></div>
+        </div>
+    </div>
+
     <div th:replace="admin/fragments/admin-scripts :: admin-scripts"></div>
     <script>
+        // Auto submit filters (with debounce for search)
+        (function () {
+            const form = document.getElementById('filterForm');
+            if (!form) return;
+
+            const searchInput = document.getElementById('searchInput');
+            const isActiveSelect = document.getElementById('isActiveSelect');
+            const isPublishedSelect = document.getElementById('isPublishedSelect');
+            const sortBySelect = document.getElementById('sortBySelect');
+            const clearBtn = document.getElementById('clearFilters');
+
+            let debounceTimer;
+            function debounceSubmit() {
+                if (debounceTimer) clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => form.submit(), 400);
+            }
+
+            if (searchInput) {
+                searchInput.addEventListener('input', debounceSubmit);
+            }
+            if (isActiveSelect) {
+                isActiveSelect.addEventListener('change', () => form.submit());
+            }
+            if (isPublishedSelect) {
+                isPublishedSelect.addEventListener('change', () => form.submit());
+            }
+            if (sortBySelect) {
+                sortBySelect.addEventListener('change', () => form.submit());
+            }
+
+            if (clearBtn) {
+                clearBtn.addEventListener('click', function () {
+                    if (searchInput) searchInput.value = '';
+                    if (isActiveSelect) isActiveSelect.value = '';
+                    if (isPublishedSelect) isPublishedSelect.value = '';
+                    if (sortBySelect) sortBySelect.value = 'title';
+
+                    // Giữ nguyên sortDir hiện tại, chỉ reset các filter
+                    form.submit();
+                });
+            }
+        })();
+
         // Toggle active status
         document.querySelectorAll('.toggle-active').forEach(toggle => {
             toggle.addEventListener('change', function () {
@@ -316,7 +321,7 @@
                     .then(response => response.json())
                     .then(data => {
                         if (data.success) {
-                            showAlert('success', 'Cập nhật trạng thái hoạt động thành công!');
+                            showToast('success', 'Cập nhật trạng thái hoạt động thành công!');
                             // Update badge
                             const card = this.closest('.page-card');
                             const badge = card.querySelector('.badge.bg-success, .badge.bg-secondary');
@@ -326,12 +331,12 @@
                             }
                         } else {
                             this.checked = !isActive; // Revert toggle
-                            showAlert('danger', 'Lỗi khi cập nhật trạng thái: ' + data.message);
+                            showToast('danger', 'Lỗi khi cập nhật trạng thái: ' + data.message);
                         }
                     })
                     .catch(error => {
                         this.checked = !isActive; // Revert toggle
-                        showAlert('danger', 'Lỗi khi cập nhật trạng thái');
+                        showToast('danger', 'Lỗi khi cập nhật trạng thái');
                     });
             });
         });
@@ -351,7 +356,7 @@
                     .then(response => response.json())
                     .then(data => {
                         if (data.success) {
-                            showAlert('success', 'Cập nhật trạng thái xuất bản thành công!');
+                            showToast('success', 'Cập nhật trạng thái xuất bản thành công!');
                             // Update badge
                             const card = this.closest('.page-card');
                             const badge = card.querySelector('.badge.bg-primary, .badge.bg-warning');
@@ -361,12 +366,12 @@
                             }
                         } else {
                             this.checked = !isPublished; // Revert toggle
-                            showAlert('danger', 'Lỗi khi cập nhật trạng thái: ' + data.message);
+                            showToast('danger', 'Lỗi khi cập nhật trạng thái: ' + data.message);
                         }
                     })
                     .catch(error => {
                         this.checked = !isPublished; // Revert toggle
-                        showAlert('danger', 'Lỗi khi cập nhật trạng thái');
+                        showToast('danger', 'Lỗi khi cập nhật trạng thái');
                     });
             });
         });
@@ -392,7 +397,7 @@
                     .then(response => response.json())
                     .then(data => {
                         if (data.success) {
-                            showAlert('success', 'Xóa trang thành công!');
+                            showToast('success', 'Xóa trang thành công!');
                             // Remove the card from DOM
                             const card = document.querySelector(`[data-id="${deletePageId}"]`).closest('.col-lg-6');
                             if (card) {
@@ -401,34 +406,54 @@
                             const modal = bootstrap.Modal.getInstance(document.getElementById('deleteModal'));
                             modal.hide();
                         } else {
-                            showAlert('danger', 'Lỗi khi xóa: ' + data.message);
+                            showToast('danger', 'Lỗi khi xóa: ' + data.message);
                         }
                     })
                     .catch(error => {
-                        showAlert('danger', 'Lỗi khi xóa trang');
+                        showToast('danger', 'Lỗi khi xóa trang');
                     });
             }
         });
 
-        // Show alert function
-        function showAlert(type, message) {
-            const alertDiv = document.createElement('div');
-            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-            alertDiv.innerHTML = `
-                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            `;
+        // Toast notification
+        function showToast(type, message) {
+            const toast = document.getElementById('listToast');
+            const toastBody = toast.querySelector('.toast-body');
+            const iconEl = toast.querySelector('.toast-header i');
 
-            const container = document.querySelector('.content-wrapper');
-            container.insertBefore(alertDiv, container.firstChild);
+            iconEl.className = 'fas me-2';
+            switch (type) {
+                case 'success':
+                    iconEl.classList.add('fa-check-circle', 'text-success');
+                    break;
+                case 'danger':
+                case 'error':
+                    iconEl.classList.add('fa-exclamation-circle', 'text-danger');
+                    break;
+                case 'warning':
+                    iconEl.classList.add('fa-exclamation-triangle', 'text-warning');
+                    break;
+                default:
+                    iconEl.classList.add('fa-info-circle', 'text-primary');
+            }
 
-            setTimeout(() => {
-                if (alertDiv.parentNode) {
-                    alertDiv.remove();
-                }
-            }, 5000);
+            toastBody.textContent = message;
+            const bsToast = new bootstrap.Toast(toast, { autohide: true, delay: 4000 });
+            bsToast.show();
         }
+
+        // Show toast for URL parameters (?success=..., ?error=...)
+        (function () {
+            const params = new URLSearchParams(window.location.search);
+            if (params.has('success')) {
+                const s = params.get('success');
+                showToast('success', s === 'add' ? 'Tạo trang thành công!' : 'Cập nhật trang thành công!');
+            }
+            if (params.has('error')) {
+                const e = params.get('error');
+                showToast('danger', e === 'notfound' ? 'Không tìm thấy trang!' : 'Đã xảy ra lỗi!');
+            }
+        })();
     </script>
 </body>
 

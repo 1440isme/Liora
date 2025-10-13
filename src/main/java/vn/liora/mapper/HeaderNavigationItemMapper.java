@@ -3,6 +3,8 @@ package vn.liora.mapper;
 import org.springframework.stereotype.Component;
 import vn.liora.dto.request.HeaderNavigationItemRequest;
 import vn.liora.entity.HeaderNavigationItem;
+import vn.liora.entity.Category;
+import vn.liora.entity.StaticPage;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,6 +26,19 @@ public class HeaderNavigationItemMapper {
         entity.setIsCategoryParent(request.getIsCategoryParent() != null ? request.getIsCategoryParent() : false);
         entity.setParentItemId(request.getParentItemId());
         entity.setIsActive(true);
+
+        // Map lightweight references by id for service to resolve
+        if (request.getCategoryId() != null) {
+            Category categoryRef = new Category();
+            categoryRef.setCategoryId(request.getCategoryId());
+            entity.setCategory(categoryRef);
+        }
+
+        if (request.getStaticPageId() != null) {
+            StaticPage pageRef = new StaticPage();
+            pageRef.setId(request.getStaticPageId());
+            entity.setStaticPage(pageRef);
+        }
 
         // Map sub-items if they exist
         if (request.getSubItems() != null && !request.getSubItems().isEmpty()) {

@@ -2,7 +2,6 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 
 <head th:replace="admin/fragments/admin-head :: admin-head('Tạo Trang Nội dung Mới - Liora Admin')">
-    <script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
     <style>
         .form-section {
             background: #f8f9fa;
@@ -31,6 +30,26 @@
         .editor-container {
             border: 1px solid #ced4da;
             border-radius: 0.375rem;
+            width: 100%;
+            min-height: 600px;
+            overflow: hidden;
+        }
+
+        /* CKEditor sizing */
+        .editor-container .ck-editor,
+        .editor-container .ck-editor__main,
+        .editor-container .ck-content {
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+
+        .editor-container .ck-content {
+            min-height: 700px;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+                'Noto Sans', 'Liberation Sans', 'Apple Color Emoji', 'Segoe UI Emoji',
+                'Segoe UI Symbol', 'Noto Color Emoji', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
         .status-badges {
@@ -68,7 +87,7 @@
                             <form th:action="@{/admin/static-pages/add}" method="post" id="pageForm">
                                 <div class="row">
                                     <!-- Left Column - Basic Info -->
-                                    <div class="col-lg-4">
+                                    <div class="col-lg-3">
                                         <div class="card">
                                             <div class="card-header">
                                                 <h5 class="mb-0">
@@ -117,8 +136,9 @@
                                                     <div class="mb-3">
                                                         <div class="form-check form-switch">
                                                             <input class="form-check-input" type="checkbox"
-                                                                id="isActive" name="isActive"
-                                                                th:checked="${staticPageRequest?.isActive ?: true}">
+                                                                id="isActive" name="isActive" value="true"
+                                                                th:checked="${staticPageRequest != null ? staticPageRequest.isActive : true}">
+                                                            <input type="hidden" name="isActive" value="false">
                                                             <label class="form-check-label" for="isActive">
                                                                 <strong>Kích hoạt trang</strong>
                                                                 <div class="form-text">Trang sẽ hiển thị trên website
@@ -130,8 +150,9 @@
                                                     <div class="mb-3">
                                                         <div class="form-check form-switch">
                                                             <input class="form-check-input" type="checkbox"
-                                                                id="isPublished" name="isPublished"
-                                                                th:checked="${staticPageRequest?.isPublished ?: false}">
+                                                                id="isPublished" name="isPublished" value="true"
+                                                                th:checked="${staticPageRequest != null ? staticPageRequest.isPublished : false}">
+                                                            <input type="hidden" name="isPublished" value="false">
                                                             <label class="form-check-label" for="isPublished">
                                                                 <strong>Xuất bản ngay</strong>
                                                                 <div class="form-text">Đánh dấu là đã xuất bản</div>
@@ -174,7 +195,7 @@
                                     </div>
 
                                     <!-- Right Column - Content Editor -->
-                                    <div class="col-lg-8">
+                                    <div class="col-lg-9">
                                         <div class="card">
                                             <div class="card-header">
                                                 <h5 class="mb-0">
@@ -183,7 +204,7 @@
                                                 </h5>
                                             </div>
                                             <div class="card-body">
-                                                <div class="mb-3">
+                                                <div class="mb-0">
                                                     <label for="content" class="form-label">
                                                         Nội dung <span class="text-danger">*</span>
                                                     </label>
@@ -268,43 +289,39 @@
     </div>
 
     <div th:replace="admin/fragments/admin-scripts :: admin-scripts"></div>
+    <script src="https://cdn.ckeditor.com/ckeditor5/41.4.2/classic/ckeditor.js"></script>
     <script>
-        // Initialize TinyMCE
-        tinymce.init({
-            selector: '#content',
-            height: 500,
-            plugins: [
-                'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
-                'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-                'insertdatetime', 'media', 'table', 'help', 'wordcount'
-            ],
-            toolbar: 'undo redo | blocks | ' +
-                'bold italic backcolor | alignleft aligncenter ' +
-                'alignright alignjustify | bullist numlist outdent indent | ' +
-                'removeformat | help | image | table | preview',
-            content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, San Francisco, Segoe UI, Roboto, Helvetica Neue, sans-serif; font-size: 14px; }',
-            image_upload_handler: function (blobInfo, success, failure) {
-                // Handle image upload
-                const formData = new FormData();
-                formData.append('file', blobInfo.blob(), blobInfo.filename());
-
-                fetch('/admin/api/upload/image', {
-                    method: 'POST',
-                    body: formData
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            success(data.url);
-                        } else {
-                            failure('Upload failed: ' + data.message);
-                        }
-                    })
-                    .catch(error => {
-                        failure('Upload failed: ' + error);
-                    });
+        let editorInstance;
+        class UploadAdapter {
+            constructor(loader) { this.loader = loader; }
+            upload() {
+                return this.loader.file.then(file => new Promise((resolve, reject) => {
+                    const formData = new FormData();
+                    formData.append('file', file, file.name);
+                    fetch('/admin/api/upload/image', { method: 'POST', body: formData })
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data && data.success && data.url) resolve({ default: data.url });
+                            else reject(data && data.message ? data.message : 'Upload failed');
+                        })
+                        .catch(err => reject(err));
+                }));
             }
-        });
+            abort() { }
+        }
+        function UploadAdapterPlugin(editor) {
+            editor.plugins.get('FileRepository').createUploadAdapter = loader => new UploadAdapter(loader);
+        }
+
+        ClassicEditor.create(document.querySelector('#content'), {
+            extraPlugins: [UploadAdapterPlugin],
+            toolbar: {
+                items: [
+                    'undo', 'redo', '|', 'heading', '|', 'bold', 'italic', 'link', '|',
+                    'bulletedList', 'numberedList', 'outdent', 'indent', '|', 'insertTable', 'imageUpload', 'mediaEmbed', 'blockQuote'
+                ]
+            }
+        }).then(editor => { editorInstance = editor; }).catch(err => console.error(err));
 
         // Auto-generate slug from title
         document.getElementById('title').addEventListener('input', function () {
@@ -336,7 +353,7 @@
         // Preview functionality
         document.getElementById('previewBtn').addEventListener('click', function () {
             const title = document.getElementById('title').value || 'Tiêu đề Trang';
-            const content = tinymce.get('content').getContent() || 'Nội dung trang...';
+            const content = (editorInstance && editorInstance.getData()) || 'Nội dung trang...';
 
             if (!content || content.trim() === '') {
                 showAlert('warning', 'Vui lòng nhập nội dung trước khi xem trước');
@@ -350,11 +367,17 @@
             modal.show();
         });
 
-        // Form validation
+        // Form validation & sync editor content to textarea before submit
         document.getElementById('pageForm').addEventListener('submit', function (e) {
             const title = document.getElementById('title').value.trim();
             const slug = document.getElementById('slug').value.trim();
-            const content = tinymce.get('content').getContent().trim();
+            const editorHtml = (editorInstance && editorInstance.getData()) || '';
+            const content = editorHtml.trim();
+            // Sync editor data back to textarea so Spring binds it
+            const contentTextarea = document.getElementById('content');
+            if (contentTextarea) {
+                contentTextarea.value = editorHtml;
+            }
 
             let isValid = true;
 

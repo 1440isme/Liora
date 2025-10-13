@@ -38,6 +38,19 @@ public interface StaticPageRepository extends JpaRepository<StaticPage, Long> {
     // Tìm static page theo trạng thái published với phân trang
     Page<StaticPage> findByIsActiveTrueAndIsPublished(Boolean isPublished, Pageable pageable);
 
+    // Bổ sung các truy vấn phục vụ lọc kết hợp
+    Page<StaticPage> findByIsPublished(Boolean isPublished, Pageable pageable);
+
+    Page<StaticPage> findByIsActiveAndIsPublished(Boolean isActive, Boolean isPublished, Pageable pageable);
+
+    Page<StaticPage> findByTitleContainingIgnoreCaseAndIsActive(String title, Boolean isActive, Pageable pageable);
+
+    Page<StaticPage> findByTitleContainingIgnoreCaseAndIsPublished(String title, Boolean isPublished,
+            Pageable pageable);
+
+    Page<StaticPage> findByTitleContainingIgnoreCaseAndIsActiveAndIsPublished(String title, Boolean isActive,
+            Boolean isPublished, Pageable pageable);
+
     // Tìm static page theo slug (tìm kiếm)
     Page<StaticPage> findBySlugContainingIgnoreCase(String slug, Pageable pageable);
 
