@@ -23,10 +23,7 @@ public class OrderProduct {
     Integer quantity;
     @Column(name = "TotalPrice", nullable = false)
     BigDecimal totalPrice;
-    @Column(name = "IsReturned", nullable = false)
-    Boolean isReturned = false;
-    @Column(name = "IsRefunded", nullable = false)
-    Boolean isRefunded = false;
+
     @ManyToOne
     @JoinColumn(name = "IdOrder")
     @JsonIgnore

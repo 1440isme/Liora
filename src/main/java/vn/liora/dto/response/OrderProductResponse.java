@@ -16,5 +16,10 @@ public class OrderProductResponse {
     Long idOrder;
     Integer quantity;
     BigDecimal totalPrice;
-    Boolean isReturned;
+    String productName;
+    String productDescription;
+    BigDecimal productPrice;
+    String mainImageUrl;
+    String categoryName;
+    String brandName;
 }

@@ -228,39 +228,29 @@ public class DiscountServiceImpl implements IDiscountService {
     public BigDecimal calculateDiscountAmount(Long discountId, BigDecimal orderTotal) {
         Discount discount = discountRepository.findById(discountId)
                 .orElseThrow(() -> new AppException(ErrorCode.DISCOUNT_NOT_FOUND));
-        
+
+        // ✅ THÊM: Check if discount is active
+        if (!isDiscountActive(discountId)) {
+            throw new AppException(ErrorCode.DISCOUNT_CANNOT_BE_APPLIED);
+        }
+
         if (orderTotal == null || orderTotal.compareTo(BigDecimal.ZERO) <= 0) {
             return BigDecimal.ZERO;
         }
-        
+
         // Check minimum order value
         if (discount.getMinOrderValue() != null && orderTotal.compareTo(discount.getMinOrderValue()) < 0) {
             return BigDecimal.ZERO;
         }
-        
+
         // Calculate discount based on type
-        BigDecimal discountAmount;
-        if ("PERCENTAGE".equals(discount.getDiscountType())) {
-            // Calculate percentage discount
-            discountAmount = orderTotal.multiply(discount.getDiscountValue()).divide(new BigDecimal("100"));
-            
-            // Apply maximum discount if set
-            if (discount.getMaxDiscountAmount() != null && discountAmount.compareTo(discount.getMaxDiscountAmount()) > 0) {
-                discountAmount = discount.getMaxDiscountAmount();
-            }
-        } else if ("FIXED_AMOUNT".equals(discount.getDiscountType())) {
-            // Fixed amount discount
-            discountAmount = discount.getDiscountValue();
-            
-            // Don't exceed order total
-            if (discountAmount.compareTo(orderTotal) > 0) {
-                discountAmount = orderTotal;
-            }
-        } else {
-            // Default to percentage if type is unknown
-            discountAmount = orderTotal.multiply(discount.getDiscountValue()).divide(new BigDecimal("100"));
+        BigDecimal discountAmount = orderTotal.multiply(discount.getDiscountValue()).divide(new BigDecimal("100"));
+
+        // Apply maximum discount if set
+        if (discount.getMaxDiscountAmount() != null && discountAmount.compareTo(discount.getMaxDiscountAmount()) > 0) {
+            discountAmount = discount.getMaxDiscountAmount();
         }
-        
+
         return discountAmount;
     }
     
@@ -299,15 +289,22 @@ public class DiscountServiceImpl implements IDiscountService {
         
         Discount discount = discountRepository.findById(request.getDiscountId())
                 .orElseThrow(() -> new AppException(ErrorCode.DISCOUNT_NOT_FOUND));
+
+        BigDecimal subTotal = order.getTotal().add(order.getTotalDiscount());
         
         // Check if discount can be applied
-        if (!canApplyDiscount(request.getDiscountId(), order.getUser().getUserId(), order.getTotal())) {
+        if (!canApplyDiscount(request.getDiscountId(), order.getUser().getUserId(), subTotal)) {
             throw new AppException(ErrorCode.DISCOUNT_CANNOT_BE_APPLIED);
         }
         
         // Add discount to order (One-to-Many relationship)
-        order.setDiscountId(request.getDiscountId());
+        BigDecimal discountAmount = calculateDiscountAmount(request.getDiscountId(), subTotal);
         order.setDiscount(discount);
+        order.setTotalDiscount(discountAmount);
+
+        BigDecimal newTotal = subTotal.subtract(discountAmount);
+        order.setTotal(newTotal);
+
         orderRepository.save(order);
         
         // Increment usage count
@@ -324,8 +321,15 @@ public class DiscountServiceImpl implements IDiscountService {
                 .orElseThrow(() -> new AppException(ErrorCode.DISCOUNT_NOT_FOUND));
         
         // Remove discount from order
-        order.setDiscountId(null);
+        BigDecimal subTotal = order.getTotal().add(order.getTotalDiscount());
+
+        // Remove discount from order and update totals
         order.setDiscount(null);
+        order.setTotalDiscount(BigDecimal.ZERO);
+
+        BigDecimal newTotal = subTotal;
+        order.setTotal(newTotal);
+        
         orderRepository.save(order);
         
         // Decrement usage count

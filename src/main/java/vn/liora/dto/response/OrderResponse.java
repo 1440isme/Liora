@@ -20,13 +20,11 @@ public class OrderResponse {
     String email;
     String note;
     LocalDateTime orderDate;
-    Boolean orderStatus;
+    String orderStatus;
     String paymentMethod;
-    Boolean paymentStatus;
-    BigDecimal shippingFee;
     BigDecimal totalDiscount;
     BigDecimal total;
     Long idAddress;
     Long userId;
-
+    String customerName;
 }

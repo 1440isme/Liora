@@ -25,28 +25,26 @@ public class Order {
     @Column(name = "TotalDiscount", nullable = false)
     BigDecimal totalDiscount;
     @Column(name = "Total", nullable = false)
-    BigDecimal total ;
+    BigDecimal total;
 
     @Column(name = "PaymentMethod", nullable = false)
     String paymentMethod;
 
-    @Column(name = "PaymentStatus", nullable = false)
-    @Builder.Default
-    Boolean paymentStatus = false;
 
     @Column(name = "OrderStatus", nullable = false)
     String orderStatus;
 
-    @Column(name = "Name", nullable = false)
+    @Column(name = "Name", nullable = false, columnDefinition = "NVARCHAR(255)")
     String name;
     @Column(name = "Phone", nullable = false)
     String phone;
     @Column(name = "AddressDetail", nullable = false, columnDefinition = "NVARCHAR(255)")
     String addressDetail;
-    @Column(name ="Email")
+    @Column(name = "Email")
     String email;
-    @Column(name ="Note", columnDefinition = "NVARCHAR(255)")
+    @Column(name = "Note", columnDefinition = "NVARCHAR(255)")
     String note;
+
 
     @ManyToOne
     @JoinColumn(name = "IdAddress", nullable = true)
@@ -58,11 +56,10 @@ public class Order {
     @JsonIgnore
     private User user;
 
-    @Column(name = "IdDiscount")
-    private Long discountId;
-
     @ManyToOne
-    @JoinColumn(name = "IdDiscount", insertable = false, updatable = false)
+    @JoinColumn(name = "IdDiscount")
     @JsonIgnore
     private Discount discount;
+
 }
+

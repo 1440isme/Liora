@@ -15,9 +15,32 @@ class OrderManager {
     }
 
     init() {
-        this.loadOrders();
+        this.setDefaultDateRange();
         this.bindEvents();
-        this.loadStatistics();
+        this.loadOrders();
+    }
+
+    setDefaultDateRange() {
+        const today = new Date();
+        const currentYear = today.getFullYear();
+        const currentMonth = today.getMonth(); // 0-based (0 = January)
+
+        // Đầu tháng hiện tại
+        const startOfMonth = new Date(currentYear, currentMonth, 1);
+        // Cuối tháng hiện tại
+        const endOfMonth = new Date(currentYear, currentMonth + 1, 0);
+
+        // Format thành YYYY-MM-DD cho input date
+        const formatDate = (date) => {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
+
+        // Set giá trị mặc định
+        $('#filterDateFrom').val(formatDate(startOfMonth));
+        $('#filterDateTo').val(formatDate(endOfMonth));
     }
 
     bindEvents() {
@@ -33,10 +56,6 @@ class OrderManager {
         });
 
         // Filter events
-        $('#filterPaymentStatus').on('change', () => {
-            this.filterOrders();
-        });
-
         $('#filterOrderStatus').on('change', () => {
             this.filterOrders();
         });
@@ -76,8 +95,15 @@ class OrderManager {
 
             this.orders = await response.json();
             this.filteredOrders = [...this.orders];
+
+            // Áp dụng filter theo thời gian mặc định ngay sau khi load
+            this.filterOrders();
+
             this.renderOrderTable();
             this.updatePagination();
+
+            // Load statistics sau khi đã có dữ liệu
+            this.loadStatistics();
 
         } catch (error) {
             console.error('Error loading orders:', error);
@@ -89,37 +115,92 @@ class OrderManager {
 
     async loadStatistics() {
         try {
-            // Load total orders count
-            const totalResponse = await fetch(this.baseUrl);
-            const allOrders = await totalResponse.json();
+            // Lấy thời gian filter hiện tại
+            const dateFrom = $('#filterDateFrom').val();
+            const dateTo = $('#filterDateTo').val();
 
-            // Load paid orders count
-            const paidResponse = await fetch(`${this.baseUrl}/payment-status?paymentStatus=true`);
-            const paidOrders = await paidResponse.json();
+            // Tạo query parameters cho API với thời gian filter
+            const queryParams = new URLSearchParams();
+            if (dateFrom) queryParams.append('dateFrom', dateFrom);
+            if (dateTo) queryParams.append('dateTo', dateTo);
 
-            // Load pending orders count
-            const pendingResponse = await fetch(`${this.baseUrl}/order-status?orderStatus=false`);
-            const pendingOrders = await pendingResponse.json();
+            // Load statistics với filter thời gian
+            const statsResponse = await fetch(`${this.baseUrl}/statistics?${queryParams.toString()}`);
 
-            // Load total revenue
-            const revenueResponse = await fetch(`${this.baseUrl}/revenue`);
-            const totalRevenue = await revenueResponse.json();
+            if (statsResponse.ok) {
+                const stats = await statsResponse.json();
+                this.updateStatistics(stats);
+            } else {
+                // Fallback: tính toán từ dữ liệu đã load và filter theo thời gian
+                this.calculateStatisticsFromFilteredData();
+            }
+
+        } catch (error) {
+            console.error('Error loading statistics:', error);
+            // Fallback: tính toán từ dữ liệu đã load
+            this.calculateStatisticsFromFilteredData();
+        }
+    }
+
+    calculateStatisticsFromFilteredData() {
+        try {
+            // Lấy thời gian filter hiện tại
+            const dateFrom = $('#filterDateFrom').val();
+            const dateTo = $('#filterDateTo').val();
+
+            // Filter orders theo thời gian
+            let filteredOrdersForStats = this.orders;
+
+            if (dateFrom || dateTo) {
+                filteredOrdersForStats = this.orders.filter(order => {
+                    const orderDate = new Date(order.orderDate);
+                    let matches = true;
+
+                    if (dateFrom) {
+                        const fromDate = new Date(dateFrom);
+                        matches = matches && (orderDate >= fromDate);
+                    }
+
+                    if (dateTo) {
+                        const toDate = new Date(dateTo);
+                        toDate.setHours(23, 59, 59, 999);
+                        matches = matches && (orderDate <= toDate);
+                    }
+
+                    return matches;
+                });
+            }
+
+            // Tính toán thống kê từ dữ liệu đã filter
+            const totalOrders = filteredOrdersForStats.length;
+            const cancelledOrders = filteredOrdersForStats.filter(order => order.orderStatus === 'CANCELLED').length;
+            const pendingOrders = filteredOrdersForStats.filter(order => order.orderStatus === 'PENDING').length;
+            const totalRevenue = filteredOrdersForStats
+                .filter(order => order.orderStatus === 'COMPLETED')
+                .reduce((sum, order) => sum + (order.total || 0), 0);
 
             this.updateStatistics({
-                total: allOrders.length,
-                paid: paidOrders.length,
-                pending: pendingOrders.length,
+                total: totalOrders,
+                cancelled: cancelledOrders,
+                pending: pendingOrders,
                 revenue: totalRevenue
             });
 
         } catch (error) {
-            console.error('Error loading statistics:', error);
+            console.error('Error calculating statistics:', error);
+            // Set default values nếu có lỗi
+            this.updateStatistics({
+                total: 0,
+                cancelled: 0,
+                pending: 0,
+                revenue: 0
+            });
         }
     }
 
     updateStatistics(stats) {
         $('#totalOrders').text(stats.total.toLocaleString());
-        $('#paidOrders').text(stats.paid.toLocaleString());
+        $('#paidOrders').text((stats.cancelled || 0).toLocaleString());
         $('#pendingOrders').text(stats.pending.toLocaleString());
         $('#totalRevenue').text(new Intl.NumberFormat('vi-VN', {
             style: 'currency',
@@ -159,6 +240,37 @@ class OrderManager {
                 minute: '2-digit'
             }).format(orderDateTime);
 
+            // Xử lý hiển thị thông tin khách hàng
+            let customerDisplay = '';
+            if (order.customerName && order.customerName.trim() !== '') {
+                // Nếu có customerName thì hiển thị tên và ID
+                customerDisplay = `
+                    <div>
+                        <span class="fw-bold text-dark">${order.customerName}</span>
+                        <br>
+                        <small class="text-muted">ID: ${order.userId || 'N/A'}</small>
+                    </div>
+                `;
+            } else if (order.userId) {
+                // Nếu chỉ có userId thì hiển thị ID và tải tên
+                customerDisplay = `
+                    <div>
+                        <span class="fw-bold text-primary">ID: ${order.userId}</span>
+                        <br>
+                        <small class="text-muted" id="customerName-${order.idOrder}">Đang tải...</small>
+                    </div>
+                `;
+            } else {
+                // Nếu không có thông tin gì thì hiển thị Khách
+                customerDisplay = `
+                    <div>
+                        <span class="fw-bold text-secondary">Khách</span>
+                        <br>
+                        <small class="text-muted">ID: N/A</small>
+                    </div>
+                `;
+            }
+
             const row = `
                 <tr>
                     <td>${startIndex + index + 1}</td>
@@ -173,11 +285,7 @@ class OrderManager {
                         </div>
                     </td>
                     <td>
-                        <div>
-                            <span class="fw-bold text-primary">ID: ${order.userId || 'N/A'}</span>
-                            <br>
-                            <small class="text-muted" id="customerName-${order.idOrder}">Đang tải...</small>
-                        </div>
+                        ${customerDisplay}
                     </td>
                     <td>
                         <span class="fw-bold text-success">
@@ -185,11 +293,6 @@ class OrderManager {
                                 style: 'currency',
                                 currency: 'VND'
                             }).format(order.total || 0)}
-                        </span>
-                    </td>
-                    <td>
-                        <span class="badge ${this.getPaymentStatusClass(order.paymentStatus)}">
-                            ${this.getPaymentStatusText(order.paymentStatus)}
                         </span>
                     </td>
                     <td>
@@ -215,8 +318,8 @@ class OrderManager {
             `;
             tbody.append(row);
 
-            // Load customer name asynchronously
-            if (order.userId) {
+            // Chỉ tải tên khách hàng nếu chưa có customerName và có userId
+            if ((!order.customerName || order.customerName.trim() === '') && order.userId) {
                 this.loadCustomerName(order.userId, order.idOrder);
             }
         });
@@ -269,89 +372,21 @@ class OrderManager {
     }
 
     async viewOrderDetail(orderId) {
-        try {
-            const order = this.orders.find(o => o.idOrder === orderId); // Sử dụng idOrder
-            if (!order) {
-                this.showAlert('error', 'Lỗi', 'Không tìm thấy đơn hàng');
-                return;
-            }
-
-            // Populate modal with order details
-            $('#modalOrderId').text(`#${order.idOrder}`);
-            $('#modalCustomerName').text(`User ID: ${order.userId || 'N/A'}`);
-            $('#modalCustomerEmail').text('Đang tải...');
-            $('#modalCustomerPhone').text('Đang tải...');
-            $('#modalOrderDate').text(this.formatDate(order.orderDate));
-            $('#modalTotalAmount').text(new Intl.NumberFormat('vi-VN', {
-                style: 'currency',
-                currency: 'VND'
-            }).format(order.total || 0));
-            $('#modalPaymentStatus').html(`<span class="badge ${this.getPaymentStatusClass(order.paymentStatus)}">${this.getPaymentStatusText(order.paymentStatus)}</span>`);
-            $('#modalOrderStatus').html(`<span class="badge ${this.getOrderStatusClass(order.orderStatus)}">${this.getOrderStatusText(order.orderStatus)}</span>`);
-            $('#modalShippingAddress').text(`Address ID: ${order.idAddress || 'N/A'}`);
-            $('#modalNotes').text('Không có ghi chú');
-
-            // Populate order items - tạm thời hiển thị thông báo
-            const itemsContainer = $('#modalOrderItems');
-            itemsContainer.empty();
-            itemsContainer.append('<p class="text-muted text-center">API chi tiết sản phẩm chưa được triển khai</p>');
-
-            // Load thông tin user nếu có userId
-            if (order.userId) {
-                this.loadUserInfoForModal(order.userId);
-            }
-
-            // Load thông tin address nếu có idAddress
-            if (order.idAddress) {
-                this.loadAddressInfoForModal(order.idAddress);
-            }
-
-            $('#orderDetailModal').modal('show');
-
-        } catch (error) {
-            console.error('Error viewing order detail:', error);
-            this.showAlert('error', 'Lỗi', 'Không thể xem chi tiết đơn hàng');
-        }
-    }
-
-    async loadUserInfoForModal(userId) {
-        try {
-            const response = await fetch(`/admin/api/users/${userId}`);
-            if (response.ok) {
-                const user = await response.json();
-                $('#modalCustomerName').text(user.fullName || user.firstName + ' ' + user.lastName || 'N/A');
-                $('#modalCustomerEmail').text(user.email || 'N/A');
-                $('#modalCustomerPhone').text(user.phoneNumber || 'N/A');
-            }
-        } catch (error) {
-            console.error('Error loading user info:', error);
-        }
-    }
-
-    async loadAddressInfoForModal(addressId) {
-        try {
-            const response = await fetch(`/admin/api/addresses/${addressId}`);
-            if (response.ok) {
-                const address = await response.json();
-                $('#modalShippingAddress').text(address.fullAddress || address.street || 'N/A');
-            }
-        } catch (error) {
-            console.error('Error loading address info:', error);
-        }
+        // Chuyển hướng đến trang chi tiết đơn hàng thay vì mở modal
+        window.location.href = `/admin/orders/detail/${orderId}`;
     }
 
     async updateOrderStatus(orderId) {
         try {
-            const order = this.orders.find(o => o.idOrder === orderId); // Sử dụng idOrder
+            const order = this.orders.find(o => o.idOrder === orderId);
             if (!order) {
                 this.showAlert('error', 'Lỗi', 'Không tìm thấy đơn hàng');
                 return;
             }
 
-            // Show update status modal
+            // Show update status modal với string values
             $('#updateOrderId').val(orderId);
-            $('#updatePaymentStatus').val(order.paymentStatus ? 'true' : 'false');
-            $('#updateOrderStatus').val(order.orderStatus ? 'true' : 'false');
+            $('#updateOrderStatus').val(order.orderStatus || 'PENDING'); // Set string value
             $('#updateStatusModal').modal('show');
 
         } catch (error) {
@@ -363,8 +398,7 @@ class OrderManager {
     async saveOrderStatus() {
         try {
             const orderId = $('#updateOrderId').val();
-            const paymentStatus = $('#updatePaymentStatus').val() === 'true';
-            const orderStatus = $('#updateOrderStatus').val() === 'true';
+            const orderStatus = $('#updateOrderStatus').val(); // Keep as string
 
             const response = await fetch(`${this.baseUrl}/${orderId}`, {
                 method: 'PUT',
@@ -372,8 +406,7 @@ class OrderManager {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    paymentStatus: paymentStatus,
-                    orderStatus: orderStatus
+                    orderStatus: orderStatus // Send only order status
                 })
             });
 
@@ -398,11 +431,22 @@ class OrderManager {
         if (!searchTerm) {
             this.filteredOrders = [...this.orders];
         } else {
-            this.filteredOrders = this.orders.filter(order =>
-                order.idOrder.toString().includes(searchTerm) ||
-                (order.userId && order.userId.toString().includes(searchTerm)) ||
-                (order.paymentMethod && order.paymentMethod.toLowerCase().includes(searchTerm))
-            );
+            this.filteredOrders = this.orders.filter(order => {
+                // Tìm theo mã đơn hàng (hỗ trợ cả #1 và 1)
+                const orderIdMatch = order.idOrder.toString().includes(searchTerm) ||
+                                   order.idOrder.toString().includes(searchTerm.replace('#')) ||
+                                   (`#${order.idOrder}`).toLowerCase().includes(searchTerm);
+
+                // Tìm theo ID khách hàng
+                const userIdMatch = order.userId && order.userId.toString().includes(searchTerm);
+
+                // Tìm theo tên khách hàng
+                const customerNameMatch = order.customerName &&
+                                        order.customerName.toLowerCase().includes(searchTerm);
+
+
+                return orderIdMatch || userIdMatch || customerNameMatch ;
+            });
         }
 
         this.currentPage = 1;
@@ -411,7 +455,6 @@ class OrderManager {
     }
 
     filterOrders() {
-        const paymentStatus = $('#filterPaymentStatus').val();
         const orderStatus = $('#filterOrderStatus').val();
         const dateFrom = $('#filterDateFrom').val();
         const dateTo = $('#filterDateTo').val();
@@ -419,14 +462,9 @@ class OrderManager {
         this.filteredOrders = this.orders.filter(order => {
             let matches = true;
 
-            // Filter by payment status
-            if (paymentStatus !== '') {
-                matches = matches && (order.paymentStatus === (paymentStatus === 'true'));
-            }
-
-            // Filter by order status
+            // Filter by order status - now supports string values
             if (orderStatus !== '') {
-                matches = matches && (order.orderStatus === (orderStatus === 'true'));
+                matches = matches && (order.orderStatus === orderStatus);
             }
 
             // Filter by date range
@@ -449,6 +487,9 @@ class OrderManager {
         this.currentPage = 1;
         this.renderOrderTable();
         this.updatePagination();
+
+        // Cập nhật statistics theo filter hiện tại
+        this.calculateStatisticsFromFilteredData();
     }
 
     updatePagination() {
@@ -502,10 +543,10 @@ class OrderManager {
     async refreshData() {
         this.currentPage = 1;
         $('#searchOrder').val('');
-        $('#filterPaymentStatus').val('');
         $('#filterOrderStatus').val('');
-        $('#filterDateFrom').val('');
-        $('#filterDateTo').val('');
+
+        // Thiết lập lại thời gian mặc định thay vì xóa trống
+        this.setDefaultDateRange();
 
         await this.loadOrders();
         await this.loadStatistics();
@@ -534,20 +575,30 @@ class OrderManager {
         }).format(date);
     }
 
-    getPaymentStatusClass(status) {
-        return status ? 'bg-success' : 'bg-warning';
-    }
-
-    getPaymentStatusText(status) {
-        return status ? 'Đã thanh toán' : 'Chưa thanh toán';
-    }
-
     getOrderStatusClass(status) {
-        return status ? 'bg-primary' : 'bg-secondary';
+        switch(status) {
+            case 'PENDING':
+                return 'bg-warning';
+            case 'CANCELLED':
+                return 'bg-danger';
+            case 'COMPLETED':
+                return 'bg-success';
+            default:
+                return 'bg-secondary';
+        }
     }
 
     getOrderStatusText(status) {
-        return status ? 'Đã xử lý' : 'Chờ xử lý';
+        switch(status) {
+            case 'PENDING':
+                return 'Chờ xử lý';
+            case 'CANCELLED':
+                return 'Đã hủy';
+            case 'COMPLETED':
+                return 'Hoàn tất';
+            default:
+                return 'Không xác định';
+        }
     }
 
     showLoading() {

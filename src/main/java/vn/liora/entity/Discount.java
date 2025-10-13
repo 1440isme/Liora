@@ -29,11 +29,6 @@ public class Discount {
     @Column(name = "Description", columnDefinition = "NVARCHAR(500)")
     private String description;
 
-    // Giảm % hoặc .000 --> "PERCENTAGE" or "FIXED_AMOUNT"
-    @Column(name = "DiscountType", nullable = false, columnDefinition = "NVARCHAR(50)")
-    @NotBlank(message = "Discount type is required")
-    private String discountType;
-
     @Column(name = "DiscountValue", nullable = false, precision = 10, scale = 2)
     @DecimalMin(value = "0.0", message = "Discount value must be positive")
     private BigDecimal discountValue;
