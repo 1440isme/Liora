@@ -282,61 +282,11 @@ public class DiscountServiceImpl implements IDiscountService {
     }
     
     // ========== ORDER DISCOUNT MANAGEMENT ==========
-    @Override
-    public void applyDiscountToOrder(ApplyDiscountRequest request) {
-        Order order = orderRepository.findById(request.getOrderId())
-                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
-        
-        Discount discount = discountRepository.findById(request.getDiscountId())
-                .orElseThrow(() -> new AppException(ErrorCode.DISCOUNT_NOT_FOUND));
-
-        BigDecimal subTotal = order.getTotal().add(order.getTotalDiscount());
-        
-        // Check if discount can be applied
-        if (!canApplyDiscount(request.getDiscountId(), order.getUser().getUserId(), subTotal)) {
-            throw new AppException(ErrorCode.DISCOUNT_CANNOT_BE_APPLIED);
-        }
-        
-        // Add discount to order (One-to-Many relationship)
-        BigDecimal discountAmount = calculateDiscountAmount(request.getDiscountId(), subTotal);
-        order.setDiscount(discount);
-        order.setTotalDiscount(discountAmount);
-
-        BigDecimal newTotal = subTotal.subtract(discountAmount);
-        order.setTotal(newTotal);
-
-        orderRepository.save(order);
-        
-        // Increment usage count
-        discount.setUsedCount(discount.getUsedCount() + 1);
-        discountRepository.save(discount);
-    }
-    
-    @Override
-    public void removeDiscountFromOrder(Long orderId, Long discountId) {
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
-        
+    public void incrementUsageCount(Long discountId) {
         Discount discount = discountRepository.findById(discountId)
                 .orElseThrow(() -> new AppException(ErrorCode.DISCOUNT_NOT_FOUND));
-        
-        // Remove discount from order
-        BigDecimal subTotal = order.getTotal().add(order.getTotalDiscount());
-
-        // Remove discount from order and update totals
-        order.setDiscount(null);
-        order.setTotalDiscount(BigDecimal.ZERO);
-
-        BigDecimal newTotal = subTotal;
-        order.setTotal(newTotal);
-        
-        orderRepository.save(order);
-        
-        // Decrement usage count
-        if (discount.getUsedCount() > 0) {
-            discount.setUsedCount(discount.getUsedCount() - 1);
-            discountRepository.save(discount);
-        }
+        discount.setUsedCount(discount.getUsedCount() + 1);
+        discountRepository.save(discount);
     }
     
     @Override

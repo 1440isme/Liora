@@ -44,7 +44,7 @@ public class SecurityConfig {
                         "/admin", "/admin/dashboard", "/admin/brands/**", "/admin/categories/**", "/admin/products/**",
                         "/admin/orders/**", "/admin/users/**", "/admin/discounts/**", "/admin/reviews/**",
                         // API endpoints - CHO PHÉP TRUY CẬP KHÔNG CẦN XÁC THỰC
-                        "/admin/api/**",
+                        "/admin/api/**", "/admin/api/discounts/**",
                         "/oauth2/**", "/login/oauth2/**", "/authenticate", "/auth/google/**"
         };
 

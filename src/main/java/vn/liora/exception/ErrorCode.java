@@ -97,7 +97,7 @@ public enum ErrorCode {
     INVALID_DATE_RANGE(408, "Invalid date range", HttpStatus.BAD_REQUEST),
     DISCOUNT_CANNOT_BE_APPLIED(409, "Discount cannot be applied", HttpStatus.BAD_REQUEST),
     VALIDATION_DISCOUNT_TYPE_TOO_LONG(410, "Discount type must not exceed 50 characters", HttpStatus.BAD_REQUEST),
-
+    DISCOUNT_NOT_APPLIED_TO_ORDER(411, "Discount is not applied to this order", HttpStatus.BAD_REQUEST),
     ;
 
     private int code;

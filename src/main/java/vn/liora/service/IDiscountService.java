@@ -59,8 +59,6 @@ public interface IDiscountService {
     boolean canApplyDiscount(Long discountId, Long userId, BigDecimal orderTotal);
     
     // ========== ORDER DISCOUNT MANAGEMENT ==========
-    void applyDiscountToOrder(ApplyDiscountRequest request);
-    void removeDiscountFromOrder(Long orderId, Long discountId);
     List<Discount> getDiscountsByOrder(Long orderId);
     
     // ========== VALIDATION ==========
@@ -73,4 +71,5 @@ public interface IDiscountService {
     Long getTotalUsageCount(Long discountId);
     Long getUsageCountByUser(Long discountId, Long userId);
     BigDecimal getTotalDiscountAmount(Long discountId);
+    void incrementUsageCount(Long discountId);
 }
