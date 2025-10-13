@@ -63,7 +63,7 @@ class CartPage {
 
         // Checkout button
         $(document).on('click', '#checkoutBtn', () => {
-            this.handleCheckout();
+            window.location.href = '/checkout';
         });
 
         // Apply promo code
