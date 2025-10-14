@@ -38,7 +38,7 @@ class CategoryProductsManager {
 
     getCategoryIdFromUrl() {
         const path = window.location.pathname;
-        const match = path.match(/\/products\/view\/category\/(\d+)/);
+        const match = path.match(/\/product\/view\/category\/(\d+)/);
         this.currentCategoryId = match ? parseInt(match[1]) : null;
         console.log('Category ID from URL:', this.currentCategoryId);
         
@@ -262,11 +262,12 @@ class CategoryProductsManager {
         emptyState.style.display = 'none';
         grid.innerHTML = ''; // Clear grid content first
         grid.style.display = 'grid';
-        grid.style.gridTemplateColumns = 'repeat(3, 1fr)';
-        grid.style.gap = '1.5rem';
-        grid.style.padding = '1rem 0';
+        grid.style.gridTemplateColumns = 'repeat(4, 1fr)';
+        grid.style.gap = '0.8rem';
+        grid.style.padding = '2rem 1rem';
         grid.style.width = '100%';
-        grid.style.margin = '0';
+        grid.style.maxWidth = '2500px';
+        grid.style.margin = '0 auto';
         grid.style.justifyContent = 'stretch';
 
         const html = this.products.map(product => this.createProductCard(product)).join('');
@@ -277,8 +278,8 @@ class CategoryProductsManager {
         console.log('Grid element:', grid);
         console.log('Grid computed style:', window.getComputedStyle(grid).display);
 
-        // Bind add to cart events
-        this.bindAddToCartEvents();
+        // Bind add to cart events - removed because we use onclick attributes
+        // this.bindAddToCartEvents();
     }
 
     createProductCard(product) {
@@ -307,11 +308,15 @@ class CategoryProductsManager {
                     
                     <div class="card-body d-flex flex-column">
                         <h6 class="card-title" title="${product.name}">
-                            ${product.name}
+                            <a href="/product/${product.productId}?from=category&categoryId=${this.currentCategoryId}" class="text-decoration-none text-dark product-name-link">
+                                ${product.name}
+                            </a>
                         </h6>
                         
                         <p class="brand-name">
-                            ${product.brandName || 'Thương hiệu'}
+                            <a href="/brand/${product.brandId}" class="text-decoration-none text-muted brand-link">
+                                ${product.brandName || 'Thương hiệu'}
+                            </a>
                         </p>
                         
                         <div class="rating">
@@ -336,24 +341,24 @@ class CategoryProductsManager {
                         </div>
                         
                         <div class="mt-auto">
-                            <div class="price-section">
+                            <div class="price-section d-flex justify-content-between align-items-center">
                                 <span class="current-price">
                                     ${this.formatPrice(product.price)}
                                 </span>
-                            </div>
-                            
-                        <button class="add-to-cart-btn ${productStatus !== 'available' ? 'disabled' : ''}" 
+                                <button class="add-to-cart-icon ${productStatus !== 'available' ? 'disabled' : ''}" 
                                     data-product-id="${product.productId}"
                                     data-product-name="${product.name}"
-                                data-product-price="${product.price}"
-                                ${productStatus !== 'available' ? 'disabled' : ''}>
-                                <i class="fas fa-shopping-cart me-1"></i>
-                            ${productStatus === 'out_of_stock' ? 'Hết hàng' : 
-                              productStatus === 'deactivated' ? 'Ngừng kinh doanh' : 'Thêm vào giỏ'}
+                                        data-product-price="${product.price}"
+                                        ${productStatus !== 'available' ? 'disabled' : ''}
+                                        title="${productStatus === 'out_of_stock' ? 'Hết hàng' : 
+                                          productStatus === 'deactivated' ? 'Ngừng kinh doanh' : 'Thêm vào giỏ'}"
+                                        onclick="window.categoryProductsManager.addToCart(${product.productId}, '${product.name}', ${product.price})">
+                                    <i class="fas fa-shopping-cart"></i>
                             </button>
                         </div>
                     </div>
                 </div>
+            </div>
         `;
     }
 
@@ -465,12 +470,34 @@ class CategoryProductsManager {
     generateStars(rating, reviewCount = 0) {
         console.log('generateStars called with rating:', rating, 'reviewCount:', reviewCount, 'type:', typeof rating);
         
-        // FORCE: Luôn hiển thị 5 sao rỗng cho product card để tránh conflict
-        console.log('FORCE: Always showing empty stars for product cards');
-        let stars = '';
-        for (let i = 0; i < 5; i++) {
-            stars += '<i class="far fa-star text-warning" style="color: #ffc107 !important; font-weight: 400 !important;"></i>';
+        // Logic đúng cho product card - giống generateStarsForModal
+        // Chỉ hiển thị sao rỗng khi rating = 0 hoặc không có rating
+        if (!rating || rating === 0 || rating === '0' || rating === null || rating === undefined) {
+            console.log('Rating is 0 or no rating, showing empty stars');
+            let stars = '';
+            for (let i = 0; i < 5; i++) {
+                stars += '<i class="far fa-star" style="color: #ccc !important; font-weight: 400 !important;"></i>';
+            }
+            console.log('Generated empty stars HTML:', stars);
+            return stars;
         }
+
+        console.log('Rating is not 0, showing stars based on rating:', rating);
+        const fullStars = Math.floor(rating);
+        const hasHalfStar = rating % 1 >= 0.5;
+        const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+
+        let stars = '';
+        for (let i = 0; i < fullStars; i++) {
+            stars += '<i class="fas fa-star text-warning"></i>';
+        }
+        if (hasHalfStar) {
+            stars += '<i class="fas fa-star-half-alt text-warning"></i>';
+        }
+        for (let i = 0; i < emptyStars; i++) {
+            stars += '<i class="far fa-star" style="color: #ccc !important; font-weight: 400 !important;"></i>';
+        }
+        
         return stars;
     }
 
@@ -479,11 +506,11 @@ class CategoryProductsManager {
         console.log('generateStarsForModal called with rating:', rating, 'reviewCount:', reviewCount);
         
         // Logic đúng cho Quick View modal
-        if (!rating || rating === 0 || rating === '0' || reviewCount === 0 || rating === null || rating === undefined) {
+        if (!rating || rating === 0 || rating === '0' || rating === null || rating === undefined) {
             console.log('Modal: Rating is 0 or no reviews, showing empty stars');
             let stars = '';
             for (let i = 0; i < 5; i++) {
-                stars += '<i class="far fa-star text-warning"></i>';
+                stars += '<i class="far fa-star" style="color: #ccc !important; font-weight: 400 !important;"></i>';
             }
             return stars;
         }
@@ -501,7 +528,7 @@ class CategoryProductsManager {
             stars += '<i class="fas fa-star-half-alt text-warning"></i>';
         }
         for (let i = 0; i < emptyStars; i++) {
-            stars += '<i class="far fa-star text-warning"></i>';
+            stars += '<i class="far fa-star" style="color: #ccc !important; font-weight: 400 !important;"></i>';
         }
         return stars;
     }
@@ -514,34 +541,59 @@ class CategoryProductsManager {
         }).format(price);
     }
 
-    bindAddToCartEvents() {
-        const addToCartBtns = document.querySelectorAll('.add-to-cart-btn');
-        addToCartBtns.forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                const productId = btn.dataset.productId;
-                const productName = btn.dataset.productName;
-                const productPrice = btn.dataset.productPrice;
-                
-                this.addToCart(productId, productName, productPrice);
-            });
-        });
-    }
+    // bindAddToCartEvents() method removed - using onclick attributes instead
 
     async addToCart(productId, productName, price) {
+        console.log('addToCart called for productId:', productId, 'productName:', productName);
+        console.log('window.cartManager exists:', !!window.cartManager);
+        console.log('window.cartManager:', window.cartManager);
+        
         try {
             // Check if cart functionality exists
             if (window.cartManager) {
+                console.log('Using cartManager.addItem');
                 await window.cartManager.addItem(productId, 1);
+                console.log('cartManager.addItem completed');
                 this.showNotification(`${productName} đã được thêm vào giỏ hàng`, 'success');
+                return;
             } else {
-                // Fallback: show notification
-                this.showNotification(`${productName} đã được thêm vào giỏ hàng`, 'success');
+                console.log('cartManager not available, trying fallback');
             }
         } catch (error) {
-            console.error('Error adding to cart:', error);
-            this.showNotification('Lỗi khi thêm vào giỏ hàng', 'error');
+            console.error('Error with cartManager:', error);
         }
+        
+        // Fallback: Try to use global cart if available (same as brand-products.js)
+        if (window.app && window.app.cartItems) {
+            console.log('Using global cart as fallback');
+            // Find product in current products array
+            const product = this.products.find(p => p.productId === productId);
+            if (product) {
+                // Check if product already in cart
+                const existingItem = window.app.cartItems.find(item => item.id === productId);
+                
+                if (existingItem) {
+                    existingItem.quantity += 1;
+                } else {
+                    window.app.cartItems.push({
+                        ...product,
+                        quantity: 1
+                    });
+                }
+                
+                // Update cart display
+                if (window.app.updateCartDisplay) {
+                    window.app.updateCartDisplay();
+                }
+                
+                this.showNotification(`${productName} đã được thêm vào giỏ hàng thành công!`, 'success');
+                return;
+            }
+        }
+        
+        // Final fallback: show notification
+        console.log('Using final fallback - notification only');
+        this.showNotification(`${productName} đã được thêm vào giỏ hàng`, 'success');
     }
 
     // Show quick view popup
@@ -616,7 +668,11 @@ class CategoryProductsManager {
                                 
                                 <!-- Product Info -->
                                 <div class="col-md-6">
-                                    <h4 class="product-name mb-3">${product.name}</h4>
+                                    <h4 class="product-name mb-3">
+                                        <a href="/product/${product.productId}?from=category&categoryId=${this.currentCategoryId}" class="text-decoration-none text-dark">
+                                            ${product.name}
+                                        </a>
+                                    </h4>
                                     <p class="brand-name text-muted mb-2">${product.brandName || 'Thương hiệu'}</p>
                                     
                                     <!-- Product Status -->
@@ -659,10 +715,15 @@ class CategoryProductsManager {
                                         <div class="d-flex align-items-center">
                                             <label class="form-label mb-0" style="margin-right: 2rem;">Số lượng:</label>
                                             <div class="input-group" style="max-width: 150px;">
-                                                <button class="btn btn-outline-secondary" type="button" onclick="this.parentNode.querySelector('input').stepDown()">-</button>
-                                                <input type="number" class="form-control text-center" value="1" min="1" max="${product.stock || 10}" id="quantityInput">
-                                                <button class="btn btn-outline-secondary" type="button" onclick="this.parentNode.querySelector('input').stepUp()">+</button>
+                                                <button class="btn btn-outline-secondary" type="button" onclick="app.decrementQuantity()">-</button>
+                                                <input type="number" class="form-control text-center" value="1" min="1" max="${product.stock || 10}" id="quantityInput" onchange="app.validateQuantity()" oninput="app.validateQuantity()" onblur="app.validateQuantityOnBlur()">
+                                                <button class="btn btn-outline-secondary" type="button" onclick="app.incrementQuantity()">+</button>
                                             </div>
+                                        </div>
+                                        <!-- Error Message -->
+                                        <div id="quantityError" class="text-danger mt-2" style="display: none;">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            <span id="quantityErrorMessage">Số lượng tối đa bạn có thể mua là ${product.stock || 10}.</span>
                                         </div>
                                     </div>
                                     
@@ -671,7 +732,7 @@ class CategoryProductsManager {
                                         ${this.getQuickViewActions(product)}
                                         
                                         <!-- View Details Button -->
-                                        <a href="/products/${product.productId}" 
+                                        <a href="/product/${product.productId}?from=category&categoryId=${this.currentCategoryId}" 
                                            class="btn btn-outline-primary btn-lg">
                                             <i class="fas fa-info-circle me-2"></i>
                                             Xem chi tiết sản phẩm
@@ -1182,8 +1243,45 @@ class CategoryProductsManager {
         const quantityInput = document.getElementById('quantityInput');
         const quantity = quantityInput ? parseInt(quantityInput.value) : 1;
         
-        // Call the existing addToCart method with quantity
-        this.addToCart(productId, quantity);
+        const product = this.products.find(p => p.productId === productId);
+        if (!product) {
+            this.showNotification('Không tìm thấy sản phẩm', 'error');
+            return;
+        }
+
+        // Validate quantity against stock
+        if (quantity > product.stock) {
+            this.showNotification(`Số lượng bạn chọn (${quantity}) vượt quá số lượng tồn kho hiện có (${product.stock} sản phẩm). Vui lòng chọn số lượng phù hợp.`, 'error');
+            return;
+        }
+
+        // Try to add to global cart if available
+        if (window.app && window.app.cartItems) {
+            // Check if product already in cart
+            const existingItem = window.app.cartItems.find(item => item.id === productId);
+            
+            if (existingItem) {
+                const newTotalQuantity = existingItem.quantity + quantity;
+                if (newTotalQuantity > product.stock) {
+                    this.showNotification(`Tổng số lượng trong giỏ hàng (${newTotalQuantity}) vượt quá tồn kho hiện có (${product.stock} sản phẩm). Vui lòng giảm số lượng.`, 'error');
+                    return;
+                }
+                existingItem.quantity = newTotalQuantity;
+            } else {
+                window.app.cartItems.push({
+                    ...product,
+                    quantity: quantity
+                });
+            }
+            
+            // Update cart display
+            if (window.app.updateCartDisplay) {
+                window.app.updateCartDisplay();
+            }
+        }
+
+        // Show success message
+        this.showNotification(`${quantity} x ${product.name} đã được thêm vào giỏ hàng thành công!`, 'success');
     }
 
     // Buy now - add to cart and redirect to checkout
@@ -1191,11 +1289,45 @@ class CategoryProductsManager {
         const quantityInput = document.getElementById('quantityInput');
         const quantity = quantityInput ? parseInt(quantityInput.value) : 1;
         
-        // Add to cart first
-        this.addToCart(productId, quantity);
+        const product = this.products.find(p => p.productId === productId);
+        if (!product) {
+            this.showNotification('Không tìm thấy sản phẩm', 'error');
+            return;
+        }
+
+        // Validate quantity against stock
+        if (quantity > product.stock) {
+            this.showNotification(`Số lượng bạn chọn (${quantity}) vượt quá số lượng tồn kho hiện có (${product.stock} sản phẩm). Vui lòng chọn số lượng phù hợp.`, 'error');
+            return;
+        }
+
+        // Add to cart silently
+        if (window.app && window.app.cartItems) {
+            // Check if product already in cart
+            const existingItem = window.app.cartItems.find(item => item.id === productId);
+            
+            if (existingItem) {
+                const newTotalQuantity = existingItem.quantity + quantity;
+                if (newTotalQuantity > product.stock) {
+                    this.showNotification(`Tổng số lượng trong giỏ hàng (${newTotalQuantity}) vượt quá tồn kho hiện có (${product.stock} sản phẩm). Vui lòng giảm số lượng.`, 'error');
+                    return;
+                }
+                existingItem.quantity = newTotalQuantity;
+            } else {
+                window.app.cartItems.push({
+                    ...product,
+                    quantity: quantity
+                });
+            }
+            
+            // Update cart display
+            if (window.app.updateCartDisplay) {
+                window.app.updateCartDisplay();
+            }
+        }
         
-        // Show success message
-        this.showNotification('Đã thêm vào giỏ hàng! Đang chuyển đến trang thanh toán...', 'success');
+        // Show single success message
+        this.showNotification(`${quantity} x ${product.name} đã được thêm vào giỏ hàng! Đang chuyển đến trang thanh toán...`, 'success');
         
         // Close modal
         const modal = bootstrap.Modal.getInstance(document.getElementById('quickViewModal'));

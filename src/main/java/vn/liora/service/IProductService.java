@@ -97,5 +97,8 @@ public interface IProductService {
     Long countOutOfStockProducts();
     Long countByBrand(Long brandId);
     Long countByCategory(Long categoryId);
+    
+    // ========== RELATED PRODUCTS ==========
+    List<Product> findByCategoryAndIdNot(Long categoryId, Long productId);
 
 }

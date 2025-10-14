@@ -33,7 +33,7 @@ body {
 /* Product Card Styles */
 .product-card {
     border: 1px solid var(--border-pink-light);
-    border-radius: 12px;
+    border-radius: 3px;
     transition: all 0.3s ease;
     overflow: hidden;
     background: white;
@@ -68,19 +68,22 @@ body {
 }
 
 .product-card .card-img-top {
-    height: 200px;
+    /* height: 200px;
     width: 100%;
-    object-fit: contain;
+    object-fit: cover;
     object-position: center;
     transition: transform 0.3s ease;
     border-radius: 8px 8px 0 0;
     background-color: #f8f9fa;
-    padding: 10px;
+    padding: 10px; */
+    height: 130px;
+    max-width: 80%; /* Giới hạn width */
+    object-fit: contain;
+    margin: 0 auto; /* Center ảnh */
+    padding: 15px;
+    display: block; /* Đảm bảo center hoàn hảo */
 }
 
-.product-card:hover .card-img-top {
-    transform: scale(1.05);
-}
 
 .product-card .card-body {
     padding: 1.25rem;
@@ -159,7 +162,7 @@ body {
     color: white;
     font-weight: 600;
     padding: 0.5rem 1rem;
-    border-radius: 6px;
+    border-radius: 3px;
     transition: all 0.3s ease;
     width: 100%;
     font-family: 'Gilroy', 'Helvetica Neue', Helvetica, Arial, sans-serif;
@@ -261,7 +264,7 @@ body {
 /* Quick View Modal Styles */
 #quickViewModal .modal-content {
     border: none;
-    border-radius: 12px;
+    border-radius: 3px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.2);
     font-family: 'Gilroy', 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
@@ -383,10 +386,37 @@ body {
 }
 
 #quickViewModal .btn-outline-primary:hover {
-    background: var(--pink-primary);
-    border-color: var(--pink-primary);
+    background: var(--pink-dark);
+    border-color: var(--pink-dark);
     color: white;
     transform: translateY(-2px);
+}
+
+/* Quantity Validation Styles */
+#quickViewModal .quantity-selector .form-control.is-invalid {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+
+#quickViewModal #quantityError {
+    font-size: 0.875rem;
+    font-weight: 500;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+#quickViewModal #quantityError i {
+    color: #dc3545;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* Buy Now Button Styles */
@@ -540,7 +570,7 @@ body {
     flex-shrink: 0;
     width: 60px;
     height: 60px;
-    border-radius: 6px;
+    border-radius: 3px;
     overflow: hidden;
     cursor: pointer;
     border: 2px solid transparent;
@@ -731,14 +761,50 @@ body {
     margin-right: 2rem; /* Tăng khoảng cách giữa text và input group */
 }
 
+/* Add to Cart Icon */
+.add-to-cart-icon {
+    background: #ffb3ba;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    font-size: 14px;
+}
+
+.add-to-cart-icon:hover:not(.disabled) {
+    background: #ffb3ba;
+}
+
+.add-to-cart-icon.disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.price-section {
+    margin-bottom: 0;
+}
+
+/* Category Header Alignment */
+.d-flex.justify-content-between.align-items-center.mb-3 {
+    padding-left: 2rem;
+}
+
 /* Product Grid Layout */
 #productsGrid {
     display: grid !important;
-    grid-template-columns: repeat(3, 1fr) !important;
-    gap: 1.5rem !important;
-    padding: 1rem 0 !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 0.8rem !important;
+    padding: 2rem 1rem !important;
     width: 100% !important;
-    margin: 0 !important;
+    max-width: 2500px !important;
+    margin: 0 auto !important;
     justify-content: stretch !important;
     align-items: stretch !important;
 }
@@ -755,6 +821,25 @@ body {
 #productsGrid.row {
     display: grid !important;
     flex-wrap: nowrap !important;
+}
+
+/* Responsive grid for 4 columns */
+@media (max-width: 1200px) {
+    #productsGrid {
+        grid-template-columns: repeat(3, 1fr) !important;
+    }
+}
+
+@media (max-width: 900px) {
+    #productsGrid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+@media (max-width: 600px) {
+    #productsGrid {
+        grid-template-columns: 1fr !important;
+    }
 }
 
 #productsGrid .col-lg-4,
@@ -778,7 +863,7 @@ body {
 /* Product Card Styles */
 .product-card {
     background: white;
-    border-radius: 12px;
+    border-radius: 3px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     transition: all 0.3s ease;
     overflow: hidden;
@@ -2087,7 +2172,7 @@ header {
 .subcategory-item {
     padding: 10px 16px;
     margin-bottom: 4px;
-    border-radius: 6px;
+    border-radius: 3px;
     cursor: pointer;
     transition: all 0.3s ease;
     font-size: 14px;
@@ -2190,7 +2275,7 @@ header {
        /* Responsive adjustments */
        @media (max-width: 1200px) {
            .level2-row {
-               grid-template-columns: repeat(3, 1fr);
+               grid-template-columns: repeat(4, 1fr);
                gap: 20px;
            }
        }
@@ -2227,7 +2312,7 @@ header {
            padding: 8px 12px;
            background: #f8f9fa;
            border: 1px solid #e0e0e0;
-           border-radius: 6px;
+           border-radius: 3px;
            cursor: pointer;
            transition: all 0.2s ease;
            text-align: center;
@@ -2540,4 +2625,39 @@ header {
     .banner-content {
         padding: 0 15px;
     }
+}
+
+/* ========== PRODUCT CARDS ========== */
+.product-name-link {
+    color: #333 !important;
+    transition: color 0.3s ease;
+    cursor: pointer;
+}
+
+.product-name-link:hover {
+    color: #E8A2B0 !important;
+    text-decoration: none !important;
+}
+
+.product-name-link:focus {
+    color: #E8A2B0 !important;
+    text-decoration: none !important;
+    outline: none;
+}
+
+.brand-link {
+    color: #6c757d !important;
+    transition: color 0.3s ease;
+    cursor: pointer;
+}
+
+.brand-link:hover {
+    color: #E8A2B0 !important;
+    text-decoration: none !important;
+}
+
+.brand-link:focus {
+    color: #E8A2B0 !important;
+    text-decoration: none !important;
+    outline: none;
 }

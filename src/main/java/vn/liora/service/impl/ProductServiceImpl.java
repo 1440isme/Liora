@@ -446,4 +446,10 @@ public class ProductServiceImpl implements IProductService {
     public Long countByCategory(Long categoryId) {
         return productRepository.countByCategory(categoryId);
     }
+    
+    // ========== RELATED PRODUCTS ==========
+    @Override
+    public List<Product> findByCategoryAndIdNot(Long categoryId, Long productId) {
+        return productRepository.findByCategoryCategoryIdAndProductIdNotAndIsActiveTrue(categoryId, productId);
+    }
 }
