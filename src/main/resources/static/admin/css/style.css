@@ -12073,6 +12073,7 @@ textarea.form-control-lg {
   width: 1em;
   height: 1em;
   margin-top: 0.25em;
+  margin-left: 1em;
   vertical-align: top;
   appearance: none;
   background-color: var(--bs-form-check-bg);
@@ -15669,9 +15670,9 @@ fieldset:disabled .btn {
   --bs-toast-border-color: var(--bs-border-color-translucent);
   --bs-toast-border-radius: var(--bs-border-radius);
   --bs-toast-box-shadow: var(--bs-box-shadow);
-  --bs-toast-header-color: var(--bs-secondary-color);
-  --bs-toast-header-bg: rgba(var(--bs-body-bg-rgb), 0.85);
-  --bs-toast-header-border-color: var(--bs-border-color-translucent);
+  --bs-toast-header-color: white;
+  --bs-toast-header-bg: linear-gradient(135deg, #007bff, #0056b3);
+  --bs-toast-header-border-color: transparent;
   width: var(--bs-toast-max-width);
   max-width: 100%;
   font-size: var(--bs-toast-font-size);
@@ -15694,7 +15695,9 @@ fieldset:disabled .btn {
 
 .toast-container {
   --bs-toast-zindex: 1090;
-  position: absolute;
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
   z-index: var(--bs-toast-zindex);
   width: max-content;
   max-width: 100%;

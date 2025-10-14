@@ -316,42 +316,29 @@
             <section class="py-5 bg-light">
                 <div class="container">
                     <div class="d-flex align-items-center justify-content-between mb-4">
-                        <h2 class="fw-bold mb-0 text-uppercase">Bí quyết làm đẹp</h2>
-                        <a href="/static-page" class="text-pink-primary fw-semibold">Xem tất cả</a>
+                        <h2 class="fw-bold mb-0 text-uppercase">Làm đẹp cùng Liora</h2>
+                        <a href="/content/list/lam-dep-cung-liora" class="text-pink-primary fw-semibold">Xem tất cả</a>
                     </div>
                     <div class="row g-4">
-                        <div class="col-md-4">
-                            <a href="/static-page" class="card border-0 shadow-sm h-100 text-decoration-none text-dark">
-                                <img class="card-img-top"
-                                    src="https://images.unsplash.com/photo-1556228724-4b63e53917a2?w=1200&q=80"
-                                    alt="Blog 1">
+                        <div class="col-md-4" th:each="p : ${latestBeautyPages}">
+                            <a th:href="@{'/content/page/' + ${p.slug}}"
+                                class="card border-0 shadow-sm h-100 text-decoration-none text-dark">
+                                <div class="ratio ratio-16x9">
+                                    <img th:if="${p.thumbnailUrl != null}" th:src="${p.thumbnailUrl}" alt="thumbnail"
+                                        class="card-img-top" style="object-fit:cover;">
+                                    <img th:if="${p.thumbnailUrl == null}"
+                                        src="https://via.placeholder.com/800x450?text=No+Image" alt="placeholder"
+                                        class="card-img-top" style="object-fit:cover;">
+                                </div>
                                 <div class="card-body">
-                                    <div class="fw-semibold">Routine dưỡng da cho người mới bắt đầu</div>
-                                    <small class="text-muted">5 phút đọc • Mẹo chăm sóc da</small>
+                                    <div class="fw-semibold" th:text="${p.title}">Tiêu đề</div>
+                                    <small class="text-muted"
+                                        th:text="${p.publishedAt != null ? #temporals.format(p.publishedAt, 'dd/MM/yyyy') : (#temporals.format(p.createdAt, 'dd/MM/yyyy'))}">Ngày</small>
                                 </div>
                             </a>
                         </div>
-                        <div class="col-md-4">
-                            <a href="/static-page" class="card border-0 shadow-sm h-100 text-decoration-none text-dark">
-                                <img class="card-img-top"
-                                    src="https://images.unsplash.com/photo-1512203492609-8f9a9bc680b4?w=1200&q=80"
-                                    alt="Blog 2">
-                                <div class="card-body">
-                                    <div class="fw-semibold">Top serum Vitamin C được yêu thích</div>
-                                    <small class="text-muted">4 phút đọc • Review</small>
-                                </div>
-                            </a>
-                        </div>
-                        <div class="col-md-4">
-                            <a href="/static-page" class="card border-0 shadow-sm h-100 text-decoration-none text-dark">
-                                <img class="card-img-top"
-                                    src="https://images.unsplash.com/photo-1516979187457-637abb4f9353?w=1200&q=80"
-                                    alt="Blog 3">
-                                <div class="card-body">
-                                    <div class="fw-semibold">Trang điểm tự nhiên cho ngày thường</div>
-                                    <small class="text-muted">3 phút đọc • Hướng dẫn</small>
-                                </div>
-                            </a>
+                        <div class="col-12" th:if="${#lists.isEmpty(latestBeautyPages)}">
+                            <div class="alert alert-info mb-0">Chưa có bài viết nào trong nhóm này.</div>
                         </div>
                     </div>
                 </div>

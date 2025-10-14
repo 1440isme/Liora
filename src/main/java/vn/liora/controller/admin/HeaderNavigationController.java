@@ -93,10 +93,10 @@ public class HeaderNavigationController {
             // Save using service
             headerNavigationService.saveOrUpdateNavigationItems(entities);
 
-            return "redirect:/admin/header-bottom?success=true";
+            return "redirect:/admin/header-bottom";
         } catch (Exception e) {
             e.printStackTrace();
-            return "redirect:/admin/header-bottom?error=true";
+            return "redirect:/admin/header-bottom";
         }
     }
 
@@ -151,10 +151,10 @@ public class HeaderNavigationController {
     public String initializeDefaultHeaderNavigation() {
         try {
             headerNavigationService.initializeDefaultNavigation();
-            return "redirect:/admin/header-bottom?success=init";
+            return "redirect:/admin/header-bottom";
         } catch (Exception e) {
             e.printStackTrace();
-            return "redirect:/admin/header-bottom?error=init";
+            return "redirect:/admin/header-bottom";
         }
     }
 

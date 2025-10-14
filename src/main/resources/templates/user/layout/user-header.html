@@ -199,6 +199,13 @@
                                         .replace(/^\/content\/page\//, '')
                                         .replace(/^\//, '');
                                     href = slug ? `/content/page/${slug}` : '#';
+                                } else if (item.linkType === 'PAGE_LIST') {
+                                    // Normalize to /content/list/{sectionSlug}
+                                    const raw = (item.url || '').toString();
+                                    const sectionSlug = raw
+                                        .replace(/^\/content\/list\//, '')
+                                        .replace(/^\//, '');
+                                    href = sectionSlug ? `/content/list/${sectionSlug}` : '#';
                                 } else if (item.linkType === 'INTERNAL') {
                                     href = item.url || '#';
                                 }

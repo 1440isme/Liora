@@ -56,29 +56,44 @@ public class ContentController {
         // Tìm header nav item tương ứng với sectionSlug
         try {
             List<HeaderNavigationItem> allItems = headerNavigationService.getAllActiveItems();
+            boolean found = false;
+
             for (HeaderNavigationItem item : allItems) {
+                // Kiểm tra main item trước
                 if (item.getLinkType() == vn.liora.enums.FooterLinkType.PAGE_LIST) {
                     String itemUrl = item.getUrl();
-                    if (itemUrl != null && itemUrl.contains("/content/list/" + sectionSlug)) {
+                    if (itemUrl != null && itemUrl.equals("/content/list/" + sectionSlug)) {
                         model.addAttribute("navItemTitle", item.getTitle());
+                        found = true;
                         break;
                     }
                 }
-                // Kiểm tra sub-items
-                if (item.getSubItems() != null) {
-                    for (HeaderNavigationItem subItem : item.getSubItems()) {
+
+                // Kiểm tra sub-items (load rõ ràng từ service để tránh lazy/không có dữ liệu)
+                if (!found) {
+                    List<HeaderNavigationItem> subItems = headerNavigationService.getSubItemsByParentId(item.getId());
+                    for (HeaderNavigationItem subItem : subItems) {
                         if (subItem.getLinkType() == vn.liora.enums.FooterLinkType.PAGE_LIST) {
                             String subItemUrl = subItem.getUrl();
-                            if (subItemUrl != null && subItemUrl.contains("/content/list/" + sectionSlug)) {
+                            if (subItemUrl != null && subItemUrl.equals("/content/list/" + sectionSlug)) {
                                 model.addAttribute("navItemTitle", subItem.getTitle());
+                                found = true;
                                 break;
                             }
                         }
                     }
                 }
+
+                if (found)
+                    break;
+            }
+
+            // Nếu không tìm thấy, sử dụng sectionSlug làm title mặc định
+            if (!found) {
+                model.addAttribute("navItemTitle", sectionSlug);
             }
         } catch (Exception e) {
-            // Nếu không tìm thấy, sử dụng sectionSlug làm title mặc định
+            // Nếu có lỗi, sử dụng sectionSlug làm title mặc định
             model.addAttribute("navItemTitle", sectionSlug);
         }
 

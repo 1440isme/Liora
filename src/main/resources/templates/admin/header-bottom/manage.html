@@ -97,12 +97,12 @@
                     </div>
 
                     <!-- Toast Container -->
-                    <div class="toast-container position-fixed top-0 end-0 p-3">
-                        <div id="headerToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="toast-container">
+                        <div id="headerToast" class="toast admin-toast admin-toast-info" role="alert"
+                            aria-live="assertive" aria-atomic="true">
                             <div class="toast-header">
-                                <i class="mdi mdi-information text-primary me-2"></i>
                                 <strong class="me-auto">Thông báo</strong>
-                                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+                                <button type="button" class="btn-close" data-bs-dismiss="toast">&times;</button>
                             </div>
                             <div class="toast-body">
                                 <!-- Toast message will be inserted here -->
@@ -285,6 +285,31 @@
         const parentCategories = /*[[${parentCategories}]]*/[];
         const staticPages = /*[[${staticPages}]]*/[];
 
+        // Build unique sectionSlug list from staticPages
+        function getUniqueSectionSlugs() {
+            const slugs = new Set();
+            if (Array.isArray(staticPages)) {
+                staticPages.forEach(p => {
+                    if (p && p.sectionSlug && p.sectionSlug.trim() !== '') {
+                        slugs.add(p.sectionSlug.trim());
+                    }
+                });
+            }
+            return Array.from(slugs).sort((a, b) => a.localeCompare(b));
+        }
+
+        function buildSectionSlugSelect(nameAttr, selectedValue) {
+            const options = getUniqueSectionSlugs();
+            let html = `<select class="form-select" name="${nameAttr}" style="opacity: 1 !important; background-color: #fff !important; border: 1px solid #ced4da !important;">`;
+            html += `<option value="">Chọn section</option>`;
+            options.forEach(slug => {
+                const sel = (selectedValue === slug) ? 'selected' : '';
+                html += `<option value="${slug}" ${sel}>${slug}</option>`;
+            });
+            html += `</select>`;
+            return html;
+        }
+
         // Toast notification function
         function showToast(type, message) {
             const toast = document.getElementById('headerToast');
@@ -387,23 +412,37 @@
                             const lastSubItem = subItems[subItems.length - 1];
                             if (lastSubItem) {
                                 const titleInput = lastSubItem.querySelector('input[name*="title"]');
-                                const urlInput = lastSubItem.querySelector('input[name*="url"]');
                                 const orderInput = lastSubItem.querySelector('input[name*="itemOrder"]');
                                 const linkTypeSelect = lastSubItem.querySelector('select[name*="linkType"]');
-                                const staticPageSelect = lastSubItem.querySelector('select[name*="staticPageId"]');
 
                                 if (titleInput) titleInput.value = subItem.title || '';
-                                if (urlInput) urlInput.value = subItem.url || '';
                                 if (orderInput) orderInput.value = subItem.itemOrder || (subIndex + 1);
+
                                 if (linkTypeSelect) {
                                     linkTypeSelect.value = subItem.linkType || 'PAGE';
-                                    // Trigger change event to update input fields
+                                    // Cập nhật UI theo linkType trước
                                     toggleSubItemLinkOptions(currentIndex, subItems.length - 1);
-                                }
-                                if (staticPageSelect && subItem.staticPage) {
-                                    staticPageSelect.value = subItem.staticPage.id || '';
-                                }
 
+                                    // Sau khi UI đã cập nhật, gán giá trị đúng theo link type
+                                    if (subItem.linkType === 'PAGE') {
+                                        const staticPageSelect = lastSubItem.querySelector('select[name*="staticPageId"]');
+                                        if (staticPageSelect && subItem.staticPage) {
+                                            staticPageSelect.value = subItem.staticPage.id || '';
+                                        }
+                                    } else if (subItem.linkType === 'PAGE_LIST') {
+                                        // set selected section in combobox
+                                        const sectionSelect = lastSubItem.querySelector('select[name*="url"]');
+                                        if (sectionSelect) {
+                                            const sectionSlug = (subItem.url || '').toString()
+                                                .replace(/^\/content\/list\//, '')
+                                                .replace(/^\//, '');
+                                            sectionSelect.value = sectionSlug;
+                                        }
+                                    } else {
+                                        const urlInput = lastSubItem.querySelector('input[name*="url"]');
+                                        if (urlInput) urlInput.value = subItem.url || '';
+                                    }
+                                }
                             }
                         });
                     }
@@ -890,6 +929,10 @@
                 initialInput = `<select class="form-select" name="navigationItems[${currentIndex}].staticPageId" style="opacity: 1 !important; background-color: #fff !important; border: 1px solid #ced4da !important;">
                     ${staticPageOptions}
                 </select>`;
+            } else if (linkType === 'PAGE_LIST') {
+                initialLabel = 'Section';
+                const sectionSlug = (url || '').toString().replace(/^\/content\/list\//, '').replace(/^\//, '');
+                initialInput = buildSectionSlugSelect(`navigationItems[${currentIndex}].url`, sectionSlug);
             } else if (linkType === 'EXTERNAL') {
                 initialLabel = 'URL';
                 initialInput = `<input type="text" class="form-control" name="navigationItems[${currentIndex}].url" 
@@ -1038,6 +1081,7 @@
                                 <option value="PAGE">Trang tĩnh</option>
                                 <option value="PAGE_LIST">Danh sách trang tĩnh</option>
                                 <option value="EXTERNAL">Link bên ngoài</option>
+                                <option value="INTERNAL">Link nội bộ</option>
                             </select>
                         </div>
                         <div class="col-md-4" id="sub-item-input-${parentIndex}-${subItemIndex}">
@@ -1106,9 +1150,8 @@
                     ${staticPageOptions}
                 </select>`;
             } else if (linkType === 'PAGE_LIST') {
-                newLabel = 'Section slug';
-                newInput = `<input type="text" class="form-control" name="navigationItems[${index}].url" 
-                    placeholder="nhom-bai">`;
+                newLabel = 'Section';
+                newInput = buildSectionSlugSelect(`navigationItems[${index}].url`, '');
             } else if (linkType === 'EXTERNAL') {
                 newLabel = 'URL';
                 newInput = `<input type="text" class="form-control" name="navigationItems[${index}].url" 
@@ -1162,13 +1205,16 @@
                     ${staticPageOptions}
                 </select>`;
             } else if (linkType === 'PAGE_LIST') {
-                newLabel = 'Section slug';
-                newInput = `<input type="text" class="form-control" name="navigationItems[${parentIndex}].subItems[${subItemIndex}].url" 
-                    placeholder="nhom-bai">`;
+                newLabel = 'Section';
+                newInput = buildSectionSlugSelect(`navigationItems[${parentIndex}].subItems[${subItemIndex}].url`, '');
             } else if (linkType === 'EXTERNAL') {
                 newLabel = 'URL';
                 newInput = `<input type="text" class="form-control" name="navigationItems[${parentIndex}].subItems[${subItemIndex}].url" 
                     placeholder="https://example.com">`;
+            } else if (linkType === 'INTERNAL') {
+                newLabel = 'URL';
+                newInput = `<input type="text" class="form-control" name="navigationItems[${parentIndex}].subItems[${subItemIndex}].url" 
+                    placeholder="/path/to/page">`;
             } else {
                 newLabel = 'URL';
                 newInput = `<input type="text" class="form-control" name="navigationItems[${parentIndex}].subItems[${subItemIndex}].url" 
@@ -1253,6 +1299,20 @@
                     showToast('info', 'Đang lưu header...');
                 });
             }
+
+            // Event delegation: phản ứng ngay khi đổi linkType của sub-item
+            document.addEventListener('change', function (e) {
+                const target = e.target;
+                if (!(target instanceof HTMLSelectElement)) return;
+                // Khớp select linkType của sub-item: navigationItems[<p>].subItems[<s>].linkType
+                const m = target.name && target.name.match(/navigationItems\[(\d+)\]\.subItems\[(\d+)\]\.linkType/);
+                if (m) {
+                    const parentIdx = parseInt(m[1], 10);
+                    const subIdx = parseInt(m[2], 10);
+                    // Cập nhật UI ngay lập tức cho sub-item tương ứng
+                    toggleSubItemLinkOptions(parentIdx, subIdx);
+                }
+            });
         });
     </script>
 </body>

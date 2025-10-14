@@ -26,6 +26,9 @@ public class StaticPageResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    // Ảnh thumbnail rút ra từ content (ảnh đầu tiên), có thể null
+    private String thumbnailUrl;
+
     // Constructor từ entity
     public StaticPageResponse(StaticPage staticPage) {
         this.id = staticPage.getId();
@@ -41,5 +44,31 @@ public class StaticPageResponse {
         this.publishedAt = staticPage.getPublishedAt();
         this.createdAt = staticPage.getCreatedAt();
         this.updatedAt = staticPage.getUpdatedAt();
+
+        // Trích ảnh đầu tiên từ nội dung HTML làm thumbnail
+        this.thumbnailUrl = extractFirstImageSrc(this.content);
+    }
+
+    private String extractFirstImageSrc(String html) {
+        if (html == null || html.isEmpty())
+            return null;
+        // Regex đơn giản để tìm <img ... src="...">
+        try {
+            java.util.regex.Pattern p = java.util.regex.Pattern.compile("<img[^>]+src=\\\"([^\\\"]+)\\\"",
+                    java.util.regex.Pattern.CASE_INSENSITIVE);
+            java.util.regex.Matcher m = p.matcher(html);
+            if (m.find()) {
+                return m.group(1);
+            }
+            // Thử với nháy đơn
+            p = java.util.regex.Pattern.compile("<img[^>]+src=\\'([^\\']+)\\'",
+                    java.util.regex.Pattern.CASE_INSENSITIVE);
+            m = p.matcher(html);
+            if (m.find()) {
+                return m.group(1);
+            }
+        } catch (Exception ignored) {
+        }
+        return null;
     }
 }

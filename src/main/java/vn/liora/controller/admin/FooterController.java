@@ -44,11 +44,11 @@ public class FooterController {
     public String saveFooter(@ModelAttribute FooterRequest footerRequest) {
         try {
             footerService.saveOrUpdateFooter(footerRequest);
-            return "redirect:/admin/footer?success=update";
+            return "redirect:/admin/footer";
         } catch (Exception e) {
             System.err.println("Error saving footer: " + e.getMessage());
             e.printStackTrace();
-            return "redirect:/admin/footer?error=save";
+            return "redirect:/admin/footer";
         }
     }
 
@@ -69,6 +69,6 @@ public class FooterController {
     @GetMapping("/init")
     public String initializeDefaultFooter() {
         footerService.initializeDefaultFooter();
-        return "redirect:/admin/footer?success=true";
+        return "redirect:/admin/footer";
     }
 }

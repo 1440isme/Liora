@@ -31,7 +31,6 @@
 /* Banner Cards */
 .banner-card {
     transition: all 0.3s ease !important;
-    cursor: move !important;
     background: white !important;
     border-radius: 8px !important;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
@@ -442,26 +441,6 @@
 #bannerToast {
     min-width: 300px;
     max-width: 400px;
-}
-
-.toast-header .fas {
-    font-size: 16px;
-}
-
-.toast-header .text-success {
-    color: #28a745 !important;
-}
-
-.toast-header .text-danger {
-    color: #dc3545 !important;
-}
-
-.toast-header .text-warning {
-    color: #ffc107 !important;
-}
-
-.toast-header .text-info {
-    color: #17a2b8 !important;
 }
 
 /* Toast Animation */
