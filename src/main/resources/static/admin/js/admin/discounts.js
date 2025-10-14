@@ -149,15 +149,15 @@ class DiscountManager {
         });
 
         // Search functionality
-        $('#searchDiscount').on('keyup', (e) => {
-            if (e.key === 'Enter') {
-                this.searchDiscounts();
-            }
-        });
-
-        $('#btnSearch').on('click', () => {
-            this.searchDiscounts();
-        });
+        // $('#searchDiscount').on('keyup', (e) => {
+        //     if (e.key === 'Enter') {
+        //         this.searchDiscounts();
+        //     }
+        // });
+        //
+        // $('#btnSearch').on('click', () => {
+        //     this.searchDiscounts();
+        // });
 
         // Filter events
         $('#filterDiscountStatus').on('change', () => {
@@ -417,10 +417,7 @@ class DiscountManager {
             const successMessage = isEdit ? 'Cập nhật mã giảm giá thành công!' : 'Tạo mã giảm giá thành công!';
             this.showAlert('success', 'Thành công', successMessage);
 
-            // Redirect to list page after 2 seconds
-            setTimeout(() => {
-                window.location.href = '/admin/discounts';
-            }, 2000);
+            window.location.href = '/admin/discounts';
 
         } catch (error) {
             console.error('Error submitting form:', error);
@@ -805,7 +802,7 @@ class DiscountManager {
 
         return `
         <tr>
-            <td>${index}</td>
+            <td class="text-center">${index}</td>
             <td>
                 <div>
                     <span class="fw-bold text-primary">${discount.name}</span>
@@ -825,25 +822,20 @@ class DiscountManager {
                     <small class="text-muted">Đến: ${endDateString}</small>
                 </div>
             </td>
-            <td>
+            <td class="text-center">
                 <span class="fw-medium">${discount.usedCount || 0}</span>
                 ${discount.usageLimit ? `<br><small class="text-muted">/ ${discount.usageLimit}</small>` : ''}
             </td>
-            <td>
-                <span class="badge ${this.getDiscountStatusClass(discount)}">
+            <td class="text-center">
+                <span class="${this.getDiscountStatusClass(discount)}">
                     ${this.getDiscountStatusText(discount)}
                 </span>
             </td>
-            <td>
+            <td class="text-center">
                 <small class="text-muted">${createdDateString}</small>
             </td>
-            <td>
+            <td class="text-center">
                 <div class="btn-group" role="group">
-                    <button type="button" class="btn btn-sm btn-outline-primary" 
-                            onclick="discountManager.viewDiscountDetail(${discount.discountId})"
-                            title="Xem chi tiết">
-                        <i class="mdi mdi-eye"></i>
-                    </button>
                     <button type="button" class="btn btn-sm btn-outline-success" 
                             onclick="discountManager.editDiscount(${discount.discountId})"
                             title="Chỉnh sửa">
@@ -890,7 +882,7 @@ class DiscountManager {
             $('#modalEndDate').text(this.formatDateTime(discount.endDate));
             $('#modalUsedCount').text(discount.usedCount || 0);
             $('#modalUsageLimit').text(discount.usageLimit || 'Không giới hạn');
-            $('#modalDiscountStatus').html(`<span class="badge ${this.getDiscountStatusClass(discount)}">${this.getDiscountStatusText(discount)}</span>`);
+            $('#modalDiscountStatus').html(`<span class="${this.getDiscountStatusClass(discount)}">${this.getDiscountStatusText(discount)}</span>`);
 
             $('#discountDetailModal').modal('show');
 
@@ -1219,14 +1211,24 @@ class DiscountManager {
         const startDate = new Date(discount.startDate);
         const endDate = new Date(discount.endDate);
 
+        // if (!discount.isActive) {
+        //     return 'bg-secondary';
+        // } else if (endDate < now) {
+        //     return 'bg-danger';
+        // } else if (startDate > now) {
+        //     return 'bg-info';
+        // } else {
+        //     return 'bg-success';
+        // }
+
         if (!discount.isActive) {
-            return 'bg-secondary';
+            return 'text-secondary'; // ✅ BỎ nền, chỉ để chữ xám
         } else if (endDate < now) {
-            return 'bg-danger';
+            return 'text-danger'; // ✅ BỎ nền, chỉ để chữ đỏ
         } else if (startDate > now) {
-            return 'bg-info';
+            return 'text-warning'; // ✅ BỎ nền, chỉ để chữ vàng
         } else {
-            return 'bg-success';
+            return 'text-success'; // ✅ BỎ nền, chỉ để chữ xanh lá
         }
     }
 
