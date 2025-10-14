@@ -41,13 +41,13 @@ h1 {
 
 h2 {
     font-family: 'Roboto', sans-serif;
-    font-size: 1.5rem;
+    font-size: 1.75rem;
     font-weight: 400;
 }
 
 h3 {
     font-family: 'Roboto', sans-serif;
-    font-size: 1rem;
+    font-size: 1.5rem;
     font-weight: 400;
 }
 
@@ -2975,34 +2975,59 @@ a.dropdown-item:hover {
 /* ========== PRODUCT CARDS ========== */
 .product-name-link {
     color: #333 !important;
-    transition: color 0.3s ease;
-    cursor: pointer;
+    transition: color 0.3s ease !important;
+    cursor: pointer !important;
+    text-decoration: none !important;
 }
 
 .product-name-link:hover {
     color: #E8A2B0 !important;
     text-decoration: none !important;
+    transform: none !important;
 }
 
 .product-name-link:focus {
     color: #E8A2B0 !important;
     text-decoration: none !important;
-    outline: none;
+    outline: none !important;
+}
+
+.product-name-link:active {
+    color: #E8A2B0 !important;
+    text-decoration: none !important;
 }
 
 .brand-link {
     color: #6c757d !important;
-    transition: color 0.3s ease;
-    cursor: pointer;
+    transition: color 0.3s ease !important;
+    cursor: pointer !important;
+    text-decoration: none !important;
 }
 
 .brand-link:hover {
     color: #E8A2B0 !important;
     text-decoration: none !important;
+    transform: none !important;
 }
 
 .brand-link:focus {
     color: #E8A2B0 !important;
     text-decoration: none !important;
-    outline: none;
+    outline: none !important;
+}
+
+.brand-link:active {
+    color: #E8A2B0 !important;
+    text-decoration: none !important;
+}
+
+/* Simple hover effects - will be overridden by inline CSS */
+.product-name-link:hover {
+    color: #E8A2B0 !important;
+    text-decoration: none !important;
+}
+
+.brand-link:hover {
+    color: #E8A2B0 !important;
+    text-decoration: none !important;
 }

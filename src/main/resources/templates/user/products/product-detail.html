@@ -424,11 +424,19 @@
                             <div class="d-flex flex-wrap gap-3">
                                 <div>
                                     <span class="text-muted">Thương hiệu:</span>
-                                    <span class="product-detail-brand fw-semibold" th:text="${product.brandName}">Brand Name</span>
+                                    <a th:href="@{'/brand/' + ${product.brandId}}" class="product-detail-brand fw-semibold text-decoration-none" 
+                                       th:text="${product.brandName}" 
+                                       style="color: var(--pink-primary) !important; transition: color 0.3s ease;"
+                                       onmouseover="this.style.color='var(--pink-dark) !important'"
+                                       onmouseout="this.style.color='var(--pink-primary) !important'">Brand Name</a>
                                 </div>
                                 <div>
                                     <span class="text-muted">Danh mục:</span>
-                                    <span class="fw-semibold" th:text="${product.categoryName}">Category Name</span>
+                                    <a th:href="@{'/product/view/category/' + ${product.categoryId}}" class="fw-semibold text-decoration-none" 
+                                       th:text="${product.categoryName}"
+                                       style="color: var(--pink-primary) !important; transition: color 0.3s ease;"
+                                       onmouseover="this.style.color='var(--pink-dark) !important'"
+                                       onmouseout="this.style.color='var(--pink-primary) !important'">Category Name</a>
                                 </div>
                             </div>
                         </div>
@@ -527,7 +535,7 @@
        <div class="container my-5">
            <div class="row">
                <div class="col-12">
-                   <h3 class="fw-bold mb-4 text-center">KHUYẾN MÃI DÀNH CHO BẠN</h3>
+                   <h2 class="fw-bold mb-4 text-center text-uppercase">Khuyến mãi dành cho bạn</h2>
                    
                    <!-- Slider Container -->
                    <div class="discount-slider-container">

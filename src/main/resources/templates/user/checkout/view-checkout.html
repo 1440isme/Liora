@@ -297,54 +297,6 @@
     });
 </script>
 
-&lt;!&ndash; Cart Button Handler &ndash;&gt;-->
-<!--<script>-->
-<!--    $(document).ready(function() {-->
-<!--        // Handle cart button click - chuyển đến trang giỏ hàng-->
-<!--        $('.btn-cart').click(function(e) {-->
-<!--            e.preventDefault();-->
-<!--            window.location.href = '/cart';-->
-<!--        });-->
-
-<!--        // Show cart with items for demo - Sửa lại để hiển thị cấu trúc mới-->
-<!--        $('#cart-empty-row').hide();-->
-<!--        $('#cart-items-row').show();-->
-
-<!--        // Always show suggested products section-->
-<!--        $('.suggested-products').show();-->
-
-<!--        // Event handling cho quantity buttons được xử lý trong cart.js-->
-
-<!--        // Demo checkbox interactions-->
-<!--        $('#selectAllItems').change(function() {-->
-<!--            $('.cart-item-checkbox').prop('checked', $(this).is(':checked'));-->
-<!--            updateDeleteButton();-->
-<!--        });-->
-
-<!--        $('.cart-item-checkbox').change(function() {-->
-<!--            updateSelectAllState();-->
-<!--            updateDeleteButton();-->
-<!--        });-->
-
-<!--        function updateSelectAllState() {-->
-<!--            const totalItems = $('.cart-item-checkbox').length;-->
-<!--            const checkedItems = $('.cart-item-checkbox:checked').length;-->
-
-<!--            if (checkedItems === 0) {-->
-<!--                $('#selectAllItems').prop('checked', false).prop('indeterminate', false);-->
-<!--            } else if (checkedItems === totalItems) {-->
-<!--                $('#selectAllItems').prop('checked', true).prop('indeterminate', false);-->
-<!--            } else {-->
-<!--                $('#selectAllItems').prop('checked', false).prop('indeterminate', true);-->
-<!--            }-->
-<!--        }-->
-
-<!--        function updateDeleteButton() {-->
-<!--            const hasSelected = $('.cart-item-checkbox:checked').length > 0;-->
-<!--            $('#deleteSelectedBtn').prop('disabled', !hasSelected);-->
-<!--        }-->
-<!--    });-->
-<!--</script>
 
 </body>
 
