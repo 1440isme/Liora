@@ -236,36 +236,39 @@ function createReviewRow(review, index) {
         '<span class="text-muted">Không có nội dung</span>';
     
     const stars = generateStars(review.rating);
-    const anonymous = review.anonymous ? 
-        '<span class="badge bg-info">Ẩn danh</span>' : 
-        '<span class="badge bg-secondary">Hiển thị</span>';
     
+    // Cập nhật format cho Ẩn danh - sử dụng text với fw-bold thay vì badge
+    const anonymous = review.anonymous ? 
+        '<span class="text-info fw-bold">Ẩn danh</span>' : 
+        '<span class="text-secondary fw-bold">Hiển thị</span>';
+    
+    // Cập nhật format cho Trạng thái - sử dụng text với fw-bold thay vì badge
     const visibility = review.isVisible ? 
-        '<span class="badge bg-success">Hiển thị</span>' : 
-        '<span class="badge bg-danger">Ẩn</span>';
+        '<span class="text-success fw-bold">Hiển thị</span>' : 
+        '<span class="text-danger fw-bold">Ẩn</span>';
     
     const createdAt = formatDateTime(review.createdAt);
     
     return `
         <tr>
-            <td>${index}</td>
+            <td class="text-center">${index}</td>
             <td>${content}</td>
-            <td>
+            <td class="text-center">
                 <div class="star-rating">${stars}</div>
                 <small class="text-muted">${review.rating}/5</small>
             </td>
-            <td>${anonymous}</td>
-            <td>
-                <span class="badge bg-primary">${review.userId}</span>
+            <td class="text-center">${anonymous}</td>
+            <td class="text-center">
+                <span class="text-dark fw-bold">${review.userId}</span>
             </td>
-            <td>
-                <span class="badge bg-secondary">${review.productId}</span>
+            <td class="text-center">
+                <span class="text-dark fw-bold">${review.productId}</span>
             </td>
-            <td>
+            <td class="text-center">
                 <small>${createdAt}</small>
             </td>
-            <td>${visibility}</td>
-            <td>
+            <td class="text-center">${visibility}</td>
+            <td class="text-center">
                 <div class="btn-group btn-group-sm" role="group">
                     <button type="button" class="btn btn-outline-info" onclick="viewReviewDetail(${review.reviewId})" title="Xem chi tiết">
                         <i class="mdi mdi-eye"></i>
@@ -304,16 +307,8 @@ function updateStatistics(stats) {
 
 // View review detail
 function viewReviewDetail(reviewId) {
-    $$.ajax({
-        url: `/admin/api/reviews/${reviewId}`,
-        method: 'GET',
-        success: function(review) {
-            showReviewDetailModal(review);
-        },
-        error: function(xhr) {
-            showAlert('Lỗi khi tải chi tiết đánh giá', 'error');
-        }
-    });
+    // Redirect to detail page instead of showing modal
+    window.location.href = `/admin/reviews/detail/${reviewId}`;
 }
 
 // Show review detail modal
@@ -321,11 +316,11 @@ function showReviewDetailModal(review) {
     $('#modalReviewContent').text(review.content || 'Không có nội dung');
     $('#modalReviewRating').html(generateStars(review.rating) + ` <span class="ms-2">${review.rating}/5</span>`);
     $('#modalReviewAnonymous').html(review.anonymous ? 
-        '<span class="badge bg-info">Ẩn danh</span>' : 
-        '<span class="badge bg-secondary">Hiển thị tên</span>');
+        '<span class="text-info fw-bold">Ẩn danh</span>' : 
+        '<span class="text-secondary fw-bold">Hiển thị tên</span>');
     $('#modalReviewStatus').html(review.isVisible ? 
-        '<span class="badge bg-success">Hiển thị</span>' : 
-        '<span class="badge bg-danger">Ẩn</span>');
+        '<span class="text-success fw-bold">Hiển thị</span>' : 
+        '<span class="text-danger fw-bold">Ẩn</span>');
     $('#modalReviewUser').text(review.userDisplayName || 'Không xác định');
     $('#modalReviewProduct').text(review.productName || 'Không xác định');
     $('#modalReviewCreatedAt').text(formatDateTime(review.createdAt));

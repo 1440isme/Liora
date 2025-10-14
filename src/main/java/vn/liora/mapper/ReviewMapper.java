@@ -1,9 +1,6 @@
 package vn.liora.mapper;
 
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
-import org.mapstruct.NullValuePropertyMappingStrategy;
+import org.mapstruct.*;
 import vn.liora.dto.request.ReviewCreationRequest;
 import vn.liora.dto.request.ReviewUpdateRequest;
 import vn.liora.dto.response.ReviewResponse;
@@ -28,8 +25,17 @@ public interface ReviewMapper {
     @Mapping(target = "userFirstname", source = "orderProduct.order.user.firstname")
     @Mapping(target = "userLastname", source = "orderProduct.order.user.lastname")
     @Mapping(target = "userAvatar", source = "orderProduct.order.user.avatar")
+    @Mapping(target = "userEmail", source = "orderProduct.order.user.email")
+    @Mapping(target = "userPhone", source = "orderProduct.order.user.phone")
     @Mapping(target = "productName", source = "orderProduct.product.name")
+    @Mapping(target = "productImage", ignore = true)
+    @Mapping(target = "productPrice", source = "orderProduct.product.price")
+    @Mapping(target = "productBrandName", source = "orderProduct.product.brand.name")
+    @Mapping(target = "productCategoryName", source = "orderProduct.product.category.name")
     @Mapping(target = "orderProductId", source = "orderProduct.idOrderProduct")
+    @Mapping(target = "orderId", source = "orderProduct.order.idOrder")
+    @Mapping(target = "orderCode", source = "orderProduct.order.idOrder", qualifiedByName = "mapOrderCode")
+    @Mapping(target = "orderDate", source = "orderProduct.order.orderDate")
     @Mapping(target = "userDisplayName", ignore = true) // Computed field
     ReviewResponse toReviewResponse(Review review);
 
@@ -48,4 +54,9 @@ public interface ReviewMapper {
     @Mapping(target = "lastUpdate", ignore = true)
     @Mapping(target = "orderProduct", ignore = true)
     void updateReview(@MappingTarget Review review, ReviewUpdateRequest request);
+
+    @Named("mapOrderCode")
+    default String mapOrderCode(Long orderId) {
+        return orderId != null ? "#" + orderId : null;
+    }
 }

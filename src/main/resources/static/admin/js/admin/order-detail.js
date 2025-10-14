@@ -188,6 +188,23 @@ class OrderDetailManager {
 
         // Load order items - cần API riêng
         this.loadOrderItems(order.idOrder);
+
+        // Hiển thị thông tin mã giảm giá và %
+        if (order.discountId && order.discountName) {
+            $('#discountCodeRow').show();
+            $('#discountCode').text(order.discountName);
+            
+            // Hiển thị % giảm giá nếu có
+            if (order.discountValue) {
+                $('#discountPercentRow').show();
+                $('#discountPercent').text(`${order.discountValue}%`);
+            } else {
+                $('#discountPercentRow').hide();
+            }
+        } else {
+            $('#discountCodeRow').hide();
+            $('#discountPercentRow').hide();
+        }
     }
 
     async loadOrderItems(orderId) {
@@ -437,6 +454,7 @@ class OrderDetailManager {
                         style: 'currency',
                         currency: 'VND'
                     }).format(order.total)}</p>
+                    ${order.discountName ? `<p><strong>Mã giảm giá:</strong> ${order.discountName} (${order.discountValue || 0}%)</p>` : ''}
                     <p><strong>Trạng thái thanh toán:</strong> ${this.getPaymentStatusText(order.paymentStatus)}</p>
                     <p><strong>Trạng thái đơn hàng:</strong> ${this.getOrderStatusText(order.orderStatus)}</p>
                 </div>

@@ -1211,24 +1211,14 @@ class DiscountManager {
         const startDate = new Date(discount.startDate);
         const endDate = new Date(discount.endDate);
 
-        // if (!discount.isActive) {
-        //     return 'bg-secondary';
-        // } else if (endDate < now) {
-        //     return 'bg-danger';
-        // } else if (startDate > now) {
-        //     return 'bg-info';
-        // } else {
-        //     return 'bg-success';
-        // }
-
         if (!discount.isActive) {
-            return 'text-secondary'; // ✅ BỎ nền, chỉ để chữ xám
+            return 'text-secondary fw-bold'; 
         } else if (endDate < now) {
-            return 'text-danger'; // ✅ BỎ nền, chỉ để chữ đỏ
+            return 'text-danger fw-bold'; 
         } else if (startDate > now) {
-            return 'text-warning'; // ✅ BỎ nền, chỉ để chữ vàng
+            return 'text-warning fw-bold'; 
         } else {
-            return 'text-success'; // ✅ BỎ nền, chỉ để chữ xanh lá
+            return 'text-success fw-bold'; 
         }
     }
 

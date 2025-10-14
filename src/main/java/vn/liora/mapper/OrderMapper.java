@@ -27,6 +27,9 @@ public interface OrderMapper {
     @Mapping(target = "idAddress", source = "address.idAddress")
     @Mapping(target = "userId", source = "user.userId")
     @Mapping(target = "customerName", source = "user", qualifiedByName = "mapCustomerName")
+    @Mapping(target = "discountId", source = "discount.discountId")
+    @Mapping(target = "discountName", source = "discount.name")
+    @Mapping(target = "discountValue", source = "discount.discountValue")
     OrderResponse toOrderResponse(Order order);
 
     List<OrderResponse> toOrderResponseList(List<Order> orders);
