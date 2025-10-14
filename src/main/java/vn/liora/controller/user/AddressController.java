@@ -6,13 +6,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.annotation.*;
 import vn.liora.dto.request.AddressCreateRequest;
 import vn.liora.dto.request.AddressUpdateRequest;
-import vn.liora.exception.AppException;
 import vn.liora.service.IAddressService;
 import vn.liora.dto.response.AddressResponse;
 

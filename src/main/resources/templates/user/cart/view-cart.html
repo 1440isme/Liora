@@ -98,87 +98,7 @@
 
                         <!-- Cart Items List -->
                         <div id="cart-items">
-
-                            <div class="cart-item">
-                                <div class="row align-items-center">
-                                    <div class="col-auto">
-                                        <div class="form-check">
-                                            <input class="form-check-input cart-item-checkbox" type="checkbox">
-                                        </div>
-                                    </div>
-                                    <div class="col-auto">
-                                        <a href="/product-detail" style="text-decoration: none;">
-                                            <img src="https://images.unsplash.com/photo-1556228149-d5e4c5b3e9a9?w=300&q=80"
-                                                 alt="Kem dưỡng da" class="cart-product-image">
-                                        </a>
-                                    </div>
-                                    <div class="col">
-                                        <div class="cart-product-info">
-                                            <a href="/product-detail" style="text-decoration: none; color: inherit;">
-                                                <h6 class="cart-product-title">Rice Water Bright Cleansing Foam</h6>
-                                            </a>
-                                            <div class="cart-product-brand">The Face Shop</div>
-                                        </div>
-                                    </div>
-                                    <div class="col-auto">
-                                        <div class="quantity-controls">
-                                            <button class="quantity-btn" data-action="decrease">
-                                                <i class="fas fa-minus"></i>
-                                            </button>
-                                            <input type="number" class="quantity-input" value="1" min="1" max="99">
-                                            <button class="quantity-btn" data-action="increase">
-                                                <i class="fas fa-plus"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div class="col-auto">
-                                        <div class="cart-price-section">
-                                            <div class="cart-price">299.000đ</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Sample Item 2 -->
-                            <div class="cart-item">
-                                <div class="row align-items-center">
-                                    <div class="col-auto">
-                                        <div class="form-check">
-                                            <input class="form-check-input cart-item-checkbox" type="checkbox">
-                                        </div>
-                                    </div>
-                                    <div class="col-auto">
-                                        <a href="/product-detail" style="text-decoration: none;">
-                                            <img src="https://images.unsplash.com/photo-1556228720-195a672e8a03?w=300&q=80"
-                                                 alt="Serum dưỡng da" class="cart-product-image">
-                                        </a>
-                                    </div>
-                                    <div class="col">
-                                        <div class="cart-product-info">
-                                            <a href="/product-detail" style="text-decoration: none; color: inherit;">
-                                                <h6 class="cart-product-title">Advanced Snail 96 Mucin Power Essence</h6>
-                                            </a>
-                                            <div class="cart-product-brand">COSRX</div>
-                                        </div>
-                                    </div>
-                                    <div class="col-auto">
-                                        <div class="quantity-controls">
-                                            <button class="quantity-btn" data-action="decrease">
-                                                <i class="fas fa-minus"></i>
-                                            </button>
-                                            <input type="number" class="quantity-input" value="2" min="1" max="99">
-                                            <button class="quantity-btn" data-action="increase">
-                                                <i class="fas fa-plus"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div class="col-auto">
-                                        <div class="cart-price-section">
-                                            <div class="cart-price">450.000đ</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                            <!-- Cart items will be loaded dynamically from API -->
                         </div>
                     </div>
                 </div>
@@ -195,12 +115,12 @@
                             </div>
                             <div class="card-body">
                                 <div class="summary-row">
-                                    <span>Tạm tính (<span id="selected-count">2</span> sản phẩm):</span>
-                                    <span id="subtotal" class="fw-medium">1.198.000đ</span>
+                                    <span>Tạm tính (<span id="selected-count">0</span> sản phẩm):</span>
+                                    <span id="subtotal" class="fw-medium">0đ</span>
                                 </div>
-                                <div class="summary-row">
+                                <div class="summary-row" style="display: none;">
                                     <span>Giảm giá:</span>
-                                    <span id="discount" class="fw-medium text-success">-51.000đ</span>
+                                    <span id="discount" class="fw-medium text-success">0đ</span>
                                 </div>
                                 <div class="summary-row">
                                     <span>Phí vận chuyển:</span>
@@ -208,7 +128,7 @@
                                 </div>
                                 <div class="summary-row">
                                     <span class="fw-bold">Tổng cộng:</span>
-                                    <span id="total" class="fw-bold">1.147.000đ</span>
+                                    <span id="total" class="fw-bold">0đ</span>
                                 </div>
 
                                 <button class="btn btn-checkout w-100 mt-4" id="checkoutBtn">
@@ -603,43 +523,8 @@
             window.location.href = '/cart';
         });
 
-        // Show cart with items for demo - Sửa lại để hiển thị cấu trúc mới
-        $('#cart-empty-row').hide();
-        $('#cart-items-row').show();
-
         // Always show suggested products section
         $('.suggested-products').show();
-
-        // Event handling cho quantity buttons được xử lý trong cart.js
-
-        // Demo checkbox interactions
-        $('#selectAllItems').change(function() {
-            $('.cart-item-checkbox').prop('checked', $(this).is(':checked'));
-            updateDeleteButton();
-        });
-
-        $('.cart-item-checkbox').change(function() {
-            updateSelectAllState();
-            updateDeleteButton();
-        });
-
-        function updateSelectAllState() {
-            const totalItems = $('.cart-item-checkbox').length;
-            const checkedItems = $('.cart-item-checkbox:checked').length;
-
-            if (checkedItems === 0) {
-                $('#selectAllItems').prop('checked', false).prop('indeterminate', false);
-            } else if (checkedItems === totalItems) {
-                $('#selectAllItems').prop('checked', true).prop('indeterminate', false);
-            } else {
-                $('#selectAllItems').prop('checked', false).prop('indeterminate', true);
-            }
-        }
-
-        function updateDeleteButton() {
-            const hasSelected = $('.cart-item-checkbox:checked').length > 0;
-            $('#deleteSelectedBtn').prop('disabled', !hasSelected);
-        }
     });
 </script>
 

@@ -17,4 +17,10 @@ public class CartProductResponse {
     Integer quantity;
     Boolean choose;
     BigDecimal totalPrice;
+    
+    // Thông tin sản phẩm
+    String productName;
+    BigDecimal productPrice;
+    String mainImageUrl;
+    String brandName;
 }

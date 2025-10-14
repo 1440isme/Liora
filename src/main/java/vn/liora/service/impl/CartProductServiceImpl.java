@@ -4,7 +4,6 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.liora.dto.request.CartProductCreationRequest;
@@ -17,7 +16,6 @@ import vn.liora.mapper.CartProductMapper;
 import vn.liora.repository.CartProductRepository;
 import vn.liora.repository.CartRepository;
 import vn.liora.repository.ProductRepository;
-import vn.liora.repository.UserRepository;
 import vn.liora.service.ICartProductService;
 
 import java.math.BigDecimal;
@@ -33,7 +31,6 @@ public class CartProductServiceImpl implements ICartProductService {
     CartProductRepository cartProductRepository;
     CartRepository cartRepository;
     ProductRepository productRepository;
-    UserRepository userRepository;
     CartProductMapper cartProductMapper;
 
     @Override
@@ -71,40 +68,54 @@ public class CartProductServiceImpl implements ICartProductService {
 
     @Override
     public CartProductResponse updateCartProduct(Long idCart, Long idCartProduct, CartProductUpdateRequest request) {
-            Cart cart = cartRepository.findById(idCart)
-                    .orElseThrow(() -> new AppException(ErrorCode.CART_NOT_FOUND));
-            CartProduct cartProduct = cartProductRepository.findByIdCartProduct(idCartProduct)
-                    .orElseThrow(() -> new AppException(ErrorCode.CART_PRODUCT_NOT_FOUND));
-            cartProductMapper.updateCartProduct(cartProduct, request);
-            Product product = cartProduct.getProduct();
-        cartProduct.setTotalPrice(product.getPrice().multiply(BigDecimal.valueOf(cartProduct.getQuantity())));
-        cartProduct = cartProductRepository.save(cartProduct);
-            return cartProductMapper.toCartProductResponse(cartProduct);
-        }
-
-    @Override
-    @Transactional
-    public void removeProductInCart(Long idCart, Long idCartProduct) {
-        Cart cart = cartRepository.findById(idCart)
+        // Validate cart exists
+        cartRepository.findById(idCart)
                 .orElseThrow(() -> new AppException(ErrorCode.CART_NOT_FOUND));
+        
         CartProduct cartProduct = cartProductRepository.findByIdCartProduct(idCartProduct)
                 .orElseThrow(() -> new AppException(ErrorCode.CART_PRODUCT_NOT_FOUND));
-        cartProductRepository.delete(cartProduct);
+        
+        cartProductMapper.updateCartProduct(cartProduct, request);
+        
+        // Chỉ tính lại totalPrice nếu quantity thay đổi
+        if (request.getQuantity() != null) {
+            Product product = cartProduct.getProduct();
+            cartProduct.setTotalPrice(product.getPrice().multiply(BigDecimal.valueOf(cartProduct.getQuantity())));
+        }
+        
+        cartProduct = cartProductRepository.save(cartProduct);
+        
+        CartProductResponse response = cartProductMapper.toCartProductResponse(cartProduct);
+        response.setMainImageUrl(getMainImageUrl(cartProduct.getProduct()));
+        return response;
     }
+
 
     @Override
     @Transactional
-
     public void removeProductsInCart(Long idCart, List<Long> idCartProduct) {
         Cart cart = cartRepository.findById(idCart)
                 .orElseThrow(() -> new AppException(ErrorCode.CART_NOT_FOUND));
-        List<CartProduct> cartProducts = cartProductRepository.findByCartAndChooseTrue(cart);
-        if (cartProducts.isEmpty()) {
-            throw new AppException(ErrorCode.CART_PRODUCT_NOT_FOUND);
+        
+        List<CartProduct> cartProducts;
+        if (idCartProduct == null) {
+            // Xóa tất cả sản phẩm đã chọn (choose = true)
+            cartProducts = cartProductRepository.findByCartAndChooseTrue(cart);
+            log.info("Found {} selected products to remove from cart {}", cartProducts.size(), idCart);
+        } else {
+            // Xóa các sản phẩm cụ thể theo danh sách ID
+            cartProducts = cartProductRepository.findAllById(idCartProduct);
+            log.info("Found {} specific products to remove from cart {}", cartProducts.size(), idCart);
         }
+        
+        if (cartProducts.isEmpty()) {
+            log.warn("No products found to remove from cart {}", idCart);
+            // Không throw exception nếu không có sản phẩm nào để xóa
+            return;
+        }
+        
         cartProductRepository.deleteAll(cartProducts);
-
-
+        log.info("Successfully removed {} products from cart {}", cartProducts.size(), idCart);
     }
 
     @Override
@@ -113,7 +124,10 @@ public class CartProductServiceImpl implements ICartProductService {
     public CartProductResponse getCartProductById(Long idCartProduct) {
         CartProduct cartProduct = cartProductRepository.findByIdCartProduct(idCartProduct)
                 .orElseThrow(() -> new AppException(ErrorCode.CART_PRODUCT_NOT_FOUND));
-        return cartProductMapper.toCartProductResponse(cartProduct);
+        
+        CartProductResponse response = cartProductMapper.toCartProductResponse(cartProduct);
+        response.setMainImageUrl(getMainImageUrl(cartProduct.getProduct()));
+        return response;
     }
 
     @Override
@@ -125,7 +139,17 @@ public class CartProductServiceImpl implements ICartProductService {
         List<CartProduct> selectedProducts = cartProductRepository.findByCartAndChooseTrue(cart);
 
         // Map sang DTO
-        return cartProductMapper.toCartProductResponseList(selectedProducts);
+        List<CartProductResponse> responses = cartProductMapper.toCartProductResponseList(selectedProducts);
+        
+        // Set main image URL for each response
+        for (int i = 0; i < responses.size(); i++) {
+            CartProductResponse response = responses.get(i);
+            CartProduct cartProduct = selectedProducts.get(i);
+            String mainImageUrl = getMainImageUrl(cartProduct.getProduct());
+            response.setMainImageUrl(mainImageUrl);
+        }
+        
+        return responses;
     }
 
     @Override
@@ -156,6 +180,39 @@ public class CartProductServiceImpl implements ICartProductService {
                 .orElseThrow(() -> new AppException(ErrorCode.CART_NOT_FOUND));
 
         List<CartProduct> cartProducts = cartProductRepository.findByCart(cart);
-        return cartProductMapper.toCartProductResponseList(cartProducts);
+        List<CartProductResponse> responses = cartProductMapper.toCartProductResponseList(cartProducts);
+        
+        // Set main image URL for each response
+        for (int i = 0; i < responses.size(); i++) {
+            CartProductResponse response = responses.get(i);
+            CartProduct cartProduct = cartProducts.get(i);
+            String mainImageUrl = getMainImageUrl(cartProduct.getProduct());
+            response.setMainImageUrl(mainImageUrl);
+        }
+        
+        return responses;
+    }
+    
+    private String getMainImageUrl(Product product) {
+        if (product.getImages() == null || product.getImages().isEmpty()) {
+            return "/uploads/products/placeholder.jpg";
+        }
+        
+        // Tìm ảnh chính (isMain = true)
+        return product.getImages().stream()
+                .filter(image -> Boolean.TRUE.equals(image.getIsMain()))
+                .findFirst()
+                .map(Image::getImageUrl)
+                .orElse(product.getImages().get(0).getImageUrl()); // Fallback to first image
+    }
+
+    @Override
+    public BigDecimal getSelectedProductsTotal(Long cartId) {
+        Cart cart = cartRepository.findById(cartId)
+                .orElseThrow(() -> new AppException(ErrorCode.CART_NOT_FOUND));
+        List<CartProduct> cartProducts = cartProductRepository.findByCartAndChooseTrue(cart);
+        return cartProducts.stream()
+                .map(CartProduct::getTotalPrice)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 }

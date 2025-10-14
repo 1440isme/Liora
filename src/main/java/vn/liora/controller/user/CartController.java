@@ -6,9 +6,15 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import vn.liora.dto.response.CartProductResponse;
+import vn.liora.entity.User;
+import vn.liora.exception.AppException;
+import vn.liora.exception.ErrorCode;
+import vn.liora.repository.UserRepository;
 import vn.liora.service.ICartProductService;
 import vn.liora.service.ICartService;
 
@@ -25,6 +31,9 @@ public class CartController {
 
     @Autowired
     ICartProductService cartProductService;
+    
+    @Autowired
+    UserRepository userRepository;
 
     @GetMapping("/cart")
     public String viewCart() {
@@ -38,16 +47,29 @@ public class CartController {
     @ResponseBody
     public ResponseEntity<?> getCurrentUserCart() {
         try {
-            // TODO: Lấy userId từ session hoặc security context
-            // Long userId = getCurrentUserId();
-            // Cart cart = cartService.getCartByUserId(userId);
+            // Lấy userId từ security context
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated()) {
+                throw new AppException(ErrorCode.UNAUTHENTICATED);
+            }
 
-            // Mock response for now
+            String username = authentication.getName();
+            User user = userRepository.findByUsername(username)
+                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+            // Lấy giỏ hàng của user
+            var cartResponse = cartService.getCart(user.getUserId());
+            
             return ResponseEntity.ok().body(new Object() {
-                public final Long cartId = 1L;
+                @SuppressWarnings("unused")
+                public final Long cartId = cartResponse.getIdCart();
+                @SuppressWarnings("unused")
                 public final String message = "Cart found";
             });
 
+        } catch (AppException e) {
+            log.error("Error getting current user cart: ", e);
+            return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
             log.error("Error getting current user cart: ", e);
             return ResponseEntity.badRequest().body("Unable to get cart information");

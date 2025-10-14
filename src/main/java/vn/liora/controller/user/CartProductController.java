@@ -11,7 +11,6 @@ import org.springframework.web.bind.annotation.*;
 import vn.liora.dto.request.CartProductCreationRequest;
 import vn.liora.dto.request.CartProductUpdateRequest;
 import vn.liora.dto.response.CartProductResponse;
-import vn.liora.entity.CartProduct;
 import vn.liora.service.ICartProductService;
 
 import java.util.List;
@@ -44,16 +43,6 @@ public class CartProductController {
         return ResponseEntity.ok(response);
     }
 
-    // Xoá sản phẩm khỏi giỏ
-    @DeleteMapping("/{cartProductId}")
-    public ResponseEntity<Void> removeProductInCart(
-            @PathVariable Long idCart,
-            @PathVariable Long cartProductId
-    ) {
-        cartProductService.removeProductInCart(idCart, cartProductId);
-        return ResponseEntity.noContent().build();
-    }
-
     // Lấy thông tin sản phẩm trong giỏ
     @GetMapping("/{cartProductId}")
     public ResponseEntity<CartProductResponse> getCartProductById(
@@ -67,6 +56,15 @@ public class CartProductController {
             @PathVariable Long idCart) {
         List<CartProductResponse> responses = cartProductService.getSelectedProducts(idCart);
         return ResponseEntity.ok(responses);
+    }
+
+    // Xóa tất cả sản phẩm đã chọn khỏi giỏ hàng
+    @DeleteMapping("/selected")
+    public ResponseEntity<Void> removeSelectedProducts(
+            @PathVariable Long idCart
+    ) {
+        cartProductService.removeProductsInCart(idCart, null);
+        return ResponseEntity.ok().build();
     }
 
 }
