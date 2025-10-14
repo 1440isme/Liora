@@ -21,8 +21,8 @@ import java.util.List;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Slf4j
 public class AdminOrderController {
-    IOrderService orderService;
-    UserRepository userRepository;
+    final IOrderService orderService;
+    final UserRepository userRepository;
     @PutMapping("/{idOrder}")
     public ResponseEntity<OrderResponse> updateOrderStatus(
             @PathVariable Long idOrder,

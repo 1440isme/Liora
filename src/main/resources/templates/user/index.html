@@ -440,6 +440,16 @@
             }
         });
     </script>
+
+    <script>
+        $(document).ready(function() {
+            $('.btn-cart').click(function(e) {
+                e.preventDefault();
+                window.location.href = '/cart';
+            });
+        });
+    </script>
+
 </body>
 
 </html>

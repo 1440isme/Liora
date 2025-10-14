@@ -22,4 +22,5 @@ public interface IOrderService {
     Long countByUser(User user);
     BigDecimal getTotalRevenue();
     BigDecimal getTotalRevenueByUser(User user);
+    void cancelOrderByUser(Long orderId, Long userId);
 }

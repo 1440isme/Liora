@@ -5,13 +5,11 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import vn.liora.dto.request.CartProductCreationRequest;
 import vn.liora.dto.request.CartProductUpdateRequest;
 import vn.liora.dto.response.CartProductResponse;
-import vn.liora.entity.CartProduct;
 import vn.liora.service.ICartProductService;
 
 import java.util.List;
@@ -21,9 +19,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Slf4j
-
 public class CartProductController {
-    @Autowired
     ICartProductService cartProductService;
     @PostMapping
     public ResponseEntity<CartProductResponse> addProductToCart(
@@ -44,16 +40,6 @@ public class CartProductController {
         return ResponseEntity.ok(response);
     }
 
-    // Xoá sản phẩm khỏi giỏ
-    @DeleteMapping("/{cartProductId}")
-    public ResponseEntity<Void> removeProductInCart(
-            @PathVariable Long idCart,
-            @PathVariable Long cartProductId
-    ) {
-        cartProductService.removeProductInCart(idCart, cartProductId);
-        return ResponseEntity.noContent().build();
-    }
-
     // Lấy thông tin sản phẩm trong giỏ
     @GetMapping("/{cartProductId}")
     public ResponseEntity<CartProductResponse> getCartProductById(
@@ -69,6 +55,12 @@ public class CartProductController {
         return ResponseEntity.ok(responses);
     }
 
+    // Xóa tất cả sản phẩm đã chọn khỏi giỏ hàng
+    @DeleteMapping("/selected")
+    public ResponseEntity<Void> removeSelectedProducts(
+            @PathVariable Long idCart
+    ) {
+        cartProductService.removeProductsInCart(idCart, null);
+        return ResponseEntity.ok().build();
+    }
 }
-
-
