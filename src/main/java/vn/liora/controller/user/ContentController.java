@@ -11,7 +11,6 @@ import vn.liora.entity.*;
 import vn.liora.service.BannerService;
 import vn.liora.service.StaticPageService;
 import vn.liora.service.FooterService;
-import vn.liora.service.HeaderBottomService;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -31,8 +30,8 @@ public class ContentController {
     @Autowired
     private FooterService footerService;
 
-    @Autowired
-    private HeaderBottomService headerBottomService;
+//    @Autowired
+//    private HeaderBottomService headerBottomService;
 
     // Trang hiển thị static page theo slug
     @GetMapping("/page/{slug}")
@@ -174,21 +173,21 @@ public class ContentController {
     }
 
     // API lấy thông tin header tầng dưới
-    @GetMapping("/api/header-bottom")
-    @ResponseBody
-    public ResponseEntity<Map<String, Object>> getHeaderBottomContent() {
-        Map<String, Object> headerContent = new HashMap<>();
-
-        try {
-            HeaderBottom headerBottom = headerBottomService.getActiveHeaderBottom();
-            if (headerBottom != null) {
-                headerContent.put("headerBottom", headerBottom);
-                headerContent.put("navigationItems",
-                        headerBottomService.getActiveNavigationItems(headerBottom.getId()));
-            }
-            return ResponseEntity.ok(headerContent);
-        } catch (Exception e) {
-            return ResponseEntity.ok(headerContent);
-        }
-    }
+//    @GetMapping("/api/header-bottom")
+//    @ResponseBody
+//    public ResponseEntity<Map<String, Object>> getHeaderBottomContent() {
+//        Map<String, Object> headerContent = new HashMap<>();
+//
+//        try {
+//            HeaderBottom headerBottom = headerBottomService.getActiveHeaderBottom();
+//            if (headerBottom != null) {
+//                headerContent.put("headerBottom", headerBottom);
+//                headerContent.put("navigationItems",
+//                        headerBottomService.getActiveNavigationItems(headerBottom.getId()));
+//            }
+//            return ResponseEntity.ok(headerContent);
+//        } catch (Exception e) {
+//            return ResponseEntity.ok(headerContent);
+//        }
+//    }
 }

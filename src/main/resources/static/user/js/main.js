@@ -301,7 +301,11 @@ class LioraApp {
                     </div>
                     <div class="card-body">
                         <div class="product-brand">${product.brand}</div>
-                        <h5 class="product-title">${product.name}</h5>
+                        <h5 class="product-title">
+                            <a href="/product/${product.id}" class="text-decoration-none text-dark">
+                                ${product.name}
+                            </a>
+                        </h5>
                         <div class="rating-stars mb-2">
                             ${this.renderStars(product.rating)}
                             <span class="rating-text ms-1">(${product.reviewCount})</span>
@@ -409,24 +413,39 @@ class LioraApp {
         }, 500);
     }
 
-    addToCart(productId) {
+    addToCart(productId, quantity = 1, showMessage = true) {
         const product = ProductManager.getProductById(productId);
         if (!product) return;
+
+        // Validate quantity against stock
+        if (quantity > product.stock) {
+            this.showToast(`Số lượng bạn chọn (${quantity}) vượt quá số lượng tồn kho hiện có (${product.stock} sản phẩm). Vui lòng chọn số lượng phù hợp.`, 'error');
+            return;
+        }
 
         // Check if product already in cart
         const existingItem = this.cartItems.find(item => item.id === productId);
 
         if (existingItem) {
-            existingItem.quantity += 1;
+            const newTotalQuantity = existingItem.quantity + quantity;
+            if (newTotalQuantity > product.stock) {
+                this.showToast(`Tổng số lượng trong giỏ hàng (${newTotalQuantity}) vượt quá tồn kho hiện có (${product.stock} sản phẩm). Vui lòng giảm số lượng.`, 'error');
+                return;
+            }
+            existingItem.quantity = newTotalQuantity;
         } else {
             this.cartItems.push({
                 ...product,
-                quantity: 1
+                quantity: quantity
             });
         }
 
         this.updateCartDisplay();
-        this.showToast(`${product.name} added to cart! 🛍️`, 'success');
+        
+        // Only show message if showMessage is true
+        if (showMessage) {
+            this.showToast(`${quantity} x ${product.name} đã được thêm vào giỏ hàng thành công! 🛍️`, 'success');
+        }
     }
 
     toggleWishlist(productId) {
@@ -567,13 +586,13 @@ class LioraApp {
                 this.renderHeaderCategories(data.result);
             } else {
                 console.warn('No categories found in API response');
-                // Try to load fallback data
-                this.loadFallbackCategories();
+                // Show empty state instead of fallback data
+                this.renderEmptyCategories();
             }
         } catch (error) {
             console.error('Error loading header categories:', error);
-            // Try fallback first, then show error
-            this.loadFallbackCategories();
+            // Show empty state instead of fallback data
+            this.renderEmptyCategories();
         }
     }
 
@@ -832,7 +851,7 @@ class LioraApp {
 
                 // Add click handler
                 level3Item.addEventListener('click', () => {
-                    window.location.href = `/products/category/${level3Category.categoryId}`;
+                    window.location.href = `/product/view/category/${level3Category.categoryId}`;
                 });
 
                 column.appendChild(level3Item);
@@ -900,7 +919,7 @@ class LioraApp {
 
                 // Add click handler
                 level3Item.addEventListener('click', () => {
-                    window.location.href = `/products/category/${level3Category.categoryId}`;
+                    window.location.href = `/product/view/category/${level3Category.categoryId}`;
                 });
 
                 column.appendChild(level3Item);
@@ -941,30 +960,17 @@ class LioraApp {
         }
     }
 
-    // Load fallback categories when API fails
-    loadFallbackCategories() {
-        console.log('Loading fallback categories...');
-        const fallbackCategories = [
-            {
-                categoryId: 1,
-                name: 'Mỹ phẩm',
-                children: [
-                    { categoryId: 2, name: 'Chăm sóc da mặt' },
-                    { categoryId: 3, name: 'Trang điểm' },
-                    { categoryId: 4, name: 'Chăm sóc cơ thể' }
-                ]
-            },
-            {
-                categoryId: 5,
-                name: 'Thực phẩm chức năng',
-                children: [
-                    { categoryId: 6, name: 'Vitamin' },
-                    { categoryId: 7, name: 'Collagen' }
-                ]
-            }
-        ];
-        
-        this.renderHeaderCategories(fallbackCategories);
+    // Render empty state when no categories are available
+    renderEmptyCategories() {
+        console.log('No categories available - showing empty state');
+        const categoriesContainer = document.getElementById('categoriesMenu');
+        if (categoriesContainer) {
+            categoriesContainer.innerHTML = `
+                <div class="text-center py-4">
+                    <p class="text-muted mb-0">Chưa có danh mục sản phẩm</p>
+                </div>
+            `;
+        }
     }
 
     checkAuthState() {
@@ -1150,7 +1156,7 @@ class LioraApp {
             { max: 1000, percentage: 70 },   // 500-1000: 55-70%
             { max: 5000, percentage: 85 },   // 1000-5000: 70-85%
             { max: 10000, percentage: 95 },  // 5000-10000: 85-95%
-            { max: Infinity, percentage: 100 } // >10000: 95-100%
+            { max: Infinity, percentage: 100 } // >10000: 95-100%/
         ];
 
         for (const threshold of thresholds) {
@@ -1290,10 +1296,15 @@ class LioraApp {
                                         <div class="d-flex align-items-center">
                                             <label class="form-label mb-0" style="margin-right: 2rem;">Số lượng:</label>
                                             <div class="input-group" style="max-width: 150px;">
-                                                <button class="btn btn-outline-secondary" type="button" onclick="this.parentNode.querySelector('input').stepDown()">-</button>
-                                                <input type="number" class="form-control text-center" value="1" min="1" max="${product.stock || 10}" id="quantityInput">
-                                                <button class="btn btn-outline-secondary" type="button" onclick="this.parentNode.querySelector('input').stepUp()">+</button>
+                                                <button class="btn btn-outline-secondary" type="button" onclick="app.decrementQuantity()">-</button>
+                                                <input type="number" class="form-control text-center" value="1" min="1" max="${product.stock || 10}" id="quantityInput" onchange="app.validateQuantity()" oninput="app.validateQuantity()" onblur="app.validateQuantityOnBlur()">
+                                                <button class="btn btn-outline-secondary" type="button" onclick="app.incrementQuantity()">+</button>
                                             </div>
+                                        </div>
+                                        <!-- Error Message -->
+                                        <div id="quantityError" class="text-danger mt-2" style="display: none;">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            <span id="quantityErrorMessage">Số lượng tối đa bạn có thể mua là ${product.stock || 10}.</span>
                                         </div>
                                     </div>
                                     
@@ -1320,7 +1331,7 @@ class LioraApp {
                                         </div>
                                         
                                         <!-- View Details Button -->
-                                        <a href="/products/${product.id}" 
+                                        <a href="/product/${product.id}" 
                                            class="btn btn-outline-primary btn-lg">
                                             <i class="fas fa-info-circle me-2"></i>
                                             Xem chi tiết sản phẩm
@@ -1448,8 +1459,8 @@ class LioraApp {
         const quantityInput = document.getElementById('quantityInput');
         const quantity = quantityInput ? parseInt(quantityInput.value) : 1;
         
-        // Call the existing addToCart method with quantity
-        this.addToCart(productId, quantity);
+        // Call the existing addToCart method with quantity (show message)
+        this.addToCart(productId, quantity, true);
     }
 
     // Buy now - add to cart and redirect to checkout
@@ -1457,11 +1468,14 @@ class LioraApp {
         const quantityInput = document.getElementById('quantityInput');
         const quantity = quantityInput ? parseInt(quantityInput.value) : 1;
         
-        // Add to cart first
-        this.addToCart(productId, quantity);
+        // Get product info for notification
+        const product = ProductManager.getProductById(productId);
         
-        // Show success message
-        this.showToast('Đã thêm vào giỏ hàng! Đang chuyển đến trang thanh toán...', 'success');
+        // Add to cart silently (no message)
+        this.addToCart(productId, quantity, false);
+        
+        // Show single success message
+        this.showToast(`${quantity} x ${product ? product.name : 'sản phẩm'} đã được thêm vào giỏ hàng! Đang chuyển đến trang thanh toán...`, 'success');
         
         // Close modal
         const modal = bootstrap.Modal.getInstance(document.getElementById('quickViewModal'));
@@ -1483,6 +1497,88 @@ class LioraApp {
         }
         return product.image || '/uploads/products/default.jpg';
     }
+
+    // Quantity validation methods
+    validateQuantity() {
+        const quantityInput = document.getElementById('quantityInput');
+        const errorDiv = document.getElementById('quantityError');
+        const errorMessage = document.getElementById('quantityErrorMessage');
+        
+        if (!quantityInput || !errorDiv || !errorMessage) return;
+        
+        const currentValue = parseInt(quantityInput.value) || 0;
+        const maxStock = parseInt(quantityInput.getAttribute('max')) || 10;
+        
+        // Allow empty input for better UX (user can clear and type new number)
+        if (quantityInput.value === '' || quantityInput.value === '0') {
+            // Hide error message when input is empty (user is typing)
+            errorDiv.style.display = 'none';
+            quantityInput.classList.remove('is-invalid');
+            return;
+        }
+        
+        if (currentValue > maxStock) {
+            // Show error message
+            errorDiv.style.display = 'block';
+            errorMessage.textContent = `Số lượng tối đa bạn có thể mua là ${maxStock}.`;
+            quantityInput.classList.add('is-invalid');
+            
+            // Reset to max stock
+            quantityInput.value = maxStock;
+        } else if (currentValue < 1) {
+            // Show error for minimum
+            errorDiv.style.display = 'block';
+            errorMessage.textContent = 'Số lượng tối thiểu là 1.';
+            quantityInput.classList.add('is-invalid');
+            
+            // Reset to minimum
+            quantityInput.value = 1;
+        } else {
+            // Hide error message
+            errorDiv.style.display = 'none';
+            quantityInput.classList.remove('is-invalid');
+        }
+    }
+
+    // Handle input blur - validate when user finishes typing
+    validateQuantityOnBlur() {
+        const quantityInput = document.getElementById('quantityInput');
+        if (!quantityInput) return;
+        
+        const currentValue = parseInt(quantityInput.value) || 0;
+        const maxStock = parseInt(quantityInput.getAttribute('max')) || 10;
+        
+        // If input is empty or 0, set to minimum
+        if (quantityInput.value === '' || currentValue < 1) {
+            quantityInput.value = 1;
+            this.validateQuantity();
+        }
+    }
+
+    incrementQuantity() {
+        const quantityInput = document.getElementById('quantityInput');
+        if (!quantityInput) return;
+        
+        const currentValue = parseInt(quantityInput.value) || 0;
+        const maxStock = parseInt(quantityInput.getAttribute('max')) || 10;
+        
+        if (currentValue < maxStock) {
+            quantityInput.value = currentValue + 1;
+            this.validateQuantity();
+        }
+    }
+
+    decrementQuantity() {
+        const quantityInput = document.getElementById('quantityInput');
+        if (!quantityInput) return;
+        
+        const currentValue = parseInt(quantityInput.value) || 0;
+        
+        if (currentValue > 1) {
+            quantityInput.value = currentValue - 1;
+            this.validateQuantity();
+        }
+    }
 }
 
 // Global function for page navigation (called from HTML onclick)
@@ -1494,6 +1590,7 @@ function showPage(pageName) {
 let app;
 document.addEventListener('DOMContentLoaded', () => {
     app = new LioraApp();
+    window.app = app; // Make app globally available
     // Ensure user UI renders after all fragments load
     setTimeout(() => {
         app.updateUserDisplay();
