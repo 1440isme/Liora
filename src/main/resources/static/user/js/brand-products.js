@@ -233,7 +233,14 @@ class BrandProductsManager {
 
         console.log('Rendering products - clearing grid first');
         if (emptyState) emptyState.style.display = 'none';
-        container.style.display = 'block';
+        container.style.display = 'grid';
+        container.style.gridTemplateColumns = 'repeat(4, 1fr)';
+        container.style.gap = '1rem';
+        container.style.padding = '1rem 1rem';
+        container.style.width = '100%';
+        container.style.maxWidth = '2500px';
+        container.style.margin = '0 auto';
+        container.style.justifyContent = 'stretch';
         
         const html = products.map(product => this.createProductCard(product)).join('');
         container.innerHTML = html;

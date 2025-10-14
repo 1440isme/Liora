@@ -263,8 +263,8 @@ class CategoryProductsManager {
         grid.innerHTML = ''; // Clear grid content first
         grid.style.display = 'grid';
         grid.style.gridTemplateColumns = 'repeat(4, 1fr)';
-        grid.style.gap = '0.8rem';
-        grid.style.padding = '2rem 1rem';
+        grid.style.gap = '1rem';
+        grid.style.padding = '1rem 1rem';
         grid.style.width = '100%';
         grid.style.maxWidth = '2500px';
         grid.style.margin = '0 auto';
