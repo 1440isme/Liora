@@ -12,17 +12,20 @@ import vn.liora.dto.request.ReviewCreationRequest;
 import vn.liora.dto.request.ReviewUpdateRequest;
 import vn.liora.dto.response.ReviewResponse;
 import vn.liora.entity.OrderProduct;
+import vn.liora.entity.Product;
 import vn.liora.entity.Review;
 import vn.liora.exception.AppException;
 import vn.liora.exception.ErrorCode;
 import vn.liora.mapper.ReviewMapper;
-import vn.liora.repository.OrderProductRepository;
-import vn.liora.repository.ReviewRepository;
+import vn.liora.repository.*;
 import vn.liora.service.IReviewService;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -33,6 +36,9 @@ public class ReviewServiceImpl implements IReviewService {
     ReviewRepository reviewRepository;
     OrderProductRepository orderProductRepository;
     ReviewMapper reviewMapper;
+    BrandRepository brandRepository; // Thêm vào constructor
+    CategoryRepository categoryRepository; // Thêm vào constructor
+    ProductRepository productRepository; // Thêm vào constructor
 
     // ========== BASIC CRUD ==========
     
@@ -274,5 +280,118 @@ public class ReviewServiceImpl implements IReviewService {
         
         Review savedReview = reviewRepository.save(review);
         return reviewMapper.toReviewResponse(savedReview);
+    }
+
+    // ========== ADMIN FUNCTIONS WITH FILTERS ==========
+
+    @Override
+    public Page<ReviewResponse> findAllReviewsForAdminWithFilters(
+            Pageable pageable,
+            String search,
+            Integer rating,
+            Long brandId,
+            Long categoryId,
+            Long productId,
+            Boolean isVisible) {
+
+        Page<Review> reviews = reviewRepository.findAllReviewsWithFilters(
+                search, rating, brandId, categoryId, productId, isVisible, pageable);
+
+        return reviews.map(reviewMapper::toReviewResponse);
+    }
+
+    @Override
+    public Map<String, Object> getReviewStatistics(
+            Integer rating,
+            Long brandId,
+            Long categoryId,
+            Long productId) {
+
+        Map<String, Object> statistics = new HashMap<>();
+
+        // Lấy điểm trung bình
+        Double averageRating = reviewRepository.getAverageRatingWithFilters(
+                rating, brandId, categoryId, productId);
+        statistics.put("averageRating", averageRating != null ? averageRating : 0.0);
+
+        // Lấy tổng số review
+        Long totalReviews = reviewRepository.getReviewCountWithFilters(
+                rating, brandId, categoryId, productId);
+        statistics.put("totalReviews", totalReviews != null ? totalReviews : 0L);
+
+        // Lấy số review 5 sao
+        Long fiveStarReviews = reviewRepository.getFiveStarReviewCountWithFilters(
+                rating, brandId, categoryId, productId);
+        statistics.put("fiveStarReviews", fiveStarReviews != null ? fiveStarReviews : 0L);
+
+        // Tính phần trăm 5 sao
+        double fiveStarPercentage = 0.0;
+        if (totalReviews != null && totalReviews > 0 && fiveStarReviews != null) {
+            fiveStarPercentage = (double) fiveStarReviews / totalReviews * 100;
+        }
+        statistics.put("fiveStarPercentage", fiveStarPercentage);
+
+        return statistics;
+    }
+
+    @Override
+    public List<Map<String, Object>> getBrandsForFilter() {
+        return brandRepository.findByIsActiveTrue().stream()
+                .map(brand -> {
+                    Map<String, Object> brandMap = new HashMap<>();
+                    brandMap.put("brandId", brand.getBrandId());
+                    brandMap.put("name", brand.getName());
+                    return brandMap;
+                })
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Map<String, Object>> getCategoriesForFilter() {
+        return categoryRepository.findByIsActiveTrue().stream()
+                .map(category -> {
+                    Map<String, Object> categoryMap = new HashMap<>();
+                    categoryMap.put("categoryId", category.getCategoryId());
+                    categoryMap.put("name", category.getName());
+                    return categoryMap;
+                })
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Map<String, Object>> getProductsForFilter(Long brandId, Long categoryId) {
+        List<Product> products;
+
+        if (brandId != null && categoryId != null) {
+            products = productRepository.findByBrandBrandIdAndCategoryCategoryIdAndIsActiveTrue(brandId, categoryId);
+        } else
+        if (brandId != null) {
+            products = productRepository.findByBrandBrandIdAndIsActiveTrue(brandId);
+        } else if (categoryId != null) {
+            products = productRepository.findByCategoryCategoryIdAndIsActiveTrue(categoryId);
+        } else {
+            products = productRepository.findByIsActiveTrue();
+        }
+
+        return products.stream()
+                .map(product -> {
+                    Map<String, Object> productMap = new HashMap<>();
+                    productMap.put("productId", product.getProductId());
+                    productMap.put("name", product.getName());
+                    return productMap;
+                })
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public void updateReviewVisibility(Long reviewId, Boolean isVisible) {
+        Review review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new AppException(ErrorCode.REVIEW_NOT_FOUND));
+
+        review.setIsVisible(isVisible);
+        review.setLastUpdate(LocalDateTime.now());
+
+        reviewRepository.save(review);
     }
 }

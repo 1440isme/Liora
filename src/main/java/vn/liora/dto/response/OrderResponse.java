@@ -27,4 +27,8 @@ public class OrderResponse {
     Long idAddress;
     Long userId;
     String customerName;
+
+    Long discountId;
+    String discountName;
+    BigDecimal discountValue;
 }

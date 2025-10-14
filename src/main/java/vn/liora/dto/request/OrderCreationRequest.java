@@ -28,5 +28,5 @@ public class OrderCreationRequest {
     @NotNull(message = "VALIDATION_REQUIRED_FIELD")
     String note;
 
-
+    Long discountId;
 }

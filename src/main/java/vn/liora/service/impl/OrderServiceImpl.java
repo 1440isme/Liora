@@ -4,6 +4,8 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.liora.dto.request.OrderCreationRequest;
@@ -18,6 +20,8 @@ import vn.liora.mapper.OrderProductMapper;
 import vn.liora.repository.*;
 import vn.liora.service.IImageService;
 import vn.liora.service.IOrderService;
+import vn.liora.entity.Discount;
+import vn.liora.repository.DiscountRepository;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -44,14 +48,15 @@ public class OrderServiceImpl implements IOrderService {
     @Transactional
 
     public OrderResponse createOrder(Long userId,OrderCreationRequest request) {
-
+        try {
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
             Cart cart = cartRepository.findByUser(user)
                     .orElseThrow(() -> new AppException(ErrorCode.CART_NOT_FOUND));
             List<CartProduct> selected = cartProductRepository.findByCartAndChooseTrue(cart);
-            if (selected.isEmpty())
+            if (selected.isEmpty()) {
                 throw new AppException(ErrorCode.NO_SELECTED_PRODUCT);
+            }
 
             Order order = orderMapper.toOrder(request);
             Address address = addressRepository.findById(request.getIdAddress())
@@ -60,29 +65,145 @@ public class OrderServiceImpl implements IOrderService {
             order.setUser(user);
             order.setOrderDate(LocalDateTime.now());
             order.setOrderStatus("Pending");
-            order.setTotalDiscount(new BigDecimal("10000"));
-            order.setTotal(new BigDecimal("0"));
-             final Order savedOrder = orderRepository.save(order);
 
-        List<OrderProduct> orderProducts = selected.stream()
-                .map(cp -> {
-                    OrderProduct op = orderProductMapper.toOrderProduct(cp);
-                    op.setOrder(savedOrder);
-                    return op;
-                })
-                .collect(Collectors.toList());
+            List<OrderProduct> orderProducts = selected.stream()
+                    .map(cp -> {
+                        OrderProduct op = orderProductMapper.toOrderProduct(cp);
+                        op.setOrder(order);
+                        return op;
+                    })
+                    .collect(Collectors.toList());
 
-        BigDecimal subtotal = orderProducts.stream()
+            BigDecimal subtotal = orderProducts.stream()
+                    .map(OrderProduct::getTotalPrice)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            BigDecimal totalDiscount = BigDecimal.ZERO;
+            BigDecimal total = subtotal;
+
+            if (request.getDiscountId() != null) {
+                try {
+                    // Kiểm tra discount có tồn tại không
+                    Discount discount = discountRepository.findById(request.getDiscountId())
+                            .orElseThrow(() -> new AppException(ErrorCode.DISCOUNT_NOT_FOUND));
+
+                    // Kiểm tra có thể áp dụng discount không
+                    if (discountService.canApplyDiscount(request.getDiscountId(), userId, subtotal)) {
+                        // Tính discount amount
+                        totalDiscount = discountService.calculateDiscountAmount(request.getDiscountId(), subtotal);
+                        total = subtotal.subtract(totalDiscount);
+
+                        // Set discount cho order
+                        order.setDiscount(discount);
+
+                        // Tăng usage count
+                        discountService.incrementUsageCount(request.getDiscountId());
+
+                        log.info("Applied discount {} to order. Discount amount: {}",
+                                request.getDiscountId(), totalDiscount);
+                    } else {
+                        log.warn("Cannot apply discount {} to order. User: {}, Subtotal: {}",
+                                request.getDiscountId(), userId, subtotal);
+                    }
+                } catch (Exception e) {
+                    log.warn("Error applying discount {}: {}. Order will be created without discount.",
+                            request.getDiscountId(), e.getMessage());
+                    // Nếu không áp dụng được discount, vẫn tạo đơn hàng bình thường
+                }
+            }
+
+            // 9. Set tổng tiền cho order
+            order.setTotalDiscount(totalDiscount);
+            order.setTotal(total);
+
+            final Order savedOrder = orderRepository.save(order);
+            orderProducts.forEach(op -> op.setOrder(savedOrder));
+            orderProductRepository.saveAll(orderProducts);
+            cartProductRepository.deleteAll(selected);
+            log.info("Order created successfully. Order ID: {}, User: {}, Total: {}, Discount: {}",
+                    savedOrder.getIdOrder(), userId, total, totalDiscount);
+
+            return orderMapper.toOrderResponse(savedOrder);
+
+        } catch (AppException e) {
+            log.error("AppException in createOrder: {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("Unexpected error in createOrder: ", e);
+            throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Autowired
+    private DiscountRepository discountRepository;
+
+    @Autowired
+    private DiscountServiceImpl discountService;
+
+    public void applyDiscountToOrder(Long orderId, Long discountId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+
+        Discount discount = discountRepository.findById(discountId)
+                .orElseThrow(() -> new AppException(ErrorCode.DISCOUNT_NOT_FOUND));
+
+        // Tính subtotal từ OrderProducts
+        BigDecimal subTotal = calculateOrderSubTotal(order);
+
+        // Kiểm tra có thể áp dụng discount không
+        if (!discountService.canApplyDiscount(discountId, order.getUser().getUserId(), subTotal)) {
+            throw new AppException(ErrorCode.DISCOUNT_CANNOT_BE_APPLIED);
+        }
+
+        // Tính discount amount
+        BigDecimal discountAmount = discountService.calculateDiscountAmount(discountId, subTotal);
+
+        // Cập nhật order
+        order.setDiscount(discount);
+        order.setTotalDiscount(discountAmount);
+        order.setTotal(subTotal.subtract(discountAmount));
+
+        orderRepository.save(order);
+
+        // Tăng usage count
+        discountService.incrementUsageCount(discountId);
+    }
+
+    private BigDecimal calculateOrderSubTotal(Order order) {
+        List<OrderProduct> orderProducts = orderProductRepository.findByOrder(order);
+        return orderProducts.stream()
                 .map(OrderProduct::getTotalPrice)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-        BigDecimal total = subtotal
-                .subtract(order.getTotalDiscount());
-        order.setTotal(total);
+    }
 
-        order = orderRepository.save(order);
-        orderProductRepository.saveAll(orderProducts);
-        cartProductRepository.deleteAll(selected);
-        return orderMapper.toOrderResponse(order);
+    @Override
+    public void removeDiscountFromOrder(Long orderId, Long discountId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+
+        Discount discount = discountRepository.findById(discountId)
+                .orElseThrow(() -> new AppException(ErrorCode.DISCOUNT_NOT_FOUND));
+
+        // Kiểm tra order có discount này không
+        if (order.getDiscount() == null || !order.getDiscount().getDiscountId().equals(discountId)) {
+            throw new AppException(ErrorCode.DISCOUNT_NOT_APPLIED_TO_ORDER);
+        }
+
+        // Tính subtotal từ OrderProducts (nhất quán với applyDiscountToOrder)
+        BigDecimal subTotal = calculateOrderSubTotal(order);
+
+        // Remove discount from order
+        order.setDiscount(null);
+        order.setTotalDiscount(BigDecimal.ZERO);
+        order.setTotal(subTotal); // total = subtotal (không có discount)
+
+        orderRepository.save(order);
+
+        // Decrement usage count
+        if (discount.getUsedCount() > 0) {
+            discount.setUsedCount(discount.getUsedCount() - 1);
+            discountRepository.save(discount);
+        }
     }
 
     @Override

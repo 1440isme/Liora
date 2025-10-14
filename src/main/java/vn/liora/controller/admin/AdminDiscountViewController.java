@@ -74,7 +74,7 @@ public class AdminDiscountViewController {
     }
 
     // ========== DISCOUNT DETAIL ==========
-    @GetMapping("/{id}")
+    @GetMapping("/{id}/detail")
     public String discountDetail(@PathVariable Long id, Model model) {
         try {
             addCurrentUserToModel(model);

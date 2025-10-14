@@ -15,7 +15,9 @@ import vn.liora.entity.Discount;
 import vn.liora.exception.AppException;
 import vn.liora.mapper.DiscountMapper;
 import vn.liora.service.IDiscountService;
+import vn.liora.service.IOrderService;
 import vn.liora.service.impl.DiscountServiceImpl;
+import vn.liora.service.impl.OrderServiceImpl;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -174,12 +176,13 @@ public class UserDiscountController {
         }
     }
 
+    IOrderService orderService;
     // ========== ORDER DISCOUNT MANAGEMENT ==========
     @PostMapping("/apply")
     public ResponseEntity<ApiResponse<String>> applyDiscountToOrder(@RequestBody ApplyDiscountRequest request) {
         ApiResponse<String> response = new ApiResponse<>();
         try {
-            discountService.applyDiscountToOrder(request);
+            orderService.applyDiscountToOrder(request.getOrderId(), request.getDiscountId());
             response.setResult("Áp dụng mã giảm giá thành công");
             response.setMessage("Mã giảm giá đã được áp dụng vào đơn hàng");
             return ResponseEntity.ok(response);
@@ -200,7 +203,7 @@ public class UserDiscountController {
             @PathVariable Long discountId) {
         ApiResponse<String> response = new ApiResponse<>();
         try {
-            discountService.removeDiscountFromOrder(orderId, discountId);
+            orderService.removeDiscountFromOrder(orderId, discountId);
             response.setResult("Xóa mã giảm giá khỏi đơn hàng thành công");
             response.setMessage("Mã giảm giá đã được xóa khỏi đơn hàng");
             return ResponseEntity.ok(response);
