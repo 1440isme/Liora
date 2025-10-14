@@ -88,38 +88,57 @@
                     <div class="box-section account-box-section">
                         <h5 class="section-title-small text-dark-gray mb-3">Tài khoản</h5>
                         <div class="account-box">
-                            <div class="account-info">
-                                <div class="account-avatar">NH</div>
-                                <div class="account-name-email">
-                                    <div>Ninh Hạnh</div>
-                                    <div>ninhhanh20112005@gmail.com</div>
-                                </div>
-                            </div>
+                            <!-- Account info will be loaded here -->
                         </div>
                     </div>
 
                     <div class="box-section shipping-info-section">
                         <div class="section-header">
                             <h5 class="section-title-small text-dark-gray">Thông tin giao hàng</h5>
-                            <button type="button" class="btn-change">Thay đổi</button>
+                            <button type="button" class="btn-change" onclick="checkoutPage.showAddressSelector()">Thay đổi</button>
                         </div>
                         <div class="row g-3">
                             <div class="col-12">
-                                <input type="text" class="form-control" id="shippingFullName" placeholder="Họ và tên" value="Ninh Hạnh" required>
-                            </div>
-                            <div class="col-12">
-                                <div class="phone-input-group">
-                                    <input type="tel" class="form-control" id="shippingPhone" placeholder="Số điện thoại" required>
+                                <div class="form-floating">
+                                    <input type="text" class="form-control" id="shippingFullName" placeholder="Họ và tên" required>
+                                    <label for="shippingFullName">Họ và tên</label>
                                 </div>
                             </div>
                             <div class="col-12">
-                                <input type="text" class="form-control" id="shippingGmail" placeholder="Gmail"  required >
+                                <div class="form-floating">
+                                    <input type="tel" class="form-control" id="shippingPhone" placeholder="Số điện thoại" required>
+                                    <label for="shippingPhone">Số điện thoại</label>
+                                </div>
                             </div>
                             <div class="col-12">
-                                <input type="text" class="form-control" id="shippingAddressDetail" placeholder="Địa chỉ, tên đường" required>
+                                <div class="form-floating">
+                                    <input type="email" class="form-control" id="shippingGmail" placeholder="Email" required>
+                                    <label for="shippingGmail">Email</label>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <select class="form-select" id="shippingProvince" required>
+                                        <option value="">Chọn Tỉnh/Thành phố</option>
+                                    </select>
+                                    <label for="shippingProvince">Tỉnh/Thành phố</label>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <select class="form-select" id="shippingWard" required disabled>
+                                        <option value="">Chọn Phường/Xã</option>
+                                    </select>
+                                    <label for="shippingWard">Phường/Xã</label>
+                                </div>
                             </div>
                             <div class="col-12">
-                                <input type="text" class="form-control" id="shippingCityDistrictWard" placeholder="Tỉnh/TP, Phường/Xã" required>
+                                <div class="form-floating">
+                                    <input type="text" class="form-control" id="shippingAddressDetail" placeholder="Địa chỉ, tên đường" required>
+                                    <label for="shippingAddressDetail">Địa chỉ, tên đường</label>
+                                </div>
                             </div>
                         </div>
                     </div>

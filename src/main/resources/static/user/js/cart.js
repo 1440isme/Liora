@@ -498,12 +498,20 @@ class CartPage {
     // ========== API HELPER METHODS ==========
     
     async apiCall(url, method = 'GET', data = null) {
+        const token = localStorage.getItem('access_token');
+        const headers = {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        };
+        
+        // Thêm Authorization header nếu có token
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+        
         const options = {
             method: method,
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            }
+            headers: headers
         };
 
         if (data && (method === 'POST' || method === 'PUT')) {
