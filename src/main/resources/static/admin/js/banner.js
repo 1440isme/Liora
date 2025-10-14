@@ -567,37 +567,16 @@ function applyFilters() {
  */
 function showAlert(type, message) {
     const toast = document.getElementById('bannerToast');
-    const toastHeader = toast.querySelector('.toast-header');
     const toastBody = toast.querySelector('.toast-body');
-    const icon = toastHeader.querySelector('.fas');
 
-    // Set icon and color based on type
-    let iconClass, textClass;
-    switch (type) {
-        case 'success':
-            iconClass = 'check-circle';
-            textClass = 'text-success';
-            break;
-        case 'danger':
-        case 'error':
-            iconClass = 'exclamation-circle';
-            textClass = 'text-danger';
-            break;
-        case 'warning':
-            iconClass = 'exclamation-triangle';
-            textClass = 'text-warning';
-            break;
-        case 'info':
-            iconClass = 'info-circle';
-            textClass = 'text-info';
-            break;
-        default:
-            iconClass = 'info-circle';
-            textClass = 'text-info';
-    }
+    // Remove all existing type classes
+    toast.classList.remove('admin-toast-success', 'admin-toast-error', 'admin-toast-warning', 'admin-toast-info');
 
-    // Update icon and color
-    icon.className = `fas fa-${iconClass} ${textClass} me-2`;
+    // Map danger to error for consistency
+    const toastType = type === 'danger' ? 'error' : type;
+
+    // Add the correct type class
+    toast.classList.add(`admin-toast-${toastType}`);
 
     // Update message
     toastBody.textContent = message;
@@ -608,5 +587,7 @@ function showAlert(type, message) {
         delay: 4000
     });
 
+    // Ensure toast is visible
+    toast.classList.add('show');
     bsToast.show();
 }

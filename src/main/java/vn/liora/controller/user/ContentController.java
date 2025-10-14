@@ -11,7 +11,9 @@ import vn.liora.entity.*;
 import vn.liora.service.BannerService;
 import vn.liora.service.StaticPageService;
 import vn.liora.service.FooterService;
+import vn.liora.service.HeaderNavigationService;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -30,12 +32,11 @@ public class ContentController {
     @Autowired
     private FooterService footerService;
 
-//    @Autowired
-//    private HeaderBottomService headerBottomService;
+    @Autowired
+    private HeaderNavigationService headerNavigationService;
 
-    // Trang hiển thị static page theo slug
     @GetMapping("/page/{slug}")
-    public String viewStaticPage(@PathVariable String slug, Model model) {
+    public String viewStaticPage(@PathVariable String slug, Model model, HttpServletRequest request) {
         try {
             StaticPageResponse staticPage = staticPageService.getStaticPageBySlug(slug);
             model.addAttribute("staticPage", staticPage);
@@ -43,6 +44,60 @@ public class ContentController {
         } catch (Exception e) {
             return "error/404";
         }
+    }
+
+    // Trang tổng hợp các trang tĩnh theo sectionSlug
+    @GetMapping("/list/{sectionSlug}")
+    public String listStaticPagesBySection(@PathVariable String sectionSlug, Model model) {
+        List<StaticPageResponse> pages = staticPageService.getPublishedPagesBySection(sectionSlug);
+        model.addAttribute("sectionSlug", sectionSlug);
+        model.addAttribute("pages", pages);
+
+        // Tìm header nav item tương ứng với sectionSlug
+        try {
+            List<HeaderNavigationItem> allItems = headerNavigationService.getAllActiveItems();
+            boolean found = false;
+
+            for (HeaderNavigationItem item : allItems) {
+                // Kiểm tra main item trước
+                if (item.getLinkType() == vn.liora.enums.FooterLinkType.PAGE_LIST) {
+                    String itemUrl = item.getUrl();
+                    if (itemUrl != null && itemUrl.equals("/content/list/" + sectionSlug)) {
+                        model.addAttribute("navItemTitle", item.getTitle());
+                        found = true;
+                        break;
+                    }
+                }
+
+                // Kiểm tra sub-items (load rõ ràng từ service để tránh lazy/không có dữ liệu)
+                if (!found) {
+                    List<HeaderNavigationItem> subItems = headerNavigationService.getSubItemsByParentId(item.getId());
+                    for (HeaderNavigationItem subItem : subItems) {
+                        if (subItem.getLinkType() == vn.liora.enums.FooterLinkType.PAGE_LIST) {
+                            String subItemUrl = subItem.getUrl();
+                            if (subItemUrl != null && subItemUrl.equals("/content/list/" + sectionSlug)) {
+                                model.addAttribute("navItemTitle", subItem.getTitle());
+                                found = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if (found)
+                    break;
+            }
+
+            // Nếu không tìm thấy, sử dụng sectionSlug làm title mặc định
+            if (!found) {
+                model.addAttribute("navItemTitle", sectionSlug);
+            }
+        } catch (Exception e) {
+            // Nếu có lỗi, sử dụng sectionSlug làm title mặc định
+            model.addAttribute("navItemTitle", sectionSlug);
+        }
+
+        return "user/static-page-list";
     }
 
     // API lấy danh sách banner active
@@ -173,21 +228,32 @@ public class ContentController {
     }
 
     // API lấy thông tin header tầng dưới
-//    @GetMapping("/api/header-bottom")
-//    @ResponseBody
-//    public ResponseEntity<Map<String, Object>> getHeaderBottomContent() {
-//        Map<String, Object> headerContent = new HashMap<>();
-//
-//        try {
-//            HeaderBottom headerBottom = headerBottomService.getActiveHeaderBottom();
-//            if (headerBottom != null) {
-//                headerContent.put("headerBottom", headerBottom);
-//                headerContent.put("navigationItems",
-//                        headerBottomService.getActiveNavigationItems(headerBottom.getId()));
-//            }
-//            return ResponseEntity.ok(headerContent);
-//        } catch (Exception e) {
-//            return ResponseEntity.ok(headerContent);
-//        }
-//    }
+    @GetMapping("/api/header-bottom")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> getHeaderNavigationContent() {
+        Map<String, Object> headerContent = new HashMap<>();
+
+        try {
+            List<HeaderNavigationItem> navigationItems = headerNavigationService.getAllActiveItems();
+            headerContent.put("navigationItems", navigationItems);
+            return ResponseEntity.ok(headerContent);
+        } catch (Exception e) {
+            System.err.println("Error loading header navigation content: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.ok(headerContent);
+        }
+    }
+
+    @GetMapping("/api/header-bottom/sub-items/{parentId}")
+    @ResponseBody
+    public ResponseEntity<List<HeaderNavigationItem>> getSubItems(@PathVariable Long parentId) {
+        try {
+            List<HeaderNavigationItem> subItems = headerNavigationService.getSubItemsByParentId(parentId);
+            return ResponseEntity.ok(subItems);
+        } catch (Exception e) {
+            System.err.println("Error loading sub-items: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.ok(new ArrayList<>());
+        }
+    }
 }

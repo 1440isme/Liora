@@ -39,20 +39,21 @@
                     <div class="row">
                         <div class="col-12">
                             <div class="page-header">
-                                <h1 class="page-title">Quản lý Footer</h1>
-                                <p class="page-subtitle">Chỉnh sửa nội dung footer website</p>
+                                <h1 class="h3 mb-0">
+                                    <i class="fas fa-file-alt text-primary me-2"></i>
+                                    Quản lý Footer
+                                </h1>
                             </div>
                         </div>
                     </div>
 
                     <!-- Toast Container -->
-                    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;">
-                        <div id="footerToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="toast-container">
+                        <div id="footerToast" class="toast admin-toast admin-toast-info" role="alert"
+                            aria-live="assertive" aria-atomic="true">
                             <div class="toast-header">
-                                <i class="fas fa-check-circle text-success me-2"></i>
                                 <strong class="me-auto">Thông báo</strong>
-                                <button type="button" class="btn-close" data-bs-dismiss="toast"
-                                    aria-label="Close"></button>
+                                <button type="button" class="btn-close" data-bs-dismiss="toast">&times;</button>
                             </div>
                             <div class="toast-body">
                                 <!-- Toast message will be inserted here -->
@@ -68,7 +69,7 @@
                                     <div class="card-header d-flex justify-content-between align-items-center">
                                         <h5 class="card-title mb-0">
                                             <i class="mdi mdi-eye me-2"></i>
-                                            Xem trước Footer hiện tại
+                                            Footer hiện tại
                                         </h5>
                                         <div>
                                             <a href="/admin/footer/init" class="btn btn-warning me-2">
@@ -191,7 +192,7 @@
 
     <th:block th:replace="admin/fragments/admin-scripts :: admin-scripts"></th:block>
 
-    <script>
+    <script th:inline="javascript">
         let columnIndex = 0;
         let itemIndex = 0;
         let currentFooterData = null;
@@ -318,13 +319,12 @@
                         'value="' + (item.title || '') + '" placeholder="Tên mục">' +
                         '</div>' +
                         '<div class="col-md-4">' +
-                        '<input type="text" class="form-control form-control-sm" ' +
-                        'name="columns[' + index + '].items[' + itemIndex + '].url" ' +
-                        'value="' + (item.url || '') + '" placeholder="URL">' +
+                        // URL or static page select will be rendered below via JS after insert
+                        '<div class="footer-item-url" data-initial-url="' + (item.url || '') + '"></div>' +
                         '</div>' +
                         '<div class="col-md-3">' +
-                        '<select class="form-select form-select-sm" ' +
-                        'name="columns[' + index + '].items[' + itemIndex + '].linkType">' +
+                        '<select class="form-select form-select-sm footer-link-type" ' +
+                        'name="columns[' + index + '].items[' + itemIndex + '].linkType" data-index="' + index + '" data-item-index="' + itemIndex + '">' +
                         '<option value="CATEGORY" ' + (item.linkType === 'CATEGORY' ? 'selected' : '') + '>Danh mục</option>' +
                         '<option value="PAGE" ' + (item.linkType === 'PAGE' ? 'selected' : '') + '>Trang</option>' +
                         '<option value="INTERNAL" ' + (item.linkType === 'INTERNAL' ? 'selected' : '') + '>Nội bộ</option>' +
@@ -371,6 +371,8 @@
                 '</button>' +
                 '</div>';
             container.insertAdjacentHTML('beforeend', columnHtml);
+            // After insert items, initialize URL/static page selects
+            setTimeout(() => initFooterItemInputs(document.getElementById('footer-columns-container')), 0);
         }
 
         // Show edit section
@@ -423,13 +425,11 @@
                 'placeholder="Tên mục">' +
                 '</div>' +
                 '<div class="col-md-4">' +
-                '<input type="text" class="form-control form-control-sm" ' +
-                'name="columns[' + columnIndex + '].items[' + itemIndex + '].url" ' +
-                'placeholder="URL">' +
+                '<div class="footer-item-url"></div>' +
                 '</div>' +
                 '<div class="col-md-3">' +
-                '<select class="form-select form-select-sm" ' +
-                'name="columns[' + columnIndex + '].items[' + itemIndex + '].linkType">' +
+                '<select class="form-select form-select-sm footer-link-type" ' +
+                'name="columns[' + columnIndex + '].items[' + itemIndex + '].linkType" data-index="' + columnIndex + '" data-item-index="' + itemIndex + '">' +
                 '<option value="CATEGORY">Danh mục</option>' +
                 '<option value="PAGE">Trang</option>' +
                 '<option value="INTERNAL">Nội bộ</option>' +
@@ -445,11 +445,66 @@
                 '</div>' +
                 '</div>';
             container.insertAdjacentHTML('beforeend', itemHtml);
+            initFooterItemInputs(container);
         }
 
         // Remove footer item
         function removeFooterItem(button) {
             button.closest('.footer-item').remove();
+        }
+
+        // Initialize URL/static-page input renderers for footer items
+        function initFooterItemInputs(scopeEl) {
+            const root = scopeEl || document;
+            const typeSelects = root.querySelectorAll('.footer-link-type');
+            const pages = /*[[${staticPages}]]*/[];
+            typeSelects.forEach(select => {
+                const colIndex = select.getAttribute('data-index');
+                const itemIndex = select.getAttribute('data-item-index');
+                const row = select.closest('.row');
+                const urlContainer = row.querySelector('.footer-item-url');
+                const initialUrl = urlContainer.getAttribute('data-initial-url') || '';
+
+                const render = () => {
+                    const type = select.value;
+                    if (type === 'PAGE') {
+                        // Build select for static pages and preselect based on URL slug
+                        const currentSlug = initialUrl
+                            .toString()
+                            .replace(/^\/content\/page\//, '')
+                            .replace(/^\//, '');
+                        let options = '<option value="">Chọn trang tĩnh</option>';
+                        pages.forEach(p => {
+                            const selected = (p.slug === currentSlug) ? 'selected' : '';
+                            options += `<option value="${p.id}" ${selected}>${p.title}</option>`;
+                        });
+                        urlContainer.innerHTML = `
+                            <select class="form-select form-select-sm" name="columns[${colIndex}].items[${itemIndex}].staticPageId">
+                                ${options}
+                            </select>
+                            <input type="hidden" name="columns[${colIndex}].items[${itemIndex}].url" value="${initialUrl}">
+                        `;
+                        // When choose a page, update hidden URL to normalized path
+                        const pageSelect = urlContainer.querySelector('select');
+                        pageSelect.addEventListener('change', () => {
+                            const selectedId = pageSelect.value;
+                            const page = pages.find(p => String(p.id) === String(selectedId));
+                            const normalized = page ? `/content/page/${page.slug}` : '';
+                            const hidden = urlContainer.querySelector(`input[name="columns[${colIndex}].items[${itemIndex}].url"]`);
+                            hidden.value = normalized;
+                        });
+                    } else {
+                        // Render plain URL input
+                        urlContainer.innerHTML = `
+                            <input type="text" class="form-control form-control-sm" 
+                                   name="columns[${colIndex}].items[${itemIndex}].url" 
+                                   value="${initialUrl}" placeholder="URL">
+                        `;
+                    }
+                };
+                render();
+                select.addEventListener('change', render);
+            });
         }
 
         // Preview footer from form data

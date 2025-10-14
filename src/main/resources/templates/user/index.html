@@ -23,6 +23,7 @@
 
     <!-- Custom CSS -->
     <link rel="stylesheet" th:href="@{/user/css/style.css}">
+
 </head>
 
 <body>
@@ -53,124 +54,299 @@
                 </div>
             </section>
 
-            <!-- Hero Section -->
-            <section class="hero-section">
+            <!-- USP / Lợi ích nhanh -->
+            <section class="py-4 border-bottom bg-white">
                 <div class="container">
-                    <div class="row align-items-center min-vh-100 py-5">
-                        <div class="col-lg-6">
-                            <div class="hero-content">
-                                <h1 class="hero-title display-4 fw-bold mb-4">
-                                    Discover Your
-                                    <span class="text-pink-primary">Glow</span> ✨
-                                </h1>
-                                <p class="hero-subtitle lead mb-4">
-                                    Authentic Korean beauty products for radiant, healthy skin.
-                                    Transform your skincare routine with K-beauty essentials.
-                                </p>
-                                <div class="hero-buttons d-flex flex-wrap gap-3">
-                                    <button class="btn btn-pink-primary btn-lg rounded-pill px-4 hover-glow"
-                                        onclick="showPage('skincare')">
-                                        Shop Skincare
-                                    </button>
-                                    <button class="btn btn-outline-pink btn-lg rounded-pill px-4"
-                                        onclick="showPage('makeup')">
-                                        Explore Makeup
-                                    </button>
+                    <div class="row g-3 text-center">
+                        <div class="col-6 col-md-3">
+                            <div class="d-flex flex-column align-items-center">
+                                <i class="mdi mdi-truck-fast-outline fs-2 text-pink-primary"></i>
+                                <div class="fw-semibold mt-2">Freeship đơn từ 0đ</div>
+                                <small class="text-muted">Giao nhanh toàn quốc</small>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="d-flex flex-column align-items-center">
+                                <i class="mdi mdi-shield-check-outline fs-2 text-pink-primary"></i>
+                                <div class="fw-semibold mt-2">100% Chính hãng</div>
+                                <small class="text-muted">Hóa đơn, tem phân phối</small>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="d-flex flex-column align-items-center">
+                                <i class="mdi mdi-cash-multiple fs-2 text-pink-primary"></i>
+                                <div class="fw-semibold mt-2">COD toàn quốc</div>
+                                <small class="text-muted">Nhận hàng rồi thanh toán</small>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="d-flex flex-column align-items-center">
+                                <i class="mdi mdi-heart-outline fs-2 text-pink-primary"></i>
+                                <div class="fw-semibold mt-2">Chất lượng cao</div>
+                                <small class="text-muted">Hiệu quả tức thì</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Danh mục nổi bật -->
+            <section class="py-5 bg-light">
+                <div class="container">
+                    <div class="d-flex align-items-center justify-content-between mb-4">
+                        <h2 class="fw-bold mb-0 text-uppercase">Danh mục nổi bật</h2>
+                        <a href="/categories" class="text-pink-primary fw-semibold">Xem tất cả</a>
+                    </div>
+                    <div class="row g-4">
+                        <div class="col-6 col-md-3">
+                            <a href="/categories/skincare" class="text-decoration-none text-dark">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <img class="card-img-top"
+                                        src="https://images.unsplash.com/photo-1585237001925-83865001e31b?w=800&q=80"
+                                        alt="Skincare">
+                                    <div class="card-body text-center">
+                                        <div class="fw-semibold">Chăm sóc da</div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <a href="/categories/makeup" class="text-decoration-none text-dark">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <img class="card-img-top"
+                                        src="https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=800&q=80"
+                                        alt="Makeup">
+                                    <div class="card-body text-center">
+                                        <div class="fw-semibold">Trang điểm</div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <a href="/categories/hair" class="text-decoration-none text-dark">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <img class="card-img-top"
+                                        src="https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=800&q=80"
+                                        alt="Hair">
+                                    <div class="card-body text-center">
+                                        <div class="fw-semibold">Tóc</div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <a href="/categories/body" class="text-decoration-none text-dark">
+                                <div class="card border-0 shadow-sm h-100">
+                                    <img class="card-img-top"
+                                        src="https://images.unsplash.com/photo-1613929720948-5b39c886d9c2?w=800&q=80"
+                                        alt="Body care">
+                                    <div class="card-body text-center">
+                                        <div class="fw-semibold">Cơ thể</div>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Khuyến mãi dành cho bạn -->
+            <section class="py-5">
+                <div class="container">
+                    <h2 class="fw-bold mb-4 text-center text-uppercase">Khuyến mãi dành cho bạn</h2>
+                    <div class="row g-3">
+                        <!-- Coupon 1 -->
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <div class="d-flex align-items-center gap-3 p-3 bg-white border rounded-3 shadow-sm h-100">
+                                <div class="rounded-3 d-flex align-items-center justify-content-center"
+                                    style="width:72px;height:72px;background:#ffc0cb33;">
+                                    <i class="mdi mdi-ticket-percent-outline fs-2 text-pink-primary"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <div class="fw-bold">GIẢM 15K</div>
+                                        <i class="mdi mdi-information-outline text-muted"></i>
+                                    </div>
+                                    <div class="small text-muted">Đơn hàng bất kỳ từ 399k</div>
+                                    <div class="mt-2 d-flex align-items-center gap-2">
+                                        <span class="badge bg-light text-dark border">Mã: <span
+                                                class="fw-semibold">MOI15</span></span>
+                                        <small class="text-muted">HSD: 31/10/2025</small>
+                                    </div>
+                                    <div class="mt-2">
+                                        <button class="btn btn-sm btn-outline-pink rounded-pill fw-semibold"
+                                            onclick="navigator.clipboard.writeText('MOI15'); this.innerText='ĐÃ SAO CHÉP';">SAO
+                                            CHÉP MÃ</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-lg-6">
-                            <div class="hero-image-container text-center">
-                                <img src="https://images.unsplash.com/photo-1515377905703-c4788e51af15?w=600&q=80"
-                                    alt="Beautiful Korean model with glowing skin"
-                                    class="hero-image img-fluid rounded-4 shadow-lg hover-scale">
+                        <!-- Coupon 2 -->
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <div class="d-flex align-items-center gap-3 p-3 bg-white border rounded-3 shadow-sm h-100">
+                                <div class="rounded-3 d-flex align-items-center justify-content-center"
+                                    style="width:72px;height:72px;background:#ffc0cb33;">
+                                    <i class="mdi mdi-ticket-percent-outline fs-2 text-pink-primary"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <div class="fw-bold">GIẢM 15K</div>
+                                        <i class="mdi mdi-information-outline text-muted"></i>
+                                    </div>
+                                    <div class="small text-muted">Đơn hàng từ 189k áp dụng khách hàng mới</div>
+                                    <div class="mt-2 d-flex align-items-center gap-2">
+                                        <span class="badge bg-light text-dark border">Mã: <span
+                                                class="fw-semibold">MOICGAUIU</span></span>
+                                        <small class="text-muted">HSD: 31/10/2025</small>
+                                    </div>
+                                    <div class="mt-2">
+                                        <button class="btn btn-sm btn-outline-pink rounded-pill fw-semibold"
+                                            onclick="navigator.clipboard.writeText('MOICGAUIU'); this.innerText='ĐÃ SAO CHÉP';">SAO
+                                            CHÉP MÃ</button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Featured Products Section -->
-            <section class="featured-products py-5 bg-pink-soft">
-                <div class="container">
-                    <div class="text-center mb-5">
-                        <h2 class="section-title fw-bold mb-3">Featured Products</h2>
-                        <p class="section-subtitle text-muted">Discover our most loved K-beauty essentials</p>
-                    </div>
-
-                    <!-- Category Tabs -->
-                    <div class="text-center mb-5">
-                        <div class="btn-group category-tabs" role="group">
-                            <button type="button" class="btn btn-outline-pink active" data-category="all">All</button>
-                            <button type="button" class="btn btn-outline-pink"
-                                data-category="skincare">Skincare</button>
-                            <button type="button" class="btn btn-outline-pink" data-category="makeup">Makeup</button>
-                            <button type="button" class="btn btn-outline-pink"
-                                data-category="bestsellers">Bestsellers</button>
+                        <!-- Coupon 3 -->
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <div class="d-flex align-items-center gap-3 p-3 bg-white border rounded-3 shadow-sm h-100">
+                                <div class="rounded-3 d-flex align-items-center justify-content-center"
+                                    style="width:72px;height:72px;background:#ffc0cb33;">
+                                    <i class="mdi mdi-fire-circle fs-2 text-pink-primary"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <div class="fw-bold">GIẢM 50K</div>
+                                        <i class="mdi mdi-information-outline text-muted"></i>
+                                    </div>
+                                    <div class="small text-muted">Khi mua combo Premium</div>
+                                    <div class="mt-2 d-flex align-items-center gap-2">
+                                        <span class="badge bg-light text-dark border">Mã: <span
+                                                class="fw-semibold">COMBO</span></span>
+                                        <small class="text-muted">HSD: 31/10/2025</small>
+                                    </div>
+                                    <div class="mt-2">
+                                        <button class="btn btn-sm btn-outline-pink rounded-pill fw-semibold"
+                                            onclick="navigator.clipboard.writeText('COMBO'); this.innerText='ĐÃ SAO CHÉP';">SAO
+                                            CHÉP MÃ</button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-
-                    <!-- Products Grid -->
-                    <div id="featured-products-grid" class="row g-4">
-                        <!-- Products will be populated by JavaScript -->
-                    </div>
-                </div>
-            </section>
-
-            <!-- Reviews Carousel -->
-            <section class="reviews-section py-5">
-                <div class="container">
-                    <div class="text-center mb-5">
-                        <h2 class="section-title fw-bold mb-3">What Our Customers Say</h2>
-                        <p class="section-subtitle text-muted">Real reviews from real beauty lovers</p>
-                    </div>
-
-                    <div id="reviewsCarousel" class="carousel slide" data-bs-ride="carousel">
-                        <div class="carousel-inner">
-                            <!-- Reviews will be populated by JavaScript -->
-                        </div>
-                        <button class="carousel-control-prev" type="button" data-bs-target="#reviewsCarousel"
-                            data-bs-slide="prev">
-                            <span class="carousel-control-prev-icon"></span>
-                        </button>
-                        <button class="carousel-control-next" type="button" data-bs-target="#reviewsCarousel"
-                            data-bs-slide="next">
-                            <span class="carousel-control-next-icon"></span>
-                        </button>
-                    </div>
-                </div>
-            </section>
-
-            <!-- CTA Banner -->
-            <section class="cta-banner py-5 bg-gradient-pink text-white">
-                <div class="container text-center">
-                    <div class="row justify-content-center">
-                        <div class="col-lg-8">
-                            <h2 class="fw-bold mb-3">Join the K-Beauty Revolution! 💕</h2>
-                            <p class="lead mb-4">
-                                Subscribe to our newsletter and get 15% off your first order.
-                                Plus, be the first to know about new arrivals and exclusive deals!
-                            </p>
-                            <div class="newsletter-form d-flex justify-content-center">
-                                <div class="input-group" style="max-width: 400px;">
-                                    <input type="email" class="form-control rounded-start-pill"
-                                        placeholder="Enter your email">
-                                    <button class="btn btn-white text-pink-primary fw-semibold rounded-end-pill px-4">
-                                        Subscribe
-                                    </button>
+                        <!-- Coupon 4 -->
+                        <div class="col-12 col-md-6 col-lg-3">
+                            <div class="d-flex align-items-center gap-3 p-3 bg-white border rounded-3 shadow-sm h-100">
+                                <div class="rounded-3 d-flex align-items-center justify-content-center"
+                                    style="width:72px;height:72px;background:#ffc0cb33;">
+                                    <i class="mdi mdi-fire-circle fs-2 text-pink-primary"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <div class="fw-bold">GIẢM 50K</div>
+                                        <i class="mdi mdi-information-outline text-muted"></i>
+                                    </div>
+                                    <div class="small text-muted">Khi mua bộ trang điểm căng bóng</div>
+                                    <div class="mt-2 d-flex align-items-center gap-2">
+                                        <span class="badge bg-light text-dark border">Mã: <span
+                                                class="fw-semibold">COMBOBBC</span></span>
+                                        <small class="text-muted">HSD: 31/10/2025</small>
+                                    </div>
+                                    <div class="mt-2">
+                                        <button class="btn btn-sm btn-outline-pink rounded-pill fw-semibold"
+                                            onclick="navigator.clipboard.writeText('COMBOBBC'); this.innerText='ĐÃ SAO CHÉP';">SAO
+                                            CHÉP MÃ</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </section>
+
+            <!-- Best Sellers -->
+            <section class="py-5">
+                <div class="container">
+                    <div class="d-flex align-items-center justify-content-between mb-4">
+                        <h2 class="fw-bold mb-0 text-uppercase">Best Sellers</h2>
+                        <a href="/products?sort=bestseller" class="text-pink-primary fw-semibold">Xem tất cả</a>
+                    </div>
+                    <div id="best-sellers-grid" class="row g-4">
+                        <!-- Nội dung sản phẩm bestseller sẽ được render bằng JS -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Hàng mới về -->
+            <section class="py-5 bg-light">
+                <div class="container">
+                    <div class="d-flex align-items-center justify-content-between mb-4">
+                        <h2 class="fw-bold mb-0 text-uppercase">Hàng mới về</h2>
+                        <a href="/products?sort=new" class="text-pink-primary fw-semibold">Xem tất cả</a>
+                    </div>
+                    <div id="new-arrivals-grid" class="row g-4">
+                        <!-- Nội dung sản phẩm mới sẽ được render bằng JS -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Thương hiệu đối tác -->
+            <section class="py-5">
+                <div class="container">
+                    <div class="text-center mb-4">
+                        <h2 class="fw-bold text-uppercase">Thương hiệu</h2>
+                        <p class="text-muted mb-0">Đồng hành cùng các brand chính hãng</p>
+                    </div>
+                    <div class="brand-slider position-relative">
+                        <div class="brand-track d-flex align-items-center">
+                            <div class="brand-item px-4 opacity-1" th:each="brand : ${activeBrands}">
+                                <img class="img-fluid" th:src="${brand.logoUrl}" th:alt="${brand.name}"
+                                    style="max-height:80px">
+                            </div>
+                            <!-- Duplicate for seamless loop -->
+                            <div class="brand-item px-4 opacity-1" th:each="brand : ${activeBrands}">
+                                <img class="img-fluid" th:src="${brand.logoUrl}" th:alt="${brand.name}"
+                                    style="max-height:80px">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Bài viết / Tin tức -->
+            <section class="py-5 bg-light">
+                <div class="container">
+                    <div class="d-flex align-items-center justify-content-between mb-4">
+                        <h2 class="fw-bold mb-0 text-uppercase">Làm đẹp cùng Liora</h2>
+                        <a href="/content/list/lam-dep-cung-liora" class="text-pink-primary fw-semibold">Xem tất cả</a>
+                    </div>
+                    <div class="row g-4">
+                        <div class="col-md-4" th:each="p : ${latestBeautyPages}">
+                            <a th:href="@{'/content/page/' + ${p.slug}}"
+                                class="card border-0 shadow-sm h-100 text-decoration-none text-dark">
+                                <div class="ratio ratio-16x9">
+                                    <img th:if="${p.thumbnailUrl != null}" th:src="${p.thumbnailUrl}" alt="thumbnail"
+                                        class="card-img-top" style="object-fit:cover;">
+                                    <img th:if="${p.thumbnailUrl == null}"
+                                        src="https://via.placeholder.com/800x450?text=No+Image" alt="placeholder"
+                                        class="card-img-top" style="object-fit:cover;">
+                                </div>
+                                <div class="card-body">
+                                    <div class="fw-semibold" th:text="${p.title}">Tiêu đề</div>
+                                    <small class="text-muted"
+                                        th:text="${p.publishedAt != null ? #temporals.format(p.publishedAt, 'dd/MM/yyyy') : (#temporals.format(p.createdAt, 'dd/MM/yyyy'))}">Ngày</small>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-12" th:if="${#lists.isEmpty(latestBeautyPages)}">
+                            <div class="alert alert-info mb-0">Chưa có bài viết nào trong nhóm này.</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+
         </div>
 
-        <!-- Other Pages (initially hidden) -->
-        <div id="skincare-page" class="page"></div>
-        <div id="makeup-page" class="page"></div>
-        <div id="bestsellers-page" class="page"></div>
-        <div id="new-arrivals-page" class="page"></div>
     </main>
 
     <!-- Footer -->

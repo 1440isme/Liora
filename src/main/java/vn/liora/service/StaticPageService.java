@@ -35,11 +35,12 @@ public class StaticPageService {
         staticPage.setSeoTitle(request.getSeoTitle());
         staticPage.setSeoDescription(request.getSeoDescription());
         staticPage.setSeoKeywords(request.getSeoKeywords());
+        staticPage.setSectionSlug(request.getSectionSlug());
         staticPage.setIsActive(request.getIsActive());
         staticPage.setIsPublished(request.getIsPublished());
 
         // Nếu publish thì set thời gian publish
-        if (request.getIsPublished()) {
+        if (Boolean.TRUE.equals(request.getIsPublished())) {
             staticPage.setPublishedAt(LocalDateTime.now());
         }
 
@@ -63,6 +64,7 @@ public class StaticPageService {
         staticPage.setSeoTitle(request.getSeoTitle());
         staticPage.setSeoDescription(request.getSeoDescription());
         staticPage.setSeoKeywords(request.getSeoKeywords());
+        staticPage.setSectionSlug(request.getSectionSlug());
         staticPage.setIsActive(request.getIsActive());
 
         // Nếu chuyển từ chưa publish sang publish
@@ -97,6 +99,15 @@ public class StaticPageService {
                 .collect(Collectors.toList());
     }
 
+    // Lấy các trang đã publish theo sectionSlug (cho listing)
+    public List<StaticPageResponse> getPublishedPagesBySection(String sectionSlug) {
+        if (sectionSlug == null || sectionSlug.trim().isEmpty())
+            return List.of();
+        List<StaticPage> staticPages = staticPageRepository
+                .findByIsActiveTrueAndIsPublishedTrueAndSectionSlugOrderByPublishedAtDesc(sectionSlug.trim());
+        return staticPages.stream().map(StaticPageResponse::new).collect(Collectors.toList());
+    }
+
     // Lấy tất cả static page với phân trang
     public Page<StaticPageResponse> getAllStaticPages(Pageable pageable) {
         Page<StaticPage> staticPages = staticPageRepository.findAll(pageable);
@@ -106,6 +117,42 @@ public class StaticPageService {
     // Tìm kiếm static page theo title
     public Page<StaticPageResponse> searchStaticPagesByTitle(String title, Pageable pageable) {
         Page<StaticPage> staticPages = staticPageRepository.findByTitleContainingIgnoreCase(title, pageable);
+        return staticPages.map(StaticPageResponse::new);
+    }
+
+    // Lấy danh sách theo bộ lọc tổng hợp (search theo title, isActive, isPublished)
+    public Page<StaticPageResponse> getStaticPages(String search, Boolean isActive, Boolean isPublished,
+            Pageable pageable) {
+        Page<StaticPage> staticPages;
+
+        String safeSearch = (search == null) ? "" : search;
+        boolean hasSearch = !safeSearch.trim().isEmpty();
+        if (hasSearch) {
+            String keyword = safeSearch.trim();
+            if (isActive != null && isPublished != null) {
+                staticPages = staticPageRepository.findByTitleContainingIgnoreCaseAndIsActiveAndIsPublished(keyword,
+                        isActive, isPublished, pageable);
+            } else if (isActive != null) {
+                staticPages = staticPageRepository.findByTitleContainingIgnoreCaseAndIsActive(keyword, isActive,
+                        pageable);
+            } else if (isPublished != null) {
+                staticPages = staticPageRepository.findByTitleContainingIgnoreCaseAndIsPublished(keyword, isPublished,
+                        pageable);
+            } else {
+                staticPages = staticPageRepository.findByTitleContainingIgnoreCase(keyword, pageable);
+            }
+        } else {
+            if (isActive != null && isPublished != null) {
+                staticPages = staticPageRepository.findByIsActiveAndIsPublished(isActive, isPublished, pageable);
+            } else if (isActive != null) {
+                staticPages = staticPageRepository.findByIsActive(isActive, pageable);
+            } else if (isPublished != null) {
+                staticPages = staticPageRepository.findByIsPublished(isPublished, pageable);
+            } else {
+                staticPages = staticPageRepository.findAll(pageable);
+            }
+        }
+
         return staticPages.map(StaticPageResponse::new);
     }
 
