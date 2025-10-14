@@ -35,7 +35,6 @@ public class CartServiceImpl implements ICartService {
                     log.info("Creating new cart for user: {}", user.getUsername());
                     Cart newCart = Cart.builder()
                             .user(user)
-                            .countProduct(0)
                             .build();
                     return cartRepository.save(newCart);
                 });

@@ -4,7 +4,6 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -26,13 +25,8 @@ import java.util.List;
 @Slf4j
 public class CartController {
 
-    @Autowired
     ICartService cartService;
-
-    @Autowired
     ICartProductService cartProductService;
-    
-    @Autowired
     UserRepository userRepository;
 
     @GetMapping("/cart")
@@ -61,9 +55,7 @@ public class CartController {
             var cartResponse = cartService.getCart(user.getUserId());
             
             return ResponseEntity.ok().body(new Object() {
-                @SuppressWarnings("unused")
                 public final Long cartId = cartResponse.getIdCart();
-                @SuppressWarnings("unused")
                 public final String message = "Cart found";
             });
 

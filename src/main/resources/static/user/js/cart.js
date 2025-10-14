@@ -89,7 +89,6 @@ class CartPage {
                 this.showEmptyCart();
             }
         } catch (error) {
-            console.error('Error loading cart data:', error);
             this.showToast('Không thể tải thông tin giỏ hàng', 'error');
             this.showEmptyCart();
         } finally {
@@ -268,17 +267,11 @@ class CartPage {
             `Bạn có chắc chắn muốn xóa ${selectedCount} sản phẩm đã chọn?`,
             async () => {
                 try {
-                    console.log('Starting to remove selected products...');
-                    console.log('Cart ID:', this.cartId);
-                    console.log('Selected count:', selectedCount);
-                    
                     // Gọi API để xóa tất cả sản phẩm đã chọn
                     const response = await this.apiCall(
                         `/CartProduct/${this.cartId}/selected`,
                         'DELETE'
                     );
-                    
-                    console.log('Delete API response:', response);
                     
                     // Lấy danh sách ID của các sản phẩm đã chọn để xóa khỏi cartItems
                     const selectedIds = [];
@@ -288,11 +281,8 @@ class CartPage {
                         selectedIds.push(cartProductId);
                     });
                     
-                    console.log('Selected IDs to remove:', selectedIds);
-                    
                     // Xóa khỏi dữ liệu local
                     this.cartItems = this.cartItems.filter(item => !selectedIds.includes(item.idCartProduct));
-                    console.log('Updated cartItems:', this.cartItems);
                     
                     // Xóa tất cả sản phẩm đã chọn khỏi DOM
                     $('.cart-item-checkbox:checked').closest('.cart-item').each((index, item) => {
@@ -304,14 +294,7 @@ class CartPage {
                     this.updateDeleteButton();
                     this.updateCartSummary();
                     
-                    console.log('Successfully removed selected products');
                 } catch (error) {
-                    console.error('Error removing selected products:', error);
-                    console.error('Error details:', {
-                        message: error.message,
-                        status: error.status,
-                        response: error.response
-                    });
                     this.showToast('Không thể xóa sản phẩm đã chọn', 'error');
                 }
             }
@@ -422,7 +405,6 @@ class CartPage {
             this.updateCartSummary();
             
         } catch (error) {
-            console.error('Error applying promo code:', error);
             this.showToast('Mã giảm giá không hợp lệ hoặc đã hết hạn', 'error');
         } finally {
             this.showLoading(false);
@@ -557,7 +539,6 @@ class CartPage {
             
             this.updateCartSummary();
         } catch (error) {
-            console.error('Error updating cart product quantity:', error);
             this.showToast('Không thể cập nhật số lượng sản phẩm', 'error');
         }
     }
@@ -568,12 +549,6 @@ class CartPage {
             const cartItem = $(`.cart-item[data-cart-product-id="${cartProductId}"]`);
             const currentQuantity = parseInt(cartItem.find('.quantity-input').val()) || 1;
             
-            console.log('Updating cart product selection:', {
-                cartProductId,
-                isSelected,
-                currentQuantity,
-                cartId: this.cartId
-            });
             
             const response = await this.apiCall(
                 `/CartProduct/${this.cartId}/${cartProductId}`,
@@ -584,15 +559,12 @@ class CartPage {
                 }
             );
             
-            console.log('Update response:', response);
-            
             // Cập nhật dữ liệu local
             const localCartItem = this.cartItems.find(item => item.idCartProduct === cartProductId);
             if (localCartItem) {
                 localCartItem.choose = isSelected;
             }
         } catch (error) {
-            console.error('Error updating cart product selection:', error);
             this.showToast('Không thể cập nhật trạng thái chọn sản phẩm', 'error');
         }
     }
@@ -611,7 +583,6 @@ class CartPage {
             this.removeItemWithAnimation(cartItemElement);
             
         } catch (error) {
-            console.error('Error removing cart product:', error);
             this.showToast('Không thể xóa sản phẩm khỏi giỏ hàng', 'error');
         }
     }

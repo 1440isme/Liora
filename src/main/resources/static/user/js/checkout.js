@@ -93,7 +93,6 @@ class CheckoutPage {
                 this.showEmptyCheckout();
             }
         } catch (error) {
-            console.error('Error loading checkout data:', error);
             this.showToast('Không thể tải thông tin thanh toán', 'error');
             this.showEmptyCheckout();
         } finally {
@@ -110,7 +109,6 @@ class CheckoutPage {
             // Load addresses after user info is loaded
             await this.loadAddresses();
         } catch (error) {
-            console.log('User not logged in, showing login prompt');
             this.renderLoginPrompt();
         }
     }
@@ -138,7 +136,7 @@ class CheckoutPage {
                 this.fillAddressToForm(addresses[0]);
             }
         } catch (error) {
-            console.error('Error loading addresses:', error);
+            this.showToast('Không thể tải danh sách địa chỉ', 'error');
         }
     }
 
@@ -306,7 +304,7 @@ class CheckoutPage {
                 throw new Error('Dữ liệu tỉnh/thành không hợp lệ');
             }
         } catch (e) {
-            console.error('Lỗi tải tỉnh/thành:', e);
+            this.showToast('Lỗi tải tỉnh/thành', 'error');
             provinceSelect.innerHTML = '<option value="">Không có dữ liệu tỉnh/thành</option>';
         }
     }
@@ -355,7 +353,7 @@ class CheckoutPage {
             }
             wardSelect.disabled = false;
         } catch (e) {
-            console.error('Lỗi tải phường/xã:', e);
+            this.showToast('Lỗi tải phường/xã', 'error');
             wardSelect.innerHTML = '<option value="">Không có dữ liệu phường/xã</option>';
             wardSelect.disabled = true;
         }
@@ -392,7 +390,7 @@ class CheckoutPage {
             this.currentEditingAddressId = id;
             this.showEditAddressModal(address);
         } catch (error) {
-            console.error('Error loading address:', error);
+            this.showToast('Lỗi tải địa chỉ', 'error');
             this.showToast('Không thể tải thông tin địa chỉ', 'error');
         }
     }
@@ -413,7 +411,7 @@ class CheckoutPage {
             this.closeAddAddressModal();
             this.closeEditAddressModal();
         } catch (error) {
-            console.error('Error deleting address:', error);
+            this.showToast('Lỗi xóa địa chỉ', 'error');
             this.showToast('Không thể xóa địa chỉ', 'error');
         }
     }
@@ -589,7 +587,7 @@ class CheckoutPage {
                 throw new Error('Dữ liệu tỉnh/thành không hợp lệ');
             }
         } catch (e) {
-            console.error('Lỗi tải tỉnh/thành:', e);
+            this.showToast('Lỗi tải tỉnh/thành', 'error');
             provinceSelect.innerHTML = '<option value="">Không có dữ liệu tỉnh/thành</option>';
         }
     }
@@ -646,7 +644,7 @@ class CheckoutPage {
                 throw new Error('Dữ liệu tỉnh/thành không hợp lệ');
             }
         } catch (e) {
-            console.error('Lỗi tải tỉnh/thành:', e);
+            this.showToast('Lỗi tải tỉnh/thành', 'error');
             provinceSelect.innerHTML = '<option value="">Không có dữ liệu tỉnh/thành</option>';
         }
     }
@@ -689,7 +687,7 @@ class CheckoutPage {
             }
             wardSelect.disabled = false;
         } catch (e) {
-            console.error('Lỗi tải phường/xã:', e);
+            this.showToast('Lỗi tải phường/xã', 'error');
             wardSelect.innerHTML = '<option value="">Không có dữ liệu phường/xã</option>';
         }
     }
@@ -730,7 +728,7 @@ class CheckoutPage {
             }
             wardSelect.disabled = false;
         } catch (e) {
-            console.error('Lỗi tải phường/xã:', e);
+            this.showToast('Lỗi tải phường/xã', 'error');
             wardSelect.innerHTML = '<option value="">Không có dữ liệu phường/xã</option>';
             wardSelect.disabled = true;
         }

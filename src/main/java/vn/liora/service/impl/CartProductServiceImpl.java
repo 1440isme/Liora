@@ -135,21 +135,17 @@ public class CartProductServiceImpl implements ICartProductService {
         Cart cart = cartRepository.findById(idCart)
                 .orElseThrow(() -> new AppException(ErrorCode.CART_NOT_FOUND));
 
-        // Lấy các sản phẩm đã chọn trong giỏ
-        List<CartProduct> selectedProducts = cartProductRepository.findByCartAndChooseTrue(cart);
+        // Sử dụng query tối ưu để tránh N+1 problem
+        List<CartProduct> selectedProducts = cartProductRepository.findByCartAndChooseTrueWithProduct(cart);
 
-        // Map sang DTO
-        List<CartProductResponse> responses = cartProductMapper.toCartProductResponseList(selectedProducts);
-        
-        // Set main image URL for each response
-        for (int i = 0; i < responses.size(); i++) {
-            CartProductResponse response = responses.get(i);
-            CartProduct cartProduct = selectedProducts.get(i);
-            String mainImageUrl = getMainImageUrl(cartProduct.getProduct());
-            response.setMainImageUrl(mainImageUrl);
-        }
-        
-        return responses;
+        // Map sang DTO và set image URL in one pass
+        return selectedProducts.stream()
+                .map(cartProduct -> {
+                    CartProductResponse response = cartProductMapper.toCartProductResponse(cartProduct);
+                    response.setMainImageUrl(getMainImageUrl(cartProduct.getProduct()));
+                    return response;
+                })
+                .toList();
     }
 
     @Override
@@ -157,10 +153,9 @@ public class CartProductServiceImpl implements ICartProductService {
         Cart cart = cartRepository.findById(cartId)
                 .orElseThrow(() -> new AppException(ErrorCode.CART_NOT_FOUND));
 
-        List<CartProduct> cartProducts = cartProductRepository.findByCart(cart);
-        return cartProducts.stream()
-                .mapToDouble(cp -> cp.getTotalPrice().doubleValue())
-                .sum();
+        // Sử dụng query tối ưu thay vì load tất cả CartProduct
+        BigDecimal total = cartProductRepository.getCartTotalAmount(cart);
+        return total != null ? total.doubleValue() : 0.0;
     }
 
     @Override
@@ -168,10 +163,9 @@ public class CartProductServiceImpl implements ICartProductService {
         Cart cart = cartRepository.findById(cartId)
                 .orElseThrow(() -> new AppException(ErrorCode.CART_NOT_FOUND));
 
-        List<CartProduct> cartProducts = cartProductRepository.findByCart(cart);
-        return cartProducts.stream()
-                .mapToInt(CartProduct::getQuantity)
-                .sum();
+        // Sử dụng query tối ưu thay vì load tất cả CartProduct
+        Long count = cartProductRepository.getCartItemCount(cart);
+        return count != null ? count.intValue() : 0;
     }
 
     @Override
@@ -179,18 +173,17 @@ public class CartProductServiceImpl implements ICartProductService {
         Cart cart = cartRepository.findById(cartId)
                 .orElseThrow(() -> new AppException(ErrorCode.CART_NOT_FOUND));
 
-        List<CartProduct> cartProducts = cartProductRepository.findByCart(cart);
-        List<CartProductResponse> responses = cartProductMapper.toCartProductResponseList(cartProducts);
+        // Sử dụng query tối ưu để tránh N+1 problem
+        List<CartProduct> cartProducts = cartProductRepository.findByCartWithProduct(cart);
         
-        // Set main image URL for each response
-        for (int i = 0; i < responses.size(); i++) {
-            CartProductResponse response = responses.get(i);
-            CartProduct cartProduct = cartProducts.get(i);
-            String mainImageUrl = getMainImageUrl(cartProduct.getProduct());
-            response.setMainImageUrl(mainImageUrl);
-        }
-        
-        return responses;
+        // Map sang DTO và set image URL in one pass
+        return cartProducts.stream()
+                .map(cartProduct -> {
+                    CartProductResponse response = cartProductMapper.toCartProductResponse(cartProduct);
+                    response.setMainImageUrl(getMainImageUrl(cartProduct.getProduct()));
+                    return response;
+                })
+                .toList();
     }
     
     private String getMainImageUrl(Product product) {

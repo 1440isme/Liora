@@ -5,7 +5,6 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import vn.liora.dto.request.CartProductCreationRequest;
@@ -20,9 +19,7 @@ import java.util.List;
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Slf4j
-
 public class CartProductController {
-    @Autowired
     ICartProductService cartProductService;
     @PostMapping
     public ResponseEntity<CartProductResponse> addProductToCart(
@@ -66,7 +63,4 @@ public class CartProductController {
         cartProductService.removeProductsInCart(idCart, null);
         return ResponseEntity.ok().build();
     }
-
 }
-
-

@@ -16,6 +16,7 @@ class UserInfoManager {
     init() {
         this.loadUserInfo();
         this.bindEvents();
+        this.handleHashNavigation();
         // Dọn dẹp cache hết hạn mỗi 1 phút
         setInterval(() => this.clearExpiredCache(), 60000);
     }
@@ -80,6 +81,7 @@ class UserInfoManager {
             } catch (_) { }
 
             this.populateUserData();
+            this.loadOrderStats();
         } catch (error) {
             console.error('Error loading user info:', error);
             this.showError('Không thể tải thông tin người dùng');
@@ -155,6 +157,11 @@ class UserInfoManager {
         const tabButtons = document.querySelectorAll('[data-bs-toggle="tab"]');
         tabButtons.forEach(button => {
             button.addEventListener('click', (e) => this.handleTabSwitch(e));
+        });
+
+        // Hash change event
+        window.addEventListener('hashchange', () => {
+            this.handleHashNavigation();
         });
 
         // Add Address modal events - Custom modal không cần Bootstrap events
@@ -290,18 +297,302 @@ class UserInfoManager {
         }
     }
 
+    handleHashNavigation() {
+        const hash = window.location.hash;
+        if (hash === '#orders') {
+            // Tìm và click vào tab orders
+            const ordersTab = document.querySelector('[data-bs-target="#orders"]');
+            if (ordersTab) {
+                ordersTab.click();
+            }
+        } else if (hash === '#address') {
+            // Tìm và click vào tab address
+            const addressTab = document.querySelector('[data-bs-target="#address"]');
+            if (addressTab) {
+                addressTab.click();
+            }
+        }
+    }
+
     async loadOrders() {
-        // Mock data for now - replace with actual API call
         const ordersContainer = document.getElementById('ordersList');
         if (!ordersContainer) return;
 
-        ordersContainer.innerHTML = `
-            <div class="empty-state">
-                <i class="fas fa-shopping-bag"></i>
-                <h5>Chưa có đơn hàng nào</h5>
-                <p>Hãy mua sắm để xem lịch sử đơn hàng của bạn</p>
+        try {
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                this.showError('Vui lòng đăng nhập để xem lịch sử đơn hàng');
+                return;
+            }
+
+            // Show loading state
+            ordersContainer.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <h5>Đang tải đơn hàng...</h5>
+                    <p>Vui lòng chờ trong giây lát</p>
+                </div>
+            `;
+
+            const response = await fetch('/users/myOrdersWithProducts', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    this.showError('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+                    return;
+                }
+                throw new Error('Failed to load orders');
+            }
+
+            const data = await response.json();
+            console.log('Orders API response:', data);
+            const ordersWithProducts = data.result || [];
+
+            if (ordersWithProducts.length === 0) {
+                ordersContainer.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-shopping-bag"></i>
+                        <h5>Chưa có đơn hàng nào</h5>
+                        <p>Hãy mua sắm để xem lịch sử đơn hàng của bạn</p>
+                        <a href="/products" class="btn btn-primary">Mua sắm ngay</a>
+                    </div>
+                `;
+            } else {
+                ordersContainer.innerHTML = ordersWithProducts.map(orderWithProduct => this.createCompactOrderCard(orderWithProduct)).join('');
+            }
+
+        } catch (error) {
+            this.showToast('Không thể tải lịch sử đơn hàng', 'error');
+            ordersContainer.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <h5>Lỗi tải đơn hàng</h5>
+                    <p>Vui lòng thử lại sau</p>
+                    <button class="btn btn-primary" onclick="userInfoManager.loadOrders()">Thử lại</button>
+                </div>
+            `;
+        }
+    }
+
+    createCompactOrderCard(orderWithProduct) {
+        const order = orderWithProduct.order;
+        const firstProduct = orderWithProduct.firstProduct;
+        const totalProducts = orderWithProduct.totalProducts;
+        
+        const orderDate = new Date(order.orderDate).toLocaleDateString('vi-VN');
+        const totalAmount = new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND'
+        }).format(order.total);
+
+        const statusClass = this.getOrderStatusClass(order.orderStatus);
+        const statusText = this.getOrderStatusText(order.orderStatus);
+
+        return `
+            <div class="compact-order-card clickable-order" data-order-id="${order.idOrder}" onclick="userInfoManager.viewOrderDetail(${order.idOrder})">
+                <div class="compact-order-header">
+                    <div class="order-basic-info">
+                        <h5 class="order-id">Đơn hàng #${order.idOrder}</h5>
+                        <p class="order-date">
+                            <i class="fas fa-calendar"></i>
+                            ${orderDate}
+                        </p>
+                    </div>
+                    <div class="order-status">
+                        <span class="status-badge ${statusClass}">${statusText}</span>
+                    </div>
+                </div>
+                
+                <div class="compact-order-content">
+                    <div class="product-preview">
+                        ${firstProduct ? `
+                        <div class="product-sample">
+                            <img src="${firstProduct.mainImageUrl || 'https://placehold.co/60x60'}" 
+                                 alt="${firstProduct.productName}" 
+                                 class="product-image">
+                            <div class="product-info">
+                                <h6 class="product-name">${firstProduct.productName}</h6>
+                                <p class="product-quantity">Số lượng: ${firstProduct.quantity}</p>
+                            </div>
+                        </div>
+                        ` : `
+                        <div class="no-product">
+                            <i class="fas fa-box-open"></i>
+                            <span>Không có sản phẩm</span>
+                        </div>
+                        `}
+                    </div>
+                    
+                    <div class="order-summary-compact">
+                        <div class="total-info">
+                            <span class="total-amount">${totalAmount}</span>
+                            <span class="product-count">(${totalProducts} sản phẩm)</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="compact-order-actions">
+                    <div class="click-hint">
+                        <i class="fas fa-mouse-pointer"></i>
+                        <span>Click để xem chi tiết</span>
+                    </div>
+                    ${order.orderStatus === 'COMPLETED' || order.orderStatus === 'CANCELLED' ? `
+                    <button class="btn btn-outline-success btn-sm" onclick="event.stopPropagation(); userInfoManager.reorder(${order.idOrder})">
+                        <i class="fas fa-redo"></i> Mua lại
+                    </button>
+                    ` : ''}
+                </div>
             </div>
         `;
+    }
+
+    createOrderCard(order) {
+        const orderDate = new Date(order.orderDate).toLocaleDateString('vi-VN');
+        const totalAmount = new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND'
+        }).format(order.total);
+
+        const statusClass = this.getOrderStatusClass(order.orderStatus);
+        const statusText = this.getOrderStatusText(order.orderStatus);
+
+        return `
+            <div class="order-card" data-order-id="${order.idOrder}">
+                <div class="order-header">
+                    <div class="order-info">
+                        <h5 class="order-id">Đơn hàng #${order.idOrder}</h5>
+                        <p class="order-date">
+                            <i class="fas fa-calendar"></i>
+                            ${orderDate}
+                        </p>
+                    </div>
+                    <div class="order-status">
+                        <span class="status-badge ${statusClass}">${statusText}</span>
+                    </div>
+                </div>
+                
+                <div class="order-details">
+                    <div class="order-summary">
+                        <div class="summary-item">
+                            <span class="label">Phương thức thanh toán:</span>
+                            <span class="value">${order.paymentMethod}</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="label">Địa chỉ giao hàng:</span>
+                            <span class="value">${order.addressDetail}</span>
+                        </div>
+                        ${order.note ? `
+                        <div class="summary-item">
+                            <span class="label">Ghi chú:</span>
+                            <span class="value">${order.note}</span>
+                        </div>
+                        ` : ''}
+                    </div>
+                    
+                    <div class="order-total">
+                        <span class="total-label">Tổng tiền:</span>
+                        <span class="total-amount">${totalAmount}</span>
+                    </div>
+                </div>
+                
+                <div class="order-actions">
+                    <button class="btn btn-outline-primary btn-sm" onclick="userInfoManager.viewOrderDetail(${order.idOrder})">
+                        <i class="fas fa-eye"></i> Xem chi tiết
+                    </button>
+                    ${order.orderStatus === 'COMPLETED' || order.orderStatus === 'CANCELLED' ? `
+                    <button class="btn btn-outline-success btn-sm" onclick="userInfoManager.reorder(${order.idOrder})">
+                        <i class="fas fa-redo"></i> Mua lại
+                    </button>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }
+
+    getOrderStatusClass(status) {
+        const statusMap = {
+            'PENDING': 'status-pending',
+            'COMPLETED': 'status-completed',
+            'CANCELLED': 'status-cancelled'
+        };
+        return statusMap[status] || 'status-pending';
+    }
+
+    getOrderStatusText(status) {
+        const statusMap = {
+            'PENDING': 'Chờ xử lý',
+            'COMPLETED': 'Hoàn tất',
+            'CANCELLED': 'Đã hủy'
+        };
+        return statusMap[status] || status;
+    }
+
+    async viewOrderDetail(orderId) {
+        // Chuyển đến trang chi tiết đơn hàng
+        window.location.href = `/user/order-detail/${orderId}`;
+    }
+
+    async reorder(orderId) {
+        // TODO: Implement reorder functionality
+        this.showToast('Tính năng mua lại sẽ được cập nhật sớm', 'info');
+    }
+
+
+    async loadOrderStats() {
+        try {
+            const token = localStorage.getItem('access_token');
+            if (!token) return;
+
+            const response = await fetch('/users/orderStats', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) return;
+
+            const data = await response.json();
+            console.log('Order stats API response:', data);
+            const stats = data.result;
+
+            // Update profile stats
+            const totalOrdersElement = document.getElementById('totalOrders');
+            const totalSpentElement = document.getElementById('totalSpent');
+            const memberSinceElement = document.getElementById('memberSince');
+
+            if (totalOrdersElement) {
+                totalOrdersElement.textContent = stats.totalOrders || 0;
+            }
+
+            if (totalSpentElement) {
+                const totalSpent = stats.totalSpent || 0;
+                totalSpentElement.textContent = new Intl.NumberFormat('vi-VN', {
+                    style: 'currency',
+                    currency: 'VND',
+                    minimumFractionDigits: 0
+                }).format(totalSpent);
+            }
+
+            if (memberSinceElement && this.currentUser?.createdDate) {
+                const createdDate = new Date(this.currentUser.createdDate);
+                memberSinceElement.textContent = createdDate.toLocaleDateString('vi-VN', {
+                    year: 'numeric',
+                    month: 'long'
+                });
+            }
+
+        } catch (error) {
+            // Silently fail for stats - not critical
+            console.log('Could not load order stats:', error);
+        }
     }
 
     async loadAddresses() {
