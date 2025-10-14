@@ -51,7 +51,63 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     
     @Query("SELECT r FROM Review r WHERE LOWER(r.content) LIKE LOWER(CONCAT('%', :keyword, '%'))")
     Page<Review> findByContentContainingIgnoreCase(@Param("keyword") String keyword, Pageable pageable);
-    
-    // Note: findByUserId và findByProductId đã được khai báo ở trên (dòng 18-21)
-    // Admin có thể sử dụng các method đó để xem tất cả review (bao gồm cả ẩn)
+
+    // ====== ADMIN FILTER QUERIES ======
+    @Query("SELECT r FROM Review r " +
+            "JOIN r.orderProduct op " +
+            "JOIN op.product p " +
+            "WHERE (:search IS NULL OR LOWER(r.content) LIKE LOWER(CONCAT('%', :search, '%'))) " +
+            "AND (:rating IS NULL OR r.rating = :rating) " +
+            "AND (:brandId IS NULL OR p.brand.brandId = :brandId) " +
+            "AND (:categoryId IS NULL OR p.category.categoryId = :categoryId) " +
+            "AND (:productId IS NULL OR r.productId = :productId) " +
+            "AND (:isVisible IS NULL OR r.isVisible = :isVisible)")
+    Page<Review> findAllReviewsWithFilters(
+            @Param("search") String search,
+            @Param("rating") Integer rating,
+            @Param("brandId") Long brandId,
+            @Param("categoryId") Long categoryId,
+            @Param("productId") Long productId,
+            @Param("isVisible") Boolean isVisible,
+            Pageable pageable);
+
+    @Query("SELECT AVG(r.rating) FROM Review r " +
+            "JOIN r.orderProduct op " +
+            "JOIN op.product p " +
+            "WHERE (:rating IS NULL OR r.rating = :rating) " +
+            "AND (:brandId IS NULL OR p.brand.brandId = :brandId) " +
+            "AND (:categoryId IS NULL OR p.category.categoryId = :categoryId) " +
+            "AND (:productId IS NULL OR r.productId = :productId)")
+    Double getAverageRatingWithFilters(
+            @Param("rating") Integer rating,
+            @Param("brandId") Long brandId,
+            @Param("categoryId") Long categoryId,
+            @Param("productId") Long productId);
+
+    @Query("SELECT COUNT(r) FROM Review r " +
+            "JOIN r.orderProduct op " +
+            "JOIN op.product p " +
+            "WHERE (:rating IS NULL OR r.rating = :rating) " +
+            "AND (:brandId IS NULL OR p.brand.brandId = :brandId) " +
+            "AND (:categoryId IS NULL OR p.category.categoryId = :categoryId) " +
+            "AND (:productId IS NULL OR r.productId = :productId)")
+    Long getReviewCountWithFilters(
+            @Param("rating") Integer rating,
+            @Param("brandId") Long brandId,
+            @Param("categoryId") Long categoryId,
+            @Param("productId") Long productId);
+
+    @Query("SELECT COUNT(r) FROM Review r " +
+            "JOIN r.orderProduct op " +
+            "JOIN op.product p " +
+            "WHERE r.rating = 5 " +
+            "AND (:rating IS NULL OR r.rating = :rating) " +
+            "AND (:brandId IS NULL OR p.brand.brandId = :brandId) " +
+            "AND (:categoryId IS NULL OR p.category.categoryId = :categoryId) " +
+            "AND (:productId IS NULL OR r.productId = :productId)")
+    Long getFiveStarReviewCountWithFilters(
+            @Param("rating") Integer rating,
+            @Param("brandId") Long brandId,
+            @Param("categoryId") Long categoryId,
+            @Param("productId") Long productId);
 }

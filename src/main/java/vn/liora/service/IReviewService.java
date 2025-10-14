@@ -8,6 +8,7 @@ import vn.liora.dto.response.ReviewResponse;
 import vn.liora.entity.Review;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public interface IReviewService {
@@ -55,4 +56,26 @@ public interface IReviewService {
     ReviewResponse toggleReviewVisibility(Long reviewId);
     ReviewResponse hideReview(Long reviewId);
     ReviewResponse showReview(Long reviewId);
+
+    // ========== ADMIN FUNCTIONS WITH FILTERS ==========
+    Page<ReviewResponse> findAllReviewsForAdminWithFilters(
+            Pageable pageable,
+            String search,
+            Integer rating,
+            Long brandId,
+            Long categoryId,
+            Long productId,
+            Boolean isVisible);
+
+    Map<String, Object> getReviewStatistics(
+            Integer rating,
+            Long brandId,
+            Long categoryId,
+            Long productId);
+
+    List<Map<String, Object>> getBrandsForFilter();
+    List<Map<String, Object>> getCategoriesForFilter();
+    List<Map<String, Object>> getProductsForFilter(Long brandId, Long categoryId);
+
+    void updateReviewVisibility(Long reviewId, Boolean isVisible);
 }

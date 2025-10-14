@@ -18,9 +18,10 @@ import vn.liora.exception.ErrorCode;
 import vn.liora.mapper.OrderMapper;
 import vn.liora.mapper.OrderProductMapper;
 import vn.liora.repository.*;
-import vn.liora.service.IDiscountService;
 import vn.liora.service.IImageService;
 import vn.liora.service.IOrderService;
+import vn.liora.entity.Discount;
+import vn.liora.repository.DiscountRepository;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -47,14 +48,15 @@ public class OrderServiceImpl implements IOrderService {
     @Transactional
 
     public OrderResponse createOrder(Long userId,OrderCreationRequest request) {
-
+        try {
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
             Cart cart = cartRepository.findByUser(user)
                     .orElseThrow(() -> new AppException(ErrorCode.CART_NOT_FOUND));
             List<CartProduct> selected = cartProductRepository.findByCartAndChooseTrue(cart);
-            if (selected.isEmpty())
+            if (selected.isEmpty()) {
                 throw new AppException(ErrorCode.NO_SELECTED_PRODUCT);
+            }
 
             Order order = orderMapper.toOrder(request);
             Address address = addressRepository.findById(request.getIdAddress())
@@ -63,29 +65,73 @@ public class OrderServiceImpl implements IOrderService {
             order.setUser(user);
             order.setOrderDate(LocalDateTime.now());
             order.setOrderStatus("Pending");
-            order.setTotalDiscount(BigDecimal.ZERO);
-            order.setTotal(BigDecimal.ZERO);
+
+            List<OrderProduct> orderProducts = selected.stream()
+                    .map(cp -> {
+                        OrderProduct op = orderProductMapper.toOrderProduct(cp);
+                        op.setOrder(order);
+                        return op;
+                    })
+                    .collect(Collectors.toList());
+
+            BigDecimal subtotal = orderProducts.stream()
+                    .map(OrderProduct::getTotalPrice)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            BigDecimal totalDiscount = BigDecimal.ZERO;
+            BigDecimal total = subtotal;
+
+            if (request.getDiscountId() != null) {
+                try {
+                    // Kiểm tra discount có tồn tại không
+                    Discount discount = discountRepository.findById(request.getDiscountId())
+                            .orElseThrow(() -> new AppException(ErrorCode.DISCOUNT_NOT_FOUND));
+
+                    // Kiểm tra có thể áp dụng discount không
+                    if (discountService.canApplyDiscount(request.getDiscountId(), userId, subtotal)) {
+                        // Tính discount amount
+                        totalDiscount = discountService.calculateDiscountAmount(request.getDiscountId(), subtotal);
+                        total = subtotal.subtract(totalDiscount);
+
+                        // Set discount cho order
+                        order.setDiscount(discount);
+
+                        // Tăng usage count
+                        discountService.incrementUsageCount(request.getDiscountId());
+
+                        log.info("Applied discount {} to order. Discount amount: {}",
+                                request.getDiscountId(), totalDiscount);
+                    } else {
+                        log.warn("Cannot apply discount {} to order. User: {}, Subtotal: {}",
+                                request.getDiscountId(), userId, subtotal);
+                    }
+                } catch (Exception e) {
+                    log.warn("Error applying discount {}: {}. Order will be created without discount.",
+                            request.getDiscountId(), e.getMessage());
+                    // Nếu không áp dụng được discount, vẫn tạo đơn hàng bình thường
+                }
+            }
+
+            // 9. Set tổng tiền cho order
+            order.setTotalDiscount(totalDiscount);
+            order.setTotal(total);
+
             final Order savedOrder = orderRepository.save(order);
+            orderProducts.forEach(op -> op.setOrder(savedOrder));
+            orderProductRepository.saveAll(orderProducts);
+            cartProductRepository.deleteAll(selected);
+            log.info("Order created successfully. Order ID: {}, User: {}, Total: {}, Discount: {}",
+                    savedOrder.getIdOrder(), userId, total, totalDiscount);
 
-        List<OrderProduct> orderProducts = selected.stream()
-                .map(cp -> {
-                    OrderProduct op = orderProductMapper.toOrderProduct(cp);
-                    op.setOrder(savedOrder);
-                    return op;
-                })
-                .collect(Collectors.toList());
+            return orderMapper.toOrderResponse(savedOrder);
 
-        BigDecimal subtotal = orderProducts.stream()
-                .map(OrderProduct::getTotalPrice)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-        BigDecimal total = subtotal
-                .subtract(order.getTotalDiscount());
-        order.setTotal(total);
-
-        order = orderRepository.save(order);
-        orderProductRepository.saveAll(orderProducts);
-        cartProductRepository.deleteAll(selected);
-        return orderMapper.toOrderResponse(order);
+        } catch (AppException e) {
+            log.error("AppException in createOrder: {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("Unexpected error in createOrder: ", e);
+            throw new AppException(ErrorCode.INTERNAL_SERVER_ERROR);
+        }
     }
 
     @Autowired

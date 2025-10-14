@@ -1,6 +1,7 @@
 package vn.liora.controller.admin;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -11,126 +12,155 @@ import org.springframework.web.bind.annotation.*;
 import vn.liora.dto.response.ReviewResponse;
 import vn.liora.service.IReviewService;
 
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
-@RequestMapping("/admin/reviews")
+@RequestMapping("/admin/api/reviews")
 @CrossOrigin(origins = "*")
+@RequiredArgsConstructor
+@Slf4j
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminReviewController {
-    
-    @Autowired
-    private IReviewService reviewService;
-    
-    // ========== ADMIN REVIEW MANAGEMENT ==========
-    
+
+    private final IReviewService reviewService;
+
     /**
-     * Lấy tất cả review (bao gồm cả ẩn) - Admin only
+     * Lấy danh sách review với phân trang và lọc
      */
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<ReviewResponse>> getAllReviews(
+    public ResponseEntity<Map<String, Object>> getReviews(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "desc") String sortDir) {
-        
-        Sort sort = sortDir.equalsIgnoreCase("desc") ? 
-            Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
-        Pageable pageable = PageRequest.of(page, size, sort);
-        
-        Page<ReviewResponse> reviewPage = reviewService.findAllReviewsForAdmin(pageable);
-        return ResponseEntity.ok(reviewPage.getContent());
+            @RequestParam(defaultValue = "desc") String sortDir,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Integer rating,
+            @RequestParam(required = false) Long brandId,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) Long productId,
+            @RequestParam(required = false) Boolean isVisible) {
+
+        try {
+            // Tạo Pageable
+            Sort sort = sortDir.equalsIgnoreCase("desc") ?
+                    Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+            Pageable pageable = PageRequest.of(page, size, sort);
+
+            // Gọi service để lấy dữ liệu
+            Page<ReviewResponse> reviews = reviewService.findAllReviewsForAdminWithFilters(
+                    pageable, search, rating, brandId, categoryId, productId, isVisible);
+
+            // Tạo response
+            Map<String, Object> response = new HashMap<>();
+            response.put("reviews", reviews.getContent());
+            response.put("currentPage", reviews.getNumber());
+            response.put("totalItems", reviews.getTotalElements());
+            response.put("totalPages", reviews.getTotalPages());
+            response.put("pageSize", reviews.getSize());
+            response.put("hasNext", reviews.hasNext());
+            response.put("hasPrevious", reviews.hasPrevious());
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Error getting reviews: ", e);
+            return ResponseEntity.internalServerError().build();
+        }
     }
-    
+
     /**
-     * Tìm kiếm review theo keyword - Admin only
+     * Lấy thống kê review
      */
-    @GetMapping("/search")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<ReviewResponse>> searchReviews(
-            @RequestParam String keyword,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
-            @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "desc") String sortDir) {
-        
-        Sort sort = sortDir.equalsIgnoreCase("desc") ? 
-            Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
-        Pageable pageable = PageRequest.of(page, size, sort);
-        
-        Page<ReviewResponse> reviewPage = reviewService.searchReviewsByContent(keyword, pageable);
-        return ResponseEntity.ok(reviewPage.getContent());
+    @GetMapping("/statistics")
+    public ResponseEntity<Map<String, Object>> getReviewStatistics(
+            @RequestParam(required = false) Integer rating,
+            @RequestParam(required = false) Long brandId,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) Long productId) {
+
+        try {
+            Map<String, Object> statistics = reviewService.getReviewStatistics(
+                    rating, brandId, categoryId, productId);
+            return ResponseEntity.ok(statistics);
+        } catch (Exception e) {
+            log.error("Error getting review statistics: ", e);
+            return ResponseEntity.internalServerError().build();
+        }
     }
-    
+
     /**
-     * Lấy review theo user ID - Admin only
+     * Lấy chi tiết review
      */
-    @GetMapping("/user/{userId}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<ReviewResponse>> getReviewsByUser(
-            @PathVariable Long userId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        Page<ReviewResponse> reviewPage = reviewService.findReviewsByUserForAdmin(userId, pageable);
-        return ResponseEntity.ok(reviewPage.getContent());
+    @GetMapping("/{id}")
+    public ResponseEntity<ReviewResponse> getReviewById(@PathVariable Long id) {
+        try {
+            ReviewResponse review = reviewService.findById(id);
+            return ResponseEntity.ok(review);
+        } catch (Exception e) {
+            log.error("Error getting review by id: ", e);
+            return ResponseEntity.notFound().build();
+        }
     }
-    
+
     /**
-     * Lấy review theo product ID - Admin only
+     * Cập nhật trạng thái hiển thị review
      */
-    @GetMapping("/product/{productId}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<ReviewResponse>> getReviewsByProduct(
-            @PathVariable Long productId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        Page<ReviewResponse> reviewPage = reviewService.findReviewsByProductForAdmin(productId, pageable);
-        return ResponseEntity.ok(reviewPage.getContent());
+    @PutMapping("/{id}/visibility")
+    public ResponseEntity<Map<String, Object>> updateReviewVisibility(
+            @PathVariable Long id,
+            @RequestParam Boolean isVisible) {
+        try {
+            reviewService.updateReviewVisibility(id, isVisible);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", isVisible ? "Review đã được hiển thị" : "Review đã được ẩn");
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Error updating review visibility: ", e);
+            return ResponseEntity.internalServerError().build();
+        }
     }
-    
-    // ========== REVIEW VISIBILITY MANAGEMENT ==========
-    
+
     /**
-     * Toggle visibility của review - Admin only
+     * Lấy danh sách brands cho filter
      */
-    @PutMapping("/{reviewId}/toggle-visibility")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ReviewResponse> toggleReviewVisibility(@PathVariable Long reviewId) {
-        ReviewResponse response = reviewService.toggleReviewVisibility(reviewId);
-        return ResponseEntity.ok(response);
+    @GetMapping("/brands")
+    public ResponseEntity<?> getBrands() {
+        try {
+            return ResponseEntity.ok(reviewService.getBrandsForFilter());
+        } catch (Exception e) {
+            log.error("Error getting brands: ", e);
+            return ResponseEntity.internalServerError().build();
+        }
     }
-    
+
     /**
-     * Ẩn review - Admin only
+     * Lấy danh sách categories cho filter
      */
-    @PutMapping("/{reviewId}/hide")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ReviewResponse> hideReview(@PathVariable Long reviewId) {
-        ReviewResponse response = reviewService.hideReview(reviewId);
-        return ResponseEntity.ok(response);
+    @GetMapping("/categories")
+    public ResponseEntity<?> getCategories() {
+        try {
+            return ResponseEntity.ok(reviewService.getCategoriesForFilter());
+        } catch (Exception e) {
+            log.error("Error getting categories: ", e);
+            return ResponseEntity.internalServerError().build();
+        }
     }
-    
+
     /**
-     * Hiện review - Admin only
+     * Lấy danh sách products cho filter
      */
-    @PutMapping("/{reviewId}/show")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ReviewResponse> showReview(@PathVariable Long reviewId) {
-        ReviewResponse response = reviewService.showReview(reviewId);
-        return ResponseEntity.ok(response);
-    }
-    
-    /**
-     * Xóa review - Admin only
-     */
-    @DeleteMapping("/{reviewId}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> deleteReview(@PathVariable Long reviewId) {
-        reviewService.deleteById(reviewId);
-        return ResponseEntity.noContent().build();
+    @GetMapping("/products")
+    public ResponseEntity<?> getProducts(
+            @RequestParam(required = false) Long brandId,
+            @RequestParam(required = false) Long categoryId) {
+        try {
+            return ResponseEntity.ok(reviewService.getProductsForFilter(brandId, categoryId));
+        } catch (Exception e) {
+            log.error("Error getting products: ", e);
+            return ResponseEntity.internalServerError().build();
+        }
     }
 }
