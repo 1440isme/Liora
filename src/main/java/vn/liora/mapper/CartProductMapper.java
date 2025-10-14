@@ -33,5 +33,6 @@ public interface CartProductMapper {
     @Mapping(target = "cart", ignore = true)
     @Mapping(target = "product", ignore = true)
     @Mapping(target = "totalPrice", ignore = true)
+    @Mapping(target = "choose", ignore = true)
     void updateCartProduct(@MappingTarget CartProduct cartProduct, CartProductUpdateRequest request);
 }

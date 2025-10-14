@@ -68,6 +68,7 @@ class CheckoutPage {
 
         // Delete item
         $(document).on('click', '.btn-delete', (e) => {
+            console.log('Delete button clicked!');
             this.handleRemoveItem(e);
         });
     }
@@ -1152,7 +1153,7 @@ class CheckoutPage {
             const response = await this.apiCall(
                 `/CartProduct/${this.cartId}/${cartProductId}`,
                 'PUT',
-                { quantity: quantity }
+                { quantity: quantity, choose: true }
             );
             
             // Cập nhật dữ liệu local
@@ -1224,12 +1225,24 @@ class CheckoutPage {
 
     enableCheckoutButton() {
         const checkoutBtn = $('button[type="submit"][form="checkoutForm"]');
-        checkoutBtn.prop('disabled', false).removeClass('btn-secondary').addClass('btn-checkout');
+        checkoutBtn.prop('disabled', false).css({
+            'background-color': '',
+            'border-color': '',
+            'color': '',
+            'opacity': '',
+            'cursor': ''
+        });
     }
 
     disableCheckoutButton() {
         const checkoutBtn = $('button[type="submit"][form="checkoutForm"]');
-        checkoutBtn.prop('disabled', true).removeClass('btn-checkout').addClass('btn-secondary');
+        checkoutBtn.prop('disabled', true).css({
+            'background-color': '#6c757d',
+            'border-color': '#6c757d',
+            'color': '#fff',
+            'opacity': '0.65',
+            'cursor': 'not-allowed'
+        });
     }
 
     showEmptyCheckout() {
@@ -1324,6 +1337,23 @@ class CheckoutPage {
         }
 
         return await response.json();
+    }
+
+    navigateToCart(event) {
+        event.preventDefault();
+        
+        // Show loading overlay
+        this.showLoading(true);
+        
+        // Add smooth transition effect
+        $('body').addClass('page-transition');
+        
+        // Navigate after a short delay for smooth effect
+        setTimeout(() => {
+            window.location.href = '/cart';
+        }, 300);
+        
+        return false;
     }
 }
 

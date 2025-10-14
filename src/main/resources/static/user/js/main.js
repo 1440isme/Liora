@@ -1498,61 +1498,15 @@ class LioraApp {
         return product.image || '/uploads/products/default.jpg';
     }
 
-    // Quantity validation methods
-    validateQuantity() {
-        const quantityInput = document.getElementById('quantityInput');
-        const errorDiv = document.getElementById('quantityError');
-        const errorMessage = document.getElementById('quantityErrorMessage');
+    // Smooth navigation method
+    smoothNavigate(url, delay = 300) {
+        // Add smooth transition effect
+        $('body').addClass('page-transition');
         
-        if (!quantityInput || !errorDiv || !errorMessage) return;
-        
-        const currentValue = parseInt(quantityInput.value) || 0;
-        const maxStock = parseInt(quantityInput.getAttribute('max')) || 10;
-        
-        // Allow empty input for better UX (user can clear and type new number)
-        if (quantityInput.value === '' || quantityInput.value === '0') {
-            // Hide error message when input is empty (user is typing)
-            errorDiv.style.display = 'none';
-            quantityInput.classList.remove('is-invalid');
-            return;
-        }
-        
-        if (currentValue > maxStock) {
-            // Show error message
-            errorDiv.style.display = 'block';
-            errorMessage.textContent = `Số lượng tối đa bạn có thể mua là ${maxStock}.`;
-            quantityInput.classList.add('is-invalid');
-            
-            // Reset to max stock
-            quantityInput.value = maxStock;
-        } else if (currentValue < 1) {
-            // Show error for minimum
-            errorDiv.style.display = 'block';
-            errorMessage.textContent = 'Số lượng tối thiểu là 1.';
-            quantityInput.classList.add('is-invalid');
-            
-            // Reset to minimum
-            quantityInput.value = 1;
-        } else {
-            // Hide error message
-            errorDiv.style.display = 'none';
-            quantityInput.classList.remove('is-invalid');
-        }
-    }
-
-    // Handle input blur - validate when user finishes typing
-    validateQuantityOnBlur() {
-        const quantityInput = document.getElementById('quantityInput');
-        if (!quantityInput) return;
-        
-        const currentValue = parseInt(quantityInput.value) || 0;
-        const maxStock = parseInt(quantityInput.getAttribute('max')) || 10;
-        
-        // If input is empty or 0, set to minimum
-        if (quantityInput.value === '' || currentValue < 1) {
-            quantityInput.value = 1;
-            this.validateQuantity();
-        }
+        // Navigate after a short delay for smooth effect
+        setTimeout(() => {
+            window.location.href = url;
+        }, delay);
     }
 
     incrementQuantity() {

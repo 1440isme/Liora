@@ -235,10 +235,19 @@ body {
     color: #b0b0b0;
     cursor: pointer;
     font-size: 14px;
-    padding: 2px;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    outline: none;
+    box-shadow: none;
 }
 .btn-delete:hover {
-    color: #ff6b9d; /* var(--primary-color) */
+    color: #ff6b9d;
+    background-color: rgba(255, 107, 157, 0.1);
+}
+.btn-delete:focus {
+    outline: none;
+    box-shadow: none;
 }
 
 /* --- Nút chọn phiên bản (Variant) --- */
@@ -566,4 +575,18 @@ body {
     color: #ff6b9d;
     font-weight: 500;
     cursor: default;
+}
+
+/* ==========================================
+   PAGE TRANSITIONS
+   ========================================== */
+
+.page-transition {
+    opacity: 0.8;
+    transform: scale(0.98);
+    transition: all 0.3s ease;
+}
+
+.page-transition * {
+    pointer-events: none;
 }

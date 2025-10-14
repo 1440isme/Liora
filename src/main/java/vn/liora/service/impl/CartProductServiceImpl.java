@@ -77,6 +77,11 @@ public class CartProductServiceImpl implements ICartProductService {
         
         cartProductMapper.updateCartProduct(cartProduct, request);
         
+        // Set choose field manually nếu có trong request
+        if (request.getChoose() != null) {
+            cartProduct.setChoose(request.getChoose());
+        }
+        
         // Chỉ tính lại totalPrice nếu quantity thay đổi
         if (request.getQuantity() != null) {
             Product product = cartProduct.getProduct();

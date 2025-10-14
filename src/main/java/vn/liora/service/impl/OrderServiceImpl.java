@@ -5,7 +5,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.liora.dto.request.OrderCreationRequest;
@@ -232,6 +235,23 @@ public class OrderServiceImpl implements IOrderService {
 
         List<Order> orders = orderRepository.findByUserOrderByOrderDateDesc(user);
         return orderMapper.toOrderResponseList(orders);
+    }
+
+    @Override
+    public List<OrderResponse> getMyOrdersPaginated(Long userId, int page, int size) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by("orderDate").descending());
+        Page<Order> orderPage = orderRepository.findByUser(user, pageable);
+        return orderMapper.toOrderResponseList(orderPage.getContent());
+    }
+
+    @Override
+    public Long countMyOrders(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+        return orderRepository.countByUser(user);
     }
 
     @Override

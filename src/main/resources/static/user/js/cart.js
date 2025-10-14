@@ -61,8 +61,9 @@ class CartPage {
         });
 
         // Checkout button
-        $(document).on('click', '#checkoutBtn', () => {
-            window.location.href = '/checkout';
+        $(document).on('click', '#checkoutBtn', (e) => {
+            e.preventDefault();
+            this.navigateToCheckout();
         });
 
         // Apply promo code
@@ -85,6 +86,11 @@ class CartPage {
                 this.cartItems = itemsResponse;
                 this.renderCartItems();
                 this.updateCartSummary();
+                
+                // Update header cart badge
+                if (window.app && window.app.updateCartDisplay) {
+                    window.app.updateCartDisplay();
+                }
             } else {
                 this.showEmptyCart();
             }
@@ -111,6 +117,11 @@ class CartPage {
         });
 
         this.showCartWithItems();
+        
+        // Cập nhật trạng thái UI sau khi render
+        this.updateSelectAllState();
+        this.updateDeleteButton();
+        this.updateCartSummary();
     }
 
     createCartItemHTML(item) {
@@ -240,7 +251,15 @@ class CartPage {
 
     updateDeleteButton() {
         const hasSelected = $('.cart-item-checkbox:checked').length > 0;
-        $('#deleteSelectedBtn').prop('disabled', !hasSelected);
+        const deleteBtn = $('#deleteSelectedBtn');
+        
+        if (hasSelected) {
+            deleteBtn.prop('disabled', false);
+        } else {
+            deleteBtn.prop('disabled', true);
+        }
+        
+        console.log('Update delete button - hasSelected:', hasSelected, 'disabled:', deleteBtn.prop('disabled'));
     }
 
     handleRemoveItem(e) {
@@ -293,6 +312,11 @@ class CartPage {
                     this.updateSelectAllState();
                     this.updateDeleteButton();
                     this.updateCartSummary();
+                    
+                    // Update header cart badge
+                    if (window.app && window.app.updateCartDisplay) {
+                        window.app.updateCartDisplay();
+                    }
                     
                 } catch (error) {
                     this.showToast('Không thể xóa sản phẩm đã chọn', 'error');
@@ -538,6 +562,11 @@ class CartPage {
             }
             
             this.updateCartSummary();
+            
+            // Update header cart badge
+            if (window.app && window.app.forceUpdateCartDisplay) {
+                window.app.forceUpdateCartDisplay();
+            }
         } catch (error) {
             this.showToast('Không thể cập nhật số lượng sản phẩm', 'error');
         }
@@ -582,6 +611,11 @@ class CartPage {
             // Animation xóa
             this.removeItemWithAnimation(cartItemElement);
             
+            // Update header cart badge
+            if (window.app && window.app.forceUpdateCartDisplay) {
+                window.app.forceUpdateCartDisplay();
+            }
+            
         } catch (error) {
             this.showToast('Không thể xóa sản phẩm khỏi giỏ hàng', 'error');
         }
@@ -590,6 +624,19 @@ class CartPage {
     calculateCartTotal() {
         const subtotalText = $('#subtotal').text().replace(/[^\d]/g, '');
         return parseFloat(subtotalText) || 0;
+    }
+
+    navigateToCheckout() {
+        // Show loading overlay
+        this.showLoading(true);
+        
+        // Add smooth transition effect
+        $('body').addClass('page-transition');
+        
+        // Navigate after a short delay for smooth effect
+        setTimeout(() => {
+            window.location.href = '/checkout';
+        }, 300);
     }
     
 }
