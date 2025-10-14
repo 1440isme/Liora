@@ -159,7 +159,7 @@ body.sidebar-icon-only .sidebar .nav .nav-item.pinned>.nav-link::after {
 /* Admin Notification Styles - Simple Toast */
 .toast-container {
     position: fixed;
-    top: 20px;
+    bottom: 20px;
     right: 20px;
     z-index: 9999;
 }
@@ -201,22 +201,22 @@ body.sidebar-icon-only .sidebar .nav .nav-item.pinned>.nav-link::after {
 }
 
 .admin-toast-success .toast-header {
-    background: linear-gradient(135deg, #28a745, #20c997);
+    background: linear-gradient(135deg, #007bff, #0056b3);
     color: white;
 }
 
 .admin-toast-error .toast-header {
-    background: linear-gradient(135deg, #dc3545, #e74c3c);
+    background: linear-gradient(135deg, #007bff, #0056b3);
     color: white;
 }
 
 .admin-toast-warning .toast-header {
-    background: linear-gradient(135deg, #ffc107, #ffb300);
-    color: #212529;
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: white;
 }
 
 .admin-toast-info .toast-header {
-    background: linear-gradient(135deg, #17a2b8, #138496);
+    background: linear-gradient(135deg, #007bff, #0056b3);
     color: white;
 }
 
@@ -402,4 +402,13 @@ body.sidebar-icon-only .sidebar .nav .nav-item.pinned>.nav-link::after {
     .sidebar .nav .nav-item {
         position: relative;
     }
+}
+
+/* Form Check Input Spacing */
+.form-check .form-check-input {
+    margin-left: 0.5rem !important;
+}
+
+.form-check .form-check-label {
+    margin-left: 2rem;
 }

@@ -12,8 +12,13 @@ import vn.liora.entity.Brand;
 
 @Mapper(componentModel = "spring")
 public interface BrandMapper {
+    @Mapping(target = "brandId", ignore = true)
+    @Mapping(target = "products", ignore = true)
     Brand toBrand(BrandCreationRequest request); // chuyển dữ liệu client -> entity lưu vào db
+    
     BrandResponse toBrandResponse(Brand brand); // chuyển entity -> response trả client
+    @Mapping(target = "brandId", ignore = true)
+    @Mapping(target = "products", ignore = true)
     @Mapping(target = "name", source = "name", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "logoUrl", source = "logoUrl", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "isActive", source = "isActive", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)

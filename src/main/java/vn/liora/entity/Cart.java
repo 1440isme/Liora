@@ -6,7 +6,6 @@ import lombok.*;
 import lombok.experimental.FieldDefaults;
 
 import java.util.List;
-import java.util.Set;
 
 @Data
 @NoArgsConstructor
@@ -21,13 +20,7 @@ public class Cart {
     @Column(name = "IdCart")
     Long idCart;
 
-    @Column(name = "CoutnProduct")
-    Integer countProduct;
-
-
-
-    @Column(name = "IdGuest")
-    String guestId;
+    // Removed unused fields: countProduct, guestId
 
     @OneToOne
     @JoinColumn(name = "IdUser", nullable = true)
@@ -37,6 +30,4 @@ public class Cart {
     @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnore
     private List<CartProduct> cartProducts;
-
-
 }

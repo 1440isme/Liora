@@ -24,4 +24,5 @@ public interface IOrderService {
     BigDecimal getTotalRevenueByUser(User user);
     void applyDiscountToOrder(Long orderId, Long discountId);
     void removeDiscountFromOrder(Long orderId, Long discountId);
+    void cancelOrderByUser(Long orderId, Long userId);
 }

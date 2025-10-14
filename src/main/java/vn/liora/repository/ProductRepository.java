@@ -118,4 +118,7 @@ public interface ProductRepository extends JpaRepository<Product,Long> {
     Long countByCategory(@Param("categoryId") Long categoryId);
 
     List<Product> findByBrandBrandIdAndCategoryCategoryIdAndIsActiveTrue(Long brandId, Long categoryId);
+    
+    // ====== RELATED PRODUCTS ======
+    List<Product> findByCategoryCategoryIdAndProductIdNotAndIsActiveTrue(Long categoryId, Long productId);
 }

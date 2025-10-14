@@ -12,5 +12,5 @@ import lombok.experimental.FieldDefaults;
 public class CartProductUpdateRequest {
     @Min(value = 1, message = "VALIDATION_QUANTITY_MIN_ONE")
     Integer quantity;
-    Boolean Choose;
+    Boolean choose;
 }

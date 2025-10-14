@@ -26,16 +26,19 @@ public class StaticPage {
     @Column(name = "slug", nullable = false, unique = true, columnDefinition = "NVARCHAR(255)")
     private String slug;
 
-    @Column(name = "content", columnDefinition = "TEXT")
+    @Column(name = "content", columnDefinition = "NVARCHAR(MAX)")
     private String content;
 
-    @Column(name = "seo_title", length = 255)
+    @Column(name = "section_slug", columnDefinition = "NVARCHAR(255)")
+    private String sectionSlug;
+
+    @Column(name = "seo_title", length = 255, columnDefinition = "NVARCHAR(255)")
     private String seoTitle;
 
-    @Column(name = "seo_description", length = 500)
+    @Column(name = "seo_description", length = 500, columnDefinition = "NVARCHAR(500)")
     private String seoDescription;
 
-    @Column(name = "seo_keywords", length = 500)
+    @Column(name = "seo_keywords", length = 500, columnDefinition = "NVARCHAR(500)")
     private String seoKeywords;
 
     @Column(name = "is_active", nullable = false)

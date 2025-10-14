@@ -286,8 +286,11 @@ class LioraApp {
                     <div class="position-relative overflow-hidden">
                         <img src="${product.image}" class="product-image" alt="${product.name}">
                         <div class="position-absolute top-0 end-0 p-2">
-                            <button class="btn btn-light btn-sm rounded-circle add-to-wishlist" data-product-id="${product.id}">
-                                <i class="fas fa-heart ${this.isInWishlist(product.id) ? 'text-danger' : 'text-muted'}"></i>
+                            <button class="btn btn-dark btn-sm rounded-circle quick-view-btn" 
+                                    data-product-id="${product.id}"
+                                    onclick="app.showQuickView(${product.id})"
+                                    title="Xem nhanh">
+                                <i class="fas fa-eye"></i>
                             </button>
                         </div>
                         ${product.discount ? `
@@ -298,11 +301,30 @@ class LioraApp {
                     </div>
                     <div class="card-body">
                         <div class="product-brand">${product.brand}</div>
-                        <h5 class="product-title">${product.name}</h5>
+                        <h5 class="product-title">
+                            <a href="/product/${product.id}" class="text-decoration-none text-dark">
+                                ${product.name}
+                            </a>
+                        </h5>
                         <div class="rating-stars mb-2">
                             ${this.renderStars(product.rating)}
                             <span class="rating-text ms-1">(${product.reviewCount})</span>
                         </div>
+                        
+                        <!-- Sales Progress Bar -->
+                        <div class="sales-progress mb-3">
+                            <div class="sales-info d-flex justify-content-between align-items-center mb-1">
+                                <span class="sales-label">Đã bán</span>
+                                <span class="sales-count">${this.formatNumber(product.soldCount || 0)}</span>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar" 
+                                     style="width: ${this.calculateSalesProgress(product.soldCount || 0)}%"
+                                     role="progressbar">
+                                </div>
+                            </div>
+                        </div>
+                        
                         <div class="d-flex align-items-center justify-content-between">
                             <div>
                                 <span class="product-price">$${product.price.toFixed(2)}</span>
@@ -319,6 +341,15 @@ class LioraApp {
     }
 
     renderStars(rating) {
+        console.log('renderStars called with rating:', rating, 'type:', typeof rating);
+        
+        // Nếu rating = 0 hoặc null/undefined, hiển thị 5 sao rỗng
+        if (!rating || rating === 0 || rating === '0') {
+            console.log('Rating is 0, showing empty stars');
+            return Array(5).fill('<i class="far fa-star"></i>').join('');
+        }
+
+        console.log('Rating is not 0, showing stars based on rating:', rating);
         const fullStars = Math.floor(rating);
         const hasHalfStar = rating % 1 !== 0;
         const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
@@ -382,24 +413,39 @@ class LioraApp {
         }, 500);
     }
 
-    addToCart(productId) {
+    addToCart(productId, quantity = 1, showMessage = true) {
         const product = ProductManager.getProductById(productId);
         if (!product) return;
+
+        // Validate quantity against stock
+        if (quantity > product.stock) {
+            this.showToast(`Số lượng bạn chọn (${quantity}) vượt quá số lượng tồn kho hiện có (${product.stock} sản phẩm). Vui lòng chọn số lượng phù hợp.`, 'error');
+            return;
+        }
 
         // Check if product already in cart
         const existingItem = this.cartItems.find(item => item.id === productId);
 
         if (existingItem) {
-            existingItem.quantity += 1;
+            const newTotalQuantity = existingItem.quantity + quantity;
+            if (newTotalQuantity > product.stock) {
+                this.showToast(`Tổng số lượng trong giỏ hàng (${newTotalQuantity}) vượt quá tồn kho hiện có (${product.stock} sản phẩm). Vui lòng giảm số lượng.`, 'error');
+                return;
+            }
+            existingItem.quantity = newTotalQuantity;
         } else {
             this.cartItems.push({
                 ...product,
-                quantity: 1
+                quantity: quantity
             });
         }
 
         this.updateCartDisplay();
-        this.showToast(`${product.name} added to cart! 🛍️`, 'success');
+        
+        // Only show message if showMessage is true
+        if (showMessage) {
+            this.showToast(`${quantity} x ${product.name} đã được thêm vào giỏ hàng thành công! 🛍️`, 'success');
+        }
     }
 
     toggleWishlist(productId) {
@@ -513,6 +559,417 @@ class LioraApp {
         // Load reviews (only if ReviewManager exists on this page)
         if (window.ReviewManager && typeof ReviewManager.loadReviews === 'function') {
             ReviewManager.loadReviews();
+        }
+
+        // Load categories for header with delay to ensure DOM is ready
+        setTimeout(() => {
+            this.loadHeaderCategories();
+        }, 100);
+    }
+
+    // Load categories for header dropdown
+    async loadHeaderCategories() {
+        try {
+            console.log('Loading header categories...');
+            const response = await fetch('/api/header/categories/api');
+            console.log('Response status:', response.status);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            console.log('API response:', data);
+            
+            if (data.result && data.result.length > 0) {
+                console.log('Rendering categories with data:', data.result);
+                this.renderHeaderCategories(data.result);
+            } else {
+                console.warn('No categories found in API response');
+                // Show empty state instead of fallback data
+                this.renderEmptyCategories();
+            }
+        } catch (error) {
+            console.error('Error loading header categories:', error);
+            // Show empty state instead of fallback data
+            this.renderEmptyCategories();
+        }
+    }
+
+    // Render categories in header dropdown
+    renderHeaderCategories(categories) {
+        console.log('Rendering categories:', categories);
+
+        // Render all 3 columns immediately
+        this.renderAllCategories(categories);
+    }
+
+    // Render all categories in 3-tier structure like Guardian
+    renderAllCategories(categories) {
+        console.log('renderAllCategories called with:', categories);
+        
+        // Try multiple selectors to find columns (3-column layout like image)
+        let leftColumn = document.querySelector('.category-column:first-child .category-list');
+        let middleColumn = document.querySelector('.category-column:nth-child(2) .subcategory-list');
+        let rightColumn = document.querySelector('.category-column:nth-child(3) .product-list');
+        
+        // Fallback selectors for Bootstrap grid structure
+        if (!leftColumn) {
+            leftColumn = document.querySelector('.col-md-3:first-child .category-list');
+        }
+        if (!middleColumn) {
+            middleColumn = document.querySelector('.col-md-4:nth-child(2) .subcategory-list');
+        }
+        if (!rightColumn) {
+            rightColumn = document.querySelector('.col-md-5:nth-child(3) .product-list');
+        }
+        
+        // Another fallback - direct class selection
+        if (!leftColumn) {
+            leftColumn = document.querySelector('.category-list');
+        }
+        if (!middleColumn) {
+            middleColumn = document.querySelector('.subcategory-list');
+        }
+        if (!rightColumn) {
+            rightColumn = document.querySelector('.product-list');
+        }
+        
+        console.log('Left column:', leftColumn);
+        console.log('Middle column:', middleColumn);
+        console.log('Right column:', rightColumn);
+        
+        if (!leftColumn || !middleColumn || !rightColumn) {
+            console.error('Columns not found!');
+            console.error('Left column found:', !!leftColumn);
+            console.error('Middle column found:', !!middleColumn);
+            console.error('Right column found:', !!rightColumn);
+            
+            // Try to find all elements with these classes
+            const allCategoryLists = document.querySelectorAll('.category-list');
+            const allSubcategoryLists = document.querySelectorAll('.subcategory-list');
+            const allProductLists = document.querySelectorAll('.product-list');
+            
+            console.log('All category-list elements:', allCategoryLists);
+            console.log('All subcategory-list elements:', allSubcategoryLists);
+            console.log('All product-list elements:', allProductLists);
+            
+            return;
+        }
+
+        // Clear all columns
+        leftColumn.innerHTML = '';
+        middleColumn.innerHTML = '';
+        rightColumn.innerHTML = '';
+
+        // Collect all level 2 and level 3 categories
+        const allLevel2Categories = [];
+        const allLevel3Categories = [];
+
+        categories.forEach(level1Category => {
+            if (level1Category.children) {
+                level1Category.children.forEach(level2Category => {
+                    allLevel2Categories.push(level2Category);
+                    
+                    if (level2Category.children) {
+                        level2Category.children.forEach(level3Category => {
+                            allLevel3Categories.push({
+                                ...level3Category,
+                                parentLevel2Id: level2Category.categoryId,
+                                parentLevel2Name: level2Category.name
+                            });
+                        });
+                    }
+                });
+            }
+        });
+
+        console.log('Level 2 categories:', allLevel2Categories);
+        console.log('Level 3 categories:', allLevel3Categories);
+
+        // Render Level 1 categories in left column with hover functionality
+        categories.forEach(category => {
+            const categoryItem = document.createElement('div');
+            categoryItem.className = 'category-item guardian-style';
+            categoryItem.dataset.categoryId = category.categoryId;
+            categoryItem.dataset.categoryName = category.name;
+            categoryItem.dataset.children = JSON.stringify(category.children || []);
+            categoryItem.textContent = category.name;
+
+            // Add hover event to show subcategories
+            categoryItem.addEventListener('mouseenter', () => {
+                // Remove active class from all items
+                document.querySelectorAll('.category-item.guardian-style').forEach(item => {
+                    item.classList.remove('active');
+                });
+                
+                // Add active class to current item
+                categoryItem.classList.add('active');
+                
+                this.showSubcategoriesForCategory(category, middleColumn, rightColumn);
+            });
+
+
+            leftColumn.appendChild(categoryItem);
+        });
+
+        // Show first category by default
+        if (categories.length > 0) {
+            // Add active class to first item
+            const firstItem = leftColumn.querySelector('.category-item.guardian-style:first-child');
+            if (firstItem) {
+                firstItem.classList.add('active');
+            }
+            this.showSubcategoriesForCategory(categories[0], middleColumn, rightColumn);
+        }
+
+        console.log('All categories rendered successfully');
+    }
+
+    // Show subcategories for a specific level 1 category
+    showSubcategoriesForCategory(category, middleColumn, rightColumn) {
+        console.log('Showing subcategories for:', category.name);
+        
+        // Clear existing content
+        middleColumn.innerHTML = '';
+        rightColumn.innerHTML = '';
+        
+        if (category.children && category.children.length > 0) {
+            // Get all level 2 and level 3 categories for this level 1 category
+            const level2Categories = category.children;
+            const allLevel3Categories = [];
+            
+            level2Categories.forEach(level2Category => {
+                if (level2Category.children) {
+                    level2Category.children.forEach(level3Category => {
+                        allLevel3Categories.push({
+                            ...level3Category,
+                            parentLevel2Id: level2Category.categoryId,
+                            parentLevel2Name: level2Category.name
+                        });
+                    });
+                }
+            });
+            
+            // Render level 2 categories in 4-column grid
+            this.renderLevel2Categories(level2Categories, allLevel3Categories, middleColumn, rightColumn);
+        } else {
+            // Show empty state
+            middleColumn.innerHTML = '<div class="empty-message">Chưa có danh mục con</div>';
+            rightColumn.innerHTML = '<div class="empty-message">Chưa có sản phẩm</div>';
+        }
+    }
+
+    // Render Level 2 categories with their Level 3 children (4 categories per row)
+    renderLevel2Categories(level2Categories, level3Categories, middleColumn, rightColumn) {
+        // Create a single row with 4 level 2 categories
+        const level2Row = document.createElement('div');
+        level2Row.className = 'level2-row';
+        level2Row.style.cssText = 'display: flex; gap: 20px; width: 100%; margin-bottom: 20px;';
+        
+        // Render first 4 level 2 categories in a single row
+        level2Categories.slice(0, 4).forEach(level2Category => {
+            const level2Item = document.createElement('div');
+            level2Item.className = 'level2-item';
+            level2Item.style.cssText = 'flex: 1; min-width: 200px;';
+            
+            // Get level 3 items for this category
+            const level3Items = level3Categories.filter(level3 => 
+                level3.parentLevel2Id === level2Category.categoryId
+            );
+            
+            this.renderCategoryGroup(level2Category, level3Items, level2Item);
+            level2Row.appendChild(level2Item);
+        });
+        
+        // Add the row to middle column
+        middleColumn.appendChild(level2Row);
+        
+        // If there are more than 4 categories, render the rest in right column
+        if (level2Categories.length > 4) {
+            level2Categories.slice(4).forEach(level2Category => {
+                const level3Items = level3Categories.filter(level3 => 
+                    level3.parentLevel2Id === level2Category.categoryId
+                );
+                this.renderCategoryGroup(level2Category, level3Items, rightColumn);
+            });
+        }
+    }
+
+    // Old method removed - using single row layout
+
+    // Render a single category group with header and items
+    renderCategoryGroup(level2Category, level3Items, column) {
+        // Category header (bold, uppercase) - ALWAYS show header
+        const categoryHeader = document.createElement('div');
+        categoryHeader.className = 'category-group-header';
+        categoryHeader.style.cssText = `
+            font-weight: bold; 
+            color: #333; 
+            margin: 16px 0 8px 0; 
+            padding: 8px 0; 
+            border-bottom: 1px solid #e0e0e0; 
+            text-transform: uppercase; 
+            font-size: 14px;
+            letter-spacing: 0.5px;
+        `;
+        categoryHeader.textContent = level2Category.name;
+        column.appendChild(categoryHeader);
+        
+        // Level 3 items in vertical list - show even if empty
+        if (level3Items && level3Items.length > 0) {
+            level3Items.forEach(level3Category => {
+                const level3Item = document.createElement('div');
+                level3Item.className = 'level3-vertical-item';
+                level3Item.style.cssText = `
+                    padding: 6px 0; 
+                    margin: 2px 0; 
+                    cursor: pointer; 
+                    transition: all 0.2s ease; 
+                    font-size: 13px; 
+                    color: #666; 
+                    border-left: 3px solid transparent;
+                    padding-left: 8px;
+                `;
+                level3Item.textContent = level3Category.name;
+                level3Item.dataset.categoryId = level3Category.categoryId;
+
+                // Add hover effect
+                level3Item.addEventListener('mouseenter', () => {
+                    level3Item.style.backgroundColor = '#f8f9fa';
+                    level3Item.style.color = '#333';
+                    level3Item.style.borderLeftColor = 'var(--pink-primary)';
+                    level3Item.style.paddingLeft = '12px';
+                });
+
+                level3Item.addEventListener('mouseleave', () => {
+                    level3Item.style.backgroundColor = 'transparent';
+                    level3Item.style.color = '#666';
+                    level3Item.style.borderLeftColor = 'transparent';
+                    level3Item.style.paddingLeft = '8px';
+                });
+
+                // Add click handler
+                level3Item.addEventListener('click', () => {
+                    window.location.href = `/product/view/category/${level3Category.categoryId}`;
+                });
+
+                column.appendChild(level3Item);
+            });
+        }
+        // Don't show empty message - just show header
+    }
+
+    // Render Level 3 categories in vertical list (no grid)
+    renderLevel3Categories(level3Categories, column) {
+        // Group level 3 categories by their parent level 2
+        const groupedByParent = {};
+        
+        level3Categories.forEach(level3Category => {
+            const parentId = level3Category.parentLevel2Id;
+            if (!groupedByParent[parentId]) {
+                groupedByParent[parentId] = [];
+            }
+            groupedByParent[parentId].push(level3Category);
+        });
+
+        // Render each group with its parent name as header
+        Object.keys(groupedByParent).forEach(parentId => {
+            const level3Items = groupedByParent[parentId];
+            const parentName = level3Items[0]?.parentLevel2Name || 'Danh mục';
+            
+            // Parent header
+            const parentHeader = document.createElement('div');
+            parentHeader.className = 'level3-parent-header';
+            parentHeader.style.cssText = 'font-weight: bold; color: #333; margin: 16px 0 8px 0; padding: 8px 0; border-bottom: 1px solid #e0e0e0; text-transform: uppercase; font-size: 14px;';
+            parentHeader.textContent = parentName;
+            column.appendChild(parentHeader);
+            
+            // Level 3 items in vertical list
+            level3Items.forEach(level3Category => {
+                const level3Item = document.createElement('div');
+                level3Item.className = 'level3-vertical-item';
+                level3Item.style.cssText = `
+                    padding: 8px 0; 
+                    margin: 2px 0; 
+                    cursor: pointer; 
+                    transition: all 0.2s ease; 
+                    font-size: 13px; 
+                    color: #666; 
+                    border-left: 3px solid transparent;
+                    padding-left: 8px;
+                `;
+                level3Item.textContent = level3Category.name;
+                level3Item.dataset.categoryId = level3Category.categoryId;
+
+                // Add hover effect
+                level3Item.addEventListener('mouseenter', () => {
+                    level3Item.style.backgroundColor = '#f8f9fa';
+                    level3Item.style.color = '#333';
+                    level3Item.style.borderLeftColor = 'var(--pink-primary)';
+                    level3Item.style.paddingLeft = '12px';
+                });
+
+                level3Item.addEventListener('mouseleave', () => {
+                    level3Item.style.backgroundColor = 'transparent';
+                    level3Item.style.color = '#666';
+                    level3Item.style.borderLeftColor = 'transparent';
+                    level3Item.style.paddingLeft = '8px';
+                });
+
+                // Add click handler
+                level3Item.addEventListener('click', () => {
+                    window.location.href = `/product/view/category/${level3Category.categoryId}`;
+                });
+
+                column.appendChild(level3Item);
+            });
+        });
+    }
+
+    // Old method removed - using new grid layout for level 2 and vertical list for level 3
+
+
+    // No need for complex event binding since we render everything immediately
+
+    // All old methods removed - using new Guardian-style layout
+
+    // Show error message when API fails
+    showErrorMessage() {
+        const leftColumn = document.querySelector('.category-column:first-child .category-list');
+        if (leftColumn) {
+            leftColumn.innerHTML = `
+                <div class="category-loading text-danger">
+                    <i class="mdi mdi-alert-circle"></i>
+                    Lỗi tải danh mục. Vui lòng thử lại.
+                </div>
+            `;
+        }
+    }
+
+    // Show message when no categories found
+    showNoCategoriesMessage() {
+        const leftColumn = document.querySelector('.category-column:first-child .category-list');
+        if (leftColumn) {
+            leftColumn.innerHTML = `
+                <div class="category-loading text-muted">
+                    <i class="mdi mdi-information"></i>
+                    Chưa có danh mục nào.
+                </div>
+            `;
+        }
+    }
+
+    // Render empty state when no categories are available
+    renderEmptyCategories() {
+        console.log('No categories available - showing empty state');
+        const categoriesContainer = document.getElementById('categoriesMenu');
+        if (categoriesContainer) {
+            categoriesContainer.innerHTML = `
+                <div class="text-center py-4">
+                    <p class="text-muted mb-0">Chưa có danh mục sản phẩm</p>
+                </div>
+            `;
         }
     }
 
@@ -683,6 +1140,445 @@ class LioraApp {
         // TODO: navigate to profile page or open profile modal
         // window.location.href = '/profile';
     }
+
+    // Helper method to format numbers (e.g., 1000 -> 1.000)
+    formatNumber(number) {
+        return new Intl.NumberFormat('vi-VN').format(number);
+    }
+
+    // Helper method to calculate sales progress percentage
+    calculateSalesProgress(soldCount) {
+        // Define different thresholds for progress calculation - optimized for better visual appeal
+        const thresholds = [
+            { max: 50, percentage: 30 },     // 0-50: 0-30% (tăng từ 20%)
+            { max: 100, percentage: 40 },    // 50-100: 30-40%
+            { max: 500, percentage: 55 },   // 100-500: 40-55%
+            { max: 1000, percentage: 70 },   // 500-1000: 55-70%
+            { max: 5000, percentage: 85 },   // 1000-5000: 70-85%
+            { max: 10000, percentage: 95 },  // 5000-10000: 85-95%
+            { max: Infinity, percentage: 100 } // >10000: 95-100%/
+        ];
+
+        for (const threshold of thresholds) {
+            if (soldCount <= threshold.max) {
+                // Get previous threshold percentage
+                const prevThreshold = thresholds[thresholds.indexOf(threshold) - 1];
+                const basePercentage = prevThreshold ? prevThreshold.percentage : 0;
+                
+                // Calculate progress within this threshold
+                const prevMax = prevThreshold ? prevThreshold.max : 0;
+                const range = threshold.max - prevMax;
+                const progress = ((soldCount - prevMax) / range) * (threshold.percentage - basePercentage);
+                
+                return Math.min(100, basePercentage + progress);
+            }
+        }
+        
+        return 100; // For very high sales
+    }
+
+    // Show quick view popup
+    async showQuickView(productId) {
+        // Find product in current products array
+        const product = this.products.find(p => p.id === productId);
+        if (!product) {
+            this.showToast('Không tìm thấy sản phẩm', 'error');
+            return;
+        }
+        
+        // Load product images if not already loaded
+        if (!product.images) {
+            try {
+                const response = await fetch(`/api/products/${productId}/images`);
+                if (response.ok) {
+                    const data = await response.json();
+                    product.images = data.result || [];
+                }
+            } catch (error) {
+                console.log('Could not load product images:', error);
+                product.images = [];
+            }
+        }
+        
+        this.createQuickViewModal(product);
+    }
+
+    // Create quick view modal
+    createQuickViewModal(product) {
+        // Remove existing modal if any
+        const existingModal = document.getElementById('quickViewModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+
+        const modalHTML = `
+            <div class="modal fade" id="quickViewModal" tabindex="-1" aria-labelledby="quickViewModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header border-0">
+                            <h5 class="modal-title" id="quickViewModalLabel">Xem nhanh sản phẩm</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row">
+                                <!-- Product Image Slider -->
+                                <div class="col-md-6">
+                                    <div class="product-image-slider">
+                                        <!-- Main Image -->
+                                        <div class="main-image-container mb-3">
+                                            <button class="slider-nav slider-prev" id="prevBtn">
+                                                <i class="fas fa-chevron-left"></i>
+                                            </button>
+                                            <img id="mainProductImage" 
+                                                 src="${this.getMainImageUrl(product)}" 
+                                                 class="img-fluid rounded" 
+                                                 alt="${product.name}"
+                                                 onerror="this.src='/uploads/products/default.jpg'">
+                                            <button class="slider-nav slider-next" id="nextBtn">
+                                                <i class="fas fa-chevron-right"></i>
+                                            </button>
+                                        </div>
+                                        
+                                        <!-- Thumbnail Slider -->
+                                        <div class="thumbnail-slider">
+                                            <div class="thumbnail-container d-flex gap-2">
+                                                ${this.generateImageThumbnails(product)}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Product Info -->
+                                <div class="col-md-6">
+                                    <h4 class="product-name mb-3">${product.name}</h4>
+                                    <p class="brand-name text-muted mb-2">${product.brand}</p>
+                                    
+                                    <!-- Product Status -->
+                                    <div class="product-status mb-3">
+                                        <span class="badge ${product.stock > 0 ? 'bg-success' : 'bg-danger'}">
+                                            ${product.stock > 0 ? 'Còn hàng' : 'Hết hàng'}
+                                        </span>
+                                        <span class="ms-2 text-muted">Mã sản phẩm: ${product.id}</span>
+                                    </div>
+                                    
+                                    <!-- Rating -->
+                                    <div class="rating mb-3">
+                                        <span class="stars">
+                                            ${this.renderStars(product.rating)}
+                                        </span>
+                                        <span class="review-count ms-2">(${product.reviewCount} đánh giá)</span>
+                                    </div>
+                                    
+                                    <!-- Sales Progress -->
+                                    <div class="sales-progress mb-3">
+                                        <div class="sales-info d-flex justify-content-between align-items-center mb-1">
+                                            <span class="sales-label">Đã bán</span>
+                                            <span class="sales-count">${this.formatNumber(product.soldCount || 0)}</span>
+                                        </div>
+                                        <div class="progress">
+                                            <div class="progress-bar" 
+                                                 style="width: ${this.calculateSalesProgress(product.soldCount || 0)}%"
+                                                 role="progressbar">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Price -->
+                                    <div class="price-section mb-4">
+                                        <span class="current-price h4 text-primary">
+                                            $${product.price.toFixed(2)}
+                                        </span>
+                                        ${product.originalPrice ? `<span class="text-muted ms-2"><s>$${product.originalPrice.toFixed(2)}</s></span>` : ''}
+                                    </div>
+                                    
+                                    <!-- Quantity Selector -->
+                                    <div class="quantity-selector mb-4">
+                                        <div class="d-flex align-items-center">
+                                            <label class="form-label mb-0" style="margin-right: 2rem;">Số lượng:</label>
+                                            <div class="input-group" style="max-width: 150px;">
+                                                <button class="btn btn-outline-secondary" type="button" onclick="app.decrementQuantity()">-</button>
+                                                <input type="number" class="form-control text-center" value="1" min="1" max="${product.stock || 10}" id="quantityInput" onchange="app.validateQuantity()" oninput="app.validateQuantity()" onblur="app.validateQuantityOnBlur()">
+                                                <button class="btn btn-outline-secondary" type="button" onclick="app.incrementQuantity()">+</button>
+                                            </div>
+                                        </div>
+                                        <!-- Error Message -->
+                                        <div id="quantityError" class="text-danger mt-2" style="display: none;">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            <span id="quantityErrorMessage">Số lượng tối đa bạn có thể mua là ${product.stock || 10}.</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Actions -->
+                                    <div class="d-grid gap-2">
+                                        <!-- Buy Now & Add to Cart Buttons (Same Row) -->
+                                        <div class="row g-2">
+                                            <div class="col-6">
+                                                <button class="btn btn-danger btn-lg w-100" 
+                                                        onclick="app.buyNow(${product.id})"
+                                                        ${product.stock <= 0 ? 'disabled' : ''}>
+                                                    <i class="fas fa-bolt me-1"></i>
+                                                    ${product.stock > 0 ? 'Mua ngay' : 'Hết hàng'}
+                                                </button>
+                                            </div>
+                                            <div class="col-6">
+                                                <button class="btn btn-primary btn-lg w-100" 
+                                                        onclick="app.addToCartWithQuantity(${product.id})"
+                                                        ${product.stock <= 0 ? 'disabled' : ''}>
+                                                    <i class="fas fa-shopping-cart me-1"></i>
+                                                    ${product.stock > 0 ? 'Thêm vào giỏ' : 'Hết hàng'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- View Details Button -->
+                                        <a href="/product/${product.id}" 
+                                           class="btn btn-outline-primary btn-lg">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            Xem chi tiết sản phẩm
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Add modal to body
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('quickViewModal'));
+        modal.show();
+        
+        // Add slider navigation event listeners
+        this.setupSliderNavigation(product);
+        
+        // Remove modal from DOM when hidden
+        document.getElementById('quickViewModal').addEventListener('hidden.bs.modal', function() {
+            this.remove();
+        });
+    }
+
+    // Setup slider navigation
+    setupSliderNavigation(product) {
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const mainImage = document.getElementById('mainProductImage');
+        const thumbnails = document.querySelectorAll('.thumbnail-item');
+        
+        if (!product.images || product.images.length <= 1) {
+            // Hide navigation buttons if only one image
+            if (prevBtn) prevBtn.style.display = 'none';
+            if (nextBtn) nextBtn.style.display = 'none';
+            return;
+        }
+        
+        let currentImageIndex = 0;
+        
+        // Update main image
+        const updateMainImage = (index) => {
+            if (product.images && product.images[index]) {
+                mainImage.src = product.images[index].imageUrl;
+                mainImage.alt = product.name;
+                
+                // Update thumbnail selection
+                thumbnails.forEach((thumb, i) => {
+                    thumb.classList.toggle('active', i === index);
+                });
+            }
+        };
+        
+        // Previous button
+        if (prevBtn) {
+            prevBtn.addEventListener('click', () => {
+                currentImageIndex = currentImageIndex > 0 ? currentImageIndex - 1 : product.images.length - 1;
+                updateMainImage(currentImageIndex);
+            });
+        }
+        
+        // Next button
+        if (nextBtn) {
+            nextBtn.addEventListener('click', () => {
+                currentImageIndex = currentImageIndex < product.images.length - 1 ? currentImageIndex + 1 : 0;
+                updateMainImage(currentImageIndex);
+            });
+        }
+        
+        // Thumbnail click handlers
+        thumbnails.forEach((thumb, index) => {
+            thumb.addEventListener('click', () => {
+                currentImageIndex = index;
+                updateMainImage(currentImageIndex);
+            });
+        });
+    }
+
+    // Generate image thumbnails for slider
+    generateImageThumbnails(product) {
+        // Use product images if available, otherwise fallback to main image
+        let images = [];
+        
+        if (product.images && product.images.length > 0) {
+            // Use actual product images
+            images = product.images.map(img => img.imageUrl || img);
+        } else {
+            // Fallback to main image repeated
+            const mainImage = product.image || '/uploads/products/default.jpg';
+            images = [mainImage];
+        }
+
+        return images.map((image, index) => `
+            <div class="thumbnail-item ${index === 0 ? 'active' : ''}" 
+                 onclick="app.changeMainImage('${image}')">
+                <img src="${image}" 
+                     class="thumbnail-img" 
+                     alt="Thumbnail ${index + 1}"
+                     onerror="this.src='/uploads/products/default.jpg'">
+            </div>
+        `).join('');
+    }
+
+    // Change main image when thumbnail is clicked
+    changeMainImage(imageSrc) {
+        const mainImage = document.getElementById('mainProductImage');
+        if (mainImage) {
+            mainImage.src = imageSrc;
+        }
+        
+        // Update active thumbnail
+        document.querySelectorAll('.thumbnail-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        event.target.closest('.thumbnail-item').classList.add('active');
+    }
+
+    // Add to cart with quantity
+    addToCartWithQuantity(productId) {
+        const quantityInput = document.getElementById('quantityInput');
+        const quantity = quantityInput ? parseInt(quantityInput.value) : 1;
+        
+        // Call the existing addToCart method with quantity (show message)
+        this.addToCart(productId, quantity, true);
+    }
+
+    // Buy now - add to cart and redirect to checkout
+    buyNow(productId) {
+        const quantityInput = document.getElementById('quantityInput');
+        const quantity = quantityInput ? parseInt(quantityInput.value) : 1;
+        
+        // Get product info for notification
+        const product = ProductManager.getProductById(productId);
+        
+        // Add to cart silently (no message)
+        this.addToCart(productId, quantity, false);
+        
+        // Show single success message
+        this.showToast(`${quantity} x ${product ? product.name : 'sản phẩm'} đã được thêm vào giỏ hàng! Đang chuyển đến trang thanh toán...`, 'success');
+        
+        // Close modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('quickViewModal'));
+        if (modal) {
+            modal.hide();
+        }
+        
+        // Redirect to checkout after a short delay
+        setTimeout(() => {
+            window.location.href = '/checkout';
+        }, 1500);
+    }
+
+    // Get main image URL for product
+    getMainImageUrl(product) {
+        if (product.images && product.images.length > 0) {
+            // Use first image as main image
+            return product.images[0].imageUrl || product.images[0];
+        }
+        return product.image || '/uploads/products/default.jpg';
+    }
+
+    // Quantity validation methods
+    validateQuantity() {
+        const quantityInput = document.getElementById('quantityInput');
+        const errorDiv = document.getElementById('quantityError');
+        const errorMessage = document.getElementById('quantityErrorMessage');
+        
+        if (!quantityInput || !errorDiv || !errorMessage) return;
+        
+        const currentValue = parseInt(quantityInput.value) || 0;
+        const maxStock = parseInt(quantityInput.getAttribute('max')) || 10;
+        
+        // Allow empty input for better UX (user can clear and type new number)
+        if (quantityInput.value === '' || quantityInput.value === '0') {
+            // Hide error message when input is empty (user is typing)
+            errorDiv.style.display = 'none';
+            quantityInput.classList.remove('is-invalid');
+            return;
+        }
+        
+        if (currentValue > maxStock) {
+            // Show error message
+            errorDiv.style.display = 'block';
+            errorMessage.textContent = `Số lượng tối đa bạn có thể mua là ${maxStock}.`;
+            quantityInput.classList.add('is-invalid');
+            
+            // Reset to max stock
+            quantityInput.value = maxStock;
+        } else if (currentValue < 1) {
+            // Show error for minimum
+            errorDiv.style.display = 'block';
+            errorMessage.textContent = 'Số lượng tối thiểu là 1.';
+            quantityInput.classList.add('is-invalid');
+            
+            // Reset to minimum
+            quantityInput.value = 1;
+        } else {
+            // Hide error message
+            errorDiv.style.display = 'none';
+            quantityInput.classList.remove('is-invalid');
+        }
+    }
+
+    // Handle input blur - validate when user finishes typing
+    validateQuantityOnBlur() {
+        const quantityInput = document.getElementById('quantityInput');
+        if (!quantityInput) return;
+        
+        const currentValue = parseInt(quantityInput.value) || 0;
+        const maxStock = parseInt(quantityInput.getAttribute('max')) || 10;
+        
+        // If input is empty or 0, set to minimum
+        if (quantityInput.value === '' || currentValue < 1) {
+            quantityInput.value = 1;
+            this.validateQuantity();
+        }
+    }
+
+    incrementQuantity() {
+        const quantityInput = document.getElementById('quantityInput');
+        if (!quantityInput) return;
+        
+        const currentValue = parseInt(quantityInput.value) || 0;
+        const maxStock = parseInt(quantityInput.getAttribute('max')) || 10;
+        
+        if (currentValue < maxStock) {
+            quantityInput.value = currentValue + 1;
+            this.validateQuantity();
+        }
+    }
+
+    decrementQuantity() {
+        const quantityInput = document.getElementById('quantityInput');
+        if (!quantityInput) return;
+        
+        const currentValue = parseInt(quantityInput.value) || 0;
+        
+        if (currentValue > 1) {
+            quantityInput.value = currentValue - 1;
+            this.validateQuantity();
+        }
+    }
 }
 
 // Global function for page navigation (called from HTML onclick)
@@ -694,11 +1590,14 @@ function showPage(pageName) {
 let app;
 document.addEventListener('DOMContentLoaded', () => {
     app = new LioraApp();
+    window.app = app; // Make app globally available
     // Ensure user UI renders after all fragments load
     setTimeout(() => {
         app.updateUserDisplay();
     }, 0);
 });
+
+
 
 // Export for use in other scripts
 window.LioraApp = LioraApp;

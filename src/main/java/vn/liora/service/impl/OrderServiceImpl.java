@@ -230,7 +230,7 @@ public class OrderServiceImpl implements IOrderService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
-        List<Order> orders = orderRepository.findByUser(user);
+        List<Order> orders = orderRepository.findByUserOrderByOrderDateDesc(user);
         return orderMapper.toOrderResponseList(orders);
     }
 
@@ -287,5 +287,30 @@ public class OrderServiceImpl implements IOrderService {
         // Tính tổng doanh thu từ các đơn hàng của một người dùng
         BigDecimal total = orderRepository.getTotalRevenueByUser(user);
         return total != null ? total : BigDecimal.ZERO;
+    }
+
+    @Override
+    @Transactional
+    public void cancelOrderByUser(Long orderId, Long userId) {
+        // Tìm đơn hàng
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+
+        // Kiểm tra xem đơn hàng có thuộc về user này không
+        if (!order.getUser().getUserId().equals(userId)) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
+        // Kiểm tra xem đơn hàng có thể hủy không (chỉ hủy được khi đang PENDING)
+        if (!"PENDING".equals(order.getOrderStatus())) {
+            throw new AppException(ErrorCode.ORDER_CANNOT_BE_CANCELLED);
+        }
+
+        // Cập nhật trạng thái đơn hàng thành CANCELLED
+        order.setOrderStatus("CANCELLED");
+        
+        orderRepository.save(order);
+        
+        log.info("Order {} cancelled by user {}", orderId, userId);
     }
 }

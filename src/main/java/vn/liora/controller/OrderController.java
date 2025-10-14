@@ -1,5 +1,6 @@
 package vn.liora.controller;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -14,6 +15,7 @@ import java.util.List;
 
 @Controller
 @RequestMapping
+@Slf4j
 public class OrderController {
 
     @Autowired
@@ -37,7 +39,7 @@ public class OrderController {
             List<OrderProductResponse> responses = orderService.getProductsByOrderId(orderId);
             return ResponseEntity.ok(responses);
         } catch (Exception e) {
-            System.err.println("Error loading order items: " + e.getMessage());
+            log.error("Error loading order items: {}", e.getMessage());
             return ResponseEntity.internalServerError().build();
         }
     }

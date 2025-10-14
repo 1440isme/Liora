@@ -23,6 +23,9 @@ public class StaticPageRequest {
 
     private String seoKeywords;
 
+    // Nhóm của trang tĩnh để gom vào trang tổng hợp
+    private String sectionSlug;
+
     @NotNull(message = "Trạng thái hoạt động không được để trống")
     private Boolean isActive;
 
