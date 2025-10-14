@@ -8,6 +8,7 @@ import vn.liora.dto.request.ProductCreationRequest;
 import vn.liora.dto.request.ProductUpdateRequest;
 import vn.liora.dto.response.ProductResponse;
 import vn.liora.entity.Product;
+import vn.liora.entity.Image;
 
 @Mapper(componentModel = "spring")
 public interface ProductMapper {
@@ -28,7 +29,31 @@ public interface ProductMapper {
     @Mapping(target = "brandName", source = "brand.name")
     @Mapping(target = "categoryId", source = "category.categoryId")
     @Mapping(target = "categoryName", source = "category.name")
+    @Mapping(target = "mainImageUrl", source = "images", qualifiedByName = "getMainImageUrl")
+    @Mapping(target = "imageUrls", source = "images", qualifiedByName = "getAllImageUrls")
     ProductResponse toProductResponse(Product product);
+    
+    @org.mapstruct.Named("getMainImageUrl")
+    default String getMainImageUrl(java.util.List<Image> images) {
+        if (images == null || images.isEmpty()) {
+            return null;
+        }
+        return images.stream()
+                .filter(image -> image.getIsMain() != null && image.getIsMain())
+                .findFirst()
+                .map(Image::getImageUrl)
+                .orElse(images.get(0).getImageUrl());
+    }
+    
+    @org.mapstruct.Named("getAllImageUrls")
+    default java.util.List<String> getAllImageUrls(java.util.List<Image> images) {
+        if (images == null || images.isEmpty()) {
+            return java.util.Collections.emptyList();
+        }
+        return images.stream()
+                .map(Image::getImageUrl)
+                .collect(java.util.stream.Collectors.toList());
+    }
 
     // ========== UPDATE MAPPING ==========
     @Mapping(target = "name", source = "name", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)

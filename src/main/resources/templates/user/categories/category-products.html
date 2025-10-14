@@ -93,14 +93,11 @@
 
             <!-- Products Grid -->
             <div class="col-lg-9">
-                <!-- Category Info -->
-                <div class="mb-4">
-                    <!-- Removed category name and loading text -->
-                </div>
 
                 <!-- Results Info and Sort -->
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <div>
+                        <h5 id="categoryTitle" class="text-dark fw-bold mb-2" style="display: none;"></h5>
                         <span id="resultsCount" class="fw-bold text-dark">Hiển thị 0 sản phẩm</span>
                     </div>
                     <div>
@@ -115,7 +112,7 @@
                 </div>
 
                 <!-- Loading Spinner -->
-                <div id="loadingSpinner" class="text-center py-5">
+                <div id="loadingSpinner" class="text-center py-5" style="display: none;">
                     <div class="spinner-border text-primary" role="status">
                         <span class="visually-hidden">Đang tải...</span>
                     </div>
