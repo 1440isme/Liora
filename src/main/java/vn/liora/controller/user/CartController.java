@@ -25,13 +25,31 @@ import java.util.List;
 @Slf4j
 public class CartController {
 
-    ICartService cartService;
-    ICartProductService cartProductService;
-    UserRepository userRepository;
+    final ICartService cartService;
+    final ICartProductService cartProductService;
+    final UserRepository userRepository;
 
     @GetMapping("/cart")
     public String viewCart() {
         return "user/cart/view-cart";
+    }
+
+    /**
+     * Test endpoint để kiểm tra authentication
+     */
+    @GetMapping("/cart/api/test")
+    @ResponseBody
+    public ResponseEntity<?> testAuth() {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            return ResponseEntity.ok().body(new Object() {
+                public final String auth = authentication != null ? authentication.toString() : "null";
+                public final boolean isAuthenticated = authentication != null && authentication.isAuthenticated();
+                public final String name = authentication != null ? authentication.getName() : "null";
+            });
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error: " + e.getMessage());
+        }
     }
 
     /**
@@ -41,18 +59,28 @@ public class CartController {
     @ResponseBody
     public ResponseEntity<?> getCurrentUserCart() {
         try {
+            log.info("Getting current user cart...");
+            
             // Lấy userId từ security context
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            log.info("Authentication: {}", authentication);
+            
             if (authentication == null || !authentication.isAuthenticated()) {
+                log.warn("User not authenticated");
                 throw new AppException(ErrorCode.UNAUTHENTICATED);
             }
 
             String username = authentication.getName();
+            log.info("Username: {}", username);
+            
             User user = userRepository.findByUsername(username)
                     .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+            
+            log.info("User found: {}", user.getUserId());
 
             // Lấy giỏ hàng của user
             var cartResponse = cartService.getCart(user.getUserId());
+            log.info("Cart response: {}", cartResponse);
             
             return ResponseEntity.ok().body(new Object() {
                 public final Long cartId = cartResponse.getIdCart();
@@ -61,10 +89,10 @@ public class CartController {
 
         } catch (AppException e) {
             log.error("Error getting current user cart: ", e);
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.status(401).body(e.getMessage());
         } catch (Exception e) {
             log.error("Error getting current user cart: ", e);
-            return ResponseEntity.badRequest().body("Unable to get cart information");
+            return ResponseEntity.status(500).body("Unable to get cart information: " + e.getMessage());
         }
     }
 

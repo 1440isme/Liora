@@ -25,6 +25,9 @@ public interface CartProductMapper {
     @Mapping(target = "productName", source = "product.name")
     @Mapping(target = "productPrice", source = "product.price")
     @Mapping(target = "brandName", source = "product.brand.name")
+    @Mapping(target = "available", source = "product.available")
+    @Mapping(target = "isActive", source = "product.isActive")
+    @Mapping(target = "stock", source = "product.stock")
     @Mapping(target = "mainImageUrl", ignore = true) // Sẽ set thủ công trong service
     CartProductResponse toCartProductResponse(CartProduct cartProduct);
     List<CartProductResponse> toCartProductResponseList(List<CartProduct> cartProducts);
@@ -33,5 +36,6 @@ public interface CartProductMapper {
     @Mapping(target = "cart", ignore = true)
     @Mapping(target = "product", ignore = true)
     @Mapping(target = "totalPrice", ignore = true)
+    @Mapping(target = "choose", ignore = true)
     void updateCartProduct(@MappingTarget CartProduct cartProduct, CartProductUpdateRequest request);
 }

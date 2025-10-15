@@ -19,12 +19,10 @@ public interface OrderMapper {
     @Mapping(target = "idOrder", ignore = true)
     @Mapping(target = "orderDate", ignore = true)
     @Mapping(target = "user", ignore = true)
-    @Mapping(target = "address", ignore = true)
     @Mapping(target = "orderStatus", ignore = true)
     @Mapping(target = "discount", ignore = true)
     Order toOrder(OrderCreationRequest request);
 
-    @Mapping(target = "idAddress", source = "address.idAddress")
     @Mapping(target = "userId", source = "user.userId")
     @Mapping(target = "customerName", source = "user", qualifiedByName = "mapCustomerName")
     @Mapping(target = "discountId", source = "discount.discountId")

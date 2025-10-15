@@ -1389,6 +1389,7 @@ header {
     display: flex;
     align-items: center;
     justify-content: center;
+    border-radius: 50%;
 }
 
 /* Bottom Header - Tầng dưới */
@@ -3005,4 +3006,61 @@ a.dropdown-item:hover {
     color: #E8A2B0 !important;
     text-decoration: none !important;
     outline: none;
+}
+
+
+
+/* Delete Selected Button - Remove red border completely with high specificity */
+button#deleteSelectedBtn.btn.btn-outline-danger.btn-sm {
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    color: #dc3545 !important;
+}
+
+button#deleteSelectedBtn.btn.btn-outline-danger.btn-sm:focus {
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    color: #dc3545 !important;
+}
+
+button#deleteSelectedBtn.btn.btn-outline-danger.btn-sm:hover {
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    color: #dc3545 !important;
+}
+
+button#deleteSelectedBtn.btn.btn-outline-danger.btn-sm:active {
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    color: #dc3545 !important;
+}
+
+button#deleteSelectedBtn.btn.btn-outline-danger.btn-sm:disabled {
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    color: #6c757d !important;
+}
+
+/* ==========================================
+   PAGE TRANSITIONS
+   ========================================== */
+
+.page-transition {
+    opacity: 0.8;
+    transform: scale(0.98);
+    transition: all 0.3s ease;
+}
+
+.page-transition * {
+    pointer-events: none;
 }

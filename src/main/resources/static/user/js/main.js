@@ -469,11 +469,70 @@ class LioraApp {
         return this.wishlistItems.includes(productId);
     }
 
-    updateCartDisplay() {
-        const totalItems = this.cartItems.reduce((total, item) => total + item.quantity, 0);
-        document.querySelectorAll('.cart-badge').forEach(badge => {
-            badge.textContent = totalItems;
-        });
+    async updateCartDisplay() {
+        try {
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                // No token, hide badge
+                document.querySelectorAll('.cart-badge').forEach(badge => {
+                    badge.textContent = '0';
+                    badge.style.display = 'none';
+                });
+                return;
+            }
+
+            // Get current cart from API
+            const response = await fetch('/cart/api/current', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.ok) {
+                const cartData = await response.json();
+                if (cartData.cartId) {
+                    // Get cart items
+                    const itemsResponse = await fetch(`/cart/api/${cartData.cartId}/items`, {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    if (itemsResponse.ok) {
+                        const cartItems = await itemsResponse.json();
+                        const totalItems = cartItems.reduce((total, item) => total + (item.quantity || 0), 0);
+                        
+                        // Update badge
+                        document.querySelectorAll('.cart-badge').forEach(badge => {
+                            badge.textContent = totalItems;
+                            badge.style.display = totalItems > 0 ? 'block' : 'none';
+                        });
+                        
+                        // Update local cart items
+                        this.cartItems = cartItems;
+                        return;
+                    }
+                }
+            }
+            
+            // Fallback: show 0 if no cart or error
+            document.querySelectorAll('.cart-badge').forEach(badge => {
+                badge.textContent = '0';
+                badge.style.display = 'none';
+            });
+            
+        } catch (error) {
+            console.error('Error updating cart display:', error);
+            // Fallback: show 0 on error
+            document.querySelectorAll('.cart-badge').forEach(badge => {
+                badge.textContent = '0';
+                badge.style.display = 'none';
+            });
+        }
     }
 
     applyFilters() {
@@ -1498,61 +1557,15 @@ class LioraApp {
         return product.image || '/uploads/products/default.jpg';
     }
 
-    // Quantity validation methods
-    validateQuantity() {
-        const quantityInput = document.getElementById('quantityInput');
-        const errorDiv = document.getElementById('quantityError');
-        const errorMessage = document.getElementById('quantityErrorMessage');
+    // Smooth navigation method
+    smoothNavigate(url, delay = 300) {
+        // Add smooth transition effect
+        $('body').addClass('page-transition');
         
-        if (!quantityInput || !errorDiv || !errorMessage) return;
-        
-        const currentValue = parseInt(quantityInput.value) || 0;
-        const maxStock = parseInt(quantityInput.getAttribute('max')) || 10;
-        
-        // Allow empty input for better UX (user can clear and type new number)
-        if (quantityInput.value === '' || quantityInput.value === '0') {
-            // Hide error message when input is empty (user is typing)
-            errorDiv.style.display = 'none';
-            quantityInput.classList.remove('is-invalid');
-            return;
-        }
-        
-        if (currentValue > maxStock) {
-            // Show error message
-            errorDiv.style.display = 'block';
-            errorMessage.textContent = `Số lượng tối đa bạn có thể mua là ${maxStock}.`;
-            quantityInput.classList.add('is-invalid');
-            
-            // Reset to max stock
-            quantityInput.value = maxStock;
-        } else if (currentValue < 1) {
-            // Show error for minimum
-            errorDiv.style.display = 'block';
-            errorMessage.textContent = 'Số lượng tối thiểu là 1.';
-            quantityInput.classList.add('is-invalid');
-            
-            // Reset to minimum
-            quantityInput.value = 1;
-        } else {
-            // Hide error message
-            errorDiv.style.display = 'none';
-            quantityInput.classList.remove('is-invalid');
-        }
-    }
-
-    // Handle input blur - validate when user finishes typing
-    validateQuantityOnBlur() {
-        const quantityInput = document.getElementById('quantityInput');
-        if (!quantityInput) return;
-        
-        const currentValue = parseInt(quantityInput.value) || 0;
-        const maxStock = parseInt(quantityInput.getAttribute('max')) || 10;
-        
-        // If input is empty or 0, set to minimum
-        if (quantityInput.value === '' || currentValue < 1) {
-            quantityInput.value = 1;
-            this.validateQuantity();
-        }
+        // Navigate after a short delay for smooth effect
+        setTimeout(() => {
+            window.location.href = url;
+        }, delay);
     }
 
     incrementQuantity() {
