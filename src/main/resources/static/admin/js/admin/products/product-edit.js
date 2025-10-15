@@ -6,7 +6,7 @@ class ProductEditManager {
         this.init();
         this.setupFormIntegration();
     }
-    
+
     init() {
         this.setupEventListeners();
         this.setupAutoResize();
@@ -22,20 +22,20 @@ class ProductEditManager {
     // Setup auto-resize for textarea
     setupAutoResize() {
         const descriptionTextarea = document.getElementById('description');
-        
+
         if (descriptionTextarea) {
             // Auto-resize on input
             descriptionTextarea.addEventListener('input', () => {
                 this.autoResizeTextarea(descriptionTextarea);
             });
-            
+
             // Auto-resize on paste
             descriptionTextarea.addEventListener('paste', () => {
                 setTimeout(() => {
                     this.autoResizeTextarea(descriptionTextarea);
                 }, 10);
             });
-            
+
             // Initial resize
             this.autoResizeTextarea(descriptionTextarea);
         }
@@ -45,11 +45,11 @@ class ProductEditManager {
     autoResizeTextarea(textarea) {
         // Reset height to auto to get the correct scrollHeight
         textarea.style.height = 'auto';
-        
+
         // Calculate new height based on content
         const newHeight = Math.min(textarea.scrollHeight, 300); // Max height 300px
         const minHeight = 100; // Min height 100px
-        
+
         // Set the new height
         textarea.style.height = Math.max(newHeight, minHeight) + 'px';
     }
@@ -57,12 +57,12 @@ class ProductEditManager {
     setupEventListeners() {
         // Delete confirmation
         document.getElementById('confirmDeleteBtn').addEventListener('click', () => this.confirmDelete());
-        
+
         // Upload new images button
         document.getElementById('uploadNewImagesBtn').addEventListener('click', () => {
             this.uploadNewImages();
         });
-        
+
         // Preview new images on file change
         document.getElementById('newImages').addEventListener('change', () => {
             this.previewNewImages();
@@ -79,30 +79,30 @@ class ProductEditManager {
     async loadProductData() {
         console.log('=== Starting loadProductData ===');
         console.log('Product ID:', this.productId);
-        
+
         if (!this.productId) {
             this.showError('Không tìm thấy ID sản phẩm');
             return;
         }
-    
+
         try {
             console.log('Fetching product data...');
             const response = await fetch(`/admin/api/products/${this.productId}`);
             const data = await response.json();
             console.log('Product edit data:', data);
-            
+
             if (data.result) {
                 console.log('Product data received, populating form...');
                 this.currentProduct = data.result;
                 this.populateForm(data.result);
-                
+
                 console.log('Form populated, loading images...');
                 this.loadCurrentImages(data.result);
-                
+
                 console.log('Loading product info...');
                 this.loadProductInfo(data.result);
                 this.updateDeleteModal(data.result);
-                
+
                 console.log('=== loadProductData completed ===');
             } else {
                 this.showError('Không thể tải thông tin sản phẩm');
@@ -116,35 +116,43 @@ class ProductEditManager {
     // Populate form with product data
     populateForm(product) {
         console.log('Populating form with product:', product); // Debug log
-        
+
         // Basic info - với null check
         const nameEl = document.getElementById('name');
         if (nameEl) nameEl.value = product.name || '';
-        
+
         const descEl = document.getElementById('description');
-        if (descEl) descEl.value = product.description || '';
-        
+        if (window.productDescriptionEditor && typeof window.productDescriptionEditor.setData === 'function') {
+            try {
+                window.productDescriptionEditor.setData(product.description || '');
+            } catch (e) {
+                if (descEl) descEl.value = product.description || '';
+            }
+        } else {
+            if (descEl) descEl.value = product.description || '';
+        }
+
         const priceEl = document.getElementById('price');
         if (priceEl) priceEl.value = product.price || '';
-        
+
         const stockEl = document.getElementById('stock');
         if (stockEl) stockEl.value = product.stock || 0;
-        
+
         const soldCountEl = document.getElementById('soldCount');
         if (soldCountEl) soldCountEl.value = product.soldCount || 0;
-        
+
         // Status checkboxes
         const isActiveEl = document.getElementById('isActive');
         if (isActiveEl) isActiveEl.checked = product.isActive || false;
-        
+
         const availableEl = document.getElementById('available');
         if (availableEl) availableEl.checked = product.available || false;
-        
+
         // Load categories and brands, then set values
         this.loadCategoriesAndBrands().then(() => {
             const categoryEl = document.getElementById('categoryId');
             if (categoryEl) categoryEl.value = product.categoryId || '';
-            
+
             const brandEl = document.getElementById('brandId');
             if (brandEl) brandEl.value = product.brandId || '';
         });
@@ -156,11 +164,11 @@ class ProductEditManager {
             // Load categories
             const categoriesResponse = await fetch('/admin/api/categories/all');
             const categoriesData = await categoriesResponse.json();
-            
+
             if (categoriesData.result) {
                 const categorySelect = document.getElementById('categoryId');
                 categorySelect.innerHTML = '<option value="">Chọn danh mục</option>';
-                
+
                 categoriesData.result.forEach(category => {
                     const option = document.createElement('option');
                     option.value = category.categoryId;
@@ -172,11 +180,11 @@ class ProductEditManager {
             // Load brands
             const brandsResponse = await fetch('/admin/api/brands/all');
             const brandsData = await brandsResponse.json();
-            
+
             if (brandsData.result) {
                 const brandSelect = document.getElementById('brandId');
                 brandSelect.innerHTML = '<option value="">Chọn thương hiệu</option>';
-                
+
                 brandsData.result.forEach(brand => {
                     const option = document.createElement('option');
                     option.value = brand.brandId;
@@ -193,7 +201,7 @@ class ProductEditManager {
     // Load current images with management features
     async loadCurrentImages(product) {
         const container = document.getElementById('currentImages');
-        
+
         if (!container) {
             console.log('currentImages container not found');
             return;
@@ -203,11 +211,11 @@ class ProductEditManager {
         container.innerHTML = '';
         container.style.overflow = 'auto';
         container.style.maxHeight = '400px';
-        
+
         try {
             const response = await fetch(`/admin/api/products/${this.productId}/images`);
             const data = await response.json();
-            
+
             if (data.result && data.result.length > 0) {
                 let imagesHTML = '<div class="row g-2">';
                 data.result.forEach((image, index) => {
@@ -219,10 +227,10 @@ class ProductEditManager {
                                 
                                 <!-- Image actions -->
                                 <div class="image-actions position-absolute top-0 end-0 p-1">
-                                    ${image.isMain ? 
-                                        '<span class="badge bg-primary">Chính</span>' : 
-                                        '<button class="btn btn-sm btn-outline-primary" onclick="window.productEditManager.setAsMain(' + image.imageId + ')">Đặt làm chính</button>'
-                                    }
+                                    ${image.isMain ?
+                            '<span class="badge bg-primary">Chính</span>' :
+                            '<button class="btn btn-sm btn-outline-primary" onclick="window.productEditManager.setAsMain(' + image.imageId + ')">Đặt làm chính</button>'
+                        }
                                     '<button class="btn btn-sm btn-outline-danger ms-1" onclick="window.productEditManager.deleteImage(${image.imageId})">'
                                         <i class="mdi mdi-delete"></i>
                                     </button>
@@ -248,7 +256,7 @@ class ProductEditManager {
             const response = await fetch(`/admin/api/products/${this.productId}/images/${imageId}/set-main`, {
                 method: 'PUT'
             });
-            
+
             if (response.ok) {
                 this.showNotification('Đặt làm ảnh chính thành công', 'success');
                 this.loadCurrentImages(); // Reload images
@@ -281,12 +289,12 @@ class ProductEditManager {
     }
 
     async confirmDeleteImage(imageId) {
-        
+
         try {
             const response = await fetch(`/admin/api/products/${this.productId}/images/${imageId}`, {
                 method: 'DELETE'
             });
-            
+
             if (response.ok) {
                 this.showNotification('Xóa hình ảnh thành công', 'success');
                 this.loadCurrentImages(); // Reload images
@@ -304,26 +312,26 @@ class ProductEditManager {
     async uploadNewImages() {
         const fileInput = document.getElementById('newImages');
         const files = fileInput.files;
-        
+
         if (!files || files.length === 0) {
             this.showNotification('Vui lòng chọn hình ảnh', 'warning');
             return;
         }
-        
+
         const formData = new FormData();
         for (let i = 0; i < files.length; i++) {
             formData.append('files', files[i]);
         }
         formData.append('productId', this.productId);
-        
+
         try {
             const response = await fetch('/admin/api/upload/products', {
                 method: 'POST',
                 body: formData
             });
-            
+
             const data = await response.json();
-            
+
             if (data.result) {
                 this.showNotification('Upload hình ảnh thành công', 'success');
                 this.loadCurrentImages(); // Reload current images
@@ -349,18 +357,18 @@ class ProductEditManager {
         const fileInput = document.getElementById('newImages');
         const files = fileInput.files;
         const preview = document.getElementById('newImagePreview');
-        
+
         if (!files || files.length === 0) {
             preview.innerHTML = '<p class="text-muted">Chọn hình ảnh mới để xem trước</p>';
             return;
         }
-        
+
         let html = '<div class="row">';
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
             const reader = new FileReader();
-            
-            reader.onload = function(e) {
+
+            reader.onload = function (e) {
                 html += `
                     <div class="col-md-4 mb-2">
                         <img src="${e.target.result}" class="img-fluid rounded" style="aspect-ratio: 4/3; object-fit: cover;">
@@ -368,7 +376,7 @@ class ProductEditManager {
                 `;
                 preview.innerHTML = html + '</div>';
             };
-            
+
             reader.readAsDataURL(file);
         }
     }
@@ -477,7 +485,7 @@ class ProductEditManager {
             const response = await fetch(`/admin/api/products/${this.productId}/update-timestamp`, {
                 method: 'PUT'
             });
-            
+
             if (response.ok) {
                 // Reload product info to show updated timestamp
                 this.loadProductInfo(this.currentProduct);
@@ -486,7 +494,7 @@ class ProductEditManager {
             console.error('Error updating timestamp:', error);
         }
     }
-    
+
     refreshProduct() {
         console.log('Refreshing product data...');
         this.loadProductData();

@@ -296,6 +296,154 @@
                 margin-bottom: 0;
             }
         }
+
+        /* Product info tabs section (pink style) */
+        .product-info-wrapper {
+            background: #ffeaf1;
+            width: 100%;
+        }
+
+        .product-info-section {
+            padding-top: 24px;
+            padding-bottom: 24px;
+        }
+
+        /* Ensure inner blocks don't override the pink background */
+        .product-info-section,
+        .product-info-wrapper .container,
+        .product-info-section .row,
+        .product-info-section .col-12 {
+            background: transparent;
+        }
+
+        .product-info-section .custom-tabs {
+            border-bottom: none;
+            gap: 24px;
+        }
+
+        .product-info-section .custom-tabs .nav-link {
+            border: none;
+            background: transparent;
+            color: #7a7a7a;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            position: relative;
+            padding: 12px 6px;
+        }
+
+        .product-info-section .custom-tabs .nav-link::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            bottom: -6px;
+            height: 3px;
+            width: 0;
+            background: #ff6b9d;
+            /* pink */
+            border-radius: 3px;
+            transition: width 0.25s ease;
+        }
+
+        .product-info-section .custom-tabs .nav-link.active {
+            color: #d6336c;
+            /* stronger pink */
+        }
+
+        .product-info-section .custom-tabs .nav-link.active::after {
+            width: 100%;
+        }
+
+        .product-info-section .tab-content {
+            border: none;
+            background: transparent;
+            border-radius: 0;
+            padding: 24px 0;
+            margin-top: 8px;
+        }
+
+        .product-description-content h1,
+        .product-description-content h2,
+        .product-description-content h3,
+        .product-description-content h4,
+        .product-description-content h5,
+        .product-description-content h6 {
+            color: #2c3e50;
+            margin-top: 1.25rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .product-description-content p,
+        .product-description-content li {
+            color: #444;
+            line-height: 1.8;
+        }
+
+        .product-description-content blockquote {
+            border-left: 4px solid #ff6b9d;
+            padding-left: 1rem;
+            color: #666;
+            margin: 1rem 0;
+        }
+
+        .product-description-content table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .product-description-content table th,
+        .product-description-content table td {
+            border: 1px solid #f3c8d7;
+            padding: 0.5rem 0.75rem;
+        }
+
+        /* Collapsible description */
+        .product-description-collapsible {
+            position: relative;
+            max-height: 520px;
+            /* collapsed height */
+            overflow: hidden;
+            transition: max-height 0.35s ease;
+        }
+
+        .product-description-collapsible.expanded {
+            max-height: 9999px;
+            /* expanded */
+        }
+
+        .product-description-fade {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: 120px;
+            background: linear-gradient(180deg, rgba(255, 234, 241, 0) 0%, rgba(255, 234, 241, 0.85) 60%, rgba(255, 234, 241, 1) 100%);
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+
+        .product-description-collapsible.expanded .product-description-fade {
+            opacity: 0;
+        }
+
+        .toggle-desc-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            border-radius: 999px;
+            border: 1px solid #ff8fb0;
+            background: #fff;
+            color: #d6336c;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        .toggle-desc-btn:hover {
+            background: #ffeaf1;
+            border-color: #ff6b9d;
+            color: #c2185b;
+        }
     </style>
 </head>
 
@@ -561,6 +709,57 @@
             </div>
         </div>
     </div>
+
+    <!-- Product Detail Tabs Section -->
+    <section class="product-info-wrapper py-4">
+        <div class="container product-info-section my-3">
+            <div class="row">
+                <div class="col-12">
+                    <ul class="nav custom-tabs" id="productDetailTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="description-tab" data-bs-toggle="tab"
+                                data-bs-target="#description" type="button" role="tab" aria-controls="description"
+                                aria-selected="true">
+                                Mô tả sản phẩm
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="reviews-tab" data-bs-toggle="tab" data-bs-target="#reviews"
+                                type="button" role="tab" aria-controls="reviews" aria-selected="false">
+                                Đánh giá sản phẩm
+                            </button>
+                        </li>
+                    </ul>
+                    <div class="tab-content" id="productDetailTabsContent">
+                        <div class="tab-pane fade show active" id="description" role="tabpanel"
+                            aria-labelledby="description-tab">
+                            <div class="product-description-content">
+                                <div id="productDescriptionCollapsible" class="product-description-collapsible">
+                                    <div th:if="${product.description != null and !#strings.isEmpty(product.description)}"
+                                        th:utext="${product.description}"></div>
+                                    <div th:if="${product.description == null or #strings.isEmpty(product.description)}"
+                                        class="text-muted">
+                                        Chưa có mô tả cho sản phẩm này.
+                                    </div>
+                                    <div class="product-description-fade"></div>
+                                </div>
+                                <div class="mt-3 text-center">
+                                    <button id="toggleDescriptionBtn" type="button" class="toggle-desc-btn">
+                                        <i class="fas fa-chevron-down"></i>
+                                        <span>Xem thêm nội dung</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="reviews" role="tabpanel" aria-labelledby="reviews-tab">
+                            <div class="text-center text-muted py-4">
+                                Tính năng đánh giá sản phẩm sẽ được phát triển sau.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+    </section>
 
     <!-- Footer -->
     <div th:replace="~{user/layout/user-footer :: footer}"></div>
@@ -1315,6 +1514,34 @@
             // Use a beautiful ticket icon for regular discounts
             return '🎫';
         }
+
+        // Toggle product description expand/collapse
+        document.addEventListener('DOMContentLoaded', function () {
+            const collapsible = document.getElementById('productDescriptionCollapsible');
+            const toggleBtn = document.getElementById('toggleDescriptionBtn');
+            if (!collapsible || !toggleBtn) return;
+
+            function isOverflowing(el) { return el.scrollHeight > el.clientHeight + 4; }
+
+            // Hide toggle if not overflowing
+            if (!isOverflowing(collapsible)) {
+                toggleBtn.style.display = 'none';
+            }
+
+            toggleBtn.addEventListener('click', function () {
+                const expanded = collapsible.classList.toggle('expanded');
+                const icon = toggleBtn.querySelector('i');
+                const text = toggleBtn.querySelector('span');
+                if (expanded) {
+                    if (icon) icon.className = 'fas fa-chevron-up';
+                    if (text) text.textContent = 'Rút gọn nội dung';
+                } else {
+                    if (icon) icon.className = 'fas fa-chevron-down';
+                    if (text) text.textContent = 'Xem thêm nội dung';
+                    collapsible.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            });
+        });
     </script>
 </body>
 

@@ -51,19 +51,19 @@ class ProductDetailManager {
 
         try {
             this.showLoadingState();
-            
+
             // Load product info and images in parallel
             const [productResponse, imagesResponse] = await Promise.all([
                 fetch(`/admin/api/products/${this.productId}`),
                 fetch(`/admin/api/products/${this.productId}/images`)
             ]);
-            
+
             const productData = await productResponse.json();
             const imagesData = await imagesResponse.json();
-            
+
             console.log('Product data:', productData);
             console.log('Images data:', imagesData);
-            
+
             if (productData.result) {
                 this.currentProduct = productData.result;
                 // Add images to product data
@@ -82,37 +82,61 @@ class ProductDetailManager {
     populateProductDetail(product) {
         // Basic information
         document.getElementById('productName').textContent = product.name || 'N/A';
-        document.getElementById('productDescription').textContent = product.description || 'N/A';
+        // Hiển thị mô tả dạng HTML an toàn (đã được hệ thống tạo ra)
+        const descEl = document.getElementById('productDescription');
+        if (descEl) {
+            descEl.innerHTML = this.sanitizeMinimal(product.description || '');
+        }
         document.getElementById('productPrice').textContent = this.formatCurrency(product.price);
         document.getElementById('productStock').textContent = `${product.stock || 0} sản phẩm`;
-        
+
         // Category and brand
         document.getElementById('productCategory').textContent = product.categoryName || 'N/A';
         document.getElementById('productBrand').textContent = product.brandName || 'N/A';
-        
+
         // Status
         document.getElementById('productStatus').innerHTML = this.renderStatus(product.isActive);
-        
+
         // Dates
         document.getElementById('productCreatedDate').textContent = this.formatDate(product.createdDate);
-        
+
         // Stock details
         document.getElementById('productStockDetail').textContent = `${product.stock || 0} sản phẩm`;
         document.getElementById('productSoldCount').textContent = product.soldCount || 0;
-        document.getElementById('productAvailable').innerHTML = product.available ? 
-            '<span class="text-success">Có sẵn</span>' : 
+        document.getElementById('productAvailable').innerHTML = product.available ?
+            '<span class="text-success">Có sẵn</span>' :
             '<span class="text-danger">Không có sẵn</span>';
-        
+
         // Images
         this.renderProductImages(product.images || []);
-        
+
         // Update action buttons based on status
         this.updateActionButtons(product.isActive);
     }
 
+    // Sanitize tối thiểu: loại bỏ script và inline event handlers
+    sanitizeMinimal(html) {
+        if (!html) return '';
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = html;
+        // Remove script/style tags
+        wrapper.querySelectorAll('script, style').forEach(el => el.remove());
+        // Remove on* attributes and javascript: links
+        wrapper.querySelectorAll('*').forEach(el => {
+            [...el.attributes].forEach(attr => {
+                const name = attr.name.toLowerCase();
+                const value = attr.value.toLowerCase();
+                if (name.startsWith('on') || value.startsWith('javascript:')) {
+                    el.removeAttribute(attr.name);
+                }
+            });
+        });
+        return wrapper.innerHTML;
+    }
+
     renderProductImages(images) {
         const container = document.getElementById('productImages');
-        
+
         if (!images || images.length === 0) {
             container.innerHTML = `
                 <div class="text-center text-muted py-4">
@@ -149,7 +173,7 @@ class ProductDetailManager {
                     <h6 class="text-muted mb-2">Hình ảnh khác (${otherImages.length})</h6>
                     <div class="row g-2">
             `;
-            
+
             otherImages.forEach((image, index) => {
                 html += `
                     <div class="col-6">
@@ -162,7 +186,7 @@ class ProductDetailManager {
                     </div>
                 `;
             });
-            
+
             html += `
                     </div>
                 </div>
@@ -174,14 +198,14 @@ class ProductDetailManager {
     }
 
     renderStatus(isActive) {
-        return isActive 
+        return isActive
             ? '<span class="badge bg-success">Hoạt động</span>'
             : '<span class="badge bg-danger">Tạm dừng</span>';
     }
 
     updateActionButtons(isActive) {
         const toggleBtn = document.getElementById('toggleStatusBtn');
-        
+
         if (toggleBtn) {
             if (isActive) {
                 toggleBtn.innerHTML = '<i class="mdi mdi-pause"></i> Tạm dừng';
@@ -200,7 +224,7 @@ class ProductDetailManager {
             'productCategory', 'productBrand', 'productStatus', 'productCreatedDate',
             'productStockDetail', 'productSoldCount', 'productAvailable'
         ];
-        
+
         elements.forEach(id => {
             const element = document.getElementById(id);
             if (element) {
@@ -293,9 +317,9 @@ class ProductDetailManager {
             ${message}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         `;
-        
+
         document.body.appendChild(notification);
-        
+
         // Auto remove after 3 seconds
         setTimeout(() => {
             if (notification.parentNode) {
