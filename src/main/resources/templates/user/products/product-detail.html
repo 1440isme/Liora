@@ -1,13 +1,14 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:text="${product.name} + ' - Liora'">Product Detail - Liora</title>
-    
+
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    
+
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -19,66 +20,69 @@
 
     <!-- Material Design Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@7.4.47/css/materialdesignicons.min.css">
-    
+
     <!-- Custom CSS -->
     <link rel="stylesheet" th:href="@{/user/css/style.css}">
     <link rel="stylesheet" th:href="@{/user/css/product-detail.css}">
-    
+
     <!-- Product Detail Gallery Styles -->
     <style>
         /* Namespace: product-detail-gallery - Tránh xung đột với global styles */
         .product-detail-gallery {
             position: relative;
         }
-        
+
         .product-detail-thumbnail-nav {
             display: flex;
             flex-direction: column;
             height: 400px;
             gap: 10px;
         }
-        
-                .product-detail-scroll-btn {
-                    width: 100%;
-                    padding: 8px;
-                    border: none;
-                    border-radius: 8px;
-                    background: rgba(255, 255, 255, 0.95);
-                    color: #495057;
-                    font-size: 12px;
-                    cursor: pointer;
-                    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                    backdrop-filter: blur(8px);
-                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                }
-                
-                .product-detail-scroll-btn:hover {
-                    background: rgba(255, 255, 255, 1);
-                    border-color: #e9ecef;
-                    color: #007bff;
-                    transform: scale(1.05);
-                    box-shadow: 0 4px 16px rgba(0, 123, 255, 0.2);
-                }
-                
-                .product-detail-scroll-btn:active {
-                    transform: scale(0.95);
-                }
-                
-        
-                .product-detail-thumbnail-list {
-                    flex: 1;
-                    overflow-y: auto;
-                    scrollbar-width: none; /* Firefox - hide scrollbar */
-                    -ms-overflow-style: none; /* IE and Edge - hide scrollbar */
-                }
-                
-                .product-detail-thumbnail-list::-webkit-scrollbar {
-                    display: none; /* Chrome, Safari, Opera - hide scrollbar */
-                }
-        
+
+        .product-detail-scroll-btn {
+            width: 100%;
+            padding: 8px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.95);
+            color: #495057;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(8px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .product-detail-scroll-btn:hover {
+            background: rgba(255, 255, 255, 1);
+            border-color: #e9ecef;
+            color: #007bff;
+            transform: scale(1.05);
+            box-shadow: 0 4px 16px rgba(0, 123, 255, 0.2);
+        }
+
+        .product-detail-scroll-btn:active {
+            transform: scale(0.95);
+        }
+
+
+        .product-detail-thumbnail-list {
+            flex: 1;
+            overflow-y: auto;
+            scrollbar-width: none;
+            /* Firefox - hide scrollbar */
+            -ms-overflow-style: none;
+            /* IE and Edge - hide scrollbar */
+        }
+
+        .product-detail-thumbnail-list::-webkit-scrollbar {
+            display: none;
+            /* Chrome, Safari, Opera - hide scrollbar */
+        }
+
         .product-detail-thumbnail-item {
             width: 100%;
             height: 60px;
@@ -90,20 +94,20 @@
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
         }
-        
+
         .product-detail-thumbnail-item:hover {
             border-color: #007bff;
             transform: scale(1.05);
             box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
         }
-        
+
         .product-detail-thumbnail-item.active {
             border-color: #dee2e6;
             box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
             transform: scale(1.02);
             background: rgba(248, 249, 250, 0.3);
         }
-        
+
         .product-detail-thumbnail-item.active::after {
             content: '';
             position: absolute;
@@ -115,7 +119,7 @@
             border-radius: 6px;
             pointer-events: none;
         }
-        
+
         .product-detail-thumbnail-item img {
             width: 100%;
             height: 100%;
@@ -123,7 +127,7 @@
             max-width: 100%;
             max-height: 100%;
         }
-        
+
         .product-detail-main-image {
             position: relative;
             height: 600px;
@@ -135,7 +139,7 @@
             align-items: center;
             justify-content: center;
         }
-        
+
         .product-detail-main-image img {
             width: 100%;
             height: 100%;
@@ -143,56 +147,58 @@
             max-width: 100%;
             max-height: 100%;
         }
-        
+
         /* Hide scrollbar for navigation arrows */
         .product-detail-nav-btn::-webkit-scrollbar {
             display: none;
         }
-        
+
         .product-detail-nav-btn {
-            -ms-overflow-style: none;  /* IE and Edge */
-            scrollbar-width: none;  /* Firefox */
+            -ms-overflow-style: none;
+            /* IE and Edge */
+            scrollbar-width: none;
+            /* Firefox */
         }
-        
+
         .product-detail-main-image img {
             width: 100%;
             height: 100%;
             object-fit: contain;
             transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        
+
         .product-detail-main-image:hover img {
             transform: scale(1.05);
         }
-        
+
         /* Image transition effects */
         .product-detail-main-image {
             position: relative;
             overflow: hidden;
         }
-        
+
         .product-detail-main-image img {
             transition: opacity 0.3s ease, transform 0.3s ease;
         }
-        
+
         .product-detail-main-image img.fade-in {
             opacity: 1;
             transform: scale(1);
         }
-        
+
         .product-detail-main-image img.fade-out {
             opacity: 0;
             transform: scale(0.95);
         }
-        
+
         .product-detail-badges {
             position: absolute;
             top: 15px;
             left: 15px;
             z-index: 10;
         }
-        
-        
+
+
         /* Navigation arrows on main image - Modern Design */
         .product-detail-nav-btn {
             position: absolute;
@@ -215,83 +221,84 @@
             align-items: center;
             justify-content: center;
         }
-        
+
         .product-detail-nav-left {
             left: 12px;
         }
-        
+
         .product-detail-nav-right {
             right: 12px;
         }
-        
+
         .product-detail-main-image:hover .product-detail-nav-btn {
             opacity: 1;
         }
-        
+
         .product-detail-nav-btn:hover {
             background: rgba(255, 255, 255, 1);
             color: #007bff;
             transform: translateY(-50%) scale(1.05);
             box-shadow: 0 4px 16px rgba(0, 123, 255, 0.2);
         }
-        
+
         .product-detail-nav-btn:active {
             transform: translateY(-50%) scale(0.95);
         }
-        
-                /* Product Information Styles */
-                .btn-pink {
-                    background-color: #ff6b9d;
-                    border-color: #ff6b9d;
-                }
-                
-                .btn-pink:hover {
-                    background-color: #ff4d7a;
-                    border-color: #ff4d7a;
-                }
-                
-                .bg-pink {
-                    background-color: #ff6b9d !important;
-                }
-                
-                /* Sales Progress Bar */
-                .progress {
-                    background-color: #e9ecef;
-                    border-radius: 4px;
-                }
-                
-                .progress-bar {
-                    background: linear-gradient(90deg, #ff6b9d 0%, #ff8fab 100%);
-                    border-radius: 4px;
-                    transition: width 0.3s ease;
-                }
-                
-                /* Responsive */
-                @media (max-width: 768px) {
-                    .product-detail-main-image {
-                        height: 400px;
-                    }
-                    
-                    .product-detail-thumbnail-nav {
-                        flex-direction: row;
-                        height: auto;
-                    }
-                    
-                    .product-detail-thumbnail-list {
-                        display: flex;
-                        overflow-x: auto;
-                        overflow-y: hidden;
-                        gap: 8px;
-                    }
-                    
-                    .product-detail-thumbnail-item {
-                        min-width: 60px;
-                        height: 60px;
-                        margin-bottom: 0;
-                    }
-                }
+
+        /* Product Information Styles */
+        .btn-pink {
+            background-color: #ff6b9d;
+            border-color: #ff6b9d;
+        }
+
+        .btn-pink:hover {
+            background-color: #ff4d7a;
+            border-color: #ff4d7a;
+        }
+
+        .bg-pink {
+            background-color: #ff6b9d !important;
+        }
+
+        /* Sales Progress Bar */
+        .progress {
+            background-color: #e9ecef;
+            border-radius: 4px;
+        }
+
+        .progress-bar {
+            background: linear-gradient(90deg, #ff6b9d 0%, #ff8fab 100%);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .product-detail-main-image {
+                height: 400px;
+            }
+
+            .product-detail-thumbnail-nav {
+                flex-direction: row;
+                height: auto;
+            }
+
+            .product-detail-thumbnail-list {
+                display: flex;
+                overflow-x: auto;
+                overflow-y: hidden;
+                gap: 8px;
+            }
+
+            .product-detail-thumbnail-item {
+                min-width: 60px;
+                height: 60px;
+                margin-bottom: 0;
+            }
+        }
     </style>
 </head>
+
 <body>
     <!-- Header -->
     <div th:replace="~{user/layout/user-header :: header}"></div>
@@ -299,7 +306,7 @@
     <!-- Breadcrumb -->
     <nav aria-label="breadcrumb" class="bg-light py-3">
         <div class="container">
-            
+
             <ol class="breadcrumb mb-0">
                 <!-- 1. Trang chủ (luôn hiển thị) -->
                 <li class="breadcrumb-item">
@@ -310,11 +317,13 @@
                     <a th:href="@{'/brand/' + ${brandId}}" th:text="${brandName}" class="text-decoration-none">Brand</a>
                 </li>
                 <li class="breadcrumb-item" th:unless="${fromBrand}">
-                    <a th:href="@{'/product/view/category/' + ${product.categoryId}}" th:text="${product.categoryName}" class="text-decoration-none">Category</a>
+                    <a th:href="@{'/product/view/category/' + ${product.categoryId}}" th:text="${product.categoryName}"
+                        class="text-decoration-none">Category</a>
                 </li>
                 <!-- 3. Category sub-level (chỉ khi từ brand) -->
                 <li class="breadcrumb-item" th:if="${fromBrand}">
-                    <a th:href="@{'/product/view/category/' + ${product.categoryId}}" th:text="${product.categoryName}" class="text-decoration-none">Category</a>
+                    <a th:href="@{'/product/view/category/' + ${product.categoryId}}" th:text="${product.categoryName}"
+                        class="text-decoration-none">Category</a>
                 </li>
                 <!-- 4. Product name (luôn hiển thị) -->
                 <li class="breadcrumb-item active" th:text="${product.name}">Product Name</li>
@@ -326,193 +335,197 @@
     <div class="product-detail-page">
         <div class="container my-5">
             <div class="row g-5">
-            <!-- Product Images -->
-            <div class="col-lg-6">
-                <div id="product-detail-gallery" class="product-detail-gallery">
-                    <div class="row">
-                        <!-- Thumbnail Navigation (Left) -->
-                        <div class="col-2">
-                            <div class="product-detail-thumbnail-nav">
-                                <!-- Scroll Up Button -->
-                                <button class="btn btn-outline-secondary btn-sm product-detail-scroll-btn" onclick="productDetailScroll('up')">
-                                    <i class="fas fa-chevron-up"></i>
-                                </button>
-                                
-                                <!-- Thumbnail List -->
-                                <div class="product-detail-thumbnail-list" id="productDetailThumbnailList">
-                                    <!-- Loop through all product images -->
-                                    <div th:each="imageUrl, iterStat : ${product.imageUrls}" 
-                                         class="product-detail-thumbnail-item" 
-                                         th:classappend="${iterStat.first} ? 'active' : ''"
-                                         th:data-image-url="${imageUrl}"
-                                         onclick="productDetailChangeImage(this.dataset.imageUrl)">
-                                        <img th:src="${imageUrl}" 
-                                             th:alt="${product.name}"
-                                             class="img-fluid">
+                <!-- Product Images -->
+                <div class="col-lg-6">
+                    <div id="product-detail-gallery" class="product-detail-gallery">
+                        <div class="row">
+                            <!-- Thumbnail Navigation (Left) -->
+                            <div class="col-2">
+                                <div class="product-detail-thumbnail-nav">
+                                    <!-- Scroll Up Button -->
+                                    <button class="btn btn-outline-secondary btn-sm product-detail-scroll-btn"
+                                        onclick="productDetailScroll('up')">
+                                        <i class="fas fa-chevron-up"></i>
+                                    </button>
+
+                                    <!-- Thumbnail List -->
+                                    <div class="product-detail-thumbnail-list" id="productDetailThumbnailList">
+                                        <!-- Loop through all product images -->
+                                        <div th:each="imageUrl, iterStat : ${product.imageUrls}"
+                                            class="product-detail-thumbnail-item"
+                                            th:classappend="${iterStat.first} ? 'active' : ''"
+                                            th:data-image-url="${imageUrl}"
+                                            onclick="productDetailChangeImage(this.dataset.imageUrl)">
+                                            <img th:src="${imageUrl}" th:alt="${product.name}" class="img-fluid">
+                                        </div>
+
+                                        <!-- Fallback if no images -->
+                                        <div th:if="${product.imageUrls == null || product.imageUrls.isEmpty()}"
+                                            class="product-detail-thumbnail-item active"
+                                            th:data-image-url="${product.mainImageUrl}"
+                                            onclick="productDetailChangeImage(this.dataset.imageUrl)">
+                                            <img th:src="${product.mainImageUrl}" th:alt="${product.name}"
+                                                class="img-fluid">
+                                        </div>
                                     </div>
-                                    
-                                    <!-- Fallback if no images -->
-                                    <div th:if="${product.imageUrls == null || product.imageUrls.isEmpty()}" 
-                                         class="product-detail-thumbnail-item active" 
-                                         th:data-image-url="${product.mainImageUrl}"
-                                         onclick="productDetailChangeImage(this.dataset.imageUrl)">
-                                        <img th:src="${product.mainImageUrl}" 
-                                             th:alt="${product.name}"
-                                             class="img-fluid">
-                                    </div>
+
+                                    <!-- Scroll Down Button -->
+                                    <button class="btn btn-outline-secondary btn-sm product-detail-scroll-btn"
+                                        onclick="productDetailScroll('down')">
+                                        <i class="fas fa-chevron-down"></i>
+                                    </button>
                                 </div>
-                                
-                                <!-- Scroll Down Button -->
-                                <button class="btn btn-outline-secondary btn-sm product-detail-scroll-btn" onclick="productDetailScroll('down')">
-                                    <i class="fas fa-chevron-down"></i>
-                                </button>
                             </div>
-                        </div>
-                        
-                        <!-- Main Image (Right) -->
-                        <div class="col-10">
-                            <div class="product-detail-main-image">
-                                <img id="productDetailMainImage" 
-                                     th:src="${product.mainImageUrl != null ? product.mainImageUrl : '/admin/images/liora-pink.svg'}"
-                                     th:alt="${product.name}"
-                                     class="img-fluid"
-                                     onerror="this.src='/admin/images/liora-pink.svg'">
-                                
-                                <!-- Navigation arrows on main image -->
-                                <button class="product-detail-nav-btn product-detail-nav-left" 
-                                        onclick="productDetailScroll('up')" 
-                                        title="Hình trước">
-                                    <i class="fas fa-chevron-left"></i>
-                                </button>
-                                
-                                <button class="product-detail-nav-btn product-detail-nav-right" 
-                                        onclick="productDetailScroll('down')" 
-                                        title="Hình tiếp">
-                                    <i class="fas fa-chevron-right"></i>
-                                </button>
+
+                            <!-- Main Image (Right) -->
+                            <div class="col-10">
+                                <div class="product-detail-main-image">
+                                    <img id="productDetailMainImage"
+                                        th:src="${product.mainImageUrl != null ? product.mainImageUrl : '/admin/images/liora-pink.svg'}"
+                                        th:alt="${product.name}" class="img-fluid"
+                                        onerror="this.src='/admin/images/liora-pink.svg'">
+
+                                    <!-- Navigation arrows on main image -->
+                                    <button class="product-detail-nav-btn product-detail-nav-left"
+                                        onclick="productDetailScroll('up')" title="Hình trước">
+                                        <i class="fas fa-chevron-left"></i>
+                                    </button>
+
+                                    <button class="product-detail-nav-btn product-detail-nav-right"
+                                        onclick="productDetailScroll('down')" title="Hình tiếp">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Product Information -->
-            <div class="col-lg-6">
-                <div class="card">
-                    <div class="card-body">
-                        
-                        <!-- Product Title -->
-                        <h1 class="product-detail-title h2 fw-bold mb-4" th:text="${product.name}">Product Name</h1>
-                        
-                        <!-- Sales Progress -->
-                        <div class="product-detail-sales-progress mb-4">
-                            <div class="product-detail-sales-info d-flex justify-content-between align-items-center mb-2">
-                                <span class="product-detail-sales-label text-muted">Đã bán</span>
-                                <span class="product-detail-sales-count fw-semibold" th:text="${product.soldCount != null ? product.soldCount : 0}">0</span>
+                <!-- Product Information -->
+                <div class="col-lg-6">
+                    <div class="card">
+                        <div class="card-body">
+
+                            <!-- Product Title -->
+                            <h1 class="product-detail-title h2 fw-bold mb-4" th:text="${product.name}">Product Name</h1>
+
+                            <!-- Sales Progress -->
+                            <div class="product-detail-sales-progress mb-4">
+                                <div
+                                    class="product-detail-sales-info d-flex justify-content-between align-items-center mb-2">
+                                    <span class="product-detail-sales-label text-muted">Đã bán</span>
+                                    <span class="product-detail-sales-count fw-semibold"
+                                        th:text="${product.soldCount != null ? product.soldCount : 0}">0</span>
+                                </div>
+                                <div class="product-detail-progress" style="height: 8px;">
+                                    <div class="progress-bar product-detail-progress-bar"
+                                        th:style="'width: ' + ${#numbers.formatDecimal(T(vn.liora.util.SalesProgressUtil).calculateProgress(product.soldCount != null ? product.soldCount : 0), 1, 1)} + '%'"
+                                        role="progressbar">
+                                    </div>
+                                </div>
+
                             </div>
-                            <div class="product-detail-progress" style="height: 8px;">
-                                <div class="progress-bar product-detail-progress-bar" 
-                                     th:style="'width: ' + ${#numbers.formatDecimal(T(vn.liora.util.SalesProgressUtil).calculateProgress(product.soldCount != null ? product.soldCount : 0), 1, 1)} + '%'"
-                                     role="progressbar">
+
+                            <!-- Brand and Category -->
+                            <div class="mb-3">
+                                <div class="d-flex flex-wrap gap-3">
+                                    <div>
+                                        <span class="text-muted">Thương hiệu:</span>
+                                        <span class="product-detail-brand fw-semibold"
+                                            th:text="${product.brandName}">Brand Name</span>
+                                    </div>
+                                    <div>
+                                        <span class="text-muted">Danh mục:</span>
+                                        <span class="fw-semibold" th:text="${product.categoryName}">Category Name</span>
+                                    </div>
                                 </div>
                             </div>
-                            
-                        </div>
-                        
-                        <!-- Brand and Category -->
-                        <div class="mb-3">
-                            <div class="d-flex flex-wrap gap-3">
-                                <div>
-                                    <span class="text-muted">Thương hiệu:</span>
-                                    <span class="product-detail-brand fw-semibold" th:text="${product.brandName}">Brand Name</span>
-                                </div>
-                                <div>
-                                    <span class="text-muted">Danh mục:</span>
-                                    <span class="fw-semibold" th:text="${product.categoryName}">Category Name</span>
+
+
+                            <!-- Price -->
+                            <div class="mb-4">
+                                <div class="d-flex align-items-center">
+                                    <span class="h2 fw-bold text-dark me-3"
+                                        th:text="${#numbers.formatDecimal(product.price, 0, 'COMMA', 0, 'POINT')} + ' ₫'">0
+                                        ₫</span>
                                 </div>
                             </div>
-                        </div>
-                        
-                        
-                        <!-- Price -->
-                        <div class="mb-4">
-                            <div class="d-flex align-items-center">
-                                <span class="h2 fw-bold text-dark me-3" th:text="${#numbers.formatDecimal(product.price, 0, 'COMMA', 0, 'POINT')} + ' ₫'">0 ₫</span>
+
+
+                            <!-- Quantity -->
+                            <div class="mb-4">
+                                <div class="mb-2">
+                                    <span class="fw-semibold">Số lượng:</span>
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <button class="btn btn-outline-secondary btn-sm" onclick="decreaseQuantity()"
+                                        th:disabled="${product.stock == 0 or !product.isActive}">-</button>
+                                    <input type="number" class="form-control text-center mx-2 quantity-input"
+                                        style="width: 80px;" value="1" min="1" th:max="${product.stock}"
+                                        id="quantityInput" oninput="validateQuantityInput()"
+                                        onblur="validateQuantityOnBlur()"
+                                        th:disabled="${product.stock == 0 or !product.isActive}">
+                                    <button class="btn btn-outline-secondary btn-sm" onclick="increaseQuantity()"
+                                        th:disabled="${product.stock == 0 or !product.isActive}">+</button>
+                                </div>
                             </div>
-                        </div>
-                        
-                        
-                        <!-- Quantity -->
-                        <div class="mb-4">
-                            <div class="mb-2">
-                                <span class="fw-semibold">Số lượng:</span>
+
+                            <!-- Stock Info -->
+                            <div class="mb-4" th:if="${product.stock > 0 and product.isActive}">
+                                <span class="text-muted">Tồn kho:</span>
+                                <span class="fw-semibold" th:text="${product.stock}">0</span>
+                                <span class="text-muted">sản phẩm</span>
                             </div>
-                            <div class="d-flex align-items-center">
-                                <button class="btn btn-outline-secondary btn-sm" onclick="decreaseQuantity()" th:disabled="${product.stock == 0 or !product.isActive}">-</button>
-                                <input type="number" class="form-control text-center mx-2 quantity-input" style="width: 80px;" value="1" min="1" th:max="${product.stock}" id="quantityInput" oninput="validateQuantityInput()" onblur="validateQuantityOnBlur()" th:disabled="${product.stock == 0 or !product.isActive}">
-                                <button class="btn btn-outline-secondary btn-sm" onclick="increaseQuantity()" th:disabled="${product.stock == 0 or !product.isActive}">+</button>
-                            </div>
-                        </div>
-                        
-                        <!-- Stock Info -->
-                        <div class="mb-4" th:if="${product.stock > 0 and product.isActive}">
-                            <span class="text-muted">Tồn kho:</span>
-                            <span class="fw-semibold" th:text="${product.stock}">0</span>
-                            <span class="text-muted">sản phẩm</span>
-                        </div>
-                        
-                        
-                        <!-- Action Buttons -->
-                        <div class="d-flex gap-2">
-                            <!-- Add to Cart Button -->
-                            <button th:if="${product.stock > 0 and product.isActive}" 
-                                    class="btn btn-pink btn-lg text-white fw-semibold" 
-                                    onclick="addToCart()"
-                                    th:data-product-id="${product.productId}"
-                                    th:data-product-name="${product.name}"
+
+
+                            <!-- Action Buttons -->
+                            <div class="d-flex gap-2">
+                                <!-- Add to Cart Button -->
+                                <button th:if="${product.stock > 0 and product.isActive}"
+                                    class="btn btn-pink btn-lg text-white fw-semibold" onclick="addToCart()"
+                                    th:data-product-id="${product.productId}" th:data-product-name="${product.name}"
                                     th:data-product-price="${product.price}">
-                                Thêm vào giỏ
-                            </button>
-                            <button th:if="${product.stock == 0 and product.isActive}" 
-                                    class="btn btn-secondary btn-lg text-white fw-semibold" 
-                                    disabled>
-                                <i class="fas fa-times-circle me-2"></i>Hết hàng
-                            </button>
-                            <button th:if="${!product.isActive}" 
-                                    class="btn btn-warning btn-lg text-white fw-semibold" 
-                                    disabled>
-                                <i class="fas fa-ban me-2"></i>Ngừng kinh doanh
-                            </button>
-                            
-                            <!-- Buy Now Button -->
-                            <button th:if="${product.stock > 0 and product.isActive}" 
-                                    class="btn btn-dark btn-lg text-white fw-semibold" 
-                                    onclick="buyNow()"
-                                    th:data-product-id="${product.productId}"
-                                    th:data-product-name="${product.name}"
+                                    Thêm vào giỏ
+                                </button>
+                                <button th:if="${product.stock == 0 and product.isActive}"
+                                    class="btn btn-secondary btn-lg text-white fw-semibold" disabled>
+                                    <i class="fas fa-times-circle me-2"></i>Hết hàng
+                                </button>
+                                <button th:if="${!product.isActive}"
+                                    class="btn btn-warning btn-lg text-white fw-semibold" disabled>
+                                    <i class="fas fa-ban me-2"></i>Ngừng kinh doanh
+                                </button>
+
+                                <!-- Buy Now Button -->
+                                <button th:if="${product.stock > 0 and product.isActive}"
+                                    class="btn btn-dark btn-lg text-white fw-semibold" onclick="buyNow()"
+                                    th:data-product-id="${product.productId}" th:data-product-name="${product.name}"
                                     th:data-product-price="${product.price}">
-                                Mua ngay
-                            </button>
-                        </div>
-                        
-                        <!-- Out of Stock Notice -->
-                        <div th:if="${product.stock == 0 and product.isActive}" class="mt-3">
-                            <div class="alert alert-warning d-flex align-items-center" role="alert">
-                                <i class="fas fa-info-circle me-2"></i>
-                                <div>
-                                    <strong>Sản phẩm tạm thời hết hàng!</strong><br>
-                                    <small>Vui lòng liên hệ với chúng tôi để được thông báo khi có hàng trở lại.</small>
+                                    Mua ngay
+                                </button>
+                            </div>
+
+                            <!-- Out of Stock Notice -->
+                            <div th:if="${product.stock == 0 and product.isActive}" class="mt-3">
+                                <div class="alert alert-warning d-flex align-items-center" role="alert">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    <div>
+                                        <strong>Sản phẩm tạm thời hết hàng!</strong><br>
+                                        <small>Vui lòng liên hệ với chúng tôi để được thông báo khi có hàng trở
+                                            lại.</small>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        
-                        <!-- Discontinued Notice -->
-                        <div th:if="${!product.isActive}" class="mt-3">
-                            <div class="alert alert-danger d-flex align-items-center" role="alert">
-                                <i class="fas fa-ban me-2"></i>
-                                <div>
-                                    <strong>Sản phẩm đã ngừng kinh doanh!</strong><br>
-                                    <small>Chúng tôi xin lỗi vì sự bất tiện này. Vui lòng tham khảo các sản phẩm khác.</small>
+
+                            <!-- Discontinued Notice -->
+                            <div th:if="${!product.isActive}" class="mt-3">
+                                <div class="alert alert-danger d-flex align-items-center" role="alert">
+                                    <i class="fas fa-ban me-2"></i>
+                                    <div>
+                                        <strong>Sản phẩm đã ngừng kinh doanh!</strong><br>
+                                        <small>Chúng tôi xin lỗi vì sự bất tiện này. Vui lòng tham khảo các sản phẩm
+                                            khác.</small>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -521,61 +534,60 @@
             </div>
         </div>
     </div>
-    </div>
 
-       <!-- Promotions Section -->
-       <div class="container my-5">
-           <div class="row">
-               <div class="col-12">
-                   <h3 class="fw-bold mb-4 text-center">KHUYẾN MÃI DÀNH CHO BẠN</h3>
-                   
-                   <!-- Slider Container -->
-                   <div class="discount-slider-container">
-                       <!-- Navigation Arrows -->
-                       <button class="slider-btn slider-btn-prev" onclick="slideDiscounts('prev')">
-                           <i class="fas fa-chevron-left"></i>
-                       </button>
-                       
-                       <div class="discount-slider-wrapper">
-                           <div id="discounts-container" class="discount-slider">
-                               <!-- Discounts will be loaded here by JavaScript -->
-                           </div>
-                       </div>
-                       
-                       <button class="slider-btn slider-btn-next" onclick="slideDiscounts('next')">
-                           <i class="fas fa-chevron-right"></i>
-                       </button>
-                   </div>
-               </div>
-           </div>
-       </div>
+    <!-- Promotions Section -->
+    <div class="container my-5">
+        <div class="row">
+            <div class="col-12">
+                <h3 class="fw-bold mb-4 text-center">KHUYẾN MÃI DÀNH CHO BẠN</h3>
+
+                <!-- Slider Container -->
+                <div class="discount-slider-container">
+                    <!-- Navigation Arrows -->
+                    <button class="slider-btn slider-btn-prev" onclick="slideDiscounts('prev')">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+
+                    <div class="discount-slider-wrapper">
+                        <div id="discounts-container" class="discount-slider">
+                            <!-- Discounts will be loaded here by JavaScript -->
+                        </div>
+                    </div>
+
+                    <button class="slider-btn slider-btn-next" onclick="slideDiscounts('next')">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Footer -->
     <div th:replace="~{user/layout/user-footer :: footer}"></div>
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    
+
     <!-- Custom JavaScript (minimal like category-products) -->
     <script th:src="@{/user/js/main.js}"></script>
     <script th:src="@{/user/js/products.js}"></script>
     <script th:src="@{/user/js/product-detail.js}"></script>
-    
+
     <script>
         // Gallery Functions with Debug
         function productDetailChangeImage(imageUrl) {
-            
+
             const mainImage = document.getElementById('productDetailMainImage');
             console.log('Main image found:', !!mainImage);
-            
+
             if (mainImage) {
                 console.log('Changing main image to:', imageUrl);
                 mainImage.src = imageUrl;
-                
+
                 // Update active thumbnail
                 const thumbnails = document.querySelectorAll('.product-detail-thumbnail-item');
                 console.log('Thumbnails found:', thumbnails.length);
-                
+
                 thumbnails.forEach(item => item.classList.remove('active'));
                 if (event && event.currentTarget) {
                     event.currentTarget.classList.add('active');
@@ -585,22 +597,22 @@
                 console.error('Main image not found!');
             }
         }
-        
+
         function productDetailScroll(direction) {
             console.log('=== GALLERY DEBUG: productDetailScroll ===');
             console.log('Direction:', direction);
-            
+
             const thumbnails = document.querySelectorAll('.product-detail-thumbnail-item');
             const mainImage = document.getElementById('productDetailMainImage');
-            
+
             console.log('Thumbnails found:', thumbnails.length);
             console.log('Main image found:', !!mainImage);
-            
+
             if (thumbnails.length === 0 || !mainImage) {
                 console.error('Required elements not found!');
                 return;
             }
-            
+
             // Find current active thumbnail
             let currentIndex = -1;
             thumbnails.forEach((thumb, index) => {
@@ -608,11 +620,11 @@
                     currentIndex = index;
                 }
             });
-            
+
             console.log('Current active index:', currentIndex);
-            
+
             if (currentIndex === -1) currentIndex = 0;
-            
+
             // Calculate new index
             let newIndex;
             if (direction === 'up') {
@@ -620,66 +632,66 @@
             } else {
                 newIndex = currentIndex < thumbnails.length - 1 ? currentIndex + 1 : 0;
             }
-            
+
             console.log('New index:', newIndex);
-            
+
             // Update image and active state
             const targetThumbnail = thumbnails[newIndex];
             const targetImageUrl = targetThumbnail.dataset.imageUrl;
-            
+
             console.log('Target image URL:', targetImageUrl);
-            
+
             mainImage.src = targetImageUrl;
             thumbnails.forEach(thumb => thumb.classList.remove('active'));
             targetThumbnail.classList.add('active');
-            
+
             console.log('Gallery navigation completed');
         }
-        
+
         // Quantity selector functions
         function increaseQuantity() {
             const quantityInput = document.getElementById('quantityInput');
             const maxStock = parseInt(quantityInput.getAttribute('max'));
             const currentValue = parseInt(quantityInput.value);
-            
+
             if (currentValue < maxStock) {
                 quantityInput.value = currentValue + 1;
             } else {
                 showToast(`Số lượng tối đa là ${maxStock} sản phẩm!`, 'error');
             }
         }
-        
+
         function decreaseQuantity() {
             const quantityInput = document.getElementById('quantityInput');
             const currentValue = parseInt(quantityInput.value);
-            
+
             if (currentValue > 1) {
                 quantityInput.value = currentValue - 1;
             }
         }
-        
+
         // Validate quantity input while typing
         function validateQuantityInput() {
             const quantityInput = document.getElementById('quantityInput');
             const maxStock = parseInt(quantityInput.getAttribute('max'));
             const currentValue = parseInt(quantityInput.value);
-            
+
             if (quantityInput.value === '' || quantityInput.value === '0') {
                 return; // Allow empty or 0 while typing
             }
-            
+
             if (currentValue > maxStock) {
                 quantityInput.value = maxStock;
                 showToast(`Số lượng tối đa là ${maxStock} sản phẩm!`, 'error');
             }
         }
-        
+
         // Validate quantity input on blur (when user finishes typing)
         function validateQuantityOnBlur() {
             const quantityInput = document.getElementById('quantityInput');
             const maxStock = parseInt(quantityInput.getAttribute('max'));
             const currentValue = parseInt(quantityInput.value);
-            
+
             if (quantityInput.value === '' || quantityInput.value === '0' || currentValue < 1) {
                 quantityInput.value = 1;
             } else if (currentValue > maxStock) {
@@ -687,14 +699,14 @@
                 showToast(`Số lượng tối đa là ${maxStock} sản phẩm!`, 'error');
             }
         }
-        
+
         // Add to cart function
         function addToCart() {
             console.log('=== ADD TO CART DEBUG ===');
-            
+
             const quantityInput = document.getElementById('quantityInput');
             const quantity = parseInt(quantityInput.value);
-            
+
             // Check if product is out of stock or discontinued
             if (quantityInput.disabled) {
                 // Check if it's discontinued or out of stock
@@ -706,41 +718,41 @@
                 }
                 return;
             }
-            
+
             // Get product info from Thymeleaf
             let productId = /*[[${product.productId}]]*/ null;
             let productName = /*[[${product.name}]]*/ '';
             let productPrice = /*[[${product.price}]]*/ 0;
-            
+
             console.log('Raw productId from Thymeleaf:', productId);
             console.log('Raw productName from Thymeleaf:', productName);
             console.log('Raw productPrice from Thymeleaf:', productPrice);
-            
+
             // Fallback: get from data attributes
             if (!productId) {
                 const button = event.currentTarget;
                 productId = button.dataset.productId;
                 productName = button.dataset.productName;
                 productPrice = parseFloat(button.dataset.productPrice);
-                
+
                 console.log('Fallback - productId from data attribute:', productId);
                 console.log('Fallback - productName from data attribute:', productName);
                 console.log('Fallback - productPrice from data attribute:', productPrice);
             }
-            
+
             console.log('Product info:', { productId, productName, productPrice, quantity });
-            
+
             // Validate input
             if (!productId) {
                 showToast('Lỗi: Không tìm thấy thông tin sản phẩm!', 'error');
                 return;
             }
-            
+
             if (quantity <= 0) {
                 showToast('Số lượng phải lớn hơn 0!', 'error');
                 return;
             }
-            
+
             // Check if app is available
             if (window.app && window.app.addToCart) {
                 console.log('Using global app.addToCart');
@@ -749,13 +761,13 @@
                 } catch (error) {
                     console.error('Error calling app.addToCart:', error);
                     console.log('Falling back to local cart logic');
-                    
+
                     // Fallback to local cart logic
                     let cartItems = JSON.parse(localStorage.getItem('cartItems') || '[]');
-                    
+
                     // Check if product already exists in cart
                     const existingItem = cartItems.find(item => item.productId == productId);
-                    
+
                     if (existingItem) {
                         existingItem.quantity += quantity;
                     } else {
@@ -766,10 +778,10 @@
                             quantity: quantity
                         });
                     }
-                    
+
                     // Save to localStorage
                     localStorage.setItem('cartItems', JSON.stringify(cartItems));
-                    
+
                     // Update cart display if available
                     if (window.app && window.app.updateCartDisplay) {
                         window.app.updateCartDisplay();
@@ -777,13 +789,13 @@
                 }
             } else {
                 console.log('Global app not available, using local cart logic');
-                
+
                 // Local cart logic
                 let cartItems = JSON.parse(localStorage.getItem('cartItems') || '[]');
-                
+
                 // Check if product already exists in cart
                 const existingItem = cartItems.find(item => item.productId == productId);
-                
+
                 if (existingItem) {
                     existingItem.quantity += quantity;
                 } else {
@@ -794,157 +806,72 @@
                         quantity: quantity
                     });
                 }
-                
+
                 // Save to localStorage
                 localStorage.setItem('cartItems', JSON.stringify(cartItems));
-                
+
                 // Update cart display if available
                 if (window.app && window.app.updateCartDisplay) {
                     window.app.updateCartDisplay();
                 }
             }
-            
+
             // Show success notification
             showToast(`Đã thêm ${quantity} sản phẩm "${productName}" vào giỏ hàng!`, 'success');
             console.log('Add to cart completed');
         }
-        
-        // Buy now function
+
+        // Buy now function - gọi trực tiếp backend để thêm + chọn và chuyển thẳng checkout
         function buyNow() {
-            console.log('=== BUY NOW DEBUG ===');
-            
+            console.log('=== BUY NOW (DIRECT) ===');
             const quantityInput = document.getElementById('quantityInput');
             const quantity = parseInt(quantityInput.value);
-            
-            // Check if product is out of stock or discontinued
             if (quantityInput.disabled) {
-                // Check if it's discontinued or out of stock
                 const isDiscontinued = /*[[${!product.isActive}]]*/ false;
-                if (isDiscontinued) {
-                    showToast('Sản phẩm đã ngừng kinh doanh!', 'error');
-                } else {
-                    showToast('Sản phẩm hiện tại đã hết hàng!', 'error');
-                }
+                showToast(isDiscontinued ? 'Sản phẩm đã ngừng kinh doanh!' : 'Sản phẩm hiện tại đã hết hàng!', 'error');
                 return;
             }
-            
-            // Get product info from Thymeleaf
             let productId = /*[[${product.productId}]]*/ null;
-            let productName = /*[[${product.name}]]*/ '';
-            
-            console.log('Raw productId from Thymeleaf:', productId);
-            console.log('Raw productName from Thymeleaf:', productName);
-            
-            // Fallback: get from data attributes
-            let button = null;
-            if (!productId) {
-                button = event.currentTarget;
+            if (!productId && event && event.currentTarget) {
+                const button = event.currentTarget;
                 productId = button.dataset.productId;
-                productName = button.dataset.productName;
-                
-                console.log('Fallback - productId from data attribute:', productId);
-                console.log('Fallback - productName from data attribute:', productName);
             }
-            
-            console.log('Product info:', { productId, productName, quantity });
-            
-            // Validate input
-            if (!productId) {
-                showToast('Lỗi: Không tìm thấy thông tin sản phẩm!', 'error');
+            if (!productId || !Number(quantity) || quantity <= 0) {
+                showToast('Thiếu thông tin sản phẩm hoặc số lượng không hợp lệ!', 'error');
                 return;
             }
-            
-            if (quantity <= 0) {
-                showToast('Số lượng phải lớn hơn 0!', 'error');
-                return;
-            }
-            
-            // Add to cart first
-            if (window.app && window.app.addToCart) {
-                console.log('Using global app.addToCart');
-                try {
-                    window.app.addToCart(productId, quantity);
-                } catch (error) {
-                    console.error('Error calling app.addToCart:', error);
-                    console.log('Falling back to local cart logic');
-                    
-                    // Fallback to local cart logic
-                    let cartItems = JSON.parse(localStorage.getItem('cartItems') || '[]');
-                    
-                    // Check if product already exists in cart
-                    const existingItem = cartItems.find(item => item.productId == productId);
-                    
-                    if (existingItem) {
-                        existingItem.quantity += quantity;
-                    } else {
-                        cartItems.push({
-                            productId: productId,
-                            name: productName,
-                            price: button ? parseFloat(button.dataset.productPrice) : 0,
-                            quantity: quantity
-                        });
-                    }
-                    
-                    // Save to localStorage
-                    localStorage.setItem('cartItems', JSON.stringify(cartItems));
-                }
+            if (window.app && typeof window.app.buyNowBackend === 'function') {
+                window.app.buyNowBackend(productId, quantity);
             } else {
-                console.log('Global app not available, using local cart logic');
-                
-                // Local cart logic
-                let cartItems = JSON.parse(localStorage.getItem('cartItems') || '[]');
-                
-                // Check if product already exists in cart
-                const existingItem = cartItems.find(item => item.productId == productId);
-                
-                if (existingItem) {
-                    existingItem.quantity += quantity;
-                } else {
-                    cartItems.push({
-                        productId: productId,
-                        name: productName,
-                        price: button ? parseFloat(button.dataset.productPrice) : 0,
-                        quantity: quantity
-                    });
+                // Fallback: thêm vào giỏ và điều hướng, không đảm bảo choose
+                if (window.app && typeof window.app.addToCart === 'function') {
+                    try { window.app.addToCart(productId, quantity); } catch (_) { }
                 }
-                
-                // Save to localStorage
-                localStorage.setItem('cartItems', JSON.stringify(cartItems));
+                window.location.href = '/checkout';
             }
-            
-            // Show confirmation with custom modal
-            showConfirmDialog(
-                'Xác nhận mua hàng',
-                `Bạn có chắc chắn muốn mua ${quantity} sản phẩm "${productName}"?`,
-                () => {
-                    // Redirect to checkout
-                    window.location.href = '/checkout';
-                    console.log('Redirecting to checkout');
-                }
-            );
         }
-        
+
         // Initialize product detail page with detailed debugging
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             console.log('=== PRODUCT DETAIL PAGE DEBUG START ===');
             console.log('Product detail page loaded');
-            
+
             // Check if main.js loaded
             console.log('window.app exists:', !!window.app);
             console.log('window.app type:', typeof window.app);
-            
+
             if (window.app) {
                 console.log('=== APP OBJECT DEBUG ===');
                 console.log('App object:', window.app);
                 console.log('App keys:', Object.keys(window.app));
-                
+
                 // Check specific functions
                 console.log('updateUserDisplay exists:', !!window.app.updateUserDisplay);
                 console.log('updateUserDisplay type:', typeof window.app.updateUserDisplay);
-                
+
                 console.log('initCategoryMenu exists:', !!window.app.initCategoryMenu);
                 console.log('initCategoryMenu type:', typeof window.app.initCategoryMenu);
-                
+
                 // Try to call functions
                 try {
                     if (window.app.updateUserDisplay) {
@@ -957,7 +884,7 @@
                 } catch (error) {
                     console.error('Error calling updateUserDisplay:', error);
                 }
-                
+
                 try {
                     if (window.app.initCategoryMenu) {
                         console.log('Calling initCategoryMenu...');
@@ -973,36 +900,36 @@
                 console.error('window.app not found!');
                 console.log('Available global objects:', Object.keys(window));
             }
-            
+
             // Check header elements
             console.log('=== HEADER ELEMENTS DEBUG ===');
             const categoryButton = document.querySelector('[data-bs-toggle="dropdown"]');
             const adminButton = document.querySelector('.btn-outline-light');
             const cartButton = document.querySelector('.btn-outline-light[href*="cart"]');
-            
+
             console.log('Category button found:', !!categoryButton);
             console.log('Admin button found:', !!adminButton);
             console.log('Cart button found:', !!cartButton);
-            
+
             if (categoryButton) {
                 console.log('Category button onclick:', categoryButton.onclick);
                 console.log('Category button data-bs-toggle:', categoryButton.getAttribute('data-bs-toggle'));
             }
-            
+
             // Check if Bootstrap dropdown is working
             console.log('=== BOOTSTRAP DEBUG ===');
             console.log('Bootstrap version:', typeof bootstrap);
             console.log('Bootstrap dropdown:', typeof bootstrap?.Dropdown);
-            
+
             console.log('=== PRODUCT DETAIL PAGE DEBUG END ===');
         });
-        
+
         // Toast notification function
         function showToast(message, type = 'info') {
             // Remove existing toasts
             const existingToasts = document.querySelectorAll('.custom-toast');
             existingToasts.forEach(toast => toast.remove());
-            
+
             // Create toast element
             const toast = document.createElement('div');
             toast.className = 'custom-toast';
@@ -1026,19 +953,19 @@
                 align-items: center;
                 gap: 12px;
             `;
-            
+
             // Add icon
             const icon = document.createElement('i');
-            icon.className = type === 'success' ? 'fas fa-check-circle' : 
-                           type === 'error' ? 'fas fa-exclamation-circle' : 
-                           'fas fa-info-circle';
+            icon.className = type === 'success' ? 'fas fa-check-circle' :
+                type === 'error' ? 'fas fa-exclamation-circle' :
+                    'fas fa-info-circle';
             icon.style.fontSize = '18px';
-            
+
             // Add message
             const messageSpan = document.createElement('span');
             messageSpan.textContent = message;
             messageSpan.style.flex = '1';
-            
+
             // Add close button
             const closeBtn = document.createElement('button');
             closeBtn.innerHTML = '×';
@@ -1053,18 +980,18 @@
                 margin-left: 8px;
             `;
             closeBtn.onclick = () => toast.remove();
-            
+
             toast.appendChild(icon);
             toast.appendChild(messageSpan);
             toast.appendChild(closeBtn);
-            
+
             document.body.appendChild(toast);
-            
+
             // Animate in
             setTimeout(() => {
                 toast.style.transform = 'translateX(0)';
             }, 10);
-            
+
             // Auto remove after 5 seconds
             setTimeout(() => {
                 if (toast.parentNode) {
@@ -1073,13 +1000,13 @@
                 }
             }, 5000);
         }
-        
+
         // Confirm dialog function
         function showConfirmDialog(title, message, onConfirm) {
             // Remove existing modals
             const existingModals = document.querySelectorAll('.custom-confirm-modal');
             existingModals.forEach(modal => modal.remove());
-            
+
             // Create modal backdrop
             const backdrop = document.createElement('div');
             backdrop.className = 'custom-confirm-modal';
@@ -1096,7 +1023,7 @@
                 justify-content: center;
                 animation: fadeIn 0.3s ease;
             `;
-            
+
             // Create modal content
             const modal = document.createElement('div');
             modal.style.cssText = `
@@ -1109,7 +1036,7 @@
                 transform: scale(0.9);
                 transition: transform 0.3s ease;
             `;
-            
+
             modal.innerHTML = `
                 <div style="text-align: center; margin-bottom: 20px;">
                     <i class="fas fa-question-circle" style="font-size: 48px; color: #6c757d; margin-bottom: 16px;"></i>
@@ -1125,15 +1052,15 @@
                     </button>
                 </div>
             `;
-            
+
             backdrop.appendChild(modal);
             document.body.appendChild(backdrop);
-            
+
             // Animate in
             setTimeout(() => {
                 modal.style.transform = 'scale(1)';
             }, 10);
-            
+
             // Close on backdrop click
             backdrop.onclick = (e) => {
                 if (e.target === backdrop) {
@@ -1141,7 +1068,7 @@
                 }
             };
         }
-        
+
         // Add CSS animations and hide spinner arrows
         const style = document.createElement('style');
         style.textContent = `
@@ -1161,13 +1088,13 @@
             }
         `;
         document.head.appendChild(style);
-        
+
         // Progress bar is now handled by product-detail.js
-        
+
         // Load active discounts
         console.log('=== START LOADING DISCOUNTS ===');
         loadActiveDiscounts();
-        
+
         function loadActiveDiscounts() {
             console.log('loadActiveDiscounts called');
             fetch('/api/products/discounts/active')
@@ -1188,36 +1115,36 @@
                     console.error('Error loading discounts:', error);
                 });
         }
-        
+
         // Slider state
         let currentSlide = 0;
         let totalCards = 0;
         let cardsPerView = 4; // Number of cards visible at once
-        
+
         function renderDiscounts(discounts) {
             console.log('renderDiscounts called with:', discounts);
             console.log('First discount description:', discounts[0]?.description);
             const container = document.getElementById('discounts-container');
             console.log('Container found:', !!container);
-            
+
             if (!container) {
                 console.error('discounts-container not found!');
                 return;
             }
-            
+
             if (discounts.length === 0) {
                 console.log('No discounts to render');
                 container.innerHTML = '<div class="col-12 text-center text-muted">Không có mã giảm giá nào đang hoạt động</div>';
                 return;
             }
-            
+
             // Calculate slider parameters
             totalCards = discounts.length;
             currentSlide = 0;
-            
+
             // Update cards per view based on screen size
             updateCardsPerView();
-            
+
             const html = discounts.map(discount => `
                 <div class="discount-slide-item">
                     <div class="discount-card">
@@ -1249,13 +1176,13 @@
                     </div>
                 </div>
             `).join('');
-            
+
             container.innerHTML = html;
-            
+
             // Initialize slider
             initializeSlider();
         }
-        
+
         function updateCardsPerView() {
             const screenWidth = window.innerWidth;
             if (screenWidth < 768) {
@@ -1266,42 +1193,42 @@
                 cardsPerView = 3; // Always show max 3 cards to prevent cutoff
             }
         }
-        
+
         function initializeSlider() {
             updateSliderPosition();
             updateSliderButtons();
         }
-        
+
         function slideDiscounts(direction) {
             const maxSlide = Math.max(0, totalCards - cardsPerView);
-            
+
             if (direction === 'next') {
                 currentSlide = Math.min(currentSlide + 1, maxSlide);
             } else {
                 currentSlide = Math.max(currentSlide - 1, 0);
             }
-            
+
             updateSliderPosition();
             updateSliderButtons();
         }
-        
+
         function updateSliderPosition() {
             const slider = document.getElementById('discounts-container');
             const cardWidth = 316; // 300px card + 16px gap
             const translateX = -(currentSlide * cardWidth);
             slider.style.transform = `translateX(${translateX}px)`;
         }
-        
-        
+
+
         function updateSliderButtons() {
             const prevBtn = document.querySelector('.slider-btn-prev');
             const nextBtn = document.querySelector('.slider-btn-next');
             const maxSlide = Math.max(0, totalCards - cardsPerView);
-            
+
             if (prevBtn) prevBtn.style.opacity = currentSlide === 0 ? '0.5' : '1';
             if (nextBtn) nextBtn.style.opacity = currentSlide === maxSlide ? '0.5' : '1';
         }
-        
+
         // Handle window resize
         window.addEventListener('resize', () => {
             updateCardsPerView();
@@ -1310,13 +1237,13 @@
             updateSliderPosition();
             updateSliderButtons();
         });
-        
+
         function copyDiscountCode(code, button) {
             console.log('Copying code:', code);
             console.log('Button element:', button);
             console.log('Clipboard API available:', !!navigator.clipboard);
             console.log('Secure context:', window.isSecureContext);
-            
+
             // Try modern clipboard API first
             if (navigator.clipboard && window.isSecureContext) {
                 navigator.clipboard.writeText(code).then(() => {
@@ -1333,21 +1260,21 @@
                 fallbackCopyTextToClipboard(code, button);
             }
         }
-        
+
         function fallbackCopyTextToClipboard(text, button) {
             const textArea = document.createElement("textarea");
             textArea.value = text;
-            
+
             // Avoid scrolling to bottom
             textArea.style.top = "0";
             textArea.style.left = "0";
             textArea.style.position = "fixed";
             textArea.style.opacity = "0";
-            
+
             document.body.appendChild(textArea);
             textArea.focus();
             textArea.select();
-            
+
             try {
                 const successful = document.execCommand('copy');
                 if (successful) {
@@ -1360,26 +1287,26 @@
                 console.error('Fallback copy failed:', err);
                 showToast('Không thể sao chép mã', 'error');
             }
-            
+
             document.body.removeChild(textArea);
         }
-        
+
         function updateButtonState(button, code) {
             button.textContent = 'Đã sao chép';
             button.classList.add('copied');
-            
+
             // Reset after 3 seconds
             setTimeout(() => {
                 button.textContent = 'Sao chép mã';
                 button.classList.remove('copied');
             }, 3000);
         }
-        
+
         function formatDate(dateString) {
             const date = new Date(dateString);
             return date.toLocaleDateString('vi-VN');
         }
-        
+
         function getDiscountIcon(discount) {
             // Check if it's a high value discount (HOT DEAL) - 50k or more
             if (discount.discountValue && parseFloat(discount.discountValue) >= 50000) {
@@ -1390,4 +1317,5 @@
         }
     </script>
 </body>
+
 </html>

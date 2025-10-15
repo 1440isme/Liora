@@ -47,11 +47,11 @@ public class OrderServiceImpl implements IOrderService {
     @Override
     @Transactional
 
-    public OrderResponse createOrder(Long userId,OrderCreationRequest request) {
+    public OrderResponse createOrder(Long userId, OrderCreationRequest request) {
         try {
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
-            Cart cart = cartRepository.findByUser(user)
+            Cart cart = cartRepository.findByUser_UserId(userId)
                     .orElseThrow(() -> new AppException(ErrorCode.CART_NOT_FOUND));
             List<CartProduct> selected = cartProductRepository.findByCartAndChooseTrue(cart);
             if (selected.isEmpty()) {
@@ -216,7 +216,6 @@ public class OrderServiceImpl implements IOrderService {
         return orderMapper.toOrderResponse(order);
     }
 
-
     @Override
     public OrderResponse getOrderById(Long idOrder) {
         Order order = orderRepository.findById(idOrder)
@@ -308,9 +307,9 @@ public class OrderServiceImpl implements IOrderService {
 
         // Cập nhật trạng thái đơn hàng thành CANCELLED
         order.setOrderStatus("CANCELLED");
-        
+
         orderRepository.save(order);
-        
+
         log.info("Order {} cancelled by user {}", orderId, userId);
     }
 }
