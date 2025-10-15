@@ -20,6 +20,7 @@ import vn.liora.dto.response.DiscountResponse;
 import vn.liora.mapper.DiscountMapper;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -404,16 +405,37 @@ public class UserProductController {
     // ========== NEWEST PRODUCTS ==========
     @GetMapping("/newest")
     public ResponseEntity<ApiResponse<List<ProductResponse>>> getNewestProducts(
-            @RequestParam(defaultValue = "10") int limit) {
+            @RequestParam(defaultValue = "8") int limit) {
 
         ApiResponse<List<ProductResponse>> response = new ApiResponse<>();
         try {
-            Pageable pageable = PageRequest.of(0, limit);
-            List<Product> products = productService.findNewestProducts(pageable);
+            // Validate limit
+            if (limit <= 0 || limit > 50) {
+                limit = 8; // Default to 8 if invalid
+            }
+            
+            // Use optimized database query for newest products
+            Pageable optimizedPageable = PageRequest.of(0, limit);
+            List<Product> products = productService.findNewestProducts(optimizedPageable);
 
+            // Convert to response with images
             List<ProductResponse> productResponses = products.stream()
-                    .map(productMapper::toProductResponse)
-                    .toList();
+                .map(product -> {
+                    ProductResponse productResponse = productMapper.toProductResponse(product);
+                    
+                    // Load main image
+                    try {
+                        Optional<Image> mainImage = imageRepository.findByProductProductIdAndIsMainTrue(product.getProductId());
+                        if (mainImage.isPresent()) {
+                            productResponse.setMainImageUrl(mainImage.get().getImageUrl());
+                        }
+                    } catch (Exception e) {
+                        // Silent fail for image loading
+                    }
+                    
+                    return productResponse;
+                })
+                .toList();
 
             response.setResult(productResponses);
             response.setMessage("Lấy sản phẩm mới nhất thành công");
@@ -428,110 +450,39 @@ public class UserProductController {
 
     // ========== BEST SELLING PRODUCTS ==========
     @GetMapping("/best-selling")
-    public ResponseEntity<ApiResponse<Page<ProductResponse>>> getBestSellingProducts(
-            @RequestParam(required = false) String sortBy,
-            @RequestParam(required = false) String sortDir,
-            @RequestParam(required = false) BigDecimal minPrice,
-            @RequestParam(required = false) BigDecimal maxPrice,
-            @RequestParam(required = false) String brands,
-            @RequestParam(required = false) String categories,
-            @RequestParam(required = false) String ratings,
-            Pageable pageable) {
+    public ResponseEntity<ApiResponse<List<ProductResponse>>> getBestSellingProducts(
+            @RequestParam(defaultValue = "8") int limit) {
 
-        ApiResponse<Page<ProductResponse>> response = new ApiResponse<>();
+        ApiResponse<List<ProductResponse>> response = new ApiResponse<>();
         try {
-            // xử lý sort
-            if (sortBy != null && !sortBy.isEmpty()) {
-                pageable = this.createSortedPageable(pageable, sortBy, sortDir);
+            // Validate limit
+            if (limit <= 0 || limit > 50) {
+                limit = 8; // Default to 8 if invalid
             }
 
-            // lấy tất cả sản phẩm bán chạy và filter
-            List<Product> allProducts = productService.findAll();
-            List<Product> filteredProducts = allProducts.stream()
-                .filter(product -> product.getSoldCount() > 0) // Chỉ lấy sản phẩm đã bán
+            // Use optimized database query for best selling products
+            Pageable optimizedPageable = PageRequest.of(0, limit);
+            List<Product> products = productService.findBestSellingProducts(optimizedPageable);
+
+            // Convert to response with images
+            List<ProductResponse> productResponses = products.stream()
+                .map(product -> {
+                    ProductResponse productResponse = productMapper.toProductResponse(product);
+                    
+                    // Load main image
+                    try {
+                        Optional<Image> mainImage = imageRepository.findByProductProductIdAndIsMainTrue(product.getProductId());
+                        if (mainImage.isPresent()) {
+                            productResponse.setMainImageUrl(mainImage.get().getImageUrl());
+                        }
+                    } catch (Exception e) {
+                        // Silent fail for image loading
+                    }
+                    
+                    return productResponse;
+                })
                 .toList();
 
-            // Apply price filter
-            if (minPrice != null || maxPrice != null) {
-                System.out.println("Applying price filter: min=" + minPrice + ", max=" + maxPrice);
-                filteredProducts = filteredProducts.stream()
-                        .filter(product -> {
-                            BigDecimal price = product.getPrice();
-                            if (minPrice != null && price.compareTo(minPrice) < 0) return false;
-                            if (maxPrice != null && price.compareTo(maxPrice) > 0) return false;
-                            return true;
-                        })
-                        .toList();
-                System.out.println("After price filter: " + filteredProducts.size() + " products");
-            }
-
-            // Apply brand filter
-            if (brands != null && !brands.trim().isEmpty()) {
-                System.out.println("Applying brand filter: " + brands);
-                List<String> brandList = List.of(brands.split(","));
-                filteredProducts = filteredProducts.stream()
-                        .filter(product -> brandList.contains(product.getBrand().getName()))
-                        .toList();
-                System.out.println("After brand filter: " + filteredProducts.size() + " products");
-            }
-
-            // Apply category filter
-            if (categories != null && !categories.trim().isEmpty()) {
-                System.out.println("Applying category filter: " + categories);
-                List<String> categoryList = List.of(categories.split(","));
-                filteredProducts = filteredProducts.stream()
-                        .filter(product -> categoryList.contains(product.getCategory().getName()))
-                        .toList();
-                System.out.println("After category filter: " + filteredProducts.size() + " products");
-            }
-
-            // Apply rating filter
-            if (ratings != null && !ratings.trim().isEmpty()) {
-                System.out.println("Applying rating filter: " + ratings);
-                List<Integer> ratingList = List.of(ratings.split(",")).stream()
-                        .map(Integer::parseInt)
-                        .toList();
-                filteredProducts = filteredProducts.stream()
-                        .filter(product -> {
-                            BigDecimal avgRating = product.getAverageRating();
-                            if (avgRating == null) return false;
-                            return ratingList.stream().anyMatch(rating -> 
-                                avgRating.compareTo(BigDecimal.valueOf(rating)) >= 0);
-                        })
-                        .toList();
-                System.out.println("After rating filter: " + filteredProducts.size() + " products");
-            }
-
-            // Apply sorting to filtered products
-            if (sortBy != null && !sortBy.isEmpty()) {
-                System.out.println("Sorting products by: " + sortBy + " " + sortDir);
-                filteredProducts = this.sortProducts(filteredProducts, sortBy, sortDir);
-                System.out.println("Sorted products count: " + filteredProducts.size());
-            } else {
-                // Default sorting: by soldCount DESC (best selling first)
-                System.out.println("Applying default sorting: soldCount DESC");
-                filteredProducts = this.sortProducts(filteredProducts, "sold", "desc");
-            }
-
-            Page<Product> filteredPage = new PageImpl<>(
-                    filteredProducts, pageable, filteredProducts.size()
-            );
-
-            Page<ProductResponse> productResponses = filteredPage.map(product -> {
-                ProductResponse productResponse = productMapper.toProductResponse(product);
-                
-                // Load main image
-                try {
-                    Optional<Image> mainImage = imageRepository.findByProductProductIdAndIsMainTrue(product.getProductId());
-                    if (mainImage.isPresent()) {
-                        productResponse.setMainImageUrl(mainImage.get().getImageUrl());
-                    }
-                } catch (Exception e) {
-                    System.err.println("Error loading image for product " + product.getProductId() + ": " + e.getMessage());
-                }
-                
-                return productResponse;
-            });
             response.setResult(productResponses);
             response.setMessage("Lấy sản phẩm bán chạy thành công");
             return ResponseEntity.ok(response);
@@ -555,7 +506,7 @@ public class UserProductController {
             }
 
             // Kiểm tra sản phẩm có tồn tại không
-            ProductResponse product = productService.findById(id);
+            productService.findById(id); // Validate product exists
             // Không kiểm tra isActive/available để cho phép xem sản phẩm bị deactivate
 
             // Lấy danh sách hình ảnh
@@ -616,31 +567,8 @@ public class UserProductController {
             // Lấy tất cả sản phẩm để filter
             List<Product> allProducts = productService.findAll();
 
-            // Filter sản phẩm tương tự - LOGIC GỐC: cùng category + brand + price range ±20%
-            List<Product> similarProducts = allProducts.stream()
-                    .filter(product -> !product.getProductId().equals(id)) // Loại trừ chính sản phẩm đó
-                    .filter(product -> {
-                        // Cùng category
-                        if (!product.getCategory().getCategoryId().equals(originalProduct.getCategoryId())) {
-                            return false;
-                        }
-
-                        // Cùng brand (nếu có)
-                        if (originalProduct.getBrandId() != null && product.getBrand() != null) {
-                            if (!product.getBrand().getBrandId().equals(originalProduct.getBrandId())) {
-                                return false;
-                            }
-                        }
-
-                        // Giá trong khoảng ±20% của sản phẩm gốc
-                        BigDecimal originalPrice = originalProduct.getPrice();
-                        BigDecimal minPriceRange = originalPrice.multiply(BigDecimal.valueOf(0.8));
-                        BigDecimal maxPriceRange = originalPrice.multiply(BigDecimal.valueOf(1.2));
-
-                        return product.getPrice().compareTo(minPriceRange) >= 0 &&
-                                product.getPrice().compareTo(maxPriceRange) <= 0;
-                    })
-                    .toList();
+            // IMPROVED SIMILAR PRODUCTS LOGIC WITH FALLBACK
+            List<Product> similarProducts = getSimilarProductsWithFallback(allProducts, originalProduct, id);
 
             // Apply price filter
             if (minPrice != null || maxPrice != null) {
@@ -983,5 +911,227 @@ public class UserProductController {
             response.setMessage("Lỗi khi lấy danh sách mã giảm giá: " + e.getMessage());
             return ResponseEntity.internalServerError().body(response);
         }
+    }
+
+    // ========== IMPROVED SIMILAR PRODUCTS LOGIC ==========
+    
+    /**
+     * Tìm sản phẩm tương tự với fallback logic
+     * Level 1: Cùng category + brand + price range ±50%
+     * Level 2: Cùng category + price range ±50% (không cần cùng brand)
+     * Level 3: Cùng category (không cần cùng price range)
+     * Level 4: Cùng brand (fallback cuối cùng)
+     */
+    private List<Product> getSimilarProductsWithFallback(List<Product> allProducts, ProductResponse originalProduct, Long excludeId) {
+        System.out.println("🔍 Finding similar products for product ID: " + excludeId);
+        
+        // Level 1: Cùng category + brand + price range ±50%
+        List<Product> level1 = allProducts.stream()
+                .filter(product -> !product.getProductId().equals(excludeId))
+                .filter(product -> product.getAvailable()) // Chỉ lấy sản phẩm available
+                .filter(product -> {
+                    // Cùng category
+                    if (!product.getCategory().getCategoryId().equals(originalProduct.getCategoryId())) {
+                        return false;
+                    }
+                    
+                    // Cùng brand (nếu có)
+                    if (originalProduct.getBrandId() != null && product.getBrand() != null) {
+                        if (!product.getBrand().getBrandId().equals(originalProduct.getBrandId())) {
+                            return false;
+                        }
+                    }
+                    
+                    // Price range ±50%
+                    return isInPriceRange(product.getPrice(), originalProduct.getPrice(), 0.5);
+                })
+                .toList();
+        
+        System.out.println("📊 Level 1 (category + brand + price): " + level1.size() + " products");
+        
+        if (level1.size() >= 4) {
+            System.out.println("✅ Using Level 1 results");
+            return level1;
+        }
+        
+        // Level 2: Cùng category + price range ±50% (không cần cùng brand)
+        List<Product> level2 = allProducts.stream()
+                .filter(product -> !product.getProductId().equals(excludeId))
+                .filter(product -> product.getAvailable()) // Chỉ lấy sản phẩm available
+                .filter(product -> {
+                    // Cùng category
+                    if (!product.getCategory().getCategoryId().equals(originalProduct.getCategoryId())) {
+                        return false;
+                    }
+                    
+                    // Price range ±50%
+                    return isInPriceRange(product.getPrice(), originalProduct.getPrice(), 0.5);
+                })
+                .toList();
+        
+        System.out.println("📊 Level 2 (category + price): " + level2.size() + " products");
+        
+        if (level1.size() + level2.size() >= 4) {
+            System.out.println("✅ Using Level 1 + Level 2 results");
+            return combineTwoLists(level1, level2, 8);
+        }
+        
+        // Level 3: Cùng category (không cần cùng price range)
+        List<Product> level3 = allProducts.stream()
+                .filter(product -> !product.getProductId().equals(excludeId))
+                .filter(product -> product.getAvailable()) // Chỉ lấy sản phẩm available
+                .filter(product -> product.getCategory().getCategoryId().equals(originalProduct.getCategoryId()))
+                .toList();
+        
+        System.out.println("📊 Level 3 (category only): " + level3.size() + " products");
+        
+        if (level1.size() + level2.size() + level3.size() >= 4) {
+            System.out.println("✅ Using Level 1 + Level 2 + Level 3 results");
+            return combineThreeLists(level1, level2, level3, 8);
+        }
+        
+        // Level 4: Cùng brand (fallback cuối cùng)
+        List<Product> level4 = allProducts.stream()
+                .filter(product -> !product.getProductId().equals(excludeId))
+                .filter(product -> product.getAvailable()) // Chỉ lấy sản phẩm available
+                .filter(product -> {
+                    if (originalProduct.getBrandId() != null && product.getBrand() != null) {
+                        return product.getBrand().getBrandId().equals(originalProduct.getBrandId());
+                    }
+                    return false;
+                })
+                .toList();
+        
+        System.out.println("📊 Level 4 (brand only): " + level4.size() + " products");
+        System.out.println("✅ Using all levels combined");
+        return combineFourLists(level1, level2, level3, level4, 8);
+    }
+    
+    /**
+     * Kiểm tra giá có trong khoảng cho phép không với dynamic range
+     */
+    private boolean isInPriceRange(BigDecimal productPrice, BigDecimal originalPrice, double rangePercent) {
+        // Dynamic price range based on product price
+        double dynamicRangePercent = getDynamicPriceRange(originalPrice);
+        BigDecimal range = originalPrice.multiply(BigDecimal.valueOf(dynamicRangePercent));
+        BigDecimal minPrice = originalPrice.subtract(range);
+        BigDecimal maxPrice = originalPrice.add(range);
+        
+        return productPrice.compareTo(minPrice) >= 0 && productPrice.compareTo(maxPrice) <= 0;
+    }
+    
+    /**
+     * Tính dynamic price range dựa trên giá sản phẩm
+     * - Sản phẩm rẻ (< 100k): ±50% (range rộng hơn)
+     * - Sản phẩm trung bình (100k-1M): ±30% 
+     * - Sản phẩm đắt (> 1M): ±20% (range hẹp hơn)
+     */
+    private double getDynamicPriceRange(BigDecimal price) {
+        if (price.compareTo(BigDecimal.valueOf(100000)) < 0) {
+            return 0.5; // ±50% for cheap items
+        } else if (price.compareTo(BigDecimal.valueOf(1000000)) < 0) {
+            return 0.3; // ±30% for medium items  
+        } else {
+            return 0.2; // ±20% for expensive items
+        }
+    }
+    
+    /**
+     * Kết hợp 2 danh sách sản phẩm
+     */
+    private List<Product> combineTwoLists(List<Product> list1, List<Product> list2, int limit) {
+        List<Product> combined = new ArrayList<>();
+        
+        // Add from list1 first
+        for (Product product : list1) {
+            if (combined.size() >= limit) break;
+            if (!combined.contains(product)) {
+                combined.add(product);
+            }
+        }
+        
+        // Add from list2 if space available
+        for (Product product : list2) {
+            if (combined.size() >= limit) break;
+            if (!combined.contains(product)) {
+                combined.add(product);
+            }
+        }
+        
+        return combined;
+    }
+    
+    /**
+     * Kết hợp 3 danh sách sản phẩm
+     */
+    private List<Product> combineThreeLists(List<Product> list1, List<Product> list2, List<Product> list3, int limit) {
+        List<Product> combined = new ArrayList<>();
+        
+        // Add from list1 first
+        for (Product product : list1) {
+            if (combined.size() >= limit) break;
+            if (!combined.contains(product)) {
+                combined.add(product);
+            }
+        }
+        
+        // Add from list2 if space available
+        for (Product product : list2) {
+            if (combined.size() >= limit) break;
+            if (!combined.contains(product)) {
+                combined.add(product);
+            }
+        }
+        
+        // Add from list3 if space available
+        for (Product product : list3) {
+            if (combined.size() >= limit) break;
+            if (!combined.contains(product)) {
+                combined.add(product);
+            }
+        }
+        
+        return combined;
+    }
+    
+    /**
+     * Kết hợp 4 danh sách sản phẩm
+     */
+    private List<Product> combineFourLists(List<Product> list1, List<Product> list2, List<Product> list3, List<Product> list4, int limit) {
+        List<Product> combined = new ArrayList<>();
+        
+        // Add from list1 first
+        for (Product product : list1) {
+            if (combined.size() >= limit) break;
+            if (!combined.contains(product)) {
+                combined.add(product);
+            }
+        }
+        
+        // Add from list2 if space available
+        for (Product product : list2) {
+            if (combined.size() >= limit) break;
+            if (!combined.contains(product)) {
+                combined.add(product);
+            }
+        }
+        
+        // Add from list3 if space available
+        for (Product product : list3) {
+            if (combined.size() >= limit) break;
+            if (!combined.contains(product)) {
+                combined.add(product);
+            }
+        }
+        
+        // Add from list4 if space available
+        for (Product product : list4) {
+            if (combined.size() >= limit) break;
+            if (!combined.contains(product)) {
+                combined.add(product);
+            }
+        }
+        
+        return combined;
     }
 }

@@ -321,11 +321,6 @@ public class ProductServiceImpl implements IProductService {
     public List<Product> findHighRatedProductsWithPagination(BigDecimal minRating, Pageable pageable) {
         return productRepository.findHighRatedProducts(minRating, pageable);
     }
-
-    @Override
-    public List<Product> findNewestProducts(Pageable pageable) {
-        return productRepository.findNewestProducts(pageable);
-    }
     // ========== ADMIN QUERIES ==========
     @Override
     public Page<Product> findActiveProductsWithPagination(Pageable pageable) {
@@ -451,5 +446,26 @@ public class ProductServiceImpl implements IProductService {
     @Override
     public List<Product> findByCategoryAndIdNot(Long categoryId, Long productId) {
         return productRepository.findByCategoryCategoryIdAndProductIdNotAndIsActiveTrue(categoryId, productId);
+    }
+    
+    // ========== OPTIMIZED FRONTEND QUERIES ==========
+    @Override
+    public List<Product> findBestSellingProducts(Pageable pageable) {
+        return productRepository.findBestSellingProducts(pageable);
+    }
+    
+    @Override
+    public List<Product> findNewestProducts(Pageable pageable) {
+        return productRepository.findNewestProducts(pageable);
+    }
+    
+    @Override
+    public List<Product> findBestSellingByCategory(Long categoryId, Pageable pageable) {
+        return productRepository.findBestSellingByCategory(categoryId, pageable);
+    }
+    
+    @Override
+    public List<Product> findBestSellingByBrand(Long brandId, Pageable pageable) {
+        return productRepository.findBestSellingByBrand(brandId, pageable);
     }
 }

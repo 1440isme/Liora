@@ -77,7 +77,6 @@ public interface IProductService {
     // ========== BUSINESS QUERIES ==========
     List<Product> findTopSellingInStockProducts(Pageable pageable);
     List<Product> findHighRatedProductsWithPagination(BigDecimal minRating, Pageable pageable);
-    List<Product> findNewestProducts(Pageable pageable);
 
     // ========== ADMIN QUERIES ==========
     Page<Product> findActiveProductsWithPagination(Pageable pageable);
@@ -100,5 +99,12 @@ public interface IProductService {
     
     // ========== RELATED PRODUCTS ==========
     List<Product> findByCategoryAndIdNot(Long categoryId, Long productId);
+    
+    // ========== OPTIMIZED FRONTEND QUERIES ==========
+    // Simple APIs for frontend - fast and efficient
+    List<Product> findBestSellingProducts(Pageable pageable);
+    List<Product> findNewestProducts(Pageable pageable);
+    List<Product> findBestSellingByCategory(Long categoryId, Pageable pageable);
+    List<Product> findBestSellingByBrand(Long brandId, Pageable pageable);
 
 }

@@ -1326,7 +1326,7 @@ class CategoryProductsManager {
             }
         }
         
-        // Show single success message
+        // Show success message
         this.showNotification(`${quantity} x ${product.name} đã được thêm vào giỏ hàng! Đang chuyển đến trang thanh toán...`, 'success');
         
         // Close modal
