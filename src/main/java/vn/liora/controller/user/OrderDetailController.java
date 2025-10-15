@@ -40,7 +40,7 @@ public class OrderDetailController {
             var orderResponse = orderService.getOrderById(orderId);
             if (orderResponse == null || !orderResponse.getUserId().equals(user.getUserId())) {
                 model.addAttribute("error", "Đơn hàng không tồn tại hoặc không thuộc về bạn");
-                return "error/404";
+                return "redirect:/";
             }
 
             // Lấy danh sách sản phẩm trong đơn hàng
@@ -55,7 +55,8 @@ public class OrderDetailController {
         } catch (Exception e) {
             log.error("Error loading order detail: {}", e.getMessage());
             model.addAttribute("error", "Không thể tải chi tiết đơn hàng");
-            return "error/404";
+            return "redirect:/";
         }
     }
+
 }

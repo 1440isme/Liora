@@ -5,6 +5,55 @@
     --gray-600: #475569;
     --main-bg: #f5f5f5;
 }
+
+/* ==========================================
+   PRODUCT STATUS TAGS
+   ========================================== */
+
+.product-status-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    margin-top: 4px;
+}
+
+.status-deactivated {
+    background-color: #fef3c7;
+    color: #92400e;
+    border: 1px solid #f59e0b;
+}
+
+.status-out-of-stock {
+    background-color: #fee2e2;
+    color: #dc2626;
+    border: 1px solid #ef4444;
+}
+
+/* Disabled cart item styles */
+.cart-item.disabled {
+    opacity: 0.6;
+    background-color: #f9fafb;
+    border: 1px solid #e5e7eb;
+}
+
+.cart-item.disabled .item-title {
+    color: #6b7280;
+}
+
+.cart-item.disabled .item-price {
+    color: #9ca3af;
+}
+
+.cart-item.disabled .quantity-btn:disabled,
+.cart-item.disabled .quantity-input:disabled {
+    background-color: #f3f4f6;
+    color: #9ca3af;
+    cursor: not-allowed;
+}
 .checkout-main {
     min-height: 100vh;
     background: linear-gradient(180deg, #f8faff 0%, #ffffff 100%);
@@ -235,10 +284,19 @@ body {
     color: #b0b0b0;
     cursor: pointer;
     font-size: 14px;
-    padding: 2px;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    outline: none;
+    box-shadow: none;
 }
 .btn-delete:hover {
-    color: #ff6b9d; /* var(--primary-color) */
+    color: #ff6b9d;
+    background-color: rgba(255, 107, 157, 0.1);
+}
+.btn-delete:focus {
+    outline: none;
+    box-shadow: none;
 }
 
 /* --- Nút chọn phiên bản (Variant) --- */
@@ -566,4 +624,18 @@ body {
     color: #ff6b9d;
     font-weight: 500;
     cursor: default;
+}
+
+/* ==========================================
+   PAGE TRANSITIONS
+   ========================================== */
+
+.page-transition {
+    opacity: 0.8;
+    transform: scale(0.98);
+    transition: all 0.3s ease;
+}
+
+.page-transition * {
+    pointer-events: none;
 }

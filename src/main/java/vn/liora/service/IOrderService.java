@@ -15,6 +15,8 @@ public interface IOrderService {
     OrderResponse updateOrderStatus(Long idOrder, OrderUpdateRequest request);
     OrderResponse getOrderById(Long idOrder);
     List<OrderResponse> getMyOrders(Long userId);
+    List<OrderResponse> getMyOrdersPaginated(Long userId, int page, int size);
+    Long countMyOrders(Long userId);
     List<OrderResponse> getAllOrders();
     List<OrderResponse> getOrdersByOrderStatus(String orderStatus);
     List<OrderResponse> getOrdersByDateRange(LocalDateTime start, LocalDateTime end);

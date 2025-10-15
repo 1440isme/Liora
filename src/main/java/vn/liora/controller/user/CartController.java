@@ -29,13 +29,31 @@ import java.util.List;
 @Slf4j
 public class CartController {
 
-    ICartService cartService;
-    ICartProductService cartProductService;
-    UserRepository userRepository;
+    final ICartService cartService;
+    final ICartProductService cartProductService;
+    final UserRepository userRepository;
 
     @GetMapping("/cart")
     public String viewCart() {
         return "user/cart/view-cart";
+    }
+
+    /**
+     * Test endpoint để kiểm tra authentication
+     */
+    @GetMapping("/cart/api/test")
+    @ResponseBody
+    public ResponseEntity<?> testAuth() {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            return ResponseEntity.ok().body(new Object() {
+                public final String auth = authentication != null ? authentication.toString() : "null";
+                public final boolean isAuthenticated = authentication != null && authentication.isAuthenticated();
+                public final String name = authentication != null ? authentication.getName() : "null";
+            });
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error: " + e.getMessage());
+        }
     }
 
     /**
@@ -78,10 +96,10 @@ public class CartController {
 
         } catch (AppException e) {
             log.error("Error getting current user cart: ", e);
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.status(401).body(e.getMessage());
         } catch (Exception e) {
             log.error("Error getting current user cart: ", e);
-            return ResponseEntity.badRequest().body("Unable to get cart information");
+            return ResponseEntity.status(500).body("Unable to get cart information: " + e.getMessage());
         }
     }
 

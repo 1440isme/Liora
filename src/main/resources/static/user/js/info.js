@@ -10,6 +10,10 @@ class UserInfoManager {
         this.cacheExpiry = 5 * 60 * 1000; // 5 phút
         this.cacheTimestamp = new Map();
         this.currentEditingAddressId = null;
+        // Pagination for orders
+        this.currentOrderPage = 0;
+        this.orderPageSize = 5;
+        this.totalOrderPages = 0;
         this.init();
     }
 
@@ -314,7 +318,7 @@ class UserInfoManager {
         }
     }
 
-    async loadOrders() {
+    async loadOrders(page = 0) {
         const ordersContainer = document.getElementById('ordersList');
         if (!ordersContainer) return;
 
@@ -334,7 +338,7 @@ class UserInfoManager {
                 </div>
             `;
 
-            const response = await fetch('/users/myOrdersWithProducts', {
+            const response = await fetch(`/users/myOrdersWithProducts?page=${page}&size=${this.orderPageSize}`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -352,9 +356,14 @@ class UserInfoManager {
 
             const data = await response.json();
             console.log('Orders API response:', data);
-            const ordersWithProducts = data.result || [];
+            const paginatedData = data.result;
+            const ordersWithProducts = paginatedData.content || [];
 
-            if (ordersWithProducts.length === 0) {
+            // Update pagination info
+            this.currentOrderPage = paginatedData.currentPage;
+            this.totalOrderPages = paginatedData.totalPages;
+
+            if (ordersWithProducts.length === 0 && page === 0) {
                 ordersContainer.innerHTML = `
                     <div class="empty-state">
                         <i class="fas fa-shopping-bag"></i>
@@ -364,7 +373,9 @@ class UserInfoManager {
                     </div>
                 `;
             } else {
-                ordersContainer.innerHTML = ordersWithProducts.map(orderWithProduct => this.createCompactOrderCard(orderWithProduct)).join('');
+                const ordersHTML = ordersWithProducts.map(orderWithProduct => this.createCompactOrderCard(orderWithProduct)).join('');
+                const paginationHTML = this.createPaginationHTML(paginatedData);
+                ordersContainer.innerHTML = ordersHTML + paginationHTML;
             }
 
         } catch (error) {
@@ -450,6 +461,95 @@ class UserInfoManager {
                 </div>
             </div>
         `;
+    }
+
+    createPaginationHTML(paginatedData) {
+        if (paginatedData.totalPages <= 1) {
+            return '';
+        }
+
+        const currentPage = paginatedData.currentPage;
+        const totalPages = paginatedData.totalPages;
+        const hasNext = paginatedData.hasNext;
+        const hasPrevious = paginatedData.hasPrevious;
+
+        let paginationHTML = `
+            <div class="pagination-container mt-4">
+                <nav aria-label="Phân trang đơn hàng">
+                    <ul class="pagination justify-content-center">
+        `;
+
+        // Previous button
+        if (hasPrevious) {
+            paginationHTML += `
+                <li class="page-item">
+                    <button class="page-link" onclick="userInfoManager.loadOrders(${currentPage - 1})">
+                        <i class="fas fa-chevron-left"></i> Trước
+                    </button>
+                </li>
+            `;
+        } else {
+            paginationHTML += `
+                <li class="page-item disabled">
+                    <span class="page-link">
+                        <i class="fas fa-chevron-left"></i> Trước
+                    </span>
+                </li>
+            `;
+        }
+
+        // Page numbers
+        const startPage = Math.max(0, currentPage - 2);
+        const endPage = Math.min(totalPages - 1, currentPage + 2);
+
+        for (let i = startPage; i <= endPage; i++) {
+            if (i === currentPage) {
+                paginationHTML += `
+                    <li class="page-item active">
+                        <span class="page-link">${i + 1}</span>
+                    </li>
+                `;
+            } else {
+                paginationHTML += `
+                    <li class="page-item">
+                        <button class="page-link" onclick="userInfoManager.loadOrders(${i})">${i + 1}</button>
+                    </li>
+                `;
+            }
+        }
+
+        // Next button
+        if (hasNext) {
+            paginationHTML += `
+                <li class="page-item">
+                    <button class="page-link" onclick="userInfoManager.loadOrders(${currentPage + 1})">
+                        Sau <i class="fas fa-chevron-right"></i>
+                    </button>
+                </li>
+            `;
+        } else {
+            paginationHTML += `
+                <li class="page-item disabled">
+                    <span class="page-link">
+                        Sau <i class="fas fa-chevron-right"></i>
+                    </span>
+                </li>
+            `;
+        }
+
+        paginationHTML += `
+                    </ul>
+                </nav>
+                <div class="pagination-info text-center mt-2">
+                    <small class="text-muted">
+                        Trang ${currentPage + 1} / ${totalPages} 
+                        (${paginatedData.totalElements} đơn hàng)
+                    </small>
+                </div>
+            </div>
+        `;
+
+        return paginationHTML;
     }
 
     createOrderCard(order) {
