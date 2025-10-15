@@ -9,6 +9,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+
+import java.util.ArrayList;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.liora.dto.request.OrderCreationRequest;
@@ -49,22 +51,18 @@ public class OrderServiceImpl implements IOrderService {
 
     @Override
     @Transactional
-
-    public OrderResponse createOrder(Long userId,OrderCreationRequest request) {
+    public OrderResponse createOrder(Long idCart, OrderCreationRequest request) {
         try {
-            User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
-            Cart cart = cartRepository.findByUser(user)
+            Cart cart = cartRepository.findById(idCart)
                     .orElseThrow(() -> new AppException(ErrorCode.CART_NOT_FOUND));
+            User user = cart.getUser();
             List<CartProduct> selected = cartProductRepository.findByCartAndChooseTrue(cart);
             if (selected.isEmpty()) {
                 throw new AppException(ErrorCode.NO_SELECTED_PRODUCT);
             }
 
+
             Order order = orderMapper.toOrder(request);
-            Address address = addressRepository.findById(request.getIdAddress())
-                    .orElseThrow(() -> new AppException(ErrorCode.ADDRESS_NOT_FOUND));
-            order.setAddress(address);
             order.setUser(user);
             order.setOrderDate(LocalDateTime.now());
             order.setOrderStatus("Pending");
@@ -91,7 +89,7 @@ public class OrderServiceImpl implements IOrderService {
                             .orElseThrow(() -> new AppException(ErrorCode.DISCOUNT_NOT_FOUND));
 
                     // Kiểm tra có thể áp dụng discount không
-                    if (discountService.canApplyDiscount(request.getDiscountId(), userId, subtotal)) {
+                    if (discountService.canApplyDiscount(request.getDiscountId(), user.getUserId(), subtotal)) {
                         // Tính discount amount
                         totalDiscount = discountService.calculateDiscountAmount(request.getDiscountId(), subtotal);
                         total = subtotal.subtract(totalDiscount);
@@ -106,7 +104,7 @@ public class OrderServiceImpl implements IOrderService {
                                 request.getDiscountId(), totalDiscount);
                     } else {
                         log.warn("Cannot apply discount {} to order. User: {}, Subtotal: {}",
-                                request.getDiscountId(), userId, subtotal);
+                                request.getDiscountId(), user.getUserId(), subtotal);
                     }
                 } catch (Exception e) {
                     log.warn("Error applying discount {}: {}. Order will be created without discount.",
@@ -124,7 +122,7 @@ public class OrderServiceImpl implements IOrderService {
             orderProductRepository.saveAll(orderProducts);
             cartProductRepository.deleteAll(selected);
             log.info("Order created successfully. Order ID: {}, User: {}, Total: {}, Discount: {}",
-                    savedOrder.getIdOrder(), userId, total, totalDiscount);
+                    savedOrder.getIdOrder(), user.getUserId(), total, totalDiscount);
 
             return orderMapper.toOrderResponse(savedOrder);
 
@@ -242,9 +240,18 @@ public class OrderServiceImpl implements IOrderService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by("orderDate").descending());
-        Page<Order> orderPage = orderRepository.findByUser(user, pageable);
-        return orderMapper.toOrderResponseList(orderPage.getContent());
+        List<Order> orders = orderRepository.findByUserOrderByOrderDateDesc(user);
+        
+        // Manual pagination
+        int start = page * size;
+        int end = Math.min(start + size, orders.size());
+        
+        if (start >= orders.size()) {
+            return new ArrayList<>();
+        }
+        
+        List<Order> paginatedOrders = orders.subList(start, end);
+        return orderMapper.toOrderResponseList(paginatedOrders);
     }
 
     @Override
@@ -333,4 +340,5 @@ public class OrderServiceImpl implements IOrderService {
         
         log.info("Order {} cancelled by user {}", orderId, userId);
     }
+
 }

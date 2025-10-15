@@ -5,6 +5,55 @@
     --gray-600: #475569;
     --main-bg: #f5f5f5;
 }
+
+/* ==========================================
+   PRODUCT STATUS TAGS
+   ========================================== */
+
+.product-status-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    margin-top: 4px;
+}
+
+.status-deactivated {
+    background-color: #fef3c7;
+    color: #92400e;
+    border: 1px solid #f59e0b;
+}
+
+.status-out-of-stock {
+    background-color: #fee2e2;
+    color: #dc2626;
+    border: 1px solid #ef4444;
+}
+
+/* Disabled cart item styles */
+.cart-item.disabled {
+    opacity: 0.6;
+    background-color: #f9fafb;
+    border: 1px solid #e5e7eb;
+}
+
+.cart-item.disabled .item-title {
+    color: #6b7280;
+}
+
+.cart-item.disabled .item-price {
+    color: #9ca3af;
+}
+
+.cart-item.disabled .quantity-btn:disabled,
+.cart-item.disabled .quantity-input:disabled {
+    background-color: #f3f4f6;
+    color: #9ca3af;
+    cursor: not-allowed;
+}
 .checkout-main {
     min-height: 100vh;
     background: linear-gradient(180deg, #f8faff 0%, #ffffff 100%);

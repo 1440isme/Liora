@@ -19,7 +19,6 @@ public class Cart {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "IdCart")
     Long idCart;
-
     // Removed unused fields: countProduct, guestId
 
     @OneToOne

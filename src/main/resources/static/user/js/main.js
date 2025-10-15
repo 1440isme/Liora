@@ -469,11 +469,70 @@ class LioraApp {
         return this.wishlistItems.includes(productId);
     }
 
-    updateCartDisplay() {
-        const totalItems = this.cartItems.reduce((total, item) => total + item.quantity, 0);
-        document.querySelectorAll('.cart-badge').forEach(badge => {
-            badge.textContent = totalItems;
-        });
+    async updateCartDisplay() {
+        try {
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                // No token, hide badge
+                document.querySelectorAll('.cart-badge').forEach(badge => {
+                    badge.textContent = '0';
+                    badge.style.display = 'none';
+                });
+                return;
+            }
+
+            // Get current cart from API
+            const response = await fetch('/cart/api/current', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.ok) {
+                const cartData = await response.json();
+                if (cartData.cartId) {
+                    // Get cart items
+                    const itemsResponse = await fetch(`/cart/api/${cartData.cartId}/items`, {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    if (itemsResponse.ok) {
+                        const cartItems = await itemsResponse.json();
+                        const totalItems = cartItems.reduce((total, item) => total + (item.quantity || 0), 0);
+                        
+                        // Update badge
+                        document.querySelectorAll('.cart-badge').forEach(badge => {
+                            badge.textContent = totalItems;
+                            badge.style.display = totalItems > 0 ? 'block' : 'none';
+                        });
+                        
+                        // Update local cart items
+                        this.cartItems = cartItems;
+                        return;
+                    }
+                }
+            }
+            
+            // Fallback: show 0 if no cart or error
+            document.querySelectorAll('.cart-badge').forEach(badge => {
+                badge.textContent = '0';
+                badge.style.display = 'none';
+            });
+            
+        } catch (error) {
+            console.error('Error updating cart display:', error);
+            // Fallback: show 0 on error
+            document.querySelectorAll('.cart-badge').forEach(badge => {
+                badge.textContent = '0';
+                badge.style.display = 'none';
+            });
+        }
     }
 
     applyFilters() {
