@@ -962,14 +962,14 @@ class BrandProductsManager {
                                             <label class="form-label mb-0" style="margin-right: 2rem;">Số lượng:</label>
                                             <div class="input-group" style="max-width: 150px;">
                                                 <button class="btn btn-outline-secondary" type="button" onclick="app.decrementQuantity()">-</button>
-                                                <input type="number" class="form-control text-center" value="1" min="1" max="${product.stock || 10}" id="quantityInput" onchange="app.validateQuantity()" oninput="app.validateQuantity()" onblur="app.validateQuantityOnBlur()">
+                                                <input type="number" class="form-control text-center" value="1" min="1" max="${Math.min(product.stock || 10, 99)}" id="quantityInput" onchange="app.validateQuantity()" oninput="app.validateQuantity()" onblur="app.validateQuantityOnBlur()">
                                                 <button class="btn btn-outline-secondary" type="button" onclick="app.incrementQuantity()">+</button>
                                             </div>
                                         </div>
                                         <!-- Error Message -->
                                         <div id="quantityError" class="text-danger mt-2" style="display: none;">
                                             <i class="fas fa-info-circle me-1"></i>
-                                            <span id="quantityErrorMessage">Số lượng tối đa bạn có thể mua là ${product.stock || 10}.</span>
+                                            <span id="quantityErrorMessage">Số lượng tối đa bạn có thể mua là ${Math.min(product.stock || 10, 99)}.</span>
                                         </div>
                                     </div>
                                     

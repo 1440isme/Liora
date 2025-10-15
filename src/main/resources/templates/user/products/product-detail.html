@@ -457,7 +457,7 @@
                             </div>
                             <div class="d-flex align-items-center">
                                 <button class="btn btn-outline-secondary btn-sm" onclick="decreaseQuantity()" th:disabled="${product.stock == 0 or !product.isActive}">-</button>
-                                <input type="number" class="form-control text-center mx-2 quantity-input" style="width: 80px;" value="1" min="1" th:max="${product.stock}" id="quantityInput" oninput="validateQuantityInput()" onblur="validateQuantityOnBlur()" th:disabled="${product.stock == 0 or !product.isActive}">
+                                <input type="number" class="form-control text-center mx-2 quantity-input" style="width: 80px;" value="1" min="1" th:max="${T(java.lang.Math).min(product.stock, 99)}" id="quantityInput" oninput="validateQuantityInput()" onblur="validateQuantityOnBlur()" th:disabled="${product.stock == 0 or !product.isActive}">
                                 <button class="btn btn-outline-secondary btn-sm" onclick="increaseQuantity()" th:disabled="${product.stock == 0 or !product.isActive}">+</button>
                             </div>
                         </div>
@@ -651,12 +651,13 @@
         function increaseQuantity() {
             const quantityInput = document.getElementById('quantityInput');
             const maxStock = parseInt(quantityInput.getAttribute('max'));
+            const maxAllowed = Math.min(maxStock, 99); // Tối đa 99 sản phẩm
             const currentValue = parseInt(quantityInput.value);
             
-            if (currentValue < maxStock) {
+            if (currentValue < maxAllowed) {
                 quantityInput.value = currentValue + 1;
             } else {
-                showNotification(`Số lượng tối đa là ${maxStock} sản phẩm!`, 'error');
+                showNotification(`Số lượng tối đa là ${maxAllowed} sản phẩm!`, 'error');
             }
         }
         
@@ -673,15 +674,16 @@
         function validateQuantityInput() {
             const quantityInput = document.getElementById('quantityInput');
             const maxStock = parseInt(quantityInput.getAttribute('max'));
+            const maxAllowed = Math.min(maxStock, 99); // Tối đa 99 sản phẩm
             const currentValue = parseInt(quantityInput.value);
             
             if (quantityInput.value === '' || quantityInput.value === '0') {
                 return; // Allow empty or 0 while typing
             }
             
-            if (currentValue > maxStock) {
-                quantityInput.value = maxStock;
-                showNotification(`Số lượng tối đa là ${maxStock} sản phẩm!`, 'error');
+            if (currentValue > maxAllowed) {
+                quantityInput.value = maxAllowed;
+                showNotification(`Số lượng tối đa là ${maxAllowed} sản phẩm!`, 'error');
             }
         }
         
@@ -689,13 +691,14 @@
         function validateQuantityOnBlur() {
             const quantityInput = document.getElementById('quantityInput');
             const maxStock = parseInt(quantityInput.getAttribute('max'));
+            const maxAllowed = Math.min(maxStock, 99); // Tối đa 99 sản phẩm
             const currentValue = parseInt(quantityInput.value);
             
             if (quantityInput.value === '' || quantityInput.value === '0' || currentValue < 1) {
                 quantityInput.value = 1;
-            } else if (currentValue > maxStock) {
-                quantityInput.value = maxStock;
-                showNotification(`Số lượng tối đa là ${maxStock} sản phẩm!`, 'error');
+            } else if (currentValue > maxAllowed) {
+                quantityInput.value = maxAllowed;
+                showNotification(`Số lượng tối đa là ${maxAllowed} sản phẩm!`, 'error');
             }
         }
         

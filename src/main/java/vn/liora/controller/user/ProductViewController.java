@@ -83,30 +83,4 @@ public class ProductViewController {
         }
     }
 
-    // API endpoint for related products
-    @GetMapping("/api/related/{productId}")
-    public ResponseEntity<List<Product>> getRelatedProducts(@PathVariable Long productId) {
-        try {
-            // Get the current product
-            ProductResponse currentProductResponse = productService.findById(productId);
-            if (currentProductResponse == null) {
-                return ResponseEntity.notFound().build();
-            }
-
-            // Get related products from the same category, excluding current product
-            List<Product> relatedProducts = productService.findByCategoryAndIdNot(
-                currentProductResponse.getCategoryId(), 
-                productId
-            );
-
-            // Limit to 4 products
-            if (relatedProducts.size() > 4) {
-                relatedProducts = relatedProducts.subList(0, 4);
-            }
-
-            return ResponseEntity.ok(relatedProducts);
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().build();
-        }
-    }
 }
