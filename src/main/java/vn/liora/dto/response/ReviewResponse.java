@@ -30,7 +30,7 @@ public class ReviewResponse {
     private String userEmail; // Thêm email
     private String userPhone; // Thêm số điện thoại
     private String productImage;
-    private String productThumbnail; // Thêm field này
+    private String productThumbnail;
 
     // Product info
     private Long productId;

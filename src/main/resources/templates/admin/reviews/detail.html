@@ -65,13 +65,12 @@
                         </div>
 
                         <!-- Product Information -->
-                        <!-- Product Information -->
                         <div class="card card-rounded mb-4">
                             <div class="card-body">
                                 <h4 class="card-title card-title-dash mb-4">
                                     <i class="mdi mdi-package-variant me-2"></i>Thông tin sản phẩm
                                 </h4>
-                                <div class="row">
+                                <div class="row h-100">
                                     <div class="col-md-3">
                                         <div class="product-image">
                                             <img id="productImage" src="" alt="Sản phẩm" class="img-fluid rounded" style="max-height: 200px; object-fit: cover;">
@@ -79,26 +78,44 @@
                                     </div>
                                     <div class="col-md-9">
                                         <div class="product-info">
-                                            <div class="info-item mb-3">
+                                            <div class="info-item mb-3"> <!-- Tăng margin-bottom -->
                                                 <label class="info-label">Tên sản phẩm:</label>
                                                 <div class="info-value" id="productName">Đang tải...</div>
                                             </div>
-                                            <div class="info-item mb-3">
-                                                <label class="info-label">Mã sản phẩm:</label>
-                                                <div class="info-value" id="productId">...</div>
+                                            
+                                            <!-- Mã sản phẩm và Giá sản phẩm ngang hàng -->
+                                            <div class="row mb-4"> <!-- Tăng margin-bottom -->
+                                                <div class="col-md-6">
+                                                    <div class="info-item">
+                                                        <label class="info-label">Mã sản phẩm:</label>
+                                                        <div class="info-value" id="productId">...</div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="info-item">
+                                                        <label class="info-label">Giá:</label>
+                                                        <div class="info-value" id="productPrice">...</div>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <div class="info-item mb-3">
-                                                <label class="info-label">Thương hiệu:</label>
-                                                <div class="info-value" id="productBrand">...</div>
+                                            
+                                            <!-- Thương hiệu và Danh mục ngang hàng -->
+                                            <div class="row mb-3"> <!-- Tăng margin-bottom -->
+                                                <div class="col-md-6">
+                                                    <div class="info-item">
+                                                        <label class="info-label">Thương hiệu:</label>
+                                                        <div class="info-value" id="productBrand">...</div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="info-item">
+                                                        <label class="info-label">Danh mục:</label>
+                                                        <div class="info-value" id="productCategory">...</div>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <div class="info-item mb-3">
-                                                <label class="info-label">Danh mục:</label>
-                                                <div class="info-value" id="productCategory">...</div>
-                                            </div>
-                                            <div class="info-item mb-3">
-                                                <label class="info-label">Giá:</label>
-                                                <div class="info-value" id="productPrice">...</div>
-                                            </div>
+                                            <!-- Thêm khoảng trống để cân bằng chiều cao -->
+                                            <div class="flex-grow-1"></div>
                                         </div>
                                     </div>
                                 </div>
@@ -177,22 +194,22 @@
                         <div class="card card-rounded">
                             <div class="card-body">
                                 <h4 class="card-title card-title-dash mb-4">
-                                    <i class="mdi mdi-receipt me-2"></i>Thông tin đơn hàng
+                                    <i class="mdi mdi-package-variant-closed me-2"></i>Thông tin đơn hàng
                                 </h4>
-                                <div class="order-info">
-                                    <div class="d-flex justify-content-between mb-2">
-                                        <span>Mã đơn hàng:</span>
-                                        <span class="fw-bold text-primary" id="orderCode">...</span>
-                                    </div>
-                                    <div class="d-flex justify-content-between mb-2">
-                                        <span>Ngày đặt hàng:</span>
-                                        <span class="fw-bold" id="orderDate">...</span>
-                                    </div>
-                                    <div class="d-flex justify-content-between mb-2">
-                                        <span>Mã người dùng:</span>
-                                        <span class="fw-bold text-secondary" id="orderUserId">...</span>
-                                    </div>
-                                </div>
+                                <table class="table table-sm table-borderless">
+                                    <tr>
+                                        <td class="fw-medium" width="40%">Mã đơn hàng:</td>
+                                        <td class="fw-bold text-primary" id="orderCode">...</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-medium">Ngày đặt hàng:</td>
+                                        <td id="orderDate">...</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-medium">Mã người dùng:</td>
+                                        <td id="orderUserId">...</td>
+                                    </tr>
+                                </table>
                             </div>
                         </div>
                     </div>
@@ -278,7 +295,7 @@
 
         /* Product info styling - Updated */
         .product-info {
-            padding-left: 0;
+            padding-left: 60px; /* Di chuyển văn bản qua phải */
             margin-left: 0;
         }
 
@@ -308,17 +325,33 @@
 
         .product-image {
             text-align: center;
+            padding-right: 0px;
+            transform: translateX(20px);
         }
 
         .product-image img {
             border: 2px solid #e3e6f0;
             border-radius: 8px;
+            width: 250px; /* Kích thước cố định */
+            height: 250px; /* Kích thước cố định */
+            object-fit: cover;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
-        /* Force left alignment for product info column */
-        .col-md-9 .product-info {
-            padding-left: 0 !important;
-            margin-left: 0 !important;
+        /* Ẩn ảnh nếu không có src */
+        .product-image img[src=""] {
+            display: none;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .product-info {
+                padding-left: 20px; /* Giảm padding trên mobile */
+            }
+
+            .product-image {
+                padding-right: 10px;
+            }
         }
     </style>
 

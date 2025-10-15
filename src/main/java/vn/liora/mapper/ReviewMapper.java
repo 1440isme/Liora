@@ -4,6 +4,7 @@ import org.mapstruct.*;
 import vn.liora.dto.request.ReviewCreationRequest;
 import vn.liora.dto.request.ReviewUpdateRequest;
 import vn.liora.dto.response.ReviewResponse;
+import vn.liora.entity.Image;
 import vn.liora.entity.Review;
 
 import java.util.List;
@@ -29,6 +30,7 @@ public interface ReviewMapper {
     @Mapping(target = "userPhone", source = "orderProduct.order.user.phone")
     @Mapping(target = "productName", source = "orderProduct.product.name")
     @Mapping(target = "productImage", ignore = true)
+    @Mapping(target = "productThumbnail", source = "orderProduct.product.images", qualifiedByName = "getFirstImage")
     @Mapping(target = "productPrice", source = "orderProduct.product.price")
     @Mapping(target = "productBrandName", source = "orderProduct.product.brand.name")
     @Mapping(target = "productCategoryName", source = "orderProduct.product.category.name")
@@ -58,5 +60,10 @@ public interface ReviewMapper {
     @Named("mapOrderCode")
     default String mapOrderCode(Long orderId) {
         return orderId != null ? "#" + orderId : null;
+    }
+
+    @Named("getFirstImage")
+    default String getFirstImage(List<Image> images) {
+        return images != null && !images.isEmpty() ? images.get(0).getImageUrl() : null;
     }
 }
