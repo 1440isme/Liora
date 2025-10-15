@@ -14,6 +14,7 @@ import vn.liora.entity.Category;
 import vn.liora.mapper.CategoryMapper;
 import vn.liora.service.ICategoryService;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -98,6 +99,10 @@ public class AdminCategoryController {
         ApiResponse<List<CategoryResponse>> response = new ApiResponse<>();
         try {
             List<Category> activeCategories = categoryService.findActiveCategories();
+            
+            // Sort categories alphabetically by name
+            activeCategories.sort(Comparator.comparing(Category::getName));
+            
             List<CategoryResponse> categoryResponses = activeCategories.stream()
                     .map(categoryMapper::toCategoryResponse)
                     .collect(Collectors.toList());
