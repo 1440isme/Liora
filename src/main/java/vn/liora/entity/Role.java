@@ -20,6 +20,7 @@ public class Role {
     @Id
     @EqualsAndHashCode.Include
     String name;
+    @Column(name = "Description", columnDefinition = "NVARCHAR(255)")
     String description;
 
     @ManyToMany(fetch = FetchType.LAZY)

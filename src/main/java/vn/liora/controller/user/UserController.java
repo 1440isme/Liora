@@ -1,71 +1,192 @@
 package vn.liora.controller.user;
 
-import jakarta.validation.Valid;
-import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
-import lombok.experimental.FieldDefaults;
-import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 import vn.liora.dto.request.ApiResponse;
-import vn.liora.dto.request.UserCreationRequest;
-import vn.liora.dto.request.UserUpdateRequest;
 import vn.liora.dto.response.UserResponse;
+import vn.liora.dto.response.OrderResponse;
+import vn.liora.dto.response.OrderProductResponse;
 import vn.liora.entity.User;
-import vn.liora.service.IUserService;
+import vn.liora.exception.AppException;
+import vn.liora.exception.ErrorCode;
+import vn.liora.repository.UserRepository;
+import vn.liora.mapper.UserMapper;
+import vn.liora.service.IOrderService;
 
-import java.time.LocalDate;
+import java.math.BigDecimal;
 import java.util.List;
-
 
 @RestController
 @RequestMapping("/users")
 @RequiredArgsConstructor
-@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-@Slf4j
 public class UserController {
-    IUserService userService;
 
-    @PostMapping
-    ApiResponse<UserResponse> createUser(@RequestBody @Valid UserCreationRequest request) {
-        return ApiResponse.<UserResponse>builder()
-                .result(userService.createUser(request))
-                .build();
-    }
+    private final UserRepository userRepository;
+    private final UserMapper userMapper;
+    private final IOrderService orderService;
 
-    @GetMapping
-    ApiResponse<List<UserResponse>> getUsers() {
-        var authentication = SecurityContextHolder.getContext().getAuthentication();
-        log.info("Username: {}", authentication.getName());
-        return ApiResponse.<List<UserResponse>>builder()
-                .result(userService.findAll())
-                .build();
-    }
-
-    @GetMapping("/{userId}")
-    ApiResponse<UserResponse> getUser(@PathVariable("userId") Long userId) {
-        return ApiResponse.<UserResponse>builder()
-                .result(userService.findById(userId))
-                .build();
-    }
     @GetMapping("/myInfo")
-    ApiResponse<UserResponse> getMyInfo() {
-        return ApiResponse.<UserResponse>builder()
-                .result(userService.getMyInfo())
-                .build();
+    public ResponseEntity<ApiResponse<UserResponse>> getMyInfo() {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated()) {
+                throw new AppException(ErrorCode.UNAUTHENTICATED);
+            }
+
+            String username = authentication.getName();
+            User user = userRepository.findByUsername(username)
+                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+            UserResponse userResponse = userMapper.toUserResponse(user);
+
+            ApiResponse<UserResponse> response = new ApiResponse<>();
+            response.setResult(userResponse);
+            response.setMessage("Lấy thông tin người dùng thành công");
+
+            return ResponseEntity.ok(response);
+        } catch (AppException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        }
     }
 
+    @GetMapping("/myOrders")
+    public ResponseEntity<ApiResponse<List<OrderResponse>>> getMyOrders() {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated()) {
+                throw new AppException(ErrorCode.UNAUTHENTICATED);
+            }
 
-    @DeleteMapping("/{userId}")
-    ApiResponse<String> deleteUser(@PathVariable Long userId) {
-        userService.deleteById(userId);
-        return ApiResponse.<String>builder().result("User has been deleted").build();
+            String username = authentication.getName();
+            User user = userRepository.findByUsername(username)
+                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+            List<OrderResponse> orders = orderService.getMyOrders(user.getUserId());
+
+            ApiResponse<List<OrderResponse>> response = new ApiResponse<>();
+            response.setResult(orders);
+            response.setMessage("Lấy lịch sử đơn hàng thành công");
+
+            return ResponseEntity.ok(response);
+        } catch (AppException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        }
     }
 
-    @PutMapping("/{userId}")
-    ApiResponse<UserResponse> updateUser(@PathVariable Long userId, @RequestBody UserUpdateRequest request) {
-        return ApiResponse.<UserResponse>builder()
-                .result(userService.updateUser(userId, request))
-                .build();
+    @GetMapping("/myOrdersWithProducts")
+    public ResponseEntity<ApiResponse<List<Object>>> getMyOrdersWithProducts() {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated()) {
+                throw new AppException(ErrorCode.UNAUTHENTICATED);
+            }
+
+            String username = authentication.getName();
+            User user = userRepository.findByUsername(username)
+                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+            List<OrderResponse> orders = orderService.getMyOrders(user.getUserId());
+            
+            // Tạo response với thông tin sản phẩm đầu tiên
+            List<Object> ordersWithProducts = orders.stream().map(order -> {
+                try {
+                    List<OrderProductResponse> products = orderService.getProductsByOrderId(order.getIdOrder());
+                    OrderProductResponse firstProduct = products.isEmpty() ? null : products.get(0);
+                    
+                    class OrderWithProduct {
+                        @SuppressWarnings("unused")
+                        public final OrderResponse order;
+                        @SuppressWarnings("unused")
+                        public final OrderProductResponse firstProduct;
+                        @SuppressWarnings("unused")
+                        public final Integer totalProducts;
+                        
+                        public OrderWithProduct(OrderResponse order, OrderProductResponse firstProduct, Integer totalProducts) {
+                            this.order = order;
+                            this.firstProduct = firstProduct;
+                            this.totalProducts = totalProducts;
+                        }
+                    }
+                    
+                    return new OrderWithProduct(order, firstProduct, products.size());
+                } catch (Exception e) {
+                    // Nếu không lấy được sản phẩm, trả về order không có sản phẩm
+                    class OrderWithProduct {
+                        @SuppressWarnings("unused")
+                        public final OrderResponse order;
+                        @SuppressWarnings("unused")
+                        public final OrderProductResponse firstProduct = null;
+                        @SuppressWarnings("unused")
+                        public final Integer totalProducts = 0;
+                        
+                        public OrderWithProduct(OrderResponse order, OrderProductResponse firstProduct, Integer totalProducts) {
+                            this.order = order;
+                        }
+                    }
+                    return new OrderWithProduct(order, null, 0);
+                }
+            }).collect(java.util.stream.Collectors.toList());
+
+            ApiResponse<List<Object>> response = new ApiResponse<>();
+            response.setResult(ordersWithProducts);
+            response.setMessage("Lấy lịch sử đơn hàng với sản phẩm thành công");
+
+            return ResponseEntity.ok(response);
+        } catch (AppException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        }
+    }
+
+    @GetMapping("/orderStats")
+    public ResponseEntity<ApiResponse<Object>> getOrderStats() {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated()) {
+                throw new AppException(ErrorCode.UNAUTHENTICATED);
+            }
+
+            String username = authentication.getName();
+            User user = userRepository.findByUsername(username)
+                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+            Long totalOrders = orderService.countByUser(user);
+            BigDecimal totalSpent = orderService.getTotalRevenueByUser(user);
+
+            // Create stats object
+            class OrderStats {
+                @SuppressWarnings("unused")
+                public final Long totalOrders;
+                @SuppressWarnings("unused")
+                public final BigDecimal totalSpent;
+                
+                public OrderStats(Long totalOrders, BigDecimal totalSpent) {
+                    this.totalOrders = totalOrders;
+                    this.totalSpent = totalSpent;
+                }
+            }
+            
+            OrderStats stats = new OrderStats(totalOrders, totalSpent);
+
+            ApiResponse<Object> response = new ApiResponse<>();
+            response.setResult(stats);
+            response.setMessage("Lấy thống kê đơn hàng thành công");
+
+            return ResponseEntity.ok(response);
+        } catch (AppException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        }
     }
 }

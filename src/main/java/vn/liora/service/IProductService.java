@@ -25,6 +25,7 @@ public interface IProductService {
     Page<Product> findAll(Pageable pageable);
     List<Product> findAllById(Iterable<Long> ids);
     Optional<Product> findByIdOptional(Long id);
+    Product save(Product product);
 
     // ========== SEARCH ==========
     List<Product> findByNameContaining(String name);
@@ -61,7 +62,7 @@ public interface IProductService {
     // ========== RATING FILTERS ==========
     List<Product> findByRatingGreaterThanEqual(BigDecimal minRating);
     List<Product> findByRatingRange(BigDecimal minRating, BigDecimal maxRating);
-    List<Product> findHighRatedProducts(BigDecimal minRating);
+    List<Product> findProductsByMinRating(BigDecimal minRating);
 
     // ========== COMBINED FILTERS ==========
     List<Product> findActiveAvailableByBrandAndCategory(Long brandId, Long categoryId);
@@ -75,7 +76,7 @@ public interface IProductService {
 
     // ========== BUSINESS QUERIES ==========
     List<Product> findTopSellingInStockProducts(Pageable pageable);
-    List<Product> findHighRatedProducts(BigDecimal minRating, Pageable pageable);
+    List<Product> findHighRatedProductsWithPagination(BigDecimal minRating, Pageable pageable);
     List<Product> findNewestProducts(Pageable pageable);
 
     // ========== ADMIN QUERIES ==========
@@ -96,5 +97,8 @@ public interface IProductService {
     Long countOutOfStockProducts();
     Long countByBrand(Long brandId);
     Long countByCategory(Long categoryId);
+    
+    // ========== RELATED PRODUCTS ==========
+    List<Product> findByCategoryAndIdNot(Long categoryId, Long productId);
 
 }

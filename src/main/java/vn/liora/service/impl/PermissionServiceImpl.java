@@ -13,13 +13,13 @@ import vn.liora.service.IPermissionService;
 
 import java.util.List;
 
-
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class PermissionServiceImpl implements IPermissionService {
     PermissionRepository permissionRepository;
     PermissionMapper permissionMapper;
+
     @Override
     public PermissionResponse create(PermissionRequest request) {
         Permission permission = permissionMapper.toPermission(request);
@@ -31,6 +31,27 @@ public class PermissionServiceImpl implements IPermissionService {
     public List<PermissionResponse> getAll() {
         var permission = permissionRepository.findAll();
         return permission.stream().map(permissionMapper::toPermissionResponse).toList();
+    }
+
+    @Override
+    public PermissionResponse getById(String name) {
+        var permission = permissionRepository.findById(name)
+                .orElseThrow(() -> new RuntimeException("Permission not found: " + name));
+        return permissionMapper.toPermissionResponse(permission);
+    }
+
+    @Override
+    public PermissionResponse update(String name, PermissionRequest request) {
+        var permission = permissionRepository.findById(name)
+                .orElseThrow(() -> new RuntimeException("Permission not found: " + name));
+
+        // Update description
+        if (request.getDescription() != null) {
+            permission.setDescription(request.getDescription());
+        }
+
+        permissionRepository.save(permission);
+        return permissionMapper.toPermissionResponse(permission);
     }
 
     @Override

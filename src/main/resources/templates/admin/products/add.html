@@ -25,99 +25,51 @@
 
                     <!-- Product Form -->
                     <div class="row">
-                        <div class="col-lg-8 grid-margin stretch-card">
-                            <div class="card card-rounded w-100">
+                        <!-- Form chính - 8 cột -->
+                        <div class="col-lg-8">
+                            <div class="card card-rounded">
                                 <div class="card-body">
                                     <h4 class="card-title card-title-dash">Thông tin sản phẩm</h4>
-                                    <form th:action="@{/admin/products}" th:object="${productRequest}" method="post"
-                                        enctype="multipart/form-data">
-                                        <div th:replace="admin/products/components/product-form"></div>
-
-                                        <div class="mt-4">
-                                            <button type="submit" class="btn btn-primary text-white me-2"><i
-                                                    class="mdi mdi-content-save"></i> Lưu sản phẩm</button>
-                                            <a href="/admin/products" class="btn btn-otline-dark"><i
-                                                    class="mdi mdi-close"></i> Hủy bỏ</a>
-                                        </div>
-                                    </form>
+                                    <div th:replace="admin/products/components/product-form"></div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Sidebar -->
-                        <div class="col-lg-4 grid-margin stretch-card">
-                            <div class="card card-rounded mb-4">
-                                <div class="card-body">
-                                    <h4 class="card-title card-title-dash">Trạng thái</h4>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="status" id="statusActive"
-                                            value="ACTIVE" checked>
-                                        <label class="form-check-label" for="statusActive">
-                                            Hoạt động
-                                        </label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="status" id="statusInactive"
-                                            value="INACTIVE">
-                                        <label class="form-check-label" for="statusInactive">
-                                            Ngừng bán
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-
+                        <!-- Hình ảnh - 4 cột bên phải -->
+                        <div class="col-lg-4">
+                            <!-- Image Upload Card -->
                             <div class="card card-rounded mb-4">
                                 <div class="card-body">
                                     <h4 class="card-title card-title-dash">Hình ảnh sản phẩm</h4>
                                     <div class="mb-3">
-                                        <label for="mainImage" class="form-label">Hình ảnh chính</label>
-                                        <input type="file" class="form-control" id="mainImage" name="mainImage"
-                                            accept="image/*">
-                                        <div class="form-text">Hình ảnh chính sẽ hiển thị trong danh sách sản phẩm</div>
-                                    </div>
-
-                                    <div class="mb-3">
-                                        <label for="additionalImages" class="form-label">Hình ảnh bổ sung</label>
-                                        <input type="file" class="form-control" id="additionalImages"
-                                            name="additionalImages" multiple accept="image/*">
-                                        <div class="form-text">Có thể chọn nhiều hình ảnh</div>
+                                        <label for="productImages" class="form-label">Hình ảnh sản phẩm</label>
+                                        <input type="file" class="form-control" id="productImages" name="productImages" multiple accept="image/*">
+                                        <div class="form-text">Chọn một hoặc nhiều hình ảnh (bắt buộc)</div>
                                     </div>
 
                                     <!-- Image Preview -->
                                     <div id="imagePreview" class="mt-3">
-                                        <!-- Preview images will be shown here -->
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="card card-rounded">
-                                <div class="card-body">
-                                    <h4 class="card-title card-title-dash">SEO</h4>
-                                    <div class="mb-3">
-                                        <label for="metaTitle" class="form-label">Meta Title</label>
-                                        <input type="text" class="form-control" id="metaTitle" name="metaTitle"
-                                            maxlength="60">
-                                        <div class="form-text">Tối đa 60 ký tự</div>
-                                    </div>
-
-                                    <div class="mb-3">
-                                        <label for="metaDescription" class="form-label">Meta Description</label>
-                                        <textarea class="form-control" id="metaDescription" name="metaDescription"
-                                            rows="3" maxlength="160"></textarea>
-                                        <div class="form-text">Tối đa 160 ký tự</div>
+                                        <div class="text-center text-muted">
+                                            <i class="mdi mdi-image-multiple mdi-48px"></i>
+                                            <p class="mt-2">Hình ảnh sẽ hiển thị ở đây</p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div th:replace="admin/layout/admin-footer"></div>
             </div>
         </div>
     </div>
 
+    <!-- Include JavaScript files -->
     <div th:replace="admin/fragments/admin-scripts :: admin-scripts"></div>
-    <script src="/admin/js/admin/products.js"></script>
+    <script src="/admin/js/admin/products/product-form.js"></script>
+    <script src="/admin/js/admin/products/product-add.js"></script>
+
+    <!-- Footer ở cuối -->
+    <div th:replace="admin/layout/admin-footer"></div>
 </body>
 
 </html>

@@ -17,12 +17,17 @@ public class GlobalExceptionHandler {
     private static final String MAX_ATTRIBUTE = "max";
 
     @ExceptionHandler(value = Exception.class)
-    ResponseEntity<ApiResponse> handlingRuntimeException(RuntimeException e) {
+    ResponseEntity<ApiResponse> handlingRuntimeException(Exception e) {
+        // In ra stack trace để debug
+        e.printStackTrace();
+
         ApiResponse apiResponse = new ApiResponse();
         apiResponse.setCode(ErrorCode.UNCATEGORIZED_EXCEPTION.getCode());
-        apiResponse.setMessage(ErrorCode.UNCATEGORIZED_EXCEPTION.getMessage());
+        // Trả về message thực sự của exception để dễ debug
+        apiResponse.setMessage(ErrorCode.UNCATEGORIZED_EXCEPTION.getMessage() + ": " + e.getMessage());
         return ResponseEntity.badRequest().body(apiResponse);
     }
+
     @ExceptionHandler(value = AppException.class)
     ResponseEntity<ApiResponse> handlingAppException(AppException e) {
         ErrorCode errorCode = e.getErrorCode();
@@ -33,6 +38,7 @@ public class GlobalExceptionHandler {
                 .status(errorCode.getStatusCode())
                 .body(apiResponse);
     }
+
     @ExceptionHandler(value = AccessDeniedException.class)
     ResponseEntity<ApiResponse> handlingAccessDeniedException(AccessDeniedException e) {
         ErrorCode errorCode = ErrorCode.UNAUTHORIZED;
@@ -40,8 +46,7 @@ public class GlobalExceptionHandler {
                 ApiResponse.builder()
                         .code(errorCode.getCode())
                         .message(errorCode.getMessage())
-                        .build()
-        );
+                        .build());
     }
 
     @ExceptionHandler(value = MethodArgumentNotValidException.class)
@@ -56,18 +61,18 @@ public class GlobalExceptionHandler {
             var constrantViolations = e.getBindingResult()
                     .getAllErrors().getFirst().unwrap(ConstraintViolation.class);
             attributes = constrantViolations.getConstraintDescriptor().getAttributes();
-        } catch (IllegalArgumentException ex) {}
+        } catch (IllegalArgumentException ex) {
+        }
 
         ApiResponse apiResponse = new ApiResponse();
         apiResponse.setCode(errorCode.getCode());
-        apiResponse.setMessage(Objects.nonNull(attributes) ?
-                mapAttribute(errorCode.getMessage(), attributes)
+        apiResponse.setMessage(Objects.nonNull(attributes) ? mapAttribute(errorCode.getMessage(), attributes)
                 : errorCode.getMessage());
         return ResponseEntity.badRequest().body(apiResponse);
     }
 
-    private  String mapAttribute(String message, Map<String, Object> attributes){
+    private String mapAttribute(String message, Map<String, Object> attributes) {
         String minValue = (String.valueOf(attributes.get(MIN_ATTRIBUTE)));
-        return message.replace("{"+MIN_ATTRIBUTE+"}", minValue);
+        return message.replace("{" + MIN_ATTRIBUTE + "}", minValue);
     }
 }

@@ -13,7 +13,6 @@ import vn.liora.enums.Role;
 import vn.liora.repository.UserRepository;
 import vn.liora.repository.RoleRepository;
 
-import java.util.HashSet;
 import java.util.Set;
 
 @Configuration
@@ -33,6 +32,14 @@ public class ApplicationInitConfig {
                             var r = vn.liora.entity.Role.builder()
                                     .name(Role.ADMIN.name())
                                     .description("Administrator")
+                                    .build();
+                            return roleRepository.save(r);
+                        });
+                roleRepository.findById(Role.USER.name())
+                        .orElseGet(() -> {
+                            var r = vn.liora.entity.Role.builder()
+                                    .name(Role.USER.name())
+                                    .description("User")
                                     .build();
                             return roleRepository.save(r);
                         });

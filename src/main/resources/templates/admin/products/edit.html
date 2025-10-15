@@ -25,109 +25,71 @@
 
                     <!-- Product Form -->
                     <div class="row">
-                        <div class="col-lg-8 grid-margin stretch-card">
+                        <div class="col-lg-8">
                             <div class="card card-rounded w-100">
                                 <div class="card-body">
                                     <h4 class="card-title card-title-dash">Thông tin sản phẩm</h4>
-                                    <form th:action="@{/admin/products/{id}(id=${product.id})}"
-                                        th:object="${productRequest}" method="post" enctype="multipart/form-data">
-                                        <input type="hidden" name="_method" value="PUT">
-                                        <div th:replace="admin/products/components/product-form"></div>
-
-                                        <div class="mt-4">
-                                            <button type="submit" class="btn btn-primary text-white me-2"><i
-                                                    class="mdi mdi-content-save"></i> Cập nhật sản phẩm</button>
-                                            <a href="/admin/products" class="btn btn-otline-dark me-2"><i
-                                                    class="mdi mdi-close"></i> Hủy bỏ</a>
-                                            <button type="button" class="btn btn-danger" data-bs-toggle="modal"
-                                                data-bs-target="#deleteModal"><i class="mdi mdi-delete"></i> Xóa sản
-                                                phẩm</button>
-                                        </div>
-                                    </form>
+                                    
+                                    <!-- Include the dynamic product form -->
+                                    <div th:replace="admin/products/components/product-form"></div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Sidebar -->
-                        <div class="col-lg-4 grid-margin stretch-card">
-                            <div class="card card-rounded mb-4">
-                                <div class="card-body">
-                                    <h4 class="card-title card-title-dash">Trạng thái</h4>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="status" id="statusActive"
-                                            value="ACTIVE" th:checked="${product.status == 'ACTIVE'}">
-                                        <label class="form-check-label" for="statusActive">
-                                            Hoạt động
-                                        </label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="radio" name="status" id="statusInactive"
-                                            value="INACTIVE" th:checked="${product.status == 'INACTIVE'}">
-                                        <label class="form-check-label" for="statusInactive">
-                                            Ngừng bán
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
-
+                        <div class="col-lg-4">
+                            <!-- Current Images Card -->
                             <div class="card card-rounded mb-4">
                                 <div class="card-body">
                                     <h4 class="card-title card-title-dash">Hình ảnh hiện tại</h4>
-                                    <div th:if="${product.images != null and !product.images.isEmpty()}">
-                                        <div class="row">
-                                            <div th:each="image : ${product.images}" class="col-6 mb-2">
-                                                <img th:src="${image.url}" th:alt="${product.name}"
-                                                    class="img-thumbnail"
-                                                    style="width: 100%; height: 100px; object-fit: cover;">
+                                    <div id="currentImages">
+                                        <div class="text-center text-muted">
+                                            <div class="spinner-border" role="status">
+                                                <span class="visually-hidden">Đang tải...</span>
                                             </div>
+                                            <p class="mt-2">Đang tải hình ảnh...</p>
                                         </div>
                                     </div>
-                                    <div th:if="${product.images == null or product.images.isEmpty()}"
-                                        class="text-muted">
-                                        Chưa có hình ảnh
-                                    </div>
                                 </div>
                             </div>
-
+                        
+                            <!-- Thêm ảnh mới - Card đơn giản -->
                             <div class="card card-rounded mb-4">
                                 <div class="card-body">
-                                    <h4 class="card-title card-title-dash">Cập nhật hình ảnh</h4>
+                                    <h4 class="card-title card-title-dash">Thêm ảnh mới</h4>
                                     <div class="mb-3">
-                                        <label for="mainImage" class="form-label">Hình ảnh chính mới</label>
-                                        <input type="file" class="form-control" id="mainImage" name="mainImage"
-                                            accept="image/*">
+                                        <label for="newImages" class="form-label">Chọn hình ảnh</label>
+                                        <input type="file" id="newImages" class="form-control" multiple accept="image/*">
+                                        <div class="form-text">Chọn nhiều hình ảnh cùng lúc</div>
                                     </div>
-
-                                    <div class="mb-3">
-                                        <label for="additionalImages" class="form-label">Hình ảnh bổ sung</label>
-                                        <input type="file" class="form-control" id="additionalImages"
-                                            name="additionalImages" multiple accept="image/*">
+                                    <div id="newImagePreview" class="mt-3">
+                                        <p class="text-muted">Chọn hình ảnh mới để xem trước</p>
                                     </div>
-
-                                    <!-- Image Preview -->
-                                    <div id="imagePreview" class="mt-3">
-                                        <!-- Preview images will be shown here -->
-                                    </div>
+                                    <button type="button" class="btn btn-primary" id="uploadNewImagesBtn">
+                                        <i class="fas fa-upload"></i> Upload ảnh
+                                    </button>
                                 </div>
                             </div>
-
+                            
+                        
+                            <!-- Product Info Card -->
                             <div class="card card-rounded">
                                 <div class="card-body">
                                     <h4 class="card-title card-title-dash">Thông tin bổ sung</h4>
-                                    <p><strong>Ngày tạo:</strong> <span
-                                            th:text="${#temporals.format(product.createdAt, 'dd/MM/yyyy HH:mm')}">15/12/2024
-                                            10:30</span></p>
-                                    <p><strong>Cập nhật lần cuối:</strong> <span
-                                            th:text="${#temporals.format(product.updatedAt, 'dd/MM/yyyy HH:mm')}">15/12/2024
-                                            15:45</span></p>
-                                    <p><strong>Lượt xem:</strong> <span th:text="${product.viewCount}">1,234</span></p>
-                                    <p><strong>Đã bán:</strong> <span th:text="${product.soldQuantity}">56</span></p>
+                                    <div id="productInfo">
+                                        <div class="text-center text-muted">
+                                            <div class="spinner-border" role="status">
+                                                <span class="visually-hidden">Đang tải...</span>
+                                            </div>
+                                            <p class="mt-2">Đang tải thông tin...</p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        </div> <!-- Đóng col-lg-4 -->
                     </div>
-                    <div th:replace="admin/layout/admin-footer"></div>
                 </div>
+                <div th:replace="admin/layout/admin-footer"></div>
             </div>
         </div>
 
@@ -140,23 +102,21 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
-                        <p>Bạn có chắc chắn muốn xóa sản phẩm <strong th:text="${product.name}">Tên sản phẩm</strong>?
-                        </p>
-                        <p class="text-danger">Hành động này không thể hoàn tác!</p>
+                        <p>Bạn có chắc chắn muốn xóa sản phẩm <strong id="deleteProductName">Tên sản phẩm</strong>?</p>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy bỏ</button>
-                        <form th:action="@{/admin/products/{id}(id=${product.id})}" method="post" class="d-inline">
-                            <input type="hidden" name="_method" value="DELETE">
-                            <button type="submit" class="btn btn-danger">Xóa sản phẩm</button>
-                        </form>
+                        <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Xóa sản phẩm</button>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <div th:replace="admin/fragments/admin-scripts :: admin-scripts"></div>
-        <script src="/admin/js/admin/products.js"></script>
+    <!-- Include JavaScript files -->
+    <div th:replace="admin/fragments/admin-scripts :: admin-scripts"></div>
+    <script src="/admin/js/admin/products/product-form.js"></script>
+    <script src="/admin/js/admin/products/product-edit.js"></script>
 </body>
 
 </html>

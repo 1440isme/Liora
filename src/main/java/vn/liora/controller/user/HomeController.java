@@ -1,17 +1,39 @@
 package vn.liora.controller.user;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import vn.liora.service.ICategoryService;
+import vn.liora.service.IBrandService;
+import vn.liora.service.StaticPageService;
+import vn.liora.dto.response.StaticPageResponse;
+import java.util.List;
 
 @Controller
 @RequestMapping({ "/", "/home" })
+@RequiredArgsConstructor
 public class HomeController {
+
+    private final ICategoryService categoryService;
+    private final IBrandService brandService;
+    private final StaticPageService staticPageService;
 
     // Dashboard
     @GetMapping()
-    public String dashboard() {
+    public String dashboard(Model model) {
+        // Thêm danh mục cha với cây con vào model để sử dụng trong header
+        model.addAttribute("parentCategories", categoryService.getCategoryTree());
+        // Thêm danh sách thương hiệu active cho section thương hiệu
+        model.addAttribute("activeBrands", brandService.findActiveBrands());
+
+        // Lấy 3 bài viết mới nhất của section "lam-dep-cung-liora"
+        List<StaticPageResponse> beautyPages = staticPageService.getPublishedPagesBySection("lam-dep-cung-liora");
+        if (beautyPages != null && beautyPages.size() > 3) {
+            beautyPages = beautyPages.subList(0, 3);
+        }
+        model.addAttribute("latestBeautyPages", beautyPages);
         return "user/index";
     }
 
@@ -19,5 +41,12 @@ public class HomeController {
     @GetMapping("/login")
     public String login() {
         return "admin/auth/login";
+    }
+
+    @GetMapping("/info")
+    public String info(Model model) {
+        // Thêm danh mục cha với cây con vào model để sử dụng trong header
+        model.addAttribute("parentCategories", categoryService.getCategoryTree());
+        return "user/user/info";
     }
 }

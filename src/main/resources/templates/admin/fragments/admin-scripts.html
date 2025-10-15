@@ -2,82 +2,22 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 
 <body th:fragment="admin-scripts">
-    <!-- plugins:js (use built outputs only) -->
-    <script th:src="@{/admin/js/vendors/vendor.bundle.base.js}"></script>
+    <!-- Core vendor bundle (jQuery, Bootstrap, etc.) -->
+    <script th:src="@{/admin/vendors/js/vendor.bundle.base.js}"></script>
 
-    <!-- End plugins:js -->
+    <!-- Optional vendor plugins (chart.js from local vendors) -->
+    <script th:src="@{/admin/vendors/chart.js/chart.umd.js}"></script>
 
-    <!-- Plugin js for this page (optional) -->
-    <script th:src="@{/admin/js/vendors/chart.js/chart.umd.js}"></script>
+    <!-- Core scripts: chỉ giữ vendor và ajax utils; không can thiệp điều hướng/collapse -->
 
-    <!-- End plugin js for this page -->
-
-    <!-- Core scripts (use built outputs) -->
-    <script th:src="@{/admin/js/admin/off-canvas.js}"></script>
-    <script th:src="@{/admin/js/admin/template.js}"></script>
-    <script th:src="@{/admin/js/admin/settings.js}"></script>
-    <script th:src="@{/admin/js/admin/hoverable-collapse.js}"></script>
-    <script th:src="@{/admin/js/admin/todolist.js}"></script>
-    <!-- endinject -->
-
-    <!-- Fallback: Bootstrap bundle from CDN to ensure collapse/offcanvas works if local assets fail -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-    <!-- Project common scripts -->
-    <script src="/admin/js/admin/admin-ajax.js"></script>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            try {
-                var currentPath = window.location.pathname;
-                var sidebar = document.getElementById('sidebar');
-                if (!sidebar) return;
-                var links = sidebar.querySelectorAll('a.nav-link');
-                links.forEach(function (link) {
-                    var href = link.getAttribute('href');
-                    if (!href) return;
-                    if (currentPath === href || (href !== '/' && currentPath.startsWith(href))) {
-                        link.classList.add('active');
-                        var collapseParent = link.closest('.collapse');
-                        if (collapseParent && typeof bootstrap !== 'undefined') {
-                            collapseParent.classList.add('show');
-                        }
-                    }
-                });
-            } catch (e) {
-                console.error('Sidebar activation error', e);
-            }
-        });
-    </script>
-</body>
-
-</html>
-
-<!DOCTYPE html>
-<html lang="vi" xmlns:th="http://www.thymeleaf.org">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Scripts</title>
-</head>
-
-<body>
-    <!-- Admin Scripts Fragment -->
-
-    <!-- Core JavaScript Libraries -->
-    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-    <!-- DataTables -->
+    <!-- DataTables (CDN) -->
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-    <script src="https://cdn.datatables.net/plug-ins/1.13.6/i18n/vi.json"></script>
 
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chart.js CDN (disabled to avoid duplicate with local) -->
+    <!-- <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> -->
 
-    <!-- Select2 -->
+    <!-- Select2 (CDN) -->
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
     <!-- SweetAlert2 -->
@@ -87,36 +27,22 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/locale/vi.min.js"></script>
 
-    <!-- Custom Admin Scripts -->
-    <script src="/admin/js/admin/common.js"></script>
-    <script src="/admin/js/admin/dashboard.js"></script>
-    <script src="/admin/js/admin/products.js"></script>
-    <script src="/admin/js/admin/categories.js"></script>
-    <script src="/admin/js/admin/brands.js"></script>
-    <script src="/admin/js/admin/orders.js"></script>
-    <script src="/admin/js/admin/users.js"></script>
-    <script src="/admin/js/admin/permissions.js"></script>
-    <script src="/admin/js/admin/roles.js"></script>
-    <script src="/admin/js/admin/profile.js"></script>
+    <!-- Project common scripts -->
+    <script src="/admin/js/admin/admin-ajax.js"></script>
+    <script src="/admin/js/admin/admin-auth.js"></script>
+    
+    <!-- Notification system -->
+    <script src="/admin/js/utils/notification.js"></script>
 
-    <!-- Page-specific scripts -->
-    <th:block th:if="${pageScripts != null}">
-        <script th:each="script : ${pageScripts}" th:src="@{${script}}"></script>
-    </th:block>
+    <!-- Sidebar scripts -->
+    <script src="/admin/js/off-canvas.js"></script>
+    <script src="/admin/js/hoverable-collapse.js"></script>
 
-    <!-- Inline scripts for specific pages -->
-    <th:block th:if="${inlineScripts != null}">
-        <script th:utext="${inlineScripts}"></script>
-    </th:block>
-
-    <!-- Global JavaScript Configuration -->
     <script>
         // Global configuration
         window.AdminConfig = {
             baseUrl: '/admin',
             apiUrl: '/admin/api',
-            csrfToken: '[[${_csrf.token}]]',
-            csrfHeader: '[[${_csrf.headerName}]]',
             locale: 'vi',
             timezone: 'Asia/Ho_Chi_Minh',
             dateFormat: 'DD/MM/YYYY',
@@ -125,8 +51,49 @@
             currencySymbol: '₫'
         };
 
-        // Initialize common functionality
+        document.addEventListener('DOMContentLoaded', function () {
+            try {
+                console.log('%c========================================', 'color: cyan; font-weight: bold');
+                console.log('%c[ADMIN-SCRIPTS] DOMContentLoaded', 'color: cyan; font-weight: bold');
+                console.log('%c========================================', 'color: cyan; font-weight: bold');
+                console.log('[ADMIN-SCRIPTS] Current URL:', window.location.href);
+                console.log('[ADMIN-SCRIPTS] jQuery loaded:', typeof jQuery !== 'undefined');
+                console.log('[ADMIN-SCRIPTS] Bootstrap loaded:', typeof bootstrap !== 'undefined');
+
+                // Xử lý sidebar active state
+                var currentPath = window.location.pathname;
+                var sidebar = document.getElementById('sidebar');
+                if (sidebar) {
+                    var links = sidebar.querySelectorAll('a.nav-link');
+                    links.forEach(function (link) {
+                        var href = link.getAttribute('href');
+                        if (!href) return;
+                        if (currentPath === href || (href !== '/' && currentPath.startsWith(href))) {
+                            link.classList.add('active');
+                            var collapseParent = link.closest('.collapse');
+                            if (collapseParent && typeof bootstrap !== 'undefined') {
+                                collapseParent.classList.add('show');
+                            }
+                        }
+                    });
+                }
+
+                // Khôi phục trạng thái sidebar từ localStorage
+                var sidebarMinimized = localStorage.getItem('sidebarMinimized');
+                if (sidebarMinimized === 'true') {
+                    document.body.classList.add('sidebar-icon-only');
+                    console.log('Sidebar state restored: minimized');
+                }
+
+            } catch (e) {
+                console.error('Admin scripts error:', e);
+            }
+        });
+
+        // jQuery ready function
         $(document).ready(function () {
+            console.log('jQuery ready!');
+
             // Initialize tooltips
             var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
             var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
@@ -144,45 +111,44 @@
                 theme: 'bootstrap-5',
                 language: 'vi'
             });
-
-            // Set up CSRF token for AJAX requests
-            $.ajaxSetup({
-                beforeSend: function (xhr) {
-                    xhr.setRequestHeader(AdminConfig.csrfHeader, AdminConfig.csrfToken);
-                }
-            });
-
-            // Global error handler
-            $(document).ajaxError(function (event, xhr, settings, thrownError) {
-                if (xhr.status === 401) {
-                    Swal.fire({
-                        title: 'Phiên đăng nhập hết hạn',
-                        text: 'Vui lòng đăng nhập lại',
-                        icon: 'warning',
-                        confirmButtonText: 'Đăng nhập'
-                    }).then(() => {
-                        window.location.href = '/admin/login';
-                    });
-                } else if (xhr.status === 403) {
-                    Swal.fire({
-                        title: 'Không có quyền truy cập',
-                        text: 'Bạn không có quyền thực hiện hành động này',
-                        icon: 'error',
-                        confirmButtonText: 'OK'
-                    });
-                } else if (xhr.status >= 500) {
-                    Swal.fire({
-                        title: 'Lỗi hệ thống',
-                        text: 'Đã xảy ra lỗi, vui lòng thử lại sau',
-                        icon: 'error',
-                        confirmButtonText: 'OK'
-                    });
-                }
-            });
         });
 
         // Utility functions
         window.AdminUtils = {
+            // Bắt sự kiện sidebar minimize
+            onSidebarMinimize: function (callback) {
+                window.addEventListener('sidebarToggle', function (e) {
+                    callback(e.detail.minimized);
+                });
+            },
+
+            // Kiểm tra trạng thái sidebar
+            isSidebarMinimized: function () {
+                return document.body.classList.contains('sidebar-icon-only');
+            },
+
+            // Toggle sidebar programmatically
+            toggleSidebar: function () {
+                var minimizeBtn = document.querySelector('button[data-bs-toggle="minimize"]');
+                if (minimizeBtn) {
+                    minimizeBtn.click();
+                }
+            },
+
+            // Minimize sidebar
+            minimizeSidebar: function () {
+                if (!this.isSidebarMinimized()) {
+                    this.toggleSidebar();
+                }
+            },
+
+            // Expand sidebar
+            expandSidebar: function () {
+                if (this.isSidebarMinimized()) {
+                    this.toggleSidebar();
+                }
+            },
+
             formatCurrency: function (amount) {
                 return new Intl.NumberFormat('vi-VN', {
                     style: 'currency',
@@ -258,6 +224,8 @@
                 });
             }
         };
+
+        // Không can thiệp điều hướng/collapse bằng JS; để Bootstrap xử lý theo data-bs-*
     </script>
 </body>
 
