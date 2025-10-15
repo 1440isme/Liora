@@ -118,7 +118,7 @@
                             <i class="mdi mdi-filter-outline me-2"></i>Tìm kiếm và lọc
                         </h5>
                         <div class="row">
-                            <div class="col-md-2 mb-3">
+                            <div class="col-md-3 mb-3">
                                 <label class="form-label">Tìm kiếm</label>
                                 <div class="input-group">
                                     <input type="text" class="form-control" id="searchReview"
@@ -171,23 +171,6 @@
                                 </select>
                             </div>
 
-                            <!-- <div class="col-md-1 mb-3">
-                                <label class="form-label">Sắp xếp</label>
-                                <select class="form-select" id="sortBy">
-                                    <option value="createdAt">Ngày tạo</option>
-                                    <option value="rating">Số sao</option>
-                                    <option value="productName">Sản phẩm</option>
-                                </select>
-                            </div>
-
-                            <div class="col-md-1 mb-3">
-                                <label class="form-label">&nbsp;</label>
-                                <select class="form-select" id="sortDir">
-                                    <option value="desc">Giảm dần</option>
-                                    <option value="asc">Tăng dần</option>
-                                </select>
-                            </div> -->
-
                             <div class="col-md-1 mb-3 d-flex align-items-end">
                                 <button type="button" class="btn btn-outline-secondary w-100" id="btnRefresh" title="Làm mới">
                                     <i class="mdi mdi-refresh"></i>
@@ -204,21 +187,21 @@
                             <table class="table table-hover align-middle">
                                 <thead class="table-light">
                                 <tr>
-                                    <th scope="col" width="5%">#</th>
-                                    <th scope="col" width="25%">Nội dung</th>
-                                    <th scope="col" width="8%" class="sortable" data-sort="rating">
+                                    <th scope="col" width="5%" class="text-center">STT</th>
+                                    <th scope="col" width="25%" class="text-center">Nội dung</th>
+                                    <th scope="col" width="8%" class="sortable text-center" data-sort="rating">
                                         Số sao
                                         <i class="mdi mdi-sort ms-1 sort-icon"></i>
                                     </th>
-                                    <th scope="col" width="8%">Ẩn danh</th>
-                                    <th scope="col" width="10%">Mã người dùng</th>
-                                    <th scope="col" width="10%">Mã sản phẩm</th>
+                                    <th scope="col" width="8%" class="text-center">Ẩn danh</th>
+                                    <th scope="col" width="10%" class="text-center">Mã người dùng</th>
+                                    <th scope="col" width="10%" class="text-center">Mã sản phẩm</th>
                                     <th scope="col" width="12%" class="sortable text-center" data-sort="createdAt">
                                         Thời gian
                                         <i class="mdi mdi-sort ms-1 sort-icon"></i>
                                     </th>
-                                    <th scope="col" width="10%">Trạng thái</th>
-                                    <th scope="col" width="12%">Thao tác</th>
+                                    <th scope="col" width="10%" class="text-center">Trạng thái</th>
+                                    <th scope="col" width="12%" class="text-center">Thao tác</th>
                                 </tr>
                                 </thead>
                                 <tbody id="reviewTableBody">
@@ -351,6 +334,32 @@
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
                 <button type="button" class="btn btn-primary" onclick="saveReviewVisibility()">
                     <i class="mdi mdi-content-save me-2"></i>Lưu thay đổi
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirm Visibility Toggle Modal -->
+<div class="modal fade" id="confirmVisibilityModal" tabindex="-1" aria-labelledby="confirmVisibilityModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmVisibilityModalLabel">
+                    <i class="mdi mdi-help-circle me-2"></i>Xác nhận thay đổi
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="confirmReviewId">
+                <input type="hidden" id="confirmNewVisibility">
+                <p>Bạn có chắc chắn muốn <strong id="confirmActionText"></strong> đánh giá này?</p>
+                <p class="text-muted"><small>Hành động này sẽ thay đổi trạng thái hiển thị của đánh giá.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" onclick="confirmToggleVisibility()">
+                    <i class="mdi mdi-check me-2"></i>Xác nhận
                 </button>
             </div>
         </div>

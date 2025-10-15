@@ -78,10 +78,17 @@
             </div>
         </li>
         <li class="nav-item">
-            <a class="nav-link" href="/admin/reviews">
-                <i class="mdi mdi-star menu-icon"></i>
+            <a class="nav-link" data-bs-toggle="collapse" href="#reviews-menu" role="button" aria-expanded="false"
+                aria-controls="reviews-menu">
+                <i class="menu-icon mdi mdi-star"></i>
                 <span class="menu-title">Đánh giá</span>
+                <i class="menu-arrow"></i>
             </a>
+            <div class="collapse" id="reviews-menu">
+                <ul class="nav flex-column sub-menu">
+                    <li class="nav-item"> <a class="nav-link" href="/admin/reviews">Danh sách</a></li>
+                </ul>
+            </div>
         </li>
         <li class="nav-item">
             <a class="nav-link" data-bs-toggle="collapse" href="#users-menu" role="button" aria-expanded="false"
