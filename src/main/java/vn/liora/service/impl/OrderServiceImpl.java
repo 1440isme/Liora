@@ -217,7 +217,6 @@ public class OrderServiceImpl implements IOrderService {
         return orderMapper.toOrderResponse(order);
     }
 
-
     @Override
     public OrderResponse getOrderById(Long idOrder) {
         Order order = orderRepository.findById(idOrder)
@@ -335,9 +334,9 @@ public class OrderServiceImpl implements IOrderService {
 
         // Cập nhật trạng thái đơn hàng thành CANCELLED
         order.setOrderStatus("CANCELLED");
-        
+
         orderRepository.save(order);
-        
+
         log.info("Order {} cancelled by user {}", orderId, userId);
     }
 

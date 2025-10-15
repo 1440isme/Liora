@@ -19,7 +19,9 @@ public class Cart {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "IdCart")
     Long idCart;
-    // Removed unused fields: countProduct, guestId
+
+    @Column(name = "IdGuest", nullable = true)
+    String guestId;
 
     @OneToOne
     @JoinColumn(name = "IdUser", nullable = true)

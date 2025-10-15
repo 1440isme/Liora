@@ -9,6 +9,121 @@ class LioraApp {
         this.init();
     }
 
+    // Backend-integrated add to cart: đảm bảo tạo cart (guest/user) và thêm sản phẩm vào DB
+    async addProductToCartBackend(productId, quantity = 1, showMessage = true) {
+        try {
+            // 1) Lấy/khởi tạo cart hiện tại (sẽ tạo cart guest nếu chưa có)
+            const cartResp = await fetch('/cart/api/current', {
+                method: 'GET',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            if (!cartResp.ok) throw new Error('Cannot get cart');
+            const cartData = await cartResp.json();
+            const cartId = cartData.cartId;
+            if (!cartId) throw new Error('Missing cartId');
+
+            // 2) Gọi API thêm sản phẩm vào giỏ
+            const addResp = await fetch(`/CartProduct/${cartId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                body: JSON.stringify({ idProduct: Number(productId), quantity: Number(quantity) })
+            });
+            if (!addResp.ok) throw new Error('Cannot add to cart');
+            const addRaw = await addResp.json();
+            const addData = (addRaw && (addRaw.result || addRaw.data?.result)) ? (addRaw.result || addRaw.data.result) : addRaw;
+
+            // 3) Cập nhật badge header bằng số lượng thực tế từ server
+            try {
+                // Cập nhật số LOẠI sản phẩm: dùng endpoint count (đếm số dòng CartProduct)
+                await this.refreshCartBadge();
+            } catch (_) {
+                // Fallback local
+                this.updateCartDisplay();
+            }
+
+            if (showMessage) {
+                this.showToast(`${quantity} x đã thêm vào giỏ hàng!`, 'success');
+            }
+            return addData;
+        } catch (err) {
+            console.error('addProductToCartBackend error:', err);
+            throw err;
+        }
+    }
+
+    // Buy now: thêm sản phẩm vào cart (để checkout chọn sẵn) rồi chuyển thẳng /checkout
+    async buyNowBackend(productId, quantity = 1) {
+        try {
+            // 1) Lấy/khởi tạo cart
+            const cartResp = await fetch('/cart/api/current', {
+                method: 'GET',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            if (!cartResp.ok) throw new Error('Cannot get cart');
+            const cartData = await cartResp.json();
+            const cartId = cartData.cartId;
+            if (!cartId) throw new Error('Missing cartId');
+
+            // 2) Thêm sản phẩm
+            const addResp = await fetch(`/CartProduct/${cartId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                body: JSON.stringify({ idProduct: Number(productId), quantity: Number(quantity) })
+            });
+            if (!addResp.ok) throw new Error('Cannot add to cart');
+            const addData = await addResp.json();
+
+            // 3) Đánh dấu chọn (choose=true) để checkout hiển thị ngay item này
+            let idCartProduct = addData && addData.idCartProduct ? addData.idCartProduct : null;
+            if (!idCartProduct) {
+                // Fallback: lấy danh sách items trong giỏ để tìm idCartProduct theo idProduct
+                try {
+                    const itemsResp = await fetch(`/cart/api/${cartId}/items`, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+                    if (itemsResp.ok) {
+                        const items = await itemsResp.json();
+                        const matches = Array.isArray(items) ? items.filter(it => Number(it.idProduct) === Number(productId)) : [];
+                        // Ưu tiên item mới nhất nếu có
+                        const matched = matches.length > 0 ? matches[matches.length - 1] : null;
+                        if (matched && matched.idCartProduct) {
+                            idCartProduct = matched.idCartProduct;
+                        } else if (matches.length > 0) {
+                            // Nếu vẫn không lấy được id, chọn tất cả matches (an toàn hơn cho UI checkout)
+                            for (const it of matches) {
+                                try {
+                                    await fetch(`/CartProduct/${cartId}/${it.idCartProduct}`, {
+                                        method: 'PUT',
+                                        headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                                        body: JSON.stringify({ choose: true })
+                                    });
+                                } catch (_) { /* ignore */ }
+                            }
+                        }
+                    }
+                } catch (_) { /* ignore */ }
+            }
+
+            if (idCartProduct) {
+                try {
+                    const parsedQty = Number(addData?.quantity ?? quantity);
+                    const validQty = Number.isFinite(parsedQty) && parsedQty >= 1 ? parsedQty : undefined;
+                    const body = { choose: true };
+                    if (validQty !== undefined) body.quantity = validQty;
+
+                    await fetch(`/CartProduct/${cartId}/${idCartProduct}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                        body: JSON.stringify(body)
+                    });
+                } catch (_) { /* ignore */ }
+            }
+
+            // 4) Chuyển tới checkout
+            window.location.href = '/checkout';
+        } catch (err) {
+            console.error('buyNowBackend error:', err);
+            this.showToast('Không thể thực hiện Mua ngay. Vui lòng thử lại.', 'error');
+        }
+    }
     init() {
         this.bindEvents();
         // Make initialization resilient across pages (e.g., /info)
@@ -16,7 +131,7 @@ class LioraApp {
             this.loadInitialData();
         } catch (_) { /* ignore to continue auth/header render */ }
         this.checkAuthState();
-        this.updateCartDisplay();
+        this.refreshCartBadge();
 
         // Listen for login/logout events to update header immediately
         document.addEventListener('user:login', (e) => {
@@ -30,16 +145,7 @@ class LioraApp {
     }
 
     bindEvents() {
-        // Navigation events
-        document.addEventListener('click', (e) => {
-            if (e.target.closest('[data-page]')) {
-                e.preventDefault();
-                const page = e.target.closest('[data-page]').dataset.page;
-                this.showPage(page);
-            }
-        });
-
-        // Category filter events
+        // Category filter events (only for actual filter buttons)
         document.addEventListener('click', (e) => {
             if (e.target.closest('.category-tabs .btn')) {
                 e.preventDefault();
@@ -47,29 +153,16 @@ class LioraApp {
             }
         });
 
-        // Categories dropdown events
+        // Handle brand-item clicks (only for non-link elements)
         document.addEventListener('click', (e) => {
-            if (e.target.closest('.category-item')) {
-                e.preventDefault();
-                const category = e.target.closest('.category-item').dataset.category;
-                if (category) {
-                    this.showPage(category);
+            if (e.target.closest('.brand-item')) {
+                // Check if it's a link inside brand-item, don't prevent default
+                if (e.target.closest('a')) {
+                    return; // Let the link work normally
                 }
-            }
-
-            if (e.target.closest('.subcategory-item, .brand-item')) {
                 e.preventDefault();
-                const item = e.target.closest('.subcategory-item, .brand-item');
+                const item = e.target.closest('.brand-item');
                 this.handleCategoryItemClick(item.textContent.trim());
-            }
-
-            // Navigation link events
-            if (e.target.closest('.nav-link[data-category]')) {
-                e.preventDefault();
-                const category = e.target.closest('.nav-link').dataset.category;
-                if (category) {
-                    this.showPage(category);
-                }
             }
         });
 
@@ -112,6 +205,21 @@ class LioraApp {
                 e.preventDefault();
                 // Ensure header shows dropdown (in case not yet rendered)
                 this.updateUserDisplay();
+            }
+        });
+
+        // Handle copy discount code
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('copy-discount-btn')) {
+                const discountName = e.target.getAttribute('data-discount-name');
+                navigator.clipboard.writeText(discountName).then(function () {
+                    e.target.innerText = 'ĐÃ SAO CHÉP';
+                    setTimeout(function () {
+                        e.target.innerText = 'SAO CHÉP MÃ';
+                    }, 2000);
+                }).catch(function (err) {
+                    console.error('Could not copy text: ', err);
+                });
             }
         });
     }
@@ -342,7 +450,7 @@ class LioraApp {
 
     renderStars(rating) {
         console.log('renderStars called with rating:', rating, 'type:', typeof rating);
-        
+
         // Nếu rating = 0 hoặc null/undefined, hiển thị 5 sao rỗng
         if (!rating || rating === 0 || rating === '0') {
             console.log('Rating is 0, showing empty stars');
@@ -414,38 +522,9 @@ class LioraApp {
     }
 
     addToCart(productId, quantity = 1, showMessage = true) {
-        const product = ProductManager.getProductById(productId);
-        if (!product) return;
-
-        // Validate quantity against stock
-        if (quantity > product.stock) {
-            this.showToast(`Số lượng bạn chọn (${quantity}) vượt quá số lượng tồn kho hiện có (${product.stock} sản phẩm). Vui lòng chọn số lượng phù hợp.`, 'error');
-            return;
-        }
-
-        // Check if product already in cart
-        const existingItem = this.cartItems.find(item => item.id === productId);
-
-        if (existingItem) {
-            const newTotalQuantity = existingItem.quantity + quantity;
-            if (newTotalQuantity > product.stock) {
-                this.showToast(`Tổng số lượng trong giỏ hàng (${newTotalQuantity}) vượt quá tồn kho hiện có (${product.stock} sản phẩm). Vui lòng giảm số lượng.`, 'error');
-                return;
-            }
-            existingItem.quantity = newTotalQuantity;
-        } else {
-            this.cartItems.push({
-                ...product,
-                quantity: quantity
-            });
-        }
-
-        this.updateCartDisplay();
-        
-        // Only show message if showMessage is true
-        if (showMessage) {
-            this.showToast(`${quantity} x ${product.name} đã được thêm vào giỏ hàng thành công! 🛍️`, 'success');
-        }
+        this.addProductToCartBackend(productId, quantity, showMessage).catch(() => {
+            this.showToast('Không thể thêm vào giỏ hàng. Vui lòng thử lại.', 'error');
+        });
     }
 
     toggleWishlist(productId) {
@@ -469,69 +548,37 @@ class LioraApp {
         return this.wishlistItems.includes(productId);
     }
 
-    async updateCartDisplay() {
+    updateCartDisplay() {
+        // Fallback: giữ lại để tương thích cũ (dựa vào local state)
+        const totalItems = this.cartItems.reduce((total, item) => total + item.quantity, 0);
+        document.querySelectorAll('.cart-badge').forEach(badge => {
+            badge.textContent = totalItems;
+        });
+    }
+
+    // Đếm theo số loại sản phẩm (server-side): số dòng CartProduct
+    async refreshCartBadge() {
         try {
-            const token = localStorage.getItem('access_token');
-            if (!token) {
-                // No token, hide badge
-                document.querySelectorAll('.cart-badge').forEach(badge => {
-                    badge.textContent = '0';
-                    badge.style.display = 'none';
-                });
-                return;
-            }
-
-            // Get current cart from API
-            const response = await fetch('/cart/api/current', {
+            const cartResp = await fetch('/cart/api/current', {
                 method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
             });
+            if (!cartResp.ok) return;
+            const cartData = await cartResp.json();
+            const cartId = cartData && cartData.cartId;
+            if (!cartId) return;
 
-            if (response.ok) {
-                const cartData = await response.json();
-                if (cartData.cartId) {
-                    // Get cart items
-                    const itemsResponse = await fetch(`/cart/api/${cartData.cartId}/items`, {
-                        method: 'GET',
-                        headers: {
-                            'Authorization': `Bearer ${token}`,
-                            'Content-Type': 'application/json'
-                        }
-                    });
-
-                    if (itemsResponse.ok) {
-                        const cartItems = await itemsResponse.json();
-                        const totalItems = cartItems.reduce((total, item) => total + (item.quantity || 0), 0);
-                        
-                        // Update badge
-                        document.querySelectorAll('.cart-badge').forEach(badge => {
-                            badge.textContent = totalItems;
-                            badge.style.display = totalItems > 0 ? 'block' : 'none';
-                        });
-                        
-                        // Update local cart items
-                        this.cartItems = cartItems;
-                        return;
-                    }
-                }
-            }
-            
-            // Fallback: show 0 if no cart or error
-            document.querySelectorAll('.cart-badge').forEach(badge => {
-                badge.textContent = '0';
-                badge.style.display = 'none';
+            const countResp = await fetch(`/cart/api/${cartId}/count`, {
+                method: 'GET',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
             });
-            
-        } catch (error) {
-            console.error('Error updating cart display:', error);
-            // Fallback: show 0 on error
+            if (!countResp.ok) return;
+            const distinctCount = await countResp.json();
             document.querySelectorAll('.cart-badge').forEach(badge => {
-                badge.textContent = '0';
-                badge.style.display = 'none';
+                badge.textContent = distinctCount;
             });
+        } catch (_) {
+            // bỏ qua, không chặn UI
         }
     }
 
@@ -632,14 +679,14 @@ class LioraApp {
             console.log('Loading header categories...');
             const response = await fetch('/api/header/categories/api');
             console.log('Response status:', response.status);
-            
+
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            
+
             const data = await response.json();
             console.log('API response:', data);
-            
+
             if (data.result && data.result.length > 0) {
                 console.log('Rendering categories with data:', data.result);
                 this.renderHeaderCategories(data.result);
@@ -666,12 +713,12 @@ class LioraApp {
     // Render all categories in 3-tier structure like Guardian
     renderAllCategories(categories) {
         console.log('renderAllCategories called with:', categories);
-        
+
         // Try multiple selectors to find columns (3-column layout like image)
         let leftColumn = document.querySelector('.category-column:first-child .category-list');
         let middleColumn = document.querySelector('.category-column:nth-child(2) .subcategory-list');
         let rightColumn = document.querySelector('.category-column:nth-child(3) .product-list');
-        
+
         // Fallback selectors for Bootstrap grid structure
         if (!leftColumn) {
             leftColumn = document.querySelector('.col-md-3:first-child .category-list');
@@ -682,7 +729,7 @@ class LioraApp {
         if (!rightColumn) {
             rightColumn = document.querySelector('.col-md-5:nth-child(3) .product-list');
         }
-        
+
         // Another fallback - direct class selection
         if (!leftColumn) {
             leftColumn = document.querySelector('.category-list');
@@ -693,26 +740,26 @@ class LioraApp {
         if (!rightColumn) {
             rightColumn = document.querySelector('.product-list');
         }
-        
+
         console.log('Left column:', leftColumn);
         console.log('Middle column:', middleColumn);
         console.log('Right column:', rightColumn);
-        
+
         if (!leftColumn || !middleColumn || !rightColumn) {
             console.error('Columns not found!');
             console.error('Left column found:', !!leftColumn);
             console.error('Middle column found:', !!middleColumn);
             console.error('Right column found:', !!rightColumn);
-            
+
             // Try to find all elements with these classes
             const allCategoryLists = document.querySelectorAll('.category-list');
             const allSubcategoryLists = document.querySelectorAll('.subcategory-list');
             const allProductLists = document.querySelectorAll('.product-list');
-            
+
             console.log('All category-list elements:', allCategoryLists);
             console.log('All subcategory-list elements:', allSubcategoryLists);
             console.log('All product-list elements:', allProductLists);
-            
+
             return;
         }
 
@@ -729,7 +776,7 @@ class LioraApp {
             if (level1Category.children) {
                 level1Category.children.forEach(level2Category => {
                     allLevel2Categories.push(level2Category);
-                    
+
                     if (level2Category.children) {
                         level2Category.children.forEach(level3Category => {
                             allLevel3Categories.push({
@@ -761,10 +808,10 @@ class LioraApp {
                 document.querySelectorAll('.category-item.guardian-style').forEach(item => {
                     item.classList.remove('active');
                 });
-                
+
                 // Add active class to current item
                 categoryItem.classList.add('active');
-                
+
                 this.showSubcategoriesForCategory(category, middleColumn, rightColumn);
             });
 
@@ -788,16 +835,16 @@ class LioraApp {
     // Show subcategories for a specific level 1 category
     showSubcategoriesForCategory(category, middleColumn, rightColumn) {
         console.log('Showing subcategories for:', category.name);
-        
+
         // Clear existing content
         middleColumn.innerHTML = '';
         rightColumn.innerHTML = '';
-        
+
         if (category.children && category.children.length > 0) {
             // Get all level 2 and level 3 categories for this level 1 category
             const level2Categories = category.children;
             const allLevel3Categories = [];
-            
+
             level2Categories.forEach(level2Category => {
                 if (level2Category.children) {
                     level2Category.children.forEach(level3Category => {
@@ -809,7 +856,7 @@ class LioraApp {
                     });
                 }
             });
-            
+
             // Render level 2 categories in 4-column grid
             this.renderLevel2Categories(level2Categories, allLevel3Categories, middleColumn, rightColumn);
         } else {
@@ -825,29 +872,29 @@ class LioraApp {
         const level2Row = document.createElement('div');
         level2Row.className = 'level2-row';
         level2Row.style.cssText = 'display: flex; gap: 20px; width: 100%; margin-bottom: 20px;';
-        
+
         // Render first 4 level 2 categories in a single row
         level2Categories.slice(0, 4).forEach(level2Category => {
             const level2Item = document.createElement('div');
             level2Item.className = 'level2-item';
             level2Item.style.cssText = 'flex: 1; min-width: 200px;';
-            
+
             // Get level 3 items for this category
-            const level3Items = level3Categories.filter(level3 => 
+            const level3Items = level3Categories.filter(level3 =>
                 level3.parentLevel2Id === level2Category.categoryId
             );
-            
+
             this.renderCategoryGroup(level2Category, level3Items, level2Item);
             level2Row.appendChild(level2Item);
         });
-        
+
         // Add the row to middle column
         middleColumn.appendChild(level2Row);
-        
+
         // If there are more than 4 categories, render the rest in right column
         if (level2Categories.length > 4) {
             level2Categories.slice(4).forEach(level2Category => {
-                const level3Items = level3Categories.filter(level3 => 
+                const level3Items = level3Categories.filter(level3 =>
                     level3.parentLevel2Id === level2Category.categoryId
                 );
                 this.renderCategoryGroup(level2Category, level3Items, rightColumn);
@@ -874,7 +921,7 @@ class LioraApp {
         `;
         categoryHeader.textContent = level2Category.name;
         column.appendChild(categoryHeader);
-        
+
         // Level 3 items in vertical list - show even if empty
         if (level3Items && level3Items.length > 0) {
             level3Items.forEach(level3Category => {
@@ -923,7 +970,7 @@ class LioraApp {
     renderLevel3Categories(level3Categories, column) {
         // Group level 3 categories by their parent level 2
         const groupedByParent = {};
-        
+
         level3Categories.forEach(level3Category => {
             const parentId = level3Category.parentLevel2Id;
             if (!groupedByParent[parentId]) {
@@ -936,14 +983,14 @@ class LioraApp {
         Object.keys(groupedByParent).forEach(parentId => {
             const level3Items = groupedByParent[parentId];
             const parentName = level3Items[0]?.parentLevel2Name || 'Danh mục';
-            
+
             // Parent header
             const parentHeader = document.createElement('div');
             parentHeader.className = 'level3-parent-header';
             parentHeader.style.cssText = 'font-weight: bold; color: #333; margin: 16px 0 8px 0; padding: 8px 0; border-bottom: 1px solid #e0e0e0; text-transform: uppercase; font-size: 14px;';
             parentHeader.textContent = parentName;
             column.appendChild(parentHeader);
-            
+
             // Level 3 items in vertical list
             level3Items.forEach(level3Category => {
                 const level3Item = document.createElement('div');
@@ -1160,7 +1207,15 @@ class LioraApp {
     }
 
     showToast(message, type = 'info') {
-        const toastContainer = document.getElementById('toastContainer');
+        let toastContainer = document.getElementById('toastContainer');
+        if (!toastContainer) {
+            // Tạo container nếu chưa có để tránh lỗi trên các trang không có sẵn
+            toastContainer = document.createElement('div');
+            toastContainer.id = 'toastContainer';
+            toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+            toastContainer.style.zIndex = '9999';
+            document.body.appendChild(toastContainer);
+        }
         const toastId = 'toast-' + Date.now();
 
         const toastHTML = `
@@ -1223,16 +1278,16 @@ class LioraApp {
                 // Get previous threshold percentage
                 const prevThreshold = thresholds[thresholds.indexOf(threshold) - 1];
                 const basePercentage = prevThreshold ? prevThreshold.percentage : 0;
-                
+
                 // Calculate progress within this threshold
                 const prevMax = prevThreshold ? prevThreshold.max : 0;
                 const range = threshold.max - prevMax;
                 const progress = ((soldCount - prevMax) / range) * (threshold.percentage - basePercentage);
-                
+
                 return Math.min(100, basePercentage + progress);
             }
         }
-        
+
         return 100; // For very high sales
     }
 
@@ -1244,7 +1299,7 @@ class LioraApp {
             this.showToast('Không tìm thấy sản phẩm', 'error');
             return;
         }
-        
+
         // Load product images if not already loaded
         if (!product.images) {
             try {
@@ -1258,7 +1313,7 @@ class LioraApp {
                 product.images = [];
             }
         }
-        
+
         this.createQuickViewModal(product);
     }
 
@@ -1406,16 +1461,16 @@ class LioraApp {
 
         // Add modal to body
         document.body.insertAdjacentHTML('beforeend', modalHTML);
-        
+
         // Show modal
         const modal = new bootstrap.Modal(document.getElementById('quickViewModal'));
         modal.show();
-        
+
         // Add slider navigation event listeners
         this.setupSliderNavigation(product);
-        
+
         // Remove modal from DOM when hidden
-        document.getElementById('quickViewModal').addEventListener('hidden.bs.modal', function() {
+        document.getElementById('quickViewModal').addEventListener('hidden.bs.modal', function () {
             this.remove();
         });
     }
@@ -1426,29 +1481,29 @@ class LioraApp {
         const nextBtn = document.getElementById('nextBtn');
         const mainImage = document.getElementById('mainProductImage');
         const thumbnails = document.querySelectorAll('.thumbnail-item');
-        
+
         if (!product.images || product.images.length <= 1) {
             // Hide navigation buttons if only one image
             if (prevBtn) prevBtn.style.display = 'none';
             if (nextBtn) nextBtn.style.display = 'none';
             return;
         }
-        
+
         let currentImageIndex = 0;
-        
+
         // Update main image
         const updateMainImage = (index) => {
             if (product.images && product.images[index]) {
                 mainImage.src = product.images[index].imageUrl;
                 mainImage.alt = product.name;
-                
+
                 // Update thumbnail selection
                 thumbnails.forEach((thumb, i) => {
                     thumb.classList.toggle('active', i === index);
                 });
             }
         };
-        
+
         // Previous button
         if (prevBtn) {
             prevBtn.addEventListener('click', () => {
@@ -1456,7 +1511,7 @@ class LioraApp {
                 updateMainImage(currentImageIndex);
             });
         }
-        
+
         // Next button
         if (nextBtn) {
             nextBtn.addEventListener('click', () => {
@@ -1464,7 +1519,7 @@ class LioraApp {
                 updateMainImage(currentImageIndex);
             });
         }
-        
+
         // Thumbnail click handlers
         thumbnails.forEach((thumb, index) => {
             thumb.addEventListener('click', () => {
@@ -1478,7 +1533,7 @@ class LioraApp {
     generateImageThumbnails(product) {
         // Use product images if available, otherwise fallback to main image
         let images = [];
-        
+
         if (product.images && product.images.length > 0) {
             // Use actual product images
             images = product.images.map(img => img.imageUrl || img);
@@ -1505,7 +1560,7 @@ class LioraApp {
         if (mainImage) {
             mainImage.src = imageSrc;
         }
-        
+
         // Update active thumbnail
         document.querySelectorAll('.thumbnail-item').forEach(item => {
             item.classList.remove('active');
@@ -1517,31 +1572,33 @@ class LioraApp {
     addToCartWithQuantity(productId) {
         const quantityInput = document.getElementById('quantityInput');
         const quantity = quantityInput ? parseInt(quantityInput.value) : 1;
-        
-        // Call the existing addToCart method with quantity (show message)
-        this.addToCart(productId, quantity, true);
+
+        // Gọi backend để đảm bảo tạo cart (guest/user) và thêm sản phẩm
+        this.addProductToCartBackend(productId, quantity, true).catch(() => {
+            this.showToast('Không thể thêm vào giỏ hàng. Vui lòng thử lại.', 'error');
+        });
     }
 
     // Buy now - add to cart and redirect to checkout
     buyNow(productId) {
         const quantityInput = document.getElementById('quantityInput');
         const quantity = quantityInput ? parseInt(quantityInput.value) : 1;
-        
+
         // Get product info for notification
         const product = ProductManager.getProductById(productId);
-        
+
         // Add to cart silently (no message)
         this.addToCart(productId, quantity, false);
-        
+
         // Show single success message
         this.showToast(`${quantity} x ${product ? product.name : 'sản phẩm'} đã được thêm vào giỏ hàng! Đang chuyển đến trang thanh toán...`, 'success');
-        
+
         // Close modal
         const modal = bootstrap.Modal.getInstance(document.getElementById('quickViewModal'));
         if (modal) {
             modal.hide();
         }
-        
+
         // Redirect to checkout after a short delay
         setTimeout(() => {
             window.location.href = '/checkout';
@@ -1557,24 +1614,70 @@ class LioraApp {
         return product.image || '/uploads/products/default.jpg';
     }
 
-    // Smooth navigation method
-    smoothNavigate(url, delay = 300) {
-        // Add smooth transition effect
-        $('body').addClass('page-transition');
-        
-        // Navigate after a short delay for smooth effect
-        setTimeout(() => {
-            window.location.href = url;
-        }, delay);
+    // Quantity validation methods
+    validateQuantity() {
+        const quantityInput = document.getElementById('quantityInput');
+        const errorDiv = document.getElementById('quantityError');
+        const errorMessage = document.getElementById('quantityErrorMessage');
+
+        if (!quantityInput || !errorDiv || !errorMessage) return;
+
+        const currentValue = parseInt(quantityInput.value) || 0;
+        const maxStock = parseInt(quantityInput.getAttribute('max')) || 10;
+
+        // Allow empty input for better UX (user can clear and type new number)
+        if (quantityInput.value === '' || quantityInput.value === '0') {
+            // Hide error message when input is empty (user is typing)
+            errorDiv.style.display = 'none';
+            quantityInput.classList.remove('is-invalid');
+            return;
+        }
+
+        if (currentValue > maxStock) {
+            // Show error message
+            errorDiv.style.display = 'block';
+            errorMessage.textContent = `Số lượng tối đa bạn có thể mua là ${maxStock}.`;
+            quantityInput.classList.add('is-invalid');
+
+            // Reset to max stock
+            quantityInput.value = maxStock;
+        } else if (currentValue < 1) {
+            // Show error for minimum
+            errorDiv.style.display = 'block';
+            errorMessage.textContent = 'Số lượng tối thiểu là 1.';
+            quantityInput.classList.add('is-invalid');
+
+            // Reset to minimum
+            quantityInput.value = 1;
+        } else {
+            // Hide error message
+            errorDiv.style.display = 'none';
+            quantityInput.classList.remove('is-invalid');
+        }
+    }
+
+    // Handle input blur - validate when user finishes typing
+    validateQuantityOnBlur() {
+        const quantityInput = document.getElementById('quantityInput');
+        if (!quantityInput) return;
+
+        const currentValue = parseInt(quantityInput.value) || 0;
+        const maxStock = parseInt(quantityInput.getAttribute('max')) || 10;
+
+        // If input is empty or 0, set to minimum
+        if (quantityInput.value === '' || currentValue < 1) {
+            quantityInput.value = 1;
+            this.validateQuantity();
+        }
     }
 
     incrementQuantity() {
         const quantityInput = document.getElementById('quantityInput');
         if (!quantityInput) return;
-        
+
         const currentValue = parseInt(quantityInput.value) || 0;
         const maxStock = parseInt(quantityInput.getAttribute('max')) || 10;
-        
+
         if (currentValue < maxStock) {
             quantityInput.value = currentValue + 1;
             this.validateQuantity();
@@ -1584,9 +1687,9 @@ class LioraApp {
     decrementQuantity() {
         const quantityInput = document.getElementById('quantityInput');
         if (!quantityInput) return;
-        
+
         const currentValue = parseInt(quantityInput.value) || 0;
-        
+
         if (currentValue > 1) {
             quantityInput.value = currentValue - 1;
             this.validateQuantity();
@@ -1691,7 +1794,7 @@ class BannerSlider {
                 this.banners = [{
                     id: 1,
                     title: "Chào mừng đến với Liora",
-                    imageUrl: "https://placehold.co/1200x600",
+                    imageUrl: "/user/img/banner.jpg",
                     targetLink: "#"
                 }];
                 console.log('No banners found, using default content');
@@ -1703,7 +1806,7 @@ class BannerSlider {
             this.banners = [{
                 id: 1,
                 title: "Chào mừng đến với Liora",
-                imageUrl: "https://placehold.co/1200x600",
+                imageUrl: "/user/img/banner.jpg",
                 targetLink: "#"
             }];
         }
@@ -1890,3 +1993,120 @@ class BannerSlider {
 
 // Export for use in other scripts
 window.BannerSlider = BannerSlider;
+
+// ========================================
+// DISCOUNT SLIDER CLASS
+// ========================================
+class DiscountSlider {
+    constructor(containerId, prevBtnId, nextBtnId) {
+        this.container = document.getElementById(containerId);
+        this.prevBtn = document.getElementById(prevBtnId);
+        this.nextBtn = document.getElementById(nextBtnId);
+        this.currentSlide = 0;
+        this.totalSlides = 0;
+        this.slidesPerView = 4;
+        this.isInitialized = false;
+
+        // Only initialize if elements exist
+        if (this.container && this.prevBtn && this.nextBtn) {
+            this.init();
+        }
+    }
+
+    init() {
+        try {
+            this.updateSlidesPerView();
+            this.bindEvents();
+            this.updateSlider();
+            this.isInitialized = true;
+            console.log('Discount slider initialized');
+        } catch (error) {
+            console.error('Error initializing discount slider:', error);
+        }
+    }
+
+    updateSlidesPerView() {
+        const width = window.innerWidth;
+        if (width <= 480) {
+            this.slidesPerView = 1;
+        } else if (width <= 768) {
+            this.slidesPerView = 2;
+        } else if (width <= 1200) {
+            this.slidesPerView = 3;
+        } else {
+            this.slidesPerView = 4;
+        }
+    }
+
+    bindEvents() {
+        // Navigation buttons
+        this.prevBtn.addEventListener('click', () => this.prevSlide());
+        this.nextBtn.addEventListener('click', () => this.nextSlide());
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            this.updateSlidesPerView();
+            this.updateSlider();
+        });
+    }
+
+    updateSlider() {
+        if (!this.isInitialized) return;
+
+        const slides = this.container.querySelectorAll('.discount-slide-item');
+        this.totalSlides = slides.length;
+
+        if (this.totalSlides === 0) return;
+
+        // Hide navigation buttons if not needed
+        if (this.totalSlides <= this.slidesPerView) {
+            this.prevBtn.style.display = 'none';
+            this.nextBtn.style.display = 'none';
+        } else {
+            this.prevBtn.style.display = 'flex';
+            this.nextBtn.style.display = 'flex';
+        }
+
+        // Update button states
+        this.updateButtonStates();
+    }
+
+    prevSlide() {
+        if (this.totalSlides <= this.slidesPerView) return;
+
+        this.currentSlide = Math.max(this.currentSlide - 1, 0);
+        this.updateSliderPosition();
+        this.updateButtonStates();
+    }
+
+    nextSlide() {
+        if (this.totalSlides <= this.slidesPerView) return;
+
+        this.currentSlide = Math.min(
+            this.currentSlide + 1,
+            this.totalSlides - this.slidesPerView
+        );
+        this.updateSliderPosition();
+        this.updateButtonStates();
+    }
+
+    updateSliderPosition() {
+        const translateX = -(this.currentSlide * (100 / this.slidesPerView));
+        this.container.style.transform = `translateX(${translateX}%)`;
+    }
+
+    updateButtonStates() {
+        if (this.prevBtn) {
+            this.prevBtn.style.opacity = this.currentSlide === 0 ? '0.5' : '1';
+            this.prevBtn.disabled = this.currentSlide === 0;
+        }
+
+        if (this.nextBtn) {
+            this.nextBtn.style.opacity = this.currentSlide >= this.totalSlides - this.slidesPerView ? '0.5' : '1';
+            this.nextBtn.disabled = this.currentSlide >= this.totalSlides - this.slidesPerView;
+        }
+    }
+}
+
+// Export for use in other scripts
+window.DiscountSlider = DiscountSlider;

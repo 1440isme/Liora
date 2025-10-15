@@ -14,7 +14,7 @@ class ProductTableManager {
             sortBy: 'createdDate',
             sortDir: 'desc'
         };
-        
+
         this.init();
     }
 
@@ -30,7 +30,7 @@ class ProductTableManager {
         if (confirmDeleteBtn) {
             confirmDeleteBtn.addEventListener('click', () => this.confirmDelete());
         }
-        
+
         // Search and filter events
         this.setupSearchAndFilter();
     }
@@ -115,15 +115,15 @@ class ProductTableManager {
                 status: this.searchParams.status,
                 stockStatus: this.searchParams.stockStatus
             });
-    
+
             console.log('Loading products with params:', params.toString());
             console.log('Search params:', this.searchParams);
-    
+
             const response = await fetch(`/admin/api/products?${params}`);
             const data = await response.json();
-    
+
             console.log('API response:', data);
-    
+
             if (data.result) {
                 this.renderProducts(data.result.content);
                 this.updatePagination(data.result);
@@ -139,11 +139,11 @@ class ProductTableManager {
             // Load categories
             const categoriesResponse = await fetch('/admin/api/categories/all');
             const categoriesData = await categoriesResponse.json();
-            
+
             if (categoriesData.result) {
                 const categorySelect = document.getElementById('category');
                 categorySelect.innerHTML = '<option value="">Tất cả danh mục</option>';
-                
+
                 categoriesData.result.forEach(category => {
                     const option = document.createElement('option');
                     option.value = category.categoryId;
@@ -151,15 +151,15 @@ class ProductTableManager {
                     categorySelect.appendChild(option);
                 });
             }
-    
+
             // Load brands
             const brandsResponse = await fetch('/admin/api/brands/all');
             const brandsData = await brandsResponse.json();
-            
+
             if (brandsData.result) {
                 const brandSelect = document.getElementById('brand');
                 brandSelect.innerHTML = '<option value="">Tất cả thương hiệu</option>';
-                
+
                 brandsData.result.forEach(brand => {
                     const option = document.createElement('option');
                     option.value = brand.brandId;
@@ -175,7 +175,7 @@ class ProductTableManager {
     // Render products table
     renderProducts(products) {
         const tbody = document.getElementById('productsTableBody');
-        
+
         if (!products || products.length === 0) {
             tbody.innerHTML = `
                 <tr>
@@ -194,6 +194,8 @@ class ProductTableManager {
 
     // Render single product row
     renderProduct(product, index) {
+        // Lấy mô tả rút gọn dạng text (loại bỏ HTML) để không làm vỡ bảng
+        const shortDescription = this.truncateText(this.stripHtml(product.description || ''), 80);
         return `
             <tr>
                 <td class="text-center">${index + 1}</td>
@@ -209,7 +211,7 @@ class ProductTableManager {
                 <td>
                     <div>
                         <h6 class="mb-1">${product.name}</h6>
-                        <small class="text-muted">${product.description ? product.description.substring(0, 50) + '...' : ''}</small>
+                        <small class="text-muted">${shortDescription}</small>
                     </div>
                 </td>
                 <td>${product.categoryName || 'N/A'}</td>
@@ -225,6 +227,21 @@ class ProductTableManager {
         `;
     }
 
+    // Loại bỏ toàn bộ thẻ HTML để render dạng text an toàn trong bảng
+    stripHtml(html) {
+        const temp = document.createElement('div');
+        temp.innerHTML = html;
+        const text = temp.textContent || temp.innerText || '';
+        return text.replace(/\s+/g, ' ').trim();
+    }
+
+    // Cắt ngắn chuỗi có hậu tố ...
+    truncateText(text, maxLength) {
+        if (!text) return '';
+        if (text.length <= maxLength) return text;
+        return text.slice(0, maxLength).trim() + '...';
+    }
+
     // Render stock status
     renderStockStatus(stock) {
         if (stock > 0) {
@@ -237,7 +254,7 @@ class ProductTableManager {
     // Render status - basic style
     renderStatus(isActive) {
         console.log('renderStatus called with isActive:', isActive); // Debug log
-        return isActive 
+        return isActive
             ? '<span class="text-success">Hoạt động</span>'
             : '<span class="text-danger">Tạm dừng</span>';
     }
@@ -269,7 +286,7 @@ class ProductTableManager {
     updatePagination(pageData) {
         this.totalPages = pageData.totalPages;
         this.totalElements = pageData.totalElements;
-        
+
         const paginationContainer = document.getElementById('paginationContainer');
         const paginationInfo = document.getElementById('paginationInfo');
         const paginationNav = document.getElementById('paginationNav');
@@ -366,7 +383,7 @@ class ProductTableManager {
 
     deleteProduct(productId) {
         this.currentProductId = productId;
-        
+
         // Show confirmation modal
         const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
         modal.show();
@@ -429,9 +446,9 @@ class ProductTableManager {
             ${message}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         `;
-        
+
         document.body.appendChild(notification);
-        
+
         // Auto remove after 3 seconds
         setTimeout(() => {
             if (notification.parentNode) {

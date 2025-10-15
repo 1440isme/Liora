@@ -9,7 +9,8 @@ class AuthManager {
 
     init() {
         this.bindEvents();
-        this.checkAuthState();
+        // Kiểm tra trạng thái đăng nhập và tính hợp lệ của token ngay khi khởi tạo
+        try { this.checkAuthState(); } catch (_) { }
         this.checkOAuth2Token();
     }
 
@@ -285,12 +286,25 @@ class AuthManager {
         }
     }
 
-    signOut() {
+    async signOut() {
+        const token = localStorage.getItem('access_token');
+        // Gọi API logout để revoke token ở server (nếu có)
+        if (token) {
+            try {
+                await fetch('/auth/logout', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token })
+                });
+            } catch (_) { }
+        }
+
+        // Xóa trạng thái cục bộ
         localStorage.removeItem('liora_user');
-        try {
-            // Clear access_token cookie
-            document.cookie = 'access_token=; Max-Age=0; path=/; SameSite=Lax';
-        } catch (_) { }
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('authenticated');
+        try { document.cookie = 'access_token=; Max-Age=0; path=/; SameSite=Lax'; } catch (_) { }
+
         this.currentUser = null;
         this.updateUserDisplay();
 
@@ -389,16 +403,69 @@ class AuthManager {
         return emailRegex.test(email);
     }
 
-    checkAuthState() {
+    async checkAuthState() {
+        const token = localStorage.getItem('access_token');
         const userData = localStorage.getItem('liora_user');
-        if (userData) {
-            try {
-                this.currentUser = JSON.parse(userData);
-                this.updateUserDisplay();
-            } catch (error) {
-                console.error('Error parsing user data:', error);
-                localStorage.removeItem('liora_user');
+
+        if (!token) {
+            if (userData) {
+                try { JSON.parse(userData); } catch { localStorage.removeItem('liora_user'); }
             }
+            return;
+        }
+
+        try {
+            const res = await fetch('/auth/introspect', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token })
+            });
+            const data = await res.json().catch(() => ({}));
+            const valid = Boolean(data?.result?.valid ?? data?.valid);
+
+            if (!res.ok || !valid) {
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('authenticated');
+                localStorage.removeItem('liora_user');
+                try { document.cookie = 'access_token=; Max-Age=0; path=/; SameSite=Lax'; } catch (_) { }
+                this.currentUser = null;
+                this.updateUserDisplay();
+                return;
+            }
+
+            if (userData) {
+                try { this.currentUser = JSON.parse(userData); } catch { this.currentUser = null; }
+            }
+            try {
+                const meRes = await fetch('/users/myInfo', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                if (meRes.ok) {
+                    const meData = await meRes.json();
+                    const me = meData.result || {};
+                    const fullName = `${me.firstname || ''} ${me.lastname || ''}`.trim();
+                    const updated = {
+                        username: me.username || this.currentUser?.username || me?.sub,
+                        name: fullName || this.currentUser?.name || 'User',
+                        roles: this.currentUser?.roles || [],
+                        isAdmin: this.currentUser?.isAdmin || false
+                    };
+                    this.currentUser = updated;
+                    localStorage.setItem('liora_user', JSON.stringify(updated));
+                }
+            } catch (_) { }
+
+            this.updateUserDisplay();
+        } catch (_) {
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('authenticated');
+            localStorage.removeItem('liora_user');
+            try { document.cookie = 'access_token=; Max-Age=0; path=/; SameSite=Lax'; } catch (_) { }
+            this.currentUser = null;
+            this.updateUserDisplay();
         }
     }
 

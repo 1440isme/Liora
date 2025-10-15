@@ -18,7 +18,6 @@ public class ProductUpdateRequest {
     @Size(max = 255, message = "VALIDATION_NAME_TOO_LONG")
     private String name;
 
-    @Size(max = 500, message = "VALIDATION_DESCRIPTION_TOO_LONG")
     private String description;
 
     @DecimalMin(value = "0.0", message = "VALIDATION_PRICE_POSITIVE")

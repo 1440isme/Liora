@@ -9,6 +9,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
+import vn.liora.config.GuestCartInterceptor;
 import vn.liora.dto.response.CartProductResponse;
 import vn.liora.entity.User;
 import vn.liora.exception.AppException;
@@ -57,35 +61,38 @@ public class CartController {
      */
     @GetMapping("/cart/api/current")
     @ResponseBody
-    public ResponseEntity<?> getCurrentUserCart() {
+    public ResponseEntity<?> getCurrentUserCart(
+            @CookieValue(name = GuestCartInterceptor.GUEST_CART_ID_COOKIE_NAME, required = false) String guestCartId,
+            HttpServletResponse response) {
         try {
-            log.info("Getting current user cart...");
-            
-            // Lấy userId từ security context
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            log.info("Authentication: {}", authentication);
-            
-            if (authentication == null || !authentication.isAuthenticated()) {
-                log.warn("User not authenticated");
-                throw new AppException(ErrorCode.UNAUTHENTICATED);
+            boolean isGuest = (authentication == null)
+                    || !authentication.isAuthenticated()
+                    || "anonymousUser".equals(String.valueOf(authentication.getPrincipal()));
+
+            Long userId = null;
+            if (!isGuest) {
+                String username = authentication.getName();
+                User user = userRepository.findByUsername(username)
+                        .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+                userId = user.getUserId();
             }
 
-            String username = authentication.getName();
-            log.info("Username: {}", username);
-            
-            User user = userRepository.findByUsername(username)
-                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
-            
-            log.info("User found: {}", user.getUserId());
+            var cartResponse = cartService.getCart(guestCartId, userId);
 
-            // Lấy giỏ hàng của user
-            var cartResponse = cartService.getCart(user.getUserId());
-            log.info("Cart response: {}", cartResponse);
-            
-            return ResponseEntity.ok().body(new Object() {
-                public final Long cartId = cartResponse.getIdCart();
-                public final String message = "Cart found";
-            });
+            // Nếu đã đăng nhập và có guestCartId thì đã merge -> xóa cookie guest trên
+            // client
+            if (userId != null && guestCartId != null) {
+                Cookie clear = new Cookie(
+                        GuestCartInterceptor.GUEST_CART_ID_COOKIE_NAME, "");
+                clear.setPath("/");
+                clear.setMaxAge(0);
+                response.addCookie(clear);
+            }
+
+            return ResponseEntity.ok().body(java.util.Map.of(
+                    "cartId", cartResponse.getIdCart(),
+                    "message", "Cart found"));
 
         } catch (AppException e) {
             log.error("Error getting current user cart: ", e);
