@@ -12,10 +12,15 @@ class LioraApp {
     // Backend-integrated add to cart: đảm bảo tạo cart (guest/user) và thêm sản phẩm vào DB
     async addProductToCartBackend(productId, quantity = 1, showMessage = true) {
         try {
+            const token = localStorage.getItem('access_token');
             // 1) Lấy/khởi tạo cart hiện tại (sẽ tạo cart guest nếu chưa có)
             const cartResp = await fetch('/cart/api/current', {
                 method: 'GET',
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                },
+                credentials: 'include'
             });
             if (!cartResp.ok) throw new Error('Cannot get cart');
             const cartData = await cartResp.json();
@@ -25,7 +30,12 @@ class LioraApp {
             // 2) Gọi API thêm sản phẩm vào giỏ
             const addResp = await fetch(`/CartProduct/${cartId}`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                },
+                credentials: 'include',
                 body: JSON.stringify({ idProduct: Number(productId), quantity: Number(quantity) })
             });
             if (!addResp.ok) throw new Error('Cannot add to cart');

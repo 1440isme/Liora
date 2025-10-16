@@ -33,4 +33,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     @Query("SELECT SUM(o.total) FROM Order o WHERE o.user = :user")
     BigDecimal getTotalRevenueByUser(@Param("user") User user);
+
+    Optional<Order> findByVnpTxnRef(String vnpTxnRef);
 }

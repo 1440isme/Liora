@@ -5,10 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+// removed unused imports
 
 import java.util.ArrayList;
 import org.springframework.stereotype.Service;
@@ -42,6 +39,7 @@ public class OrderServiceImpl implements IOrderService {
     OrderRepository orderRepository;
     UserRepository userRepository;
     CartRepository cartRepository;
+    @SuppressWarnings("unused")
     AddressRepository addressRepository;
     OrderProductRepository orderProductRepository;
     OrderProductMapper orderProductMapper;
@@ -61,11 +59,11 @@ public class OrderServiceImpl implements IOrderService {
                 throw new AppException(ErrorCode.NO_SELECTED_PRODUCT);
             }
 
-
             Order order = orderMapper.toOrder(request);
             order.setUser(user);
             order.setOrderDate(LocalDateTime.now());
             order.setOrderStatus("Pending");
+            order.setPaymentStatus("PENDING");
 
             List<OrderProduct> orderProducts = selected.stream()
                     .map(cp -> {
@@ -240,15 +238,15 @@ public class OrderServiceImpl implements IOrderService {
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
         List<Order> orders = orderRepository.findByUserOrderByOrderDateDesc(user);
-        
+
         // Manual pagination
         int start = page * size;
         int end = Math.min(start + size, orders.size());
-        
+
         if (start >= orders.size()) {
             return new ArrayList<>();
         }
-        
+
         List<Order> paginatedOrders = orders.subList(start, end);
         return orderMapper.toOrderResponseList(paginatedOrders);
     }

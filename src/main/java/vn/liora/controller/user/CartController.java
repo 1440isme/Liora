@@ -72,10 +72,31 @@ public class CartController {
 
             Long userId = null;
             if (!isGuest) {
-                String username = authentication.getName();
-                User user = userRepository.findByUsername(username)
-                        .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+                String principalName = authentication.getName();
+                User user = userRepository.findByUsername(principalName)
+                        .orElseGet(() -> {
+                            // Fallback: một số provider trả email làm name
+                            if (principalName != null && principalName.contains("@")) {
+                                return userRepository.findByEmail(principalName).orElse(null);
+                            }
+                            return null;
+                        });
+                if (user == null) {
+                    throw new AppException(ErrorCode.USER_NOT_FOUND);
+                }
                 userId = user.getUserId();
+            }
+
+            // Nếu là khách và chưa có guestCartId (request đầu tiên), tạo ngay cookie để
+            // dùng
+            if (isGuest && guestCartId == null) {
+                String newGuestId = java.util.UUID.randomUUID().toString();
+                jakarta.servlet.http.Cookie cookie = new jakarta.servlet.http.Cookie(
+                        GuestCartInterceptor.GUEST_CART_ID_COOKIE_NAME, newGuestId);
+                cookie.setPath("/");
+                cookie.setMaxAge(7 * 24 * 60 * 60);
+                response.addCookie(cookie);
+                guestCartId = newGuestId;
             }
 
             var cartResponse = cartService.getCart(guestCartId, userId);

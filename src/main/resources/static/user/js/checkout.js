@@ -91,14 +91,14 @@ class CheckoutPage {
     async loadCheckoutData() {
         try {
             this.showLoading(true);
-            
+
             // Load user info first
             await this.loadUserInfo();
-            
+
             // Lấy thông tin giỏ hàng hiện tại
             const cartResponse = await this.apiCall('/cart/api/current', 'GET');
             this.cartId = cartResponse.cartId;
-            
+
             if (this.cartId) {
                 // Lấy danh sách sản phẩm đã chọn
                 const selectedItemsResponse = await this.apiCall(`/CartProduct/${this.cartId}/selected-products`, 'GET');
@@ -137,10 +137,10 @@ class CheckoutPage {
         try {
             const addresses = await this.apiCall(`/addresses/${this.currentUser.userId}`, 'GET');
             this.addresses = addresses;
-            
+
             // Load provinces first
             await this.loadShippingProvinces();
-            
+
             // Auto-fill default address into form
             const defaultAddress = addresses.find(addr => addr.isDefault);
             if (defaultAddress) {
@@ -161,7 +161,7 @@ class CheckoutPage {
 
         // Fill address name (not user name)
         $('#shippingFullName').val(address.name || '');
-        
+
         // Fill user email from current user
         if (this.currentUser) {
             $('#shippingGmail').val(this.currentUser.email || '');
@@ -170,7 +170,7 @@ class CheckoutPage {
         // Fill address info
         $('#shippingPhone').val(address.phone || '');
         $('#shippingAddressDetail').val(address.addressDetail || '');
-        
+
         // Fill province and ward dropdowns
         if (address.province) {
             // Find province code from province name
@@ -226,7 +226,7 @@ class CheckoutPage {
         const isDefault = address.isDefault ? '<span class="badge bg-success ms-2">Mặc định</span>' : '';
         const fullAddress = [address.addressDetail, address.ward, address.province].filter(Boolean).join(', ');
         const isSelected = this.selectedAddressId === address.idAddress ? 'checked' : '';
-        
+
         return `
             <div class="address-option mb-3">
                 <div class="form-check">
@@ -271,7 +271,7 @@ class CheckoutPage {
 
         const addressId = parseInt(selectedOption.val());
         const selectedAddress = this.addresses.find(addr => addr.idAddress === addressId);
-        
+
         if (selectedAddress) {
             this.selectedAddressId = addressId;
             await this.fillAddressToForm(selectedAddress);
@@ -418,10 +418,10 @@ class CheckoutPage {
         try {
             await this.apiCall(`/addresses/${this.currentUser.userId}/${id}`, 'DELETE');
             this.showToast('Đã xóa địa chỉ', 'success');
-            
+
             // Reload addresses and update form
             await this.loadAddresses();
-            
+
             // Close any open modals
             this.closeAddressSelector();
             this.closeAddAddressModal();
@@ -798,7 +798,7 @@ class CheckoutPage {
             this.showToast('Đã lưu địa chỉ thành công', 'success');
             this.closeAddAddressModal();
             await this.loadAddresses();
-            
+
             // If this is the first address or it's set as default, fill it to form
             if (isDefault || this.addresses.length === 1) {
                 const newAddress = this.addresses.find(addr => addr.isDefault) || this.addresses[0];
@@ -870,7 +870,7 @@ class CheckoutPage {
             this.showToast('Cập nhật địa chỉ thành công', 'success');
             this.closeEditAddressModal();
             await this.loadAddresses();
-            
+
             // If this was the selected address, update the form
             if (this.selectedAddressId === currentAddressId) {
                 const updatedAddress = this.addresses.find(addr => addr.idAddress === currentAddressId);
@@ -893,7 +893,7 @@ class CheckoutPage {
         const avatar = fullName ? fullName.charAt(0).toUpperCase() : (user.username ? user.username.charAt(0).toUpperCase() : 'U');
         const displayName = fullName || user.username || 'Người dùng';
         const email = user.email || 'Chưa cập nhật email';
-        
+
         accountBox.html(`
             <div class="account-info">
                 <div class="account-avatar">${avatar}</div>
@@ -905,9 +905,9 @@ class CheckoutPage {
         `);
     }
 
-        renderLoginPrompt() {
-            const accountBox = $('.account-box');
-            accountBox.html(`
+    renderLoginPrompt() {
+        const accountBox = $('.account-box');
+        accountBox.html(`
                 <div class="account-info text-center">
                     <div class="account-avatar mb-2">
                         <i class="fas fa-user-circle fa-2x text-muted"></i>
@@ -919,7 +919,7 @@ class CheckoutPage {
                     </div>
                 </div>
             `);
-        }
+    }
 
     renderSelectedItems() {
         const container = $('#selected-items-container');
@@ -951,7 +951,7 @@ class CheckoutPage {
     createSelectedItemHTML(item) {
         const productStatus = this.getProductStatus(item);
         const isDisabled = productStatus !== 'available';
-        
+
         return `
             <div class="cart-item ${isDisabled ? 'disabled' : ''}" data-cart-product-id="${item.idCartProduct}" data-unit-price="${item.productPrice || 0}">
                 <div class="cart-item-image">
@@ -1030,20 +1030,20 @@ class CheckoutPage {
     handlePaymentMethodSelect(e) {
         const paymentRow = $(e.currentTarget);
         const radioInput = paymentRow.find('input[type="radio"]');
-        
+
         // Remove active class from all payment options
         $('.payment-option-row').removeClass('active');
-        
+
         // Add active class to selected option
         paymentRow.addClass('active');
-        
+
         // Check the radio input
         radioInput.prop('checked', true);
     }
 
     async handleApplyPromo() {
         const promoCode = $('#promoCode').val().trim();
-        
+
         if (!promoCode) {
             this.showToast('Vui lòng nhập mã giảm giá', 'warning');
             return;
@@ -1051,7 +1051,7 @@ class CheckoutPage {
 
         try {
             this.showLoading(true);
-            
+
             // Gọi API để kiểm tra và áp dụng mã giảm giá
             const response = await this.apiCall('/discounts/apply', 'POST', {
                 discountCode: promoCode,
@@ -1060,11 +1060,11 @@ class CheckoutPage {
 
             this.discount = response.discountAmount || 0;
             this.updateOrderSummary();
-            
+
             this.showToast('Áp dụng mã giảm giá thành công!', 'success');
             $('#promoCode').val('').attr('placeholder', `Đã áp dụng: ${promoCode}`);
             $('#applyPromoBtn').text('Đã áp dụng').prop('disabled', true);
-            
+
         } catch (error) {
             console.error('Error applying promo code:', error);
             this.showToast('Mã giảm giá không hợp lệ hoặc đã hết hạn', 'error');
@@ -1091,25 +1091,38 @@ class CheckoutPage {
 
         try {
             this.showLoading(true);
-            
+
             const orderData = this.collectOrderData();
-            
+
             // Kiểm tra nếu orderData null (validation failed)
             if (!orderData) {
                 this.showLoading(false);
                 return;
             }
-            
+
             // Gọi API để tạo đơn hàng
             const response = await this.apiCall(`/order/${this.cartId}`, 'POST', orderData);
-            
+
+            // Nếu phương thức là VNPAY thì gọi tạo URL thanh toán và redirect
+            if (orderData.paymentMethod && orderData.paymentMethod.toUpperCase() === 'VNPAY') {
+                try {
+                    const payResp = await this.apiCall(`/payment/vnpay/create/${response.idOrder}`, 'POST');
+                    if (payResp && payResp.paymentUrl) {
+                        window.location.href = payResp.paymentUrl;
+                        return; // dừng lại, sẽ rời trang
+                    }
+                } catch (e) {
+                    console.error('Create VNPAY URL failed:', e);
+                    this.showToast('Không tạo được liên kết thanh toán VNPAY, vui lòng thử lại', 'error');
+                }
+            }
+
+            // Nếu không phải VNPAY (ví dụ COD) giữ flow cũ
             this.showToast('Đặt hàng thành công!', 'success');
-            
-            // Redirect to home page
             setTimeout(() => {
                 window.location.href = '/';
             }, 2000);
-            
+
         } catch (error) {
             console.error('Error placing order:', error);
             this.showToast('Không thể đặt hàng. Vui lòng thử lại!', 'error');
@@ -1122,20 +1135,20 @@ class CheckoutPage {
         // Kiểm tra tất cả sản phẩm đã chọn
         for (const item of this.selectedItems) {
             const status = this.getProductStatus(item);
-            
+
             // Nếu sản phẩm không hợp lệ (hết hàng hoặc ngừng kinh doanh)
             if (status !== 'available') {
                 this.showToast('Đơn hàng có sản phẩm không hợp lệ', 'error');
                 return false;
             }
-            
+
             // Kiểm tra số lượng có vượt quá tồn kho không
             if (item.quantity > item.stock) {
                 this.showToast('Đơn hàng có sản phẩm không hợp lệ', 'error');
                 return false;
             }
         }
-        
+
         return true;
     }
 
@@ -1147,44 +1160,44 @@ class CheckoutPage {
         const province = $('#shippingProvince').val();
         const ward = $('#shippingWard').val();
         const addressDetail = $('#shippingAddressDetail').val().trim();
-        
+
         if (!fullName) {
             this.showToast('Vui lòng nhập họ và tên', 'warning');
             return false;
         }
-        
+
         if (!phone) {
             this.showToast('Vui lòng nhập số điện thoại', 'warning');
             return false;
         }
-        
+
         if (!email) {
             this.showToast('Vui lòng nhập email', 'warning');
             return false;
         }
-        
+
         if (!province) {
             this.showToast('Vui lòng chọn tỉnh/thành phố', 'warning');
             return false;
         }
-        
+
         if (!ward) {
             this.showToast('Vui lòng chọn phường/xã', 'warning');
             return false;
         }
-        
+
         if (!addressDetail) {
             this.showToast('Vui lòng nhập địa chỉ chi tiết', 'warning');
             return false;
         }
-        
+
         // Kiểm tra phương thức thanh toán (đã có mặc định)
         const paymentMethod = $('input[name="paymentMethod"]:checked').val();
         if (!paymentMethod) {
             this.showToast('Vui lòng chọn phương thức thanh toán', 'warning');
             return false;
         }
-        
+
         return true;
     }
 
@@ -1196,13 +1209,13 @@ class CheckoutPage {
         const province = $('#shippingProvince').val();
         const ward = $('#shippingWard').val();
         const addressDetail = $('#shippingAddressDetail').val().trim();
-        
+
         // Ghép địa chỉ chi tiết
         const fullAddress = `${addressDetail}, ${ward}, ${province}`;
-        
+
         const paymentMethod = $('input[name="paymentMethod"]:checked').val();
         const notes = $('#orderNotes').val() || 'Không có ghi chú';
-        
+
         // Debug: Log tất cả values để kiểm tra
         console.log('Order Data Debug:', {
             fullName,
@@ -1212,7 +1225,7 @@ class CheckoutPage {
             paymentMethod,
             notes
         });
-        
+
         // Validation: Kiểm tra các field required
         if (!fullName || fullName.trim() === '') {
             this.showToast('Vui lòng nhập họ và tên', 'warning');
@@ -1231,23 +1244,23 @@ class CheckoutPage {
             return null;
         }
         // Ghi chú có thể null, không cần validation
-        
+
         const orderData = {
             // Thông tin giao hàng
             name: fullName,
             phone: phone,
             email: email || '', // Đảm bảo email không null
             addressDetail: fullAddress,
-            
+
             // Thông tin đơn hàng
             paymentMethod: paymentMethod,
             note: notes,
             discountId: null // Field này có thể null
         };
-        
+
         // Debug: Log final order data
         console.log('Final Order Data:', orderData);
-        
+
         return orderData;
     }
 
@@ -1257,17 +1270,17 @@ class CheckoutPage {
     }
 
     // ========== CART ITEM HANDLERS ==========
-    
+
     async handleQuantityChange(e) {
         const button = $(e.target).closest('.quantity-btn');
         const action = button.data('action');
         const input = button.siblings('.quantity-input');
         const cartItem = button.closest('.cart-item');
         const cartProductId = cartItem.data('cart-product-id');
-        
+
         let newQuantity = parseInt(input.val()) || 1;
         const maxStock = parseInt(input.attr('max')) || 99; // Đã được tính min với 99
-        
+
         if (action === 'increase') {
             if (newQuantity < maxStock) {
                 newQuantity = newQuantity + 1;
@@ -1282,7 +1295,7 @@ class CheckoutPage {
                 this.showToast(`Số lượng tối thiểu là 1 sản phẩm`, 'warning');
             }
         }
-        
+
         input.val(newQuantity);
         await this.updateCartProductQuantity(cartProductId, newQuantity);
     }
@@ -1293,9 +1306,9 @@ class CheckoutPage {
         const cartProductId = cartItem.data('cart-product-id');
         const maxStock = parseInt(input.attr('max')) || 99; // Đã được tính min với 99
         let newQuantity = parseInt(input.val()) || 1;
-        
+
         console.log('Checkout input validation:', { newQuantity, maxStock, inputVal: input.val(), cartProductId });
-        
+
         // Force validation ngay lập tức
         if (newQuantity < 1) {
             newQuantity = 1;
@@ -1334,21 +1347,21 @@ class CheckoutPage {
                 'PUT',
                 { quantity: quantity, choose: true }
             );
-            
+
             // Cập nhật dữ liệu local
             const cartItem = this.selectedItems.find(item => item.idCartProduct === cartProductId);
             if (cartItem) {
                 cartItem.quantity = quantity;
                 cartItem.totalPrice = response.totalPrice || (cartItem.productPrice * quantity);
             }
-            
+
             // Cập nhật giá trong DOM
             const cartItemElement = $(`.cart-item[data-cart-product-id="${cartProductId}"]`);
             const priceElement = cartItemElement.find('.item-price');
             priceElement.text(this.formatCurrency(response.totalPrice));
-            
+
             this.updateOrderSummary();
-            
+
         } catch (error) {
             console.error('Error updating cart product quantity:', error);
             this.showToast('Không thể cập nhật số lượng sản phẩm', 'error');
@@ -1360,27 +1373,27 @@ class CheckoutPage {
             // Lấy quantity hiện tại từ DOM
             const cartItem = $(`.cart-item[data-cart-product-id="${cartProductId}"]`);
             const currentQuantity = parseInt(cartItem.find('.quantity-input').val()) || 1;
-            
+
             // Set choose = false thay vì xóa
             await this.apiCall(
                 `/CartProduct/${this.cartId}/${cartProductId}`,
                 'PUT',
-                { 
+                {
                     choose: false,
                     quantity: currentQuantity
                 }
             );
-            
+
             // Xóa khỏi dữ liệu local
             this.selectedItems = this.selectedItems.filter(item => item.idCartProduct !== cartProductId);
-            
+
             // Animation xóa
             this.removeItemWithAnimation(cartItemElement);
-            
+
             // Cập nhật UI ngay lập tức
             this.renderSelectedItems();
             this.updateOrderSummary();
-            
+
         } catch (error) {
             console.error('Error removing cart product:', error);
             this.showToast('Không thể bỏ chọn sản phẩm', 'error');
@@ -1456,7 +1469,7 @@ class CheckoutPage {
             'warning': 'alert-warning',
             'info': 'alert-info'
         }[type] || 'alert-info';
-        
+
         const toast = $(`
             <div class="alert ${toastClass} alert-dismissible fade show position-fixed" 
                  style="top: 20px; right: 20px; z-index: 9999; min-width: 300px;">
@@ -1464,9 +1477,9 @@ class CheckoutPage {
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         `);
-        
+
         $('body').append(toast);
-        
+
         // Auto remove after 5 seconds
         setTimeout(() => {
             toast.alert('close');
@@ -1481,19 +1494,19 @@ class CheckoutPage {
     }
 
     // ========== API HELPER METHODS ==========
-    
+
     async apiCall(url, method = 'GET', data = null) {
         const token = localStorage.getItem('access_token');
         const headers = {
             'Content-Type': 'application/json',
             'X-Requested-With': 'XMLHttpRequest'
         };
-        
+
         // Thêm Authorization header nếu có token
         if (token) {
             headers['Authorization'] = `Bearer ${token}`;
         }
-        
+
         const options = {
             method: method,
             headers: headers
@@ -1504,7 +1517,7 @@ class CheckoutPage {
         }
 
         const response = await fetch(url, options);
-        
+
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
             throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
@@ -1520,18 +1533,18 @@ class CheckoutPage {
 
     navigateToCart(event) {
         event.preventDefault();
-        
+
         // Show loading overlay
         this.showLoading(true);
-        
+
         // Add smooth transition effect
         $('body').addClass('page-transition');
-        
+
         // Navigate after a short delay for smooth effect
         setTimeout(() => {
             window.location.href = '/cart';
         }, 300);
-        
+
         return false;
     }
 }

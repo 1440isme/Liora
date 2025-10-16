@@ -30,9 +30,30 @@ public class Order {
     @Column(name = "PaymentMethod", nullable = false)
     String paymentMethod;
 
-
     @Column(name = "OrderStatus", nullable = false)
     String orderStatus;
+
+    // ===== Payment fields for VNPAY integration =====
+    @Column(name = "PaymentStatus", nullable = false)
+    String paymentStatus; // PENDING, PAID, FAILED, CANCELLED
+
+    @Column(name = "VnpTxnRef")
+    String vnpTxnRef; // unique reference sent to VNPAY
+
+    @Column(name = "VnpTransactionNo")
+    String vnpTransactionNo;
+
+    @Column(name = "VnpBankCode")
+    String vnpBankCode;
+
+    @Column(name = "PaidAmount")
+    BigDecimal paidAmount;
+
+    @Column(name = "PaidAt")
+    LocalDateTime paidAt;
+
+    @Column(name = "FailureReason")
+    String failureReason;
 
     @Column(name = "Name", nullable = false, columnDefinition = "NVARCHAR(255)")
     String name;
@@ -45,7 +66,6 @@ public class Order {
     @Column(name = "Note", columnDefinition = "NVARCHAR(255)")
     String note;
 
-
     @ManyToOne
     @JoinColumn(name = "IdUser", nullable = true)
     @JsonIgnore
@@ -57,4 +77,3 @@ public class Order {
     private Discount discount;
 
 }
-
