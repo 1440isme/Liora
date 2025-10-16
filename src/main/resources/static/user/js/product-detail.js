@@ -9,7 +9,7 @@ class ProductDetailManager {
         this.product = null;
         this.quantity = 1;
         this.maxStock = parseInt(document.getElementById('quantityInput')?.getAttribute('max') || '10');
-        
+
         this.init();
     }
 
@@ -60,12 +60,12 @@ class ProductDetailManager {
     scrollImages(direction) {
         const thumbnails = document.querySelectorAll('.product-detail-thumbnail-item');
         const mainImage = document.getElementById('productDetailMainImage');
-        
+
         if (thumbnails.length === 0 || !mainImage) {
             console.error('Required elements not found!');
             return;
         }
-        
+
         // Find current active thumbnail
         let currentIndex = -1;
         thumbnails.forEach((thumb, index) => {
@@ -73,9 +73,9 @@ class ProductDetailManager {
                 currentIndex = index;
             }
         });
-        
+
         if (currentIndex === -1) currentIndex = 0;
-        
+
         // Calculate new index
         let newIndex;
         if (direction === 'up') {
@@ -83,11 +83,11 @@ class ProductDetailManager {
         } else {
             newIndex = currentIndex < thumbnails.length - 1 ? currentIndex + 1 : 0;
         }
-        
+
         // Update image and active state
         const targetThumbnail = thumbnails[newIndex];
         const targetImageUrl = targetThumbnail.dataset.imageUrl;
-        
+
         mainImage.src = targetImageUrl;
         thumbnails.forEach(thumb => thumb.classList.remove('active'));
         targetThumbnail.classList.add('active');
@@ -96,11 +96,11 @@ class ProductDetailManager {
     openImageLightbox() {
         const mainImage = document.getElementById('mainProductImage');
         const lightboxImage = document.getElementById('lightboxImage');
-        
+
         if (mainImage && lightboxImage) {
             lightboxImage.src = mainImage.src;
             lightboxImage.alt = mainImage.alt;
-            
+
             const lightbox = new bootstrap.Modal(document.getElementById('imageLightbox'));
             lightbox.show();
         }
@@ -112,7 +112,7 @@ class ProductDetailManager {
             lightbox.addEventListener('show.bs.modal', () => {
                 document.body.style.overflow = 'hidden';
             });
-            
+
             lightbox.addEventListener('hide.bs.modal', () => {
                 document.body.style.overflow = 'auto';
             });
@@ -124,18 +124,18 @@ class ProductDetailManager {
         const quantityInput = document.getElementById('quantityInput');
         const errorDiv = document.getElementById('quantityError');
         const errorMessage = document.getElementById('quantityErrorMessage');
-        
+
         if (!quantityInput || !errorDiv || !errorMessage) return;
-        
+
         const currentValue = parseInt(quantityInput.value) || 0;
-        
+
         // Allow empty input for better UX
         if (quantityInput.value === '' || quantityInput.value === '0') {
             errorDiv.style.display = 'none';
             quantityInput.classList.remove('is-invalid');
             return;
         }
-        
+
         if (currentValue > this.maxStock) {
             errorDiv.style.display = 'block';
             errorMessage.textContent = `Số lượng tối đa bạn có thể mua là ${this.maxStock}.`;
@@ -155,9 +155,9 @@ class ProductDetailManager {
     validateQuantityOnBlur() {
         const quantityInput = document.getElementById('quantityInput');
         if (!quantityInput) return;
-        
+
         const currentValue = parseInt(quantityInput.value) || 0;
-        
+
         if (quantityInput.value === '' || currentValue < 1) {
             quantityInput.value = 1;
             this.validateQuantity();
@@ -167,9 +167,9 @@ class ProductDetailManager {
     incrementQuantity() {
         const quantityInput = document.getElementById('quantityInput');
         if (!quantityInput) return;
-        
+
         const currentValue = parseInt(quantityInput.value) || 0;
-        
+
         if (currentValue < this.maxStock) {
             quantityInput.value = currentValue + 1;
             this.validateQuantity();
@@ -179,104 +179,62 @@ class ProductDetailManager {
     decrementQuantity() {
         const quantityInput = document.getElementById('quantityInput');
         if (!quantityInput) return;
-        
+
         const currentValue = parseInt(quantityInput.value) || 0;
-        
+
         if (currentValue > 1) {
             quantityInput.value = currentValue - 1;
             this.validateQuantity();
         }
     }
 
-    // Cart Functions
-    addToCart() {
+    // Cart Functions (backend)
+    async addToCart() {
         const quantityInput = document.getElementById('quantityInput');
         const quantity = quantityInput ? parseInt(quantityInput.value) : 1;
-        
+
         if (quantity > this.maxStock) {
             this.showNotification(`Số lượng bạn chọn (${quantity}) vượt quá số lượng tồn kho hiện có (${this.maxStock} sản phẩm). Vui lòng chọn số lượng phù hợp.`, 'error');
             return;
         }
 
-        // Add to global cart if available
-        if (window.app && window.app.cartItems) {
-            const existingItem = window.app.cartItems.find(item => item.id === this.productId);
-            
-            if (existingItem) {
-                const newTotalQuantity = existingItem.quantity + quantity;
-                if (newTotalQuantity > this.maxStock) {
-                    this.showNotification(`Tổng số lượng trong giỏ hàng (${newTotalQuantity}) vượt quá tồn kho hiện có (${this.maxStock} sản phẩm). Vui lòng giảm số lượng.`, 'error');
-                    return;
-                }
-                existingItem.quantity = newTotalQuantity;
+        try {
+            if (window.app && typeof window.app.addProductToCartBackend === 'function') {
+                await window.app.addProductToCartBackend(this.productId, quantity, true);
+                await window.app.refreshCartBadge?.();
             } else {
-                // Get product data from page
-                const productData = this.getProductDataFromPage();
-                if (productData) {
-                    window.app.cartItems.push({
-                        ...productData,
-                        quantity: quantity
-                    });
-                }
+                this.showNotification('Không thể thêm vào giỏ hàng. Vui lòng thử lại.', 'error');
             }
-            
-            // Update cart display
-            if (window.app.updateCartDisplay) {
-                window.app.updateCartDisplay();
-            }
+        } catch (_) {
+            this.showNotification('Không thể thêm vào giỏ hàng. Vui lòng thử lại.', 'error');
         }
-
-        this.showNotification(`${quantity} x ${document.querySelector('.product-name').textContent} đã được thêm vào giỏ hàng thành công! 🛍️`, 'success');
     }
 
-    buyNow() {
+    async buyNow() {
         const quantityInput = document.getElementById('quantityInput');
         const quantity = quantityInput ? parseInt(quantityInput.value) : 1;
-        
+
         if (quantity > this.maxStock) {
             this.showNotification(`Số lượng bạn chọn (${quantity}) vượt quá số lượng tồn kho hiện có (${this.maxStock} sản phẩm). Vui lòng chọn số lượng phù hợp.`, 'error');
             return;
         }
 
-        // Add to cart silently
-        if (window.app && window.app.cartItems) {
-            const existingItem = window.app.cartItems.find(item => item.id === this.productId);
-            
-            if (existingItem) {
-                const newTotalQuantity = existingItem.quantity + quantity;
-                if (newTotalQuantity > this.maxStock) {
-                    this.showNotification(`Tổng số lượng trong giỏ hàng (${newTotalQuantity}) vượt quá tồn kho hiện có (${this.maxStock} sản phẩm). Vui lòng giảm số lượng.`, 'error');
-                    return;
-                }
-                existingItem.quantity = newTotalQuantity;
-            } else {
-                const productData = this.getProductDataFromPage();
-                if (productData) {
-                    window.app.cartItems.push({
-                        ...productData,
-                        quantity: quantity
-                    });
-                }
+        try {
+            if (window.app && typeof window.app.buyNowBackend === 'function') {
+                await window.app.buyNowBackend(this.productId, quantity);
+                return;
             }
-            
-            if (window.app.updateCartDisplay) {
-                window.app.updateCartDisplay();
-            }
+            this.showNotification('Không thể thực hiện mua ngay. Vui lòng thử lại.', 'error');
+        } catch (_) {
+            this.showNotification('Không thể thực hiện mua ngay. Vui lòng thử lại.', 'error');
         }
-        
-        this.showNotification(`${quantity} x ${document.querySelector('.product-name').textContent} đã được thêm vào giỏ hàng! Đang chuyển đến trang thanh toán...`, 'success');
-        
-        // Redirect to checkout
-        setTimeout(() => {
-            window.location.href = '/checkout';
-        }, 1500);
     }
 
     toggleWishlist() {
         // Toggle wishlist functionality
         const wishlistBtn = document.querySelector('[onclick="toggleWishlist()"]');
         const icon = wishlistBtn.querySelector('i');
-        
+
         if (icon.classList.contains('fas')) {
             // Remove from wishlist
             icon.classList.remove('fas');
@@ -296,7 +254,7 @@ class ProductDetailManager {
         const productName = document.querySelector('.product-name')?.textContent;
         const productPrice = document.querySelector('.current-price')?.textContent;
         const productImage = document.querySelector('#mainProductImage')?.src;
-        
+
         if (productName && productPrice) {
             return {
                 id: this.productId,
@@ -358,7 +316,7 @@ class ProductDetailManager {
         // Create toast notification
         const toastContainer = document.getElementById('toastContainer') || this.createToastContainer();
         const toastId = 'toast-' + Date.now();
-        
+
         const toastHTML = `
             <div class="toast align-items-center text-white bg-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} border-0" 
                  id="${toastId}" role="alert">
@@ -433,72 +391,72 @@ function validateQuantityOnBlur() {
 }
 
 // Add methods to ProductDetailManager class
-ProductDetailManager.prototype.initProgressBar = function() {
-        const progressBar = document.querySelector('.product-detail-progress-bar');
-        if (!progressBar) {
-            console.log('Progress bar not found');
-            return;
-        }
+ProductDetailManager.prototype.initProgressBar = function () {
+    const progressBar = document.querySelector('.product-detail-progress-bar');
+    if (!progressBar) {
+        console.log('Progress bar not found');
+        return;
+    }
 
-        console.log('Initializing progress bar...');
-        
-        // Force the background
-        progressBar.style.background = 'linear-gradient(90deg, #E8A2B0 0%, #C97089 100%)';
-        progressBar.style.backgroundColor = '#E8A2B0';
-        progressBar.style.display = 'block';
-        progressBar.style.height = '100%';
-        
-        // Calculate width dynamically from soldCount
-        const soldCountElement = document.querySelector('.product-detail-sales-count');
-        if (soldCountElement) {
-            const soldCount = parseInt(soldCountElement.textContent) || 0;
-            console.log('Found soldCount:', soldCount);
-            
-            // Calculate progress using same logic as Java SalesProgressUtil
-            let progress = this.calculateSalesProgress(soldCount);
-            const widthPercent = progress.toFixed(1) + '%';
-            
-            progressBar.style.width = widthPercent;
-            console.log('Calculated width for soldCount', soldCount, ':', widthPercent);
-        } else {
-            console.log('soldCount element not found');
-        }
-        
-        console.log('Progress bar initialized with width:', progressBar.style.width);
+    console.log('Initializing progress bar...');
+
+    // Force the background
+    progressBar.style.background = 'linear-gradient(90deg, #E8A2B0 0%, #C97089 100%)';
+    progressBar.style.backgroundColor = '#E8A2B0';
+    progressBar.style.display = 'block';
+    progressBar.style.height = '100%';
+
+    // Calculate width dynamically from soldCount
+    const soldCountElement = document.querySelector('.product-detail-sales-count');
+    if (soldCountElement) {
+        const soldCount = parseInt(soldCountElement.textContent) || 0;
+        console.log('Found soldCount:', soldCount);
+
+        // Calculate progress using same logic as Java SalesProgressUtil
+        let progress = this.calculateSalesProgress(soldCount);
+        const widthPercent = progress.toFixed(1) + '%';
+
+        progressBar.style.width = widthPercent;
+        console.log('Calculated width for soldCount', soldCount, ':', widthPercent);
+    } else {
+        console.log('soldCount element not found');
+    }
+
+    console.log('Progress bar initialized with width:', progressBar.style.width);
 };
 
-ProductDetailManager.prototype.calculateSalesProgress = function(soldCount) {
-        const thresholds = [
-            { max: 50, percentage: 30 },      // 0-50: 0-30%
-            { max: 100, percentage: 40 },     // 50-100: 30-40%
-            { max: 500, percentage: 55 },     // 100-500: 40-55%
-            { max: 1000, percentage: 70 },    // 500-1000: 55-70%
-            { max: 5000, percentage: 85 },    // 1000-5000: 70-85%
-            { max: 10000, percentage: 95 },   // 5000-10000: 85-95%
-            { max: Infinity, percentage: 100 } // >10000: 95-100%
-        ];
-        
-        for (let i = 0; i < thresholds.length; i++) {
-            const { max, percentage } = thresholds[i];
-            
-            if (soldCount <= max) {
-                // Get previous threshold percentage
-                const basePercentage = (i > 0) ? thresholds[i-1].percentage : 0;
-                
-                // Calculate progress within this threshold
-                const prevMax = (i > 0) ? thresholds[i-1].max : 0;
-                const range = max - prevMax;
-                
-                if (range > 0) {
-                    const progress = ((soldCount - prevMax) / range) * (percentage - basePercentage);
-                    return Math.min(100, Math.max(0, basePercentage + progress));
-                } else {
-                    return basePercentage;
-                }
+ProductDetailManager.prototype.calculateSalesProgress = function (soldCount) {
+    const thresholds = [
+        { max: 50, percentage: 30 },      // 0-50: 0-30%
+        { max: 100, percentage: 40 },     // 50-100: 30-40%
+        { max: 500, percentage: 55 },     // 100-500: 40-55%
+        { max: 1000, percentage: 70 },    // 500-1000: 55-70%
+        { max: 5000, percentage: 85 },    // 1000-5000: 70-85%
+        { max: 10000, percentage: 95 },   // 5000-10000: 85-95%
+        { max: Infinity, percentage: 100 } // >10000: 95-100%
+    ];
+
+    for (let i = 0; i < thresholds.length; i++) {
+        const { max, percentage } = thresholds[i];
+
+        if (soldCount <= max) {
+            // Get previous threshold percentage
+            const basePercentage = (i > 0) ? thresholds[i - 1].percentage : 0;
+
+            // Calculate progress within this threshold
+            const prevMax = (i > 0) ? thresholds[i - 1].max : 0;
+            const range = max - prevMax;
+
+            if (range > 0) {
+                const progress = ((soldCount - prevMax) / range) * (percentage - basePercentage);
+                return Math.min(100, Math.max(0, basePercentage + progress));
+            } else {
+                return basePercentage;
             }
         }
-        
-        return 100; // For very high sales
+    }
+
+    return 100; // For very high sales
 };
 
 function addToCart() {

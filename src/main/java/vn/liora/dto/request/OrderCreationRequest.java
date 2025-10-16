@@ -17,7 +17,6 @@ public class OrderCreationRequest {
 
     @NotBlank(message = "VALIDATION_REQUIRED_FIELD")
     String  paymentMethod;
-    Long idAddress;
     @NotNull(message = "VALIDATION_REQUIRED_FIELD")
     String name;
     @NotNull(message = "VALIDATION_REQUIRED_FIELD")
@@ -25,7 +24,6 @@ public class OrderCreationRequest {
     @NotNull(message = "VALIDATION_REQUIRED_FIELD")
     String addressDetail;
     String email;
-    @NotNull(message = "VALIDATION_REQUIRED_FIELD")
     String note;
 
     Long discountId;

@@ -81,7 +81,7 @@ class DiscountManager {
         }
     }
 
-// ✅ THÊM: Fill form với dữ liệu
+    // ✅ THÊM: Fill form với dữ liệu
     fillFormWithData(discount) {
         $('#discountId').val(discount.discountId);
         $('#name').val(discount.name);
@@ -228,7 +228,7 @@ class DiscountManager {
 
     handleApiError(response, data) {
         console.error('API Error:', response.status, data);
-        
+
         if (response.status === 400) {
             // Bad Request - validation errors
             if (data.errors && Array.isArray(data.errors)) {
@@ -367,17 +367,21 @@ class DiscountManager {
                                 'Content-Type': 'application/json'
                             },
                             body: JSON.stringify({
-                                refreshToken: refreshToken
+                                token: refreshToken
                             })
                         });
 
                         if (refreshResponse.ok) {
                             const refreshData = await refreshResponse.json();
-                            localStorage.setItem('access_token', refreshData.result.accessToken);
-                            localStorage.setItem('refresh_token', refreshData.result.refreshToken);
+                            // Backend trả về AuthenticationResponse { token, authenticated }
+                            const newToken = (refreshData?.result && refreshData.result.token) || refreshData?.token;
+                            if (newToken) {
+                                localStorage.setItem('access_token', newToken);
+                                try { document.cookie = `access_token=${newToken}; path=/; SameSite=Lax`; } catch (_) { }
+                            }
 
                             // Retry the original request with new token
-                            headers['Authorization'] = `Bearer ${refreshData.result.accessToken}`;
+                            if (newToken) headers['Authorization'] = `Bearer ${newToken}`;
 
                             const retryResponse = await fetch(url, {
                                 method: method,
@@ -485,10 +489,10 @@ class DiscountManager {
             userUsageLimit: $('#userUsageLimit').val() ? parseInt($('#userUsageLimit').val()) : null,
             isActive: $('#isActive').is(':checked')
         };
-    
+
         // ✅ THÊM: Log dữ liệu để debug
         console.log('Prepared form data:', formData);
-        
+
         return formData;
     }
 
@@ -1249,13 +1253,13 @@ class DiscountManager {
         const endDate = new Date(discount.endDate);
 
         if (!discount.isActive) {
-            return 'text-secondary fw-bold'; 
+            return 'text-secondary fw-bold';
         } else if (endDate < now) {
-            return 'text-danger fw-bold'; 
+            return 'text-danger fw-bold';
         } else if (startDate > now) {
-            return 'text-warning fw-bold'; 
+            return 'text-warning fw-bold';
         } else {
-            return 'text-success fw-bold'; 
+            return 'text-success fw-bold';
         }
     }
 
@@ -1336,7 +1340,7 @@ function resetForm() {
 }
 
 // Initialize when document is ready
-$(document).ready(function() {
+$(document).ready(function () {
     window.discountManager = new DiscountManager();
 });
 

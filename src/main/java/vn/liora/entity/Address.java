@@ -5,7 +5,6 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -30,11 +29,8 @@ public class Address {
     @Column(name = "Province", nullable = false, columnDefinition = "NVARCHAR(255)")
     String province;
     @Column(name = "IsDefault")
+    @Builder.Default
     Boolean isDefault = false;
-
-    @OneToMany(mappedBy = "address", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JsonIgnore
-    private List<Order> orders;
 
     @ManyToOne
     @JoinColumn(name = "IdUser")
