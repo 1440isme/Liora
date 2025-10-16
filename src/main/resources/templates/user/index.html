@@ -154,8 +154,23 @@
             <section class="py-5">
                 <div class="container">
                     <h2 class="fw-bold mb-4 text-center text-uppercase">Khuyến mãi dành cho bạn</h2>
-                    <div class="row g-3">
+                    
+                    <!-- Slider Container -->
+                    <div class="discount-slider-container">
+                        <!-- Navigation Arrows -->
+                        <button class="slider-btn slider-btn-prev" onclick="slideDiscounts('prev')">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
                         
+                        <div class="discount-slider-wrapper">
+                            <div id="discounts-container" class="discount-slider">
+                                <!-- Discounts will be loaded here by JavaScript -->
+                            </div>
+                        </div>
+                        
+                        <button class="slider-btn slider-btn-next" onclick="slideDiscounts('next')">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
                     </div>
                 </div>
             </section>
@@ -346,6 +361,581 @@
             });
         });
     </script>
+
+    <script>
+        // Load active discounts
+        document.addEventListener('DOMContentLoaded', function() {
+            loadActiveDiscounts();
+        });
+        
+        function loadActiveDiscounts() {
+            console.log('=== START LOADING DISCOUNTS ===');
+            fetch('/api/products/discounts/active')
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('API Response:', data);
+                    if ((data.code === 200 || data.code === 1000) && data.result) {
+                        console.log('Rendering discounts:', data.result);
+                        renderDiscounts(data.result);
+                    } else {
+                        console.log('No discounts found or error in response');
+                        showNoDiscountsMessage();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading discounts:', error);
+                    showNoDiscountsMessage();
+                });
+        }
+        
+        function renderDiscounts(discounts) {
+            console.log('renderDiscounts called with:', discounts);
+            const container = document.getElementById('discounts-container');
+            console.log('Container found:', !!container);
+            
+            if (!container) {
+                console.error('discounts-container not found!');
+                return;
+            }
+            
+            if (discounts.length === 0) {
+                console.log('No discounts to render');
+                showNoDiscountsMessage();
+                return;
+            }
+            
+            // Calculate slider parameters
+            totalCards = discounts.length;
+            currentSlide = 0;
+            
+            // Update cards per view based on screen size
+            updateCardsPerView();
+            
+            const html = discounts.map(discount => `
+                <div class="discount-slide-item">
+                    <div class="discount-card">
+                        <div class="discount-card-left">
+                            <div class="discount-icon">
+                                ${getDiscountIcon(discount)}
+                            </div>
+                        </div>
+                        <div class="discount-card-right">
+                            <div class="discount-header">
+                                <div class="discount-title">${discount.name}</div>
+                                <div class="discount-info-icon" title="Thông tin chi tiết">
+                                    i
+                                </div>
+                            </div>
+                            <div class="discount-description">
+                                ${discount.description && discount.description.trim() !== '' ? discount.description : 'Áp dụng cho đơn hàng'}
+                            </div>
+                            <div class="discount-details">
+                                <div class="discount-expiry">HSD: ${formatDate(discount.endDate)}</div>
+                                <button class="discount-copy-btn" onclick="copyDiscountCode('${discount.name}', this)">
+                                    Sao chép mã
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            container.innerHTML = html;
+            
+            // Initialize slider
+            initializeSlider();
+        }
+        
+        function showNoDiscountsMessage() {
+            const container = document.getElementById('discounts-container');
+            if (container) {
+                container.innerHTML = `
+                    <div class="col-12">
+                        <div class="text-center text-muted py-4">
+                            <i class="mdi mdi-ticket-percent-outline fs-1 mb-3"></i>
+                            <p class="mb-0">Hiện tại chưa có mã khuyến mãi nào</p>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+        
+        function copyDiscountCode(code, button) {
+            console.log('Copying code:', code);
+            console.log('Button element:', button);
+            console.log('Clipboard API available:', !!navigator.clipboard);
+            console.log('Secure context:', window.isSecureContext);
+            
+            // Try modern clipboard API first
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(code).then(() => {
+                    console.log('Clipboard API success');
+                    showToast(`Đã sao chép mã "${code}"`, 'success');
+                    updateButtonState(button, code);
+                }).catch(err => {
+                    console.error('Clipboard API failed:', err);
+                    fallbackCopyTextToClipboard(code, button);
+                });
+            } else {
+                console.log('Using fallback method');
+                // Fallback for older browsers or non-secure contexts
+                fallbackCopyTextToClipboard(code, button);
+            }
+        }
+        
+        function fallbackCopyTextToClipboard(text, button) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            
+            // Avoid scrolling to bottom
+            textArea.style.top = "0";
+            textArea.style.left = "0";
+            textArea.style.position = "fixed";
+            textArea.style.opacity = "0";
+            
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showToast(`Đã sao chép mã "${text}"`, 'success');
+                    updateButtonState(button, text);
+                } else {
+                    showToast('Không thể sao chép mã', 'error');
+                }
+            } catch (err) {
+                console.error('Fallback copy failed:', err);
+                showToast('Không thể sao chép mã', 'error');
+            }
+            
+            document.body.removeChild(textArea);
+        }
+        
+        function updateButtonState(button, code) {
+            button.textContent = 'Đã sao chép';
+            button.classList.add('copied');
+            
+            // Reset after 3 seconds
+            setTimeout(() => {
+                button.textContent = 'Sao chép mã';
+                button.classList.remove('copied');
+            }, 3000);
+        }
+        
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('vi-VN');
+        }
+        
+        function getDiscountIcon(discount) {
+            // Check if it's a high value discount (HOT DEAL) - 50k or more
+            if (discount.discountValue && parseFloat(discount.discountValue) >= 50000) {
+                return '🔥';
+            }
+            // Use a beautiful ticket icon for regular discounts
+            return '🎫';
+        }
+        
+        // Toast notification function (if not already defined)
+        function showToast(message, type = 'info') {
+            // Check if toast function exists from main.js
+            if (typeof window.showToast === 'function') {
+                window.showToast(message, type);
+            } else {
+                // Fallback toast implementation
+                console.log(`Toast: ${message} (${type})`);
+            }
+        }
+
+        // Slider state
+        let currentSlide = 0;
+        let totalCards = 0;
+        let cardsPerView = 4; // Number of cards visible at once
+
+        function updateCardsPerView() {
+            const container = document.querySelector('.discount-slider-wrapper');
+            if (!container) return;
+            
+            const containerWidth = container.offsetWidth;
+            const cardWidth = 300; // Fixed width from CSS
+            const gap = 16; // 1rem gap
+            
+            if (window.innerWidth <= 768) {
+                cardsPerView = 1;
+            } else if (window.innerWidth <= 992) {
+                cardsPerView = 2;
+            } else if (window.innerWidth <= 1200) {
+                cardsPerView = 3;
+            } else {
+                cardsPerView = 4;
+            }
+        }
+
+        function initializeSlider() {
+            updateSliderPosition();
+            updateSliderButtons();
+        }
+
+        function slideDiscounts(direction) {
+            const maxSlide = Math.max(0, totalCards - cardsPerView);
+            
+            if (direction === 'prev') {
+                currentSlide = Math.max(0, currentSlide - 1);
+            } else if (direction === 'next') {
+                currentSlide = Math.min(maxSlide, currentSlide + 1);
+            }
+            
+            updateSliderPosition();
+            updateSliderButtons();
+        }
+
+        function updateSliderPosition() {
+            const slider = document.querySelector('.discount-slider');
+            if (!slider) return;
+            
+            const cardWidth = 300; // Fixed width from CSS
+            const gap = 16; // 1rem gap
+            const translateX = -(currentSlide * (cardWidth + gap));
+            
+            slider.style.transform = `translateX(${translateX}px)`;
+        }
+
+        function updateSliderButtons() {
+            const prevBtn = document.querySelector('.slider-btn-prev');
+            const nextBtn = document.querySelector('.slider-btn-next');
+            const maxSlide = Math.max(0, totalCards - cardsPerView);
+            
+            if (prevBtn) prevBtn.style.opacity = currentSlide === 0 ? '0.5' : '1';
+            if (nextBtn) nextBtn.style.opacity = currentSlide === maxSlide ? '0.5' : '1';
+        }
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            updateCardsPerView();
+            const maxSlide = Math.max(0, totalCards - cardsPerView);
+            currentSlide = Math.min(currentSlide, maxSlide);
+            updateSliderPosition();
+            updateSliderButtons();
+        });
+
+    </script>
+
+<style>
+    /* ========== DISCOUNT SLIDER ========== */
+    .discount-slider-container {
+        position: relative;
+        margin: 0 auto;
+        max-width: 1200px;
+        display: flex;
+        align-items: center;
+        gap: 0; /* Bỏ gap giữa buttons và wrapper */
+        margin-bottom: 0;
+        justify-content: center;
+    }
+    
+    .discount-slider-wrapper {
+        position: relative;
+        overflow: hidden;
+        border-radius: 12px;
+        flex: 1;
+        max-width: 100%; /* Chiếm toàn bộ width */
+        margin-bottom: 0;
+        order: 2;
+    }
+    
+    .discount-slider {
+        display: flex;
+        transition: transform 0.5s ease;
+        gap: 1rem;
+        padding: 0;
+    }
+    
+    .discount-slide-item {
+        flex: 0 0 calc(25% - 0.75rem); /* 4 cards per row, accounting for gap */
+        min-width: 0; /* Allow flex shrinking */
+    }
+    
+    .slider-btn {
+        background: rgba(232, 162, 176, 0.9);
+        border: none;
+        color: white;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        z-index: 10;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        flex-shrink: 0;
+        position: absolute; /* Đặt absolute để di chuyển ra ngoài */
+    }
+    
+    .slider-btn:hover {
+        background: rgba(201, 112, 137, 0.9);
+        transform: scale(1.1);
+    }
+    
+    .slider-btn-prev {
+        order: 1;
+        flex-shrink: 0;
+        left: -60px; /* Di chuyển ra ngoài bên trái */
+    }
+    
+    .slider-btn-next {
+        order: 3;
+        flex-shrink: 0;
+        right: -60px; /* Di chuyển ra ngoài bên phải */
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 1200px) {
+        .discount-slide-item {
+            flex: 0 0 calc(33.333% - 0.67rem); /* 3 cards per row */
+        }
+        
+        .slider-btn-prev {
+            left: -50px;
+        }
+        
+        .slider-btn-next {
+            right: -50px;
+        }
+    }
+    
+    @media (max-width: 992px) {
+        .discount-slide-item {
+            flex: 0 0 calc(50% - 0.5rem); /* 2 cards per row */
+        }
+        
+        .slider-btn-prev {
+            left: -45px;
+        }
+        
+        .slider-btn-next {
+            right: -45px;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .discount-slider-container {
+            gap: 10px;
+        }
+        
+        .discount-slider-wrapper {
+            max-width: calc(100% - 20px);
+        }
+        
+        .slider-btn {
+            display: none;
+        }
+        
+        .discount-slider {
+            padding: 0;
+        }
+        
+        .discount-slide-item {
+            flex: 0 0 calc(100% - 0rem); /* 1 card per row */
+        }
+    }
+    
+    /* ========== DISCOUNT CARDS ========== */
+    .discount-card {
+        background: white;
+        border: 1px solid rgba(232, 162, 176, 0.2);
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        height: 180px;
+        min-height: 180px;
+        width: 100%; /* Full width of container */
+    }
+    
+    .discount-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(232, 162, 176, 0.15);
+        border-color: rgba(232, 162, 176, 0.3);
+    }
+    
+    .discount-card-left {
+        background: linear-gradient(135deg, #FFE4F1 0%, #F8BBD9 50%, #E8A2B0 100%);
+        width: 60px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 20px 15px;
+        position: relative;
+        box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.3), 
+                    inset 0 -1px 2px rgba(232, 162, 176, 0.2);
+    }
+    
+    .discount-card-left::after {
+        content: '';
+        position: absolute;
+        right: -8px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 0;
+        height: 0;
+        border-top: 8px solid transparent;
+        border-bottom: 8px solid transparent;
+        border-left: 8px solid #E8A2B0;
+        filter: drop-shadow(1px 0 2px rgba(232, 162, 176, 0.3));
+    }
+    
+    .discount-card-right {
+        flex: 1;
+        padding: 18px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        height: 100%;
+        position: relative;
+    }
+    
+    .discount-card-right .discount-details {
+        margin-top: auto;
+    }
+    
+    .discount-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 8px;
+    }
+    
+    .discount-icon {
+        color: #FF6B9D;
+        font-size: 36px;
+        font-weight: bold;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+        filter: drop-shadow(0 3px 6px rgba(255, 107, 157, 0.3));
+        transition: all 0.3s ease;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    }
+    
+    .discount-info-icon {
+        width: 20px;
+        height: 20px;
+        background: rgba(0, 0, 0, 0.1);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #333;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-weight: bold;
+    }
+    
+    .discount-info-icon:hover {
+        background: rgba(0, 0, 0, 0.2);
+        transform: scale(1.1);
+    }
+    
+    .discount-title {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #2D1B2E;
+        margin-bottom: 8px;
+        font-family: 'Gilroy', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    }
+    
+    .discount-description {
+        font-size: 0.85rem;
+        color: #555;
+        margin-bottom: 10px;
+        line-height: 1.4;
+        font-weight: 500;
+        max-height: 2.8em;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
+    
+    .discount-details {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0;
+        margin-top: auto;
+        flex-wrap: nowrap;
+        gap: 8px;
+    }
+    
+    .discount-expiry {
+        font-size: 0.8rem;
+        color: #C97089;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+    
+    .discount-copy-btn {
+        background: linear-gradient(135deg, #E8A2B0 0%, #C97089 100%);
+        border: none;
+        color: white;
+        font-weight: 600;
+        padding: 8px 16px;
+        border-radius: 6px;
+        transition: all 0.3s ease;
+        font-size: 0.8rem;
+        cursor: pointer;
+        white-space: nowrap;
+        min-width: 100px;
+    }
+    
+    .discount-copy-btn:hover {
+        background: linear-gradient(135deg, #C97089 0%, #E8A2B0 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(232, 162, 176, 0.3);
+    }
+    
+    .discount-copy-btn.copied {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        transform: scale(0.95);
+        animation: copySuccess 0.3s ease;
+    }
+    
+    @keyframes copySuccess {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+        100% { transform: scale(0.95); }
+    }
+    
+    /* Responsive discount cards */
+    @media (max-width: 768px) {
+        .discount-card {
+            padding: 16px;
+        }
+        
+        .discount-details {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .discount-expiry {
+            margin-bottom: 8px;
+        }
+    }
+    </style>
 
 </body>
 
