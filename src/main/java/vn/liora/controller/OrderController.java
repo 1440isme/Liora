@@ -32,7 +32,6 @@ public class OrderController {
         return "admin/orders/detail";
     }
 
-    // API endpoint để lấy danh sách sản phẩm trong đơn hàng
     @GetMapping("/api/orders/{orderId}/items")
     public ResponseEntity<List<OrderProductResponse>> getOrderItems(@PathVariable Long orderId) {
         try {

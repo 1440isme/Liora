@@ -398,9 +398,37 @@ html {
 .address-modal.show {
     display: flex;
     align-items: center;
-    justify-content: center;
-    opacity: 1;
 }
+
+/* Làm cho nút Đánh giá đặt cạnh nút Mua lại */
+.compact-order-actions {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 10px !important;
+}
+
+.compact-order-actions .click-hint {
+    flex: 1 !important;
+}
+
+.compact-order-actions button.btn-primary {
+    margin-right: 0 !important;
+    background-color: transparent !important;
+    border-color: #ff9800 !important;
+    color: #ff9800 !important;
+}
+
+.compact-order-actions button.btn-primary:hover {
+    background-color: #ff9800 !important;
+    border-color: #ff9800 !important;
+    color: #fff !important;
+}
+
+.compact-order-actions button.btn-outline-success {
+    margin-left: 10px !important;
+}
+
 
 .address-modal-content {
     background: white;

@@ -155,8 +155,9 @@ class OrderDetailManager {
         // Order details - sử dụng trường total thay vì totalAmount
         const formattedAmount = new Intl.NumberFormat('vi-VN', {
             style: 'currency',
-            currency: 'VND'
-        }).format(order.total || 0);
+            currency: 'VND',
+            minimumFractionDigits: 0
+        }).format(order.total || 0).replace('₫', '₫');
         
         $('#totalAmount').text(formattedAmount);
         $('#summaryTotal').text(formattedAmount);
@@ -164,15 +165,17 @@ class OrderDetailManager {
         // Shipping fee và discount
         const shippingFee = new Intl.NumberFormat('vi-VN', {
             style: 'currency',
-            currency: 'VND'
-        }).format(order.shippingFee || 0);
+            currency: 'VND',
+            minimumFractionDigits: 0
+        }).format(order.shippingFee || 0).replace('₫', '₫');
         $('#shippingFee').text(shippingFee);
         $('#summaryShippingFee').text(shippingFee);
         
         const discount = new Intl.NumberFormat('vi-VN', {
             style: 'currency',
-            currency: 'VND'
-        }).format(order.totalDiscount || 0);
+            currency: 'VND',
+            minimumFractionDigits: 0
+        }).format(order.totalDiscount || 0).replace('₫', '₫');
         $('#discount').text(discount);
         $('#summaryDiscount').text(`-${discount}`);
         
@@ -180,8 +183,9 @@ class OrderDetailManager {
         const subtotal = (order.total || 0) - (order.shippingFee || 0) + (order.totalDiscount || 0);
         $('#subtotal').text(new Intl.NumberFormat('vi-VN', {
             style: 'currency',
-            currency: 'VND'
-        }).format(subtotal));
+            currency: 'VND',
+            minimumFractionDigits: 0
+        }).format(subtotal).replace('₫', '₫'));
         
         // Order notes - sử dụng trường note từ Order
         $('#orderNotes').text(order.note || 'Không có ghi chú');
@@ -292,13 +296,15 @@ class OrderDetailManager {
                         ${item.productPrice ? 
                             new Intl.NumberFormat('vi-VN', {
                                 style: 'currency',
-                                currency: 'VND'
-                            }).format(item.productPrice) : 
+                                currency: 'VND',
+                                minimumFractionDigits: 0
+                            }).format(item.productPrice).replace('₫', '₫') : 
                             (item.totalPrice && item.quantity ? 
                                 new Intl.NumberFormat('vi-VN', {
                                     style: 'currency',
-                                    currency: 'VND'
-                                }).format(item.totalPrice / item.quantity) : 'N/A'
+                                    currency: 'VND',
+                                    minimumFractionDigits: 0
+                                }).format(item.totalPrice / item.quantity).replace('₫', '₫') : 'N/A'
                             )
                         }
                     </td>
@@ -308,8 +314,9 @@ class OrderDetailManager {
                     <td class="fw-bold text-primary text-end">
                         ${new Intl.NumberFormat('vi-VN', {
                             style: 'currency',
-                            currency: 'VND'
-                        }).format(itemTotal)}
+                            currency: 'VND',
+                            minimumFractionDigits: 0
+                        }).format(itemTotal).replace('₫', '₫')}
                     </td>
                 </tr>
             `;
@@ -320,8 +327,9 @@ class OrderDetailManager {
         if (subtotalFromItems > 0) {
             $('#subtotal').text(new Intl.NumberFormat('vi-VN', {
                 style: 'currency',
-                currency: 'VND'
-            }).format(subtotalFromItems));
+                currency: 'VND',
+                minimumFractionDigits: 0
+            }).format(subtotalFromItems).replace('₫', '₫'));
         }
     }
 
@@ -563,3 +571,4 @@ function saveOrderStatus() {
         window.orderDetailManager.saveOrderStatus();
     }
 }
+

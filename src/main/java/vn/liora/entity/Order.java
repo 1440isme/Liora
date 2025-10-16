@@ -68,7 +68,7 @@ public class Order {
     private User user;
 
     @ManyToOne
-    @JoinColumn(name = "IdDiscount")
+    @JoinColumn(name = "IdDiscount", nullable = true)
     @JsonIgnore
     private Discount discount;
 
