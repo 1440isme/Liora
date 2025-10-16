@@ -204,7 +204,7 @@ public class PaymentServiceImpl implements PaymentService {
             try {
                 // Đảm bảo Order đã có đủ thông tin địa chỉ (district/ward)
                 // Nếu thiếu thì bỏ qua tạo GHN để không chặn IPN
-                if (order.getDistrict() != null && order.getWard() != null) {
+                if (order.getDistrictId() != null && order.getWardCode() != null) {
                     ghnShippingService.createShippingOrder(order);
                     log.info("Created GHN shipping order for Order {}", order.getIdOrder());
                 } else {

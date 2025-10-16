@@ -71,13 +71,13 @@ public class OrderServiceImpl implements IOrderService {
 
             // Map địa chỉ GHN từ request (nếu FE gửi) để tính phí chuẩn
             if (request.getDistrictId() != null) {
-                order.setDistrict(String.valueOf(request.getDistrictId()));
+                order.setDistrictId(request.getDistrictId());
             }
             if (request.getWardCode() != null) {
-                order.setWard(request.getWardCode());
+                order.setWardCode(request.getWardCode());
             }
-            if (request.getProvinceName() != null) {
-                order.setProvince(request.getProvinceName());
+            if (request.getProvinceId() != null) {
+                order.setProvinceId(request.getProvinceId());
             }
 
             List<OrderProduct> orderProducts = selected.stream()
@@ -102,7 +102,8 @@ public class OrderServiceImpl implements IOrderService {
                             .orElseThrow(() -> new AppException(ErrorCode.DISCOUNT_NOT_FOUND));
 
                     // Kiểm tra có thể áp dụng discount không (chỉ cho user đã đăng nhập)
-                    if (user != null && discountService.canApplyDiscount(request.getDiscountId(), user.getUserId(), subtotal)) {
+                    if (user != null
+                            && discountService.canApplyDiscount(request.getDiscountId(), user.getUserId(), subtotal)) {
                         // Tính discount amount
                         totalDiscount = discountService.calculateDiscountAmount(request.getDiscountId(), subtotal);
                         total = subtotal.subtract(totalDiscount);
@@ -149,7 +150,7 @@ public class OrderServiceImpl implements IOrderService {
             final Order savedOrder = orderRepository.save(order);
             orderProducts.forEach(op -> op.setOrder(savedOrder));
             orderProductRepository.saveAll(orderProducts);
-            
+
             // Cập nhật stock cho từng sản phẩm trong đơn hàng
             for (OrderProduct orderProduct : orderProducts) {
                 try {
@@ -160,23 +161,23 @@ public class OrderServiceImpl implements IOrderService {
                     // Cập nhật stock và sold count
                     productService.updateStock(product.getProductId(), newStock);
                     productService.updateSoldCount(product.getProductId(), product.getSoldCount() + orderedQuantity);
-                    
-                    log.info("Updated stock for product {}: {} -> {} (ordered: {})", 
+
+                    log.info("Updated stock for product {}: {} -> {} (ordered: {})",
                             product.getProductId(), currentStock, newStock, orderedQuantity);
-                            
+
                 } catch (Exception e) {
-                    log.error("Error updating stock for product {}: {}", 
+                    log.error("Error updating stock for product {}: {}",
                             orderProduct.getProduct().getProductId(), e.getMessage());
                     // Không throw exception để không rollback toàn bộ đơn hàng
                 }
             }
-            
+
             cartProductRepository.deleteAll(selected);
 
             // Tạo vận đơn GHN ngay khi đặt hàng nếu không dùng VNPAY (COD)
             try {
                 if (request.getPaymentMethod() != null && !"VNPAY".equalsIgnoreCase(request.getPaymentMethod())) {
-                    if (savedOrder.getDistrict() != null && savedOrder.getWard() != null) {
+                    if (savedOrder.getDistrictId() != null && savedOrder.getWardCode() != null) {
                         ghnShippingService.createShippingOrder(savedOrder);
                         log.info("Created GHN shipping order (COD) for Order {}", savedOrder.getIdOrder());
                     } else {
@@ -303,6 +304,7 @@ public class OrderServiceImpl implements IOrderService {
 
     @Autowired
     private ReviewRepository reviewRepository;
+
     @Override
     public List<OrderResponse> getMyOrdersPaginated(Long userId, int page, int size) {
         User user = userRepository.findById(userId)
@@ -333,20 +335,20 @@ public class OrderServiceImpl implements IOrderService {
     public List<OrderResponse> getAllOrders() {
         List<Order> orders = orderRepository.findAll();
         return orderMapper.toOrderResponseList(orders);
-//        List<Order> orders = orderRepository.findAll();
-//        List<OrderResponse> responses = orderMapper.toOrderResponseList(orders);
-//
-//        // Set hasReview cho từng order
-//        for (int i = 0; i < orders.size(); i++) {
-//            Order order = orders.get(i);
-//            OrderResponse response = responses.get(i);
-//
-//            // Kiểm tra xem có review nào cho đơn hàng này không
-//            boolean hasReview = reviewRepository.existsByOrderId(order.getIdOrder());
-//            response.setHasReview(hasReview);
-//        }
-//
-//        return responses;
+        // List<Order> orders = orderRepository.findAll();
+        // List<OrderResponse> responses = orderMapper.toOrderResponseList(orders);
+        //
+        // // Set hasReview cho từng order
+        // for (int i = 0; i < orders.size(); i++) {
+        // Order order = orders.get(i);
+        // OrderResponse response = responses.get(i);
+        //
+        // // Kiểm tra xem có review nào cho đơn hàng này không
+        // boolean hasReview = reviewRepository.existsByOrderId(order.getIdOrder());
+        // response.setHasReview(hasReview);
+        // }
+        //
+        // return responses;
     }
 
     @Override

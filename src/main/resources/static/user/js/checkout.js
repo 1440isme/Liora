@@ -1442,13 +1442,14 @@ class CheckoutPage {
         const email = $('#shippingGmail').val().trim();
         const province = $('#shippingProvince').val();
         const provinceNameText = $('#shippingProvince option:selected').text();
+        const districtName = $('#shippingDistrict option:selected').text();
         const districtIdRaw = $('#shippingDistrict').val();
         const wardCode = $('#shippingWard').val();
         const wardName = $('#shippingWard option:selected').text();
         const addressDetail = $('#shippingAddressDetail').val().trim();
 
         // Ghép địa chỉ chi tiết
-        const fullAddress = `${addressDetail}, ${wardName || wardCode || ''}, ${provinceNameText || province || ''}`;
+        const fullAddress = `${addressDetail}, ${wardName || wardCode || ''}, ${districtName || ''}, ${provinceNameText || province || ''}`;
 
         const paymentMethod = $('input[name="paymentMethod"]:checked').val();
         const notes = $('#orderNotes').val() || 'Không có ghi chú';
@@ -1484,7 +1485,7 @@ class CheckoutPage {
 
         // Chuẩn hoá dữ liệu địa chỉ cần cho BE tính phí GHN
         let districtId = districtIdRaw ? parseInt(districtIdRaw, 10) : null;
-        let provinceName = (provinceNameText || province || null);
+        let provinceId = province ? parseInt(province, 10) : null;
 
         const orderData = {
             // Thông tin giao hàng
@@ -1501,7 +1502,7 @@ class CheckoutPage {
             // Thông tin GHN để BE tính phí và lưu vào order.shippingFee
             districtId: Number.isFinite(districtId) ? districtId : null,
             wardCode: wardCode || null,
-            provinceName: provinceName || null
+            provinceId: Number.isFinite(provinceId) ? provinceId : null
         };
 
         // Debug: Log final order data

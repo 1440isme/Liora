@@ -78,7 +78,7 @@ public class PaymentController {
                             order.setOrderStatus("PAID");
                             // Tạo GHN ngay trong fallback dev nếu đủ thông tin địa chỉ
                             try {
-                                if (order.getDistrict() != null && order.getWard() != null) {
+                                if (order.getDistrictId() != null && order.getWardCode() != null) {
                                     ghnShippingService.createShippingOrder(order);
                                 }
                             } catch (Exception ignore) {

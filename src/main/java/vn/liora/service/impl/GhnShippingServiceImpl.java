@@ -263,11 +263,9 @@ public class GhnShippingServiceImpl implements IGhnShippingService {
             requestBody.put("to_phone", order.getPhone());
             requestBody.put("to_address", order.getAddressDetail());
             // GHN create API yêu cầu ward_code và district_id
-            requestBody.put("to_ward_code", order.getWard());
-            try {
-                requestBody.put("to_district_id", Integer.parseInt(order.getDistrict()));
-            } catch (Exception e) {
-                log.warn("Invalid order district id: {}", order.getDistrict());
+            requestBody.put("to_ward_code", order.getWardCode());
+            if (order.getDistrictId() != null) {
+                requestBody.put("to_district_id", order.getDistrictId());
             }
 
             // Nếu đã thanh toán online, COD = 0
@@ -306,8 +304,8 @@ public class GhnShippingServiceImpl implements IGhnShippingService {
                         .toName(order.getName())
                         .toPhone(order.getPhone())
                         .toAddress(order.getAddressDetail())
-                        .toWardCode(order.getWard())
-                        .toDistrictId((Integer) requestBody.get("to_district_id"))
+                        .toWardCode(order.getWardCode())
+                        .toDistrictId(order.getDistrictId())
                         .ghnStatus("PENDING")
                         .shippingFee(order.getShippingFee())
                         .build();
@@ -330,15 +328,9 @@ public class GhnShippingServiceImpl implements IGhnShippingService {
     public BigDecimal calculateOrderShippingFee(Order order) {
         try {
             // Map địa chỉ KH (guest hoặc user)
-            // Tạm thời: yêu cầu FE gửi districtId/wardCode khi đặt hàng hoặc đã set vào
-            // Order trước đó
-            Integer toDistrictId = null;
-            String toWardCode = null;
-            try {
-                toDistrictId = Integer.parseInt(order.getDistrict());
-            } catch (Exception ignore) {
-            }
-            toWardCode = order.getWard();
+            // Lấy districtId/wardCode trực tiếp từ Order entity
+            Integer toDistrictId = order.getDistrictId();
+            String toWardCode = order.getWardCode();
 
             if (toDistrictId == null || toWardCode == null) {
                 log.warn("Order missing district/ward for fee calculation. Using zero fee.");
