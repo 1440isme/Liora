@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="${brand.name + ' - Liora'}" th:if="${brand}">Thương hiệu - Liora</title>
-    <title>Thương hiệu - Liora</title>
+    <title>Sản phẩm bán chạy - Liora</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
@@ -33,6 +32,45 @@
             color: #E8A2B0 !important;
             text-decoration: none !important;
         }
+        
+        /* Hide numeric input arrows */
+        #quickViewModal input[type="number"]::-webkit-outer-spin-button,
+        #quickViewModal input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        
+        #quickViewModal input[type="number"] {
+            -moz-appearance: textfield;
+        }
+        
+        /* Breadcrumb styling */
+        .breadcrumb {
+            background: transparent;
+            border-radius: 0;
+            padding: 8px 0;
+            box-shadow: none;
+        }
+        
+        .breadcrumb-item a {
+            color: #6c757d;
+            transition: color 0.3s ease;
+        }
+        
+        .breadcrumb-item a:hover {
+            color: #E8A2B0;
+        }
+        
+        .breadcrumb-item.active {
+            color: #495057;
+            font-weight: 500;
+        }
+        
+        .breadcrumb-item + .breadcrumb-item::before {
+            content: "›";
+            color: #adb5bd;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -40,7 +78,18 @@
     <div th:replace="user/layout/user-header :: header"></div>
 
     <!-- Main Content -->
-    <div class="container py-4">
+    <div class="container py-2">
+        <!-- Breadcrumb -->
+        <nav aria-label="breadcrumb" class="mb-4">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item">
+                    <a href="/" class="text-decoration-none">Trang chủ</a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page">
+                    Sản phẩm bán chạy
+                </li>
+            </ol>
+        </nav>
         <div class="row">
             <!-- Sidebar Filters -->
             <div class="col-lg-2">
@@ -63,11 +112,11 @@
                             </select>
                         </div>
 
-                        <!-- Category Filter -->
+                        <!-- Brand Filter -->
                         <div class="mb-4">
-                            <label class="form-label fw-bold">Danh mục</label>
-                            <div id="categoryFilters">
-                                <!-- Categories will be loaded dynamically -->
+                            <label class="form-label fw-bold">Thương hiệu</label>
+                            <div id="brandFilters">
+                                <!-- Brands will be loaded dynamically -->
                             </div>
                         </div>
 
@@ -110,12 +159,13 @@
                 <!-- Results Info and Sort -->
                 <div class="d-flex justify-content-between align-items-center mb-1 mt-0">
                     <div>
-                        <h5 id="brandTitle" class="text-dark fw-bold mb-2" th:text="${brand.name}" th:if="${brand}">Thương hiệu</h5>
+                        <h5 class="text-dark fw-bold mb-2">Sản phẩm bán chạy</h5>
                         <span id="resultsCount" class="fw-bold text-dark">Hiển thị 0 sản phẩm</span>
                     </div>
                     <div>
                         <select class="form-select d-inline-block w-auto" id="sortSelect">
                             <option value="">Sắp xếp: Mặc định</option>
+                            <option value="sold,desc">Bán chạy nhất</option>
                             <option value="name,asc">Tên (A-Z)</option>
                             <option value="name,desc">Tên (Z-A)</option>
                             <option value="price,desc">Giá (Cao -> Thấp)</option>
@@ -168,18 +218,18 @@
 
     <!-- Custom JavaScript -->
     <script th:src="@{/user/js/main.js}"></script>
-    <script th:src="@{/user/js/brand-products.js}"></script>
+    <script th:src="@{/user/js/bestseller-products-page.js}"></script>
     <script>
-        // Initialize brand products page
+        // Initialize bestseller products page
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM loaded, checking BrandProductsManager...');
-            console.log('window.brandProductsManager:', window.brandProductsManager);
+            console.log('DOM loaded, checking BestsellerProductsPageManager...');
+            console.log('window.bestsellerProductsPageManager:', window.bestsellerProductsPageManager);
             
-            if (window.brandProductsManager) {
-                console.log('BrandProductsManager found, initializing...');
-                window.brandProductsManager.init();
+            if (window.bestsellerProductsPageManager) {
+                console.log('BestsellerProductsPageManager found, initializing...');
+                window.bestsellerProductsPageManager.init();
             } else {
-                console.error('BrandProductsManager not found!');
+                console.error('BestsellerProductsPageManager not found!');
             }
         });
     </script>

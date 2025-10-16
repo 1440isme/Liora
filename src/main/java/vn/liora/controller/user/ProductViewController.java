@@ -39,6 +39,30 @@ public class ProductViewController {
         }
     }
 
+    @GetMapping("/bestseller-products")
+    public String getBestsellerProducts(Model model) {
+        try {
+            // Add categories for navigation
+            model.addAttribute("parentCategories", categoryService.getCategoryTree());
+            return "user/products/bestseller-products";
+        } catch (Exception e) {
+            // If error, redirect to home
+            return "redirect:/";
+        }
+    }
+
+    @GetMapping("/newest-products")
+    public String getNewestProducts(Model model) {
+        try {
+            // Add categories for navigation
+            model.addAttribute("parentCategories", categoryService.getCategoryTree());
+            return "user/products/newest-products";
+        } catch (Exception e) {
+            // If error, redirect to home
+            return "redirect:/";
+        }
+    }
+
     @GetMapping("/{id}")
     public String productDetail(@PathVariable Long id, 
                                @RequestParam(required = false) String from,
@@ -83,30 +107,4 @@ public class ProductViewController {
         }
     }
 
-    // API endpoint for related products
-    @GetMapping("/api/related/{productId}")
-    public ResponseEntity<List<Product>> getRelatedProducts(@PathVariable Long productId) {
-        try {
-            // Get the current product
-            ProductResponse currentProductResponse = productService.findById(productId);
-            if (currentProductResponse == null) {
-                return ResponseEntity.notFound().build();
-            }
-
-            // Get related products from the same category, excluding current product
-            List<Product> relatedProducts = productService.findByCategoryAndIdNot(
-                currentProductResponse.getCategoryId(), 
-                productId
-            );
-
-            // Limit to 4 products
-            if (relatedProducts.size() > 4) {
-                relatedProducts = relatedProducts.subList(0, 4);
-            }
-
-            return ResponseEntity.ok(relatedProducts);
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().build();
-        }
-    }
 }

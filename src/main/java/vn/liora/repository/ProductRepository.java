@@ -65,9 +65,6 @@ public interface ProductRepository extends JpaRepository<Product,Long> {
             "OR LOWER(p.description) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     Page<Product> searchActiveAvailableProducts(@Param("keyword") String keyword, Pageable pageable);
 
-    @Query("SELECT p FROM Product p WHERE p.isActive = true AND p.available = true " +
-            "ORDER BY p.createdDate DESC")
-    List<Product> findNewestProducts(Pageable pageable);
     // ====== Các query sort ======
     @Query("SELECT p FROM Product p WHERE p.isActive = true AND p.available = true " +
             "ORDER BY p.price ASC")
@@ -121,4 +118,27 @@ public interface ProductRepository extends JpaRepository<Product,Long> {
     
     // ====== RELATED PRODUCTS ======
     List<Product> findByCategoryCategoryIdAndProductIdNotAndIsActiveTrue(Long categoryId, Long productId);
+    
+    // ====== OPTIMIZED QUERIES FOR FRONTEND ======
+    // Best selling products - optimized for frontend
+    @Query("SELECT p FROM Product p WHERE p.isActive = true AND p.available = true " +
+           "AND p.soldCount > 0 ORDER BY p.soldCount DESC")
+    List<Product> findBestSellingProducts(Pageable pageable);
+    
+    // Newest products - optimized for frontend  
+    @Query("SELECT p FROM Product p WHERE p.isActive = true AND p.available = true " +
+           "ORDER BY p.createdDate DESC")
+    List<Product> findNewestProducts(Pageable pageable);
+    
+    // Best selling by category
+    @Query("SELECT p FROM Product p WHERE p.isActive = true AND p.available = true " +
+           "AND p.soldCount > 0 AND p.category.categoryId = :categoryId " +
+           "ORDER BY p.soldCount DESC")
+    List<Product> findBestSellingByCategory(@Param("categoryId") Long categoryId, Pageable pageable);
+    
+    // Best selling by brand
+    @Query("SELECT p FROM Product p WHERE p.isActive = true AND p.available = true " +
+           "AND p.soldCount > 0 AND p.brand.brandId = :brandId " +
+           "ORDER BY p.soldCount DESC")
+    List<Product> findBestSellingByBrand(@Param("brandId") Long brandId, Pageable pageable);
 }

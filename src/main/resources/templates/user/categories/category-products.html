@@ -21,6 +21,18 @@
 
     <!-- Custom CSS -->
     <link rel="stylesheet" th:href="@{/user/css/style.css}">
+    
+    <!-- Inline CSS for hover effect -->
+    <style>
+        .product-name-link:hover {
+            color: #E8A2B0 !important;
+            text-decoration: none !important;
+        }
+        .brand-link:hover {
+            color: #E8A2B0 !important;
+            text-decoration: none !important;
+        }
+    </style>
 </head>
 <body>
     <!-- Header -->
@@ -30,7 +42,7 @@
     <div class="container py-4">
         <div class="row">
             <!-- Sidebar Filters -->
-            <div class="col-lg-3">
+            <div class="col-lg-2">
                 <div class="card">
                     <div class="card-header">
                         <h5 class="mb-0">Bộ lọc sản phẩm</h5>
@@ -92,10 +104,10 @@
             </div>
 
             <!-- Products Grid -->
-            <div class="col-lg-9">
+            <div class="col-lg-10">
 
                 <!-- Results Info and Sort -->
-                <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-1 mt-0">
                     <div>
                         <h5 id="categoryTitle" class="text-dark fw-bold mb-2" style="display: none;"></h5>
                         <span id="resultsCount" class="fw-bold text-dark">Hiển thị 0 sản phẩm</span>

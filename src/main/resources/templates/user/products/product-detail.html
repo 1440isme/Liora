@@ -27,6 +27,34 @@
 
     <!-- Product Detail Gallery Styles -->
     <style>
+        /* Breadcrumb styling */
+        .breadcrumb {
+            background: transparent;
+            border-radius: 0;
+            padding: 8px 0;
+            box-shadow: none;
+        }
+        
+        .breadcrumb-item a {
+            color: #6c757d;
+            transition: color 0.3s ease;
+        }
+        
+        .breadcrumb-item a:hover {
+            color: #E8A2B0;
+        }
+        
+        .breadcrumb-item.active {
+            color: #495057;
+            font-weight: 500;
+        }
+        
+        .breadcrumb-item + .breadcrumb-item::before {
+            content: "›";
+            color: #adb5bd;
+            font-weight: bold;
+        }
+        
         /* Namespace: product-detail-gallery - Tránh xung đột với global styles */
         .product-detail-gallery {
             position: relative;
@@ -452,9 +480,8 @@
     <div th:replace="~{user/layout/user-header :: header}"></div>
 
     <!-- Breadcrumb -->
-    <nav aria-label="breadcrumb" class="bg-light py-3">
-        <div class="container">
-
+    <div class="container py-4">
+        <nav aria-label="breadcrumb" class="mb-4">
             <ol class="breadcrumb mb-0">
                 <!-- 1. Trang chủ (luôn hiển thị) -->
                 <li class="breadcrumb-item">
@@ -476,8 +503,8 @@
                 <!-- 4. Product name (luôn hiển thị) -->
                 <li class="breadcrumb-item active" th:text="${product.name}">Product Name</li>
             </ol>
-        </div>
-    </nav>
+        </nav>
+    </div>
 
     <!-- Product Detail Section -->
     <div class="product-detail-page">
@@ -565,27 +592,28 @@
                                     <span class="product-detail-sales-count fw-semibold"
                                         th:text="${product.soldCount != null ? product.soldCount : 0}">0</span>
                                 </div>
-                                <div class="product-detail-progress" style="height: 8px;">
-                                    <div class="progress-bar product-detail-progress-bar"
-                                        th:style="'width: ' + ${#numbers.formatDecimal(T(vn.liora.util.SalesProgressUtil).calculateProgress(product.soldCount != null ? product.soldCount : 0), 1, 1)} + '%'"
-                                        role="progressbar">
-                                    </div>
-                                </div>
-
                             </div>
-
-                            <!-- Brand and Category -->
-                            <div class="mb-3">
-                                <div class="d-flex flex-wrap gap-3">
-                                    <div>
-                                        <span class="text-muted">Thương hiệu:</span>
-                                        <span class="product-detail-brand fw-semibold"
-                                            th:text="${product.brandName}">Brand Name</span>
-                                    </div>
-                                    <div>
-                                        <span class="text-muted">Danh mục:</span>
-                                        <span class="fw-semibold" th:text="${product.categoryName}">Category Name</span>
-                                    </div>
+                            
+                        </div>
+                        
+                        <!-- Brand and Category -->
+                        <div class="mb-3">
+                            <div class="d-flex flex-wrap gap-3">
+                                <div>
+                                    <span class="text-muted">Thương hiệu:</span>
+                                    <a th:href="@{'/brand/' + ${product.brandId}}" class="product-detail-brand fw-semibold text-decoration-none" 
+                                       th:text="${product.brandName}" 
+                                       style="color: var(--pink-primary) !important; transition: color 0.3s ease;"
+                                       onmouseover="this.style.color='var(--pink-dark) !important'"
+                                       onmouseout="this.style.color='var(--pink-primary) !important'">Brand Name</a>
+                                </div>
+                                <div>
+                                    <span class="text-muted">Danh mục:</span>
+                                    <a th:href="@{'/product/view/category/' + ${product.categoryId}}" class="fw-semibold text-decoration-none" 
+                                       th:text="${product.categoryName}"
+                                       style="color: var(--pink-primary) !important; transition: color 0.3s ease;"
+                                       onmouseover="this.style.color='var(--pink-dark) !important'"
+                                       onmouseout="this.style.color='var(--pink-primary) !important'">Category Name</a>
                                 </div>
                             </div>
 
@@ -617,6 +645,10 @@
                                         th:disabled="${product.stock == 0 or !product.isActive}">+</button>
                                 </div>
                             </div>
+                            <div class="d-flex align-items-center">
+                                <button class="btn btn-outline-secondary btn-sm" onclick="decreaseQuantity()" th:disabled="${product.stock == 0 or !product.isActive}">-</button>
+                                <input type="number" class="form-control text-center mx-2 quantity-input" style="width: 80px;" value="1" min="1" th:max="${T(java.lang.Math).min(product.stock, 99)}" id="quantityInput" oninput="validateQuantityInput()" onblur="validateQuantityOnBlur()" th:disabled="${product.stock == 0 or !product.isActive}">
+                                <button class="btn btn-outline-secondary btn-sm" onclick="increaseQuantity()" th:disabled="${product.stock == 0 or !product.isActive}">+</button>
 
                             <!-- Stock Info -->
                             <div class="mb-4" th:if="${product.stock > 0 and product.isActive}">
@@ -710,6 +742,32 @@
         </div>
     </div>
 
+       <!-- Promotions Section -->
+       <div class="container my-5">
+           <div class="row">
+               <div class="col-12">
+                   <h2 class="fw-bold mb-4 text-center text-uppercase">Khuyến mãi dành cho bạn</h2>
+                   
+                   <!-- Slider Container -->
+                   <div class="discount-slider-container">
+                       <!-- Navigation Arrows -->
+                       <button class="slider-btn slider-btn-prev" onclick="slideDiscounts('prev')">
+                           <i class="fas fa-chevron-left"></i>
+                       </button>
+                       
+                       <div class="discount-slider-wrapper">
+                           <div id="discounts-container" class="discount-slider">
+                               <!-- Discounts will be loaded here by JavaScript -->
+                           </div>
+                       </div>
+                       
+                       <button class="slider-btn slider-btn-next" onclick="slideDiscounts('next')">
+                           <i class="fas fa-chevron-right"></i>
+                       </button>
+                   </div>
+               </div>
+           </div>
+       </div>
     <!-- Product Detail Tabs Section -->
     <section class="product-info-wrapper py-4">
         <div class="container product-info-section my-3">
@@ -760,6 +818,9 @@
                 </div>
             </div>
     </section>
+
+    <!-- Include Similar Products Section -->
+    <div th:replace="user/products/fragments/_similar-products :: similarProductsSection"></div>
 
     <!-- Footer -->
     <div th:replace="~{user/layout/user-footer :: footer}"></div>
@@ -851,12 +912,13 @@
         function increaseQuantity() {
             const quantityInput = document.getElementById('quantityInput');
             const maxStock = parseInt(quantityInput.getAttribute('max'));
+            const maxAllowed = Math.min(maxStock, 99); // Tối đa 99 sản phẩm
             const currentValue = parseInt(quantityInput.value);
-
-            if (currentValue < maxStock) {
+            
+            if (currentValue < maxAllowed) {
                 quantityInput.value = currentValue + 1;
             } else {
-                showToast(`Số lượng tối đa là ${maxStock} sản phẩm!`, 'error');
+                showNotification(`Số lượng tối đa là ${maxAllowed} sản phẩm!`, 'error');
             }
         }
 
@@ -873,15 +935,16 @@
         function validateQuantityInput() {
             const quantityInput = document.getElementById('quantityInput');
             const maxStock = parseInt(quantityInput.getAttribute('max'));
+            const maxAllowed = Math.min(maxStock, 99); // Tối đa 99 sản phẩm
             const currentValue = parseInt(quantityInput.value);
 
             if (quantityInput.value === '' || quantityInput.value === '0') {
                 return; // Allow empty or 0 while typing
             }
-
-            if (currentValue > maxStock) {
-                quantityInput.value = maxStock;
-                showToast(`Số lượng tối đa là ${maxStock} sản phẩm!`, 'error');
+            
+            if (currentValue > maxAllowed) {
+                quantityInput.value = maxAllowed;
+                showNotification(`Số lượng tối đa là ${maxAllowed} sản phẩm!`, 'error');
             }
         }
 
@@ -889,13 +952,14 @@
         function validateQuantityOnBlur() {
             const quantityInput = document.getElementById('quantityInput');
             const maxStock = parseInt(quantityInput.getAttribute('max'));
+            const maxAllowed = Math.min(maxStock, 99); // Tối đa 99 sản phẩm
             const currentValue = parseInt(quantityInput.value);
 
             if (quantityInput.value === '' || quantityInput.value === '0' || currentValue < 1) {
                 quantityInput.value = 1;
-            } else if (currentValue > maxStock) {
-                quantityInput.value = maxStock;
-                showToast(`Số lượng tối đa là ${maxStock} sản phẩm!`, 'error');
+            } else if (currentValue > maxAllowed) {
+                quantityInput.value = maxAllowed;
+                showNotification(`Số lượng tối đa là ${maxAllowed} sản phẩm!`, 'error');
             }
         }
 
@@ -911,9 +975,9 @@
                 // Check if it's discontinued or out of stock
                 const isDiscontinued = /*[[${!product.isActive}]]*/ false;
                 if (isDiscontinued) {
-                    showToast('Sản phẩm đã ngừng kinh doanh!', 'error');
+                    showNotification('Sản phẩm đã ngừng kinh doanh!', 'error');
                 } else {
-                    showToast('Sản phẩm hiện tại đã hết hàng!', 'error');
+                    showNotification('Sản phẩm hiện tại đã hết hàng!', 'error');
                 }
                 return;
             }
@@ -943,12 +1007,12 @@
 
             // Validate input
             if (!productId) {
-                showToast('Lỗi: Không tìm thấy thông tin sản phẩm!', 'error');
+                showNotification('Lỗi: Không tìm thấy thông tin sản phẩm!', 'error');
                 return;
             }
 
             if (quantity <= 0) {
-                showToast('Số lượng phải lớn hơn 0!', 'error');
+                showNotification('Số lượng phải lớn hơn 0!', 'error');
                 return;
             }
 
@@ -1016,7 +1080,7 @@
             }
 
             // Show success notification
-            showToast(`Đã thêm ${quantity} sản phẩm "${productName}" vào giỏ hàng!`, 'success');
+            showNotification(`Đã thêm ${quantity} sản phẩm "${productName}" vào giỏ hàng!`, 'success');
             console.log('Add to cart completed');
         }
 
@@ -1194,10 +1258,9 @@
             // Auto remove after 5 seconds
             setTimeout(() => {
                 if (toast.parentNode) {
-                    toast.style.transform = 'translateX(100%)';
-                    setTimeout(() => toast.remove(), 300);
+                    toast.parentNode.removeChild(toast);
                 }
-            }, 5000);
+            }, 4000);
         }
 
         // Confirm dialog function
@@ -1447,7 +1510,7 @@
             if (navigator.clipboard && window.isSecureContext) {
                 navigator.clipboard.writeText(code).then(() => {
                     console.log('Clipboard API success');
-                    showToast(`Đã sao chép mã "${code}"`, 'success');
+                    showNotification(`Đã sao chép mã "${code}"`, 'success');
                     updateButtonState(button, code);
                 }).catch(err => {
                     console.error('Clipboard API failed:', err);
@@ -1477,14 +1540,14 @@
             try {
                 const successful = document.execCommand('copy');
                 if (successful) {
-                    showToast(`Đã sao chép mã "${text}"`, 'success');
+                    showNotification(`Đã sao chép mã "${text}"`, 'success');
                     updateButtonState(button, text);
                 } else {
-                    showToast('Không thể sao chép mã', 'error');
+                    showNotification('Không thể sao chép mã', 'error');
                 }
             } catch (err) {
                 console.error('Fallback copy failed:', err);
-                showToast('Không thể sao chép mã', 'error');
+                showNotification('Không thể sao chép mã', 'error');
             }
 
             document.body.removeChild(textArea);
@@ -1543,6 +1606,15 @@
             });
         });
     </script>
+
+    <!-- Hidden input để lấy product ID -->
+    <input type="hidden" id="productId" th:value="${product.productId}" />
+
+    <!-- Include CSS -->
+    <link rel="stylesheet" th:href="@{/user/css/similar-products.css}">
+
+    <!-- Include JavaScript -->
+    <script th:src="@{/user/js/similar-products.js}"></script>
 </body>
 
 </html>
