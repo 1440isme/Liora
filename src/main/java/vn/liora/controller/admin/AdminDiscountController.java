@@ -243,7 +243,7 @@ public class AdminDiscountController {
                     .map(discountMapper::toDiscountResponse)
                     .toList();
             response.setResult(discountResponses);
-            response.setMessage("Lấy danh sách mã giảm giá không hoạt động thành công");
+            response.setMessage("Lấy danh sách mã giảm giá ngưng hoạt động thành công");
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             response.setCode(500);

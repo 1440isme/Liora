@@ -270,18 +270,53 @@ function createReviewRow(review, index) {
             <td class="text-center">${visibility}</td>
             <td class="text-center">
                 <div class="btn-group btn-group-sm" role="group">
-                    <button type="button" class="btn btn-outline-info" onclick="viewReviewDetail(${review.reviewId})" title="Xem chi tiết">
-                        <i class="mdi mdi-eye"></i>
-                    </button>
                     <button type="button" class="btn btn-outline-${review.isVisible ? 'warning' : 'success'}" 
-                            onclick="updateReviewVisibility(${review.reviewId}, ${review.isVisible})" 
-                            title="${review.isVisible ? 'Ẩn' : 'Hiển thị'}">
+                            onclick="toggleReviewVisibility(${review.reviewId}, ${review.isVisible})" 
+                            title="${review.isVisible ? 'Ẩn đánh giá' : 'Hiển thị đánh giá'}">
                         <i class="mdi mdi-${review.isVisible ? 'eye-off' : 'eye'}"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-info" onclick="viewReviewDetail(${review.reviewId})" title="Xem chi tiết">
+                        <i class="mdi mdi-information-outline"></i>
                     </button>
                 </div>
             </td>
         </tr>
     `;
+}
+
+function toggleReviewVisibility(reviewId, currentVisibility) {
+    const newVisibility = !currentVisibility;
+    const action = newVisibility ? 'hiển thị' : 'ẩn';
+    
+    // Lưu thông tin vào modal
+    $('#confirmReviewId').val(reviewId);
+    $('#confirmNewVisibility').val(newVisibility);
+    $('#confirmActionText').text(action);
+    
+    // Hiển thị modal xác nhận
+    $('#confirmVisibilityModal').modal('show');
+}
+
+// Function xác nhận
+function confirmToggleVisibility() {
+    const reviewId = $('#confirmReviewId').val();
+    const newVisibility = $('#confirmNewVisibility').val() === 'true';
+    const action = newVisibility ? 'hiển thị' : 'ẩn';
+    
+    $.ajax({
+        url: `/admin/api/reviews/${reviewId}/visibility`,
+        method: 'PUT',
+        data: { isVisible: newVisibility },
+        success: function(response) {
+            $('#confirmVisibilityModal').modal('hide');
+            showAlert(`Đã ${action} đánh giá thành công`, 'success');
+            loadReviews();
+            loadStatistics();
+        },
+        error: function(xhr) {
+            showAlert('Lỗi khi cập nhật trạng thái', 'error');
+        }
+    });
 }
 
 // Generate stars HTML

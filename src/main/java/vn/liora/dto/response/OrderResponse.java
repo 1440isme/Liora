@@ -29,4 +29,5 @@ public class OrderResponse {
     Long discountId;
     String discountName;
     BigDecimal discountValue;
+    private Boolean hasReview = false;
 }
