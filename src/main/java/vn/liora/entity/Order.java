@@ -47,11 +47,6 @@ public class Order {
 
 
     @ManyToOne
-    @JoinColumn(name = "IdAddress", nullable = true)
-    @JsonIgnore
-    private Address address;
-
-    @ManyToOne
     @JoinColumn(name = "IdUser", nullable = true)
     @JsonIgnore
     private User user;

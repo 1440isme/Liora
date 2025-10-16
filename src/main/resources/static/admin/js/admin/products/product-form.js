@@ -7,7 +7,7 @@ class ProductFormManager {
         this.submitText = document.getElementById('submitText');
         this.isEditMode = false;
         this.productId = null;
-        
+
         this.init();
     }
 
@@ -21,11 +21,11 @@ class ProductFormManager {
         try {
             const response = await fetch('/admin/api/categories/all');
             const data = await response.json();
-            
+
             if (data.result) {
                 const categorySelect = document.getElementById('categoryId');
                 categorySelect.innerHTML = '<option value="">Chọn danh mục</option>';
-                
+
                 data.result.forEach(category => {
                     const option = document.createElement('option');
                     option.value = category.categoryId;
@@ -43,11 +43,11 @@ class ProductFormManager {
         try {
             const response = await fetch('/admin/api/brands/all');
             const data = await response.json();
-            
+
             if (data.result) {
                 const brandSelect = document.getElementById('brandId');
                 brandSelect.innerHTML = '<option value="">Chọn thương hiệu</option>';
-                
+
                 data.result.forEach(brand => {
                     const option = document.createElement('option');
                     option.value = brand.brandId;
@@ -67,14 +67,14 @@ class ProductFormManager {
             console.log('[PRODUCT-FORM] Skipping setup for add page');
             return;
         }
-        
+
         this.form.addEventListener('submit', (e) => this.handleSubmit(e));
     }
 
     setEditMode(productId) {
         this.isEditMode = true;
         this.productId = productId;
-        
+
         // Update submit button text
         const submitText = document.getElementById('submitText');
         if (submitText) {
@@ -84,18 +84,18 @@ class ProductFormManager {
 
     async handleSubmit(e) {
         e.preventDefault();
-        
+
         if (!this.validateForm()) {
             return;
         }
-    
+
         this.setLoading(true);
-    
+
         try {
             const formData = this.getFormData();
             const url = this.isEditMode ? `/admin/api/products/${this.productId}` : '/admin/api/products';
             const method = this.isEditMode ? 'PUT' : 'POST';
-    
+
             const response = await fetch(url, {
                 method: method,
                 headers: {
@@ -103,9 +103,9 @@ class ProductFormManager {
                 },
                 body: JSON.stringify(formData)
             });
-    
+
             const result = await response.json();
-    
+
             if (response.ok) {
                 this.showNotification(result.message || 'Thành công!', 'success');
                 if (!this.isEditMode) {
@@ -127,9 +127,15 @@ class ProductFormManager {
     }
 
     getFormData() {
+        const descriptionEl = document.getElementById('description');
+        // Nếu CKEditor đã khởi tạo, lấy dữ liệu từ editor
+        const editorHtml = (window.productDescriptionEditor && typeof window.productDescriptionEditor.getData === 'function')
+            ? window.productDescriptionEditor.getData()
+            : (descriptionEl ? descriptionEl.value : '');
+
         return {
             name: document.getElementById('name').value,
-            description: document.getElementById('description').value,
+            description: editorHtml,
             price: parseFloat(document.getElementById('price').value),
             brandId: parseInt(document.getElementById('brandId').value),
             categoryId: parseInt(document.getElementById('categoryId').value),
@@ -145,7 +151,7 @@ class ProductFormManager {
         requiredFields.forEach(fieldId => {
             const field = document.getElementById(fieldId);
             const value = field.value.trim();
-            
+
             if (!value) {
                 field.classList.add('is-invalid');
                 isValid = false;

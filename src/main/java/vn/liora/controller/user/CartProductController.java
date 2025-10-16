@@ -63,4 +63,24 @@ public class CartProductController {
         cartProductService.removeProductsInCart(idCart, null);
         return ResponseEntity.ok().build();
     }
+
+//    // Xóa một sản phẩm cụ thể khỏi giỏ hàng
+//    @DeleteMapping("/{cartProductId}")
+//    public ResponseEntity<Void> removeCartProduct(
+//            @PathVariable Long idCart,
+//            @PathVariable Long cartProductId
+//    ) {
+//        cartProductService.removeProductsInCart(idCart, List.of(cartProductId));
+//        return ResponseEntity.ok().build();
+//    }
+
+    // Xóa một sản phẩm không tồn tại khỏi giỏ hàng
+    @DeleteMapping("/unavailable/{cartProductId}")
+    public ResponseEntity<Void> removeUnavailableCartProduct(
+            @PathVariable Long idCart,
+            @PathVariable Long cartProductId
+    ) {
+        cartProductService.removeProductsInCart(idCart, List.of(cartProductId));
+        return ResponseEntity.ok().build();
+    }
 }

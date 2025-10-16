@@ -81,7 +81,7 @@ class DiscountManager {
         }
     }
 
-// ✅ THÊM: Fill form với dữ liệu
+    // ✅ THÊM: Fill form với dữ liệu
     fillFormWithData(discount) {
         $('#discountId').val(discount.discountId);
         $('#name').val(discount.name);
@@ -228,7 +228,7 @@ class DiscountManager {
 
     handleApiError(response, data) {
         console.error('API Error:', response.status, data);
-        
+
         if (response.status === 400) {
             // Bad Request - validation errors
             if (data.errors && Array.isArray(data.errors)) {
@@ -367,17 +367,21 @@ class DiscountManager {
                                 'Content-Type': 'application/json'
                             },
                             body: JSON.stringify({
-                                refreshToken: refreshToken
+                                token: refreshToken
                             })
                         });
 
                         if (refreshResponse.ok) {
                             const refreshData = await refreshResponse.json();
-                            localStorage.setItem('access_token', refreshData.result.accessToken);
-                            localStorage.setItem('refresh_token', refreshData.result.refreshToken);
+                            // Backend trả về AuthenticationResponse { token, authenticated }
+                            const newToken = (refreshData?.result && refreshData.result.token) || refreshData?.token;
+                            if (newToken) {
+                                localStorage.setItem('access_token', newToken);
+                                try { document.cookie = `access_token=${newToken}; path=/; SameSite=Lax`; } catch (_) { }
+                            }
 
                             // Retry the original request with new token
-                            headers['Authorization'] = `Bearer ${refreshData.result.accessToken}`;
+                            if (newToken) headers['Authorization'] = `Bearer ${newToken}`;
 
                             const retryResponse = await fetch(url, {
                                 method: method,
@@ -485,10 +489,10 @@ class DiscountManager {
             userUsageLimit: $('#userUsageLimit').val() ? parseInt($('#userUsageLimit').val()) : null,
             isActive: $('#isActive').is(':checked')
         };
-    
+
         // ✅ THÊM: Log dữ liệu để debug
         console.log('Prepared form data:', formData);
-        
+
         return formData;
     }
 
@@ -521,7 +525,7 @@ class DiscountManager {
                             <div class="col-6">
                                 <strong>Trạng thái:</strong><br>
                                 <span class="badge ${isActive ? 'bg-success' : 'bg-secondary'}">
-                                    ${isActive ? 'Hoạt động' : 'Không hoạt động'}
+                                    ${isActive ? 'Hoạt động' : 'Ngưng hoạt động'}
                                 </span>
                             </div>
                         </div>
@@ -841,10 +845,10 @@ class DiscountManager {
                             title="Chỉnh sửa">
                         <i class="mdi mdi-pencil"></i>
                     </button>
-                    <button type="button" class="btn btn-sm btn-outline-warning" 
-                            onclick="discountManager.updateDiscountStatus(${discount.discountId})"
-                            title="Cập nhật trạng thái">
-                        <i class="mdi mdi-toggle-switch"></i>
+                    <button type="button" class="btn btn-sm ${discount.isActive ? 'btn-outline-warning' : 'btn-outline-success'}" 
+                            onclick="discountManager.toggleDiscountStatus(${discount.discountId})"
+                            title="${discount.isActive ? 'Tạm dừng' : 'Kích hoạt'}">
+                        <i class="mdi mdi-${discount.isActive ? 'pause' : 'play'}"></i>
                     </button>
                     <button type="button" class="btn btn-sm btn-outline-danger" 
                             onclick="discountManager.deleteDiscount(${discount.discountId}, '${discount.name}')"
@@ -857,6 +861,43 @@ class DiscountManager {
     `;
     }
 
+    async toggleDiscountStatus(discountId) {
+        try {
+            const discount = this.discounts.find(d => d.discountId === discountId);
+            if (!discount) {
+                this.showAlert('error', 'Lỗi', 'Không tìm thấy mã giảm giá');
+                return;
+            }
+
+            const newStatus = !discount.isActive;
+            
+            const response = await fetch(`${this.baseUrl}/${discountId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    isActive: newStatus
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Không thể cập nhật trạng thái mã giảm giá');
+            }
+
+            this.showAlert('success', 'Thành công', 'Cập nhật trạng thái mã giảm giá thành công');
+            
+            // Tải lại dữ liệu và áp dụng lại bộ lọc hiện tại
+            await this.loadDiscounts();
+            this.filterDiscounts(); // Áp dụng lại bộ lọc hiện tại
+            await this.loadStatistics();
+
+        } catch (error) {
+            console.error('Error toggling discount status:', error);
+            this.showAlert('error', 'Lỗi', 'Không thể cập nhật trạng thái mã giảm giá');
+        }
+    }
+    
     async viewDiscountDetail(discountId) {
         try {
             const response = await fetch(`${this.baseUrl}/${discountId}`);
@@ -1212,13 +1253,13 @@ class DiscountManager {
         const endDate = new Date(discount.endDate);
 
         if (!discount.isActive) {
-            return 'text-secondary fw-bold'; 
+            return 'text-secondary fw-bold';
         } else if (endDate < now) {
-            return 'text-danger fw-bold'; 
+            return 'text-danger fw-bold';
         } else if (startDate > now) {
-            return 'text-warning fw-bold'; 
+            return 'text-warning fw-bold';
         } else {
-            return 'text-success fw-bold'; 
+            return 'text-success fw-bold';
         }
     }
 
@@ -1228,7 +1269,7 @@ class DiscountManager {
         const endDate = new Date(discount.endDate);
 
         if (!discount.isActive) {
-            return 'Không hoạt động';
+            return 'Ngưng hoạt động';
         } else if (endDate < now) {
             return 'Đã hết hạn';
         } else if (startDate > now) {
@@ -1299,7 +1340,7 @@ function resetForm() {
 }
 
 // Initialize when document is ready
-$(document).ready(function() {
+$(document).ready(function () {
     window.discountManager = new DiscountManager();
 });
 

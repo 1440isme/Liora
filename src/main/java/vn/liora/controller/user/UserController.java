@@ -6,11 +6,13 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import vn.liora.dto.request.ApiResponse;
 import vn.liora.dto.response.UserResponse;
 import vn.liora.dto.response.OrderResponse;
 import vn.liora.dto.response.OrderProductResponse;
+import vn.liora.dto.response.PaginatedResponse;
 import vn.liora.entity.User;
 import vn.liora.exception.AppException;
 import vn.liora.exception.ErrorCode;
@@ -83,7 +85,9 @@ public class UserController {
     }
 
     @GetMapping("/myOrdersWithProducts")
-    public ResponseEntity<ApiResponse<List<Object>>> getMyOrdersWithProducts() {
+    public ResponseEntity<ApiResponse<PaginatedResponse<Object>>> getMyOrdersWithProducts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size) {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             if (authentication == null || !authentication.isAuthenticated()) {
@@ -94,7 +98,7 @@ public class UserController {
             User user = userRepository.findByUsername(username)
                     .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
-            List<OrderResponse> orders = orderService.getMyOrders(user.getUserId());
+            List<OrderResponse> orders = orderService.getMyOrdersPaginated(user.getUserId(), page, size);
             
             // Tạo response với thông tin sản phẩm đầu tiên
             List<Object> ordersWithProducts = orders.stream().map(order -> {
@@ -136,8 +140,24 @@ public class UserController {
                 }
             }).collect(java.util.stream.Collectors.toList());
 
-            ApiResponse<List<Object>> response = new ApiResponse<>();
-            response.setResult(ordersWithProducts);
+            // Tính toán thông tin phân trang
+            long totalElements = orderService.countMyOrders(user.getUserId());
+            int totalPages = (int) Math.ceil((double) totalElements / size);
+            
+            PaginatedResponse<Object> paginatedResponse = PaginatedResponse.<Object>builder()
+                    .content(ordersWithProducts)
+                    .currentPage(page)
+                    .pageSize(size)
+                    .totalElements(totalElements)
+                    .totalPages(totalPages)
+                    .hasNext(page < totalPages - 1)
+                    .hasPrevious(page > 0)
+                    .isFirst(page == 0)
+                    .isLast(page >= totalPages - 1)
+                    .build();
+
+            ApiResponse<PaginatedResponse<Object>> response = new ApiResponse<>();
+            response.setResult(paginatedResponse);
             response.setMessage("Lấy lịch sử đơn hàng với sản phẩm thành công");
 
             return ResponseEntity.ok(response);

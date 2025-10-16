@@ -23,6 +23,8 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     // ====== BY ORDER PRODUCT (1-1) ======
     Optional<Review> findByOrderProduct_IdOrderProduct(Long idOrderProduct);
     boolean existsByOrderProduct_IdOrderProduct(Long idOrderProduct);
+    @Query("SELECT COUNT(r) > 0 FROM Review r WHERE r.orderProduct.order.idOrder = :orderId")
+    boolean existsByOrderId(@Param("orderId") Long orderId);
     
     // ====== VISIBILITY FILTERS ======
     List<Review> findByProductIdAndIsVisibleTrue(Long productId);

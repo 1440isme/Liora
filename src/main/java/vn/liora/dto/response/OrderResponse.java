@@ -1,6 +1,5 @@
 package vn.liora.dto.response;
 
-import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -24,11 +23,11 @@ public class OrderResponse {
     String paymentMethod;
     BigDecimal totalDiscount;
     BigDecimal total;
-    Long idAddress;
     Long userId;
     String customerName;
 
     Long discountId;
     String discountName;
     BigDecimal discountValue;
+    private Boolean hasReview = false;
 }

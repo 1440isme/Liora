@@ -140,18 +140,21 @@ class ReviewDetailManager {
             $('#productPrice').text('N/A');
         }
         
-        // Set product image if available
-        if (review.productImage) { 
-            $('#productImage').attr('src', review.productImage).show();
+        // Set product image
+        if (review.productThumbnail) {
+            $('#productImage').attr('src', review.productThumbnail).show();
         } else {
-            $('#productImage').hide();
-            // Ẩn cả container chứa hình ảnh nếu có
-            $('#productImage').closest('.image-container').hide();
+            // Hiển thị ảnh placeholder nếu không có ảnh
+            $('#productImage').attr('src', '/admin/images/no-image.png').show();
         }
         
         // Order information - Thay thế phần thống kê
         if (review.orderId) {
-            $('#orderCode').text(review.orderCode || `#${review.orderId}`);
+            // Tạo link clickable cho mã đơn hàng
+            const orderCode = review.orderCode || `#${review.orderId}`;
+            const orderLink = `<a href="/admin/orders/detail/${review.orderId}" class="text-decoration-none fw-bold text-primary" title="Xem chi tiết đơn hàng">${orderCode}</a>`;
+            $('#orderCode').html(orderLink);
+            
             $('#orderDate').text(review.orderDate ? this.formatDateTime(new Date(review.orderDate)) : 'N/A');
             $('#orderUserId').text(review.userId || 'N/A');
         } else {

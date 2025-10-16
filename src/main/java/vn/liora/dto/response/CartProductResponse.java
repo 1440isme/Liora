@@ -23,4 +23,9 @@ public class CartProductResponse {
     BigDecimal productPrice;
     String mainImageUrl;
     String brandName;
+    
+    // Thông tin trạng thái sản phẩm
+    Boolean available;
+    Boolean isActive;
+    Integer stock;
 }

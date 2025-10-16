@@ -30,11 +30,11 @@ class BrandProductsManager {
         console.log('Current filters:', this.currentFilters);
         console.log('Current URL:', window.location.href);
         console.log('Pathname:', window.location.pathname);
-        
+
         this.loadCategories();
         this.loadProducts();
         this.setupEventListeners();
-        
+
         console.log('=== INIT COMPLETED ===');
     }
 
@@ -56,7 +56,7 @@ class BrandProductsManager {
         // Filter inputs
         const minPriceInput = document.getElementById('minPrice');
         const maxPriceInput = document.getElementById('maxPrice');
-        
+
         if (minPriceInput) {
             minPriceInput.addEventListener('input', this.debounce(() => {
                 this.currentFilters.minPrice = minPriceInput.value;
@@ -138,7 +138,7 @@ class BrandProductsManager {
 
     async loadProducts() {
         if (this.isLoading) return;
-        
+
         console.log('Loading products for brand ID:', this.brandId);
         this.isLoading = true;
         this.showLoading();
@@ -174,10 +174,10 @@ class BrandProductsManager {
 
             const url = `/api/products/brand/${this.brandId}?${params}`;
             console.log('Fetching URL:', url);
-            
+
             const response = await fetch(url);
             const data = await response.json();
-            
+
             console.log('API Response:', data);
 
             if (data.code === 200 || data.code === 1000) {
@@ -185,7 +185,7 @@ class BrandProductsManager {
                 this.totalElements = data.result.totalElements || 0;
                 this.totalPages = data.result.totalPages || 0;
                 console.log('Products loaded:', this.products.length, 'Total:', this.totalElements);
-                
+
                 this.renderProducts(this.products);
                 this.updatePagination(data.result);
                 this.updateProductCount(data.result.totalElements);
@@ -216,12 +216,12 @@ class BrandProductsManager {
         if (!container) return;
 
         console.log('renderProducts called with', products.length, 'products');
-        
+
         // Hide loading spinner
         if (loadingSpinner) {
             loadingSpinner.style.display = 'none';
         }
-        
+
         // Clear grid content first
         container.innerHTML = '';
 
@@ -244,7 +244,7 @@ class BrandProductsManager {
         
         const html = products.map(product => this.createProductCard(product)).join('');
         container.innerHTML = html;
-        
+
         console.log('Products rendered:', products.length);
     }
 
@@ -252,11 +252,11 @@ class BrandProductsManager {
         const productStatus = this.getProductStatus(product);
         const statusClass = this.getProductStatusClass(productStatus);
         const statusText = this.getProductStatusText(productStatus);
-        
+
         const productUrl = `/product/${product.productId}?from=brand&brandId=${this.brandId}`;
         console.log('createProductCard - this.brandId:', this.brandId);
         console.log('createProductCard - productUrl:', productUrl);
-        
+
         return `
             <div class="product-card ${statusClass}">
                     <div class="position-relative">
@@ -320,8 +320,8 @@ class BrandProductsManager {
                                     data-product-name="${product.name}"
                                         data-product-price="${product.price}"
                                         ${productStatus !== 'available' ? 'disabled' : ''}
-                                        title="${productStatus === 'out_of_stock' ? 'Hết hàng' : 
-                                          productStatus === 'deactivated' ? 'Ngừng kinh doanh' : 'Thêm vào giỏ'}"
+                                        title="${productStatus === 'out_of_stock' ? 'Hết hàng' :
+                productStatus === 'deactivated' ? 'Ngừng kinh doanh' : 'Thêm vào giỏ'}"
                                         onclick="console.log('Button clicked for product:', ${product.productId}); window.brandProductsManager.addToCart(${product.productId})">
                                     <i class="fas fa-shopping-cart"></i>
                             </button>
@@ -341,19 +341,19 @@ class BrandProductsManager {
             available: product.available,
             stock: product.stock
         });
-        
+
         // 1. Kiểm tra ngừng kinh doanh (ưu tiên cao nhất)
         if (!product.isActive) {
             console.log('Product is deactivated:', product.name);
             return 'deactivated';
         }
-        
+
         // 2. Kiểm tra hết hàng (chỉ khi sản phẩm còn active)
         if (product.stock <= 0) {
             console.log('Product is out of stock:', product.name);
             return 'out_of_stock';
         }
-        
+
         // 3. Sản phẩm có sẵn
         console.log('Product is available:', product.name);
         return 'available';
@@ -385,7 +385,7 @@ class BrandProductsManager {
 
     getProductStatusBadge(product) {
         const status = this.getProductStatus(product);
-        
+
         switch (status) {
             case 'deactivated':
                 return '<span class="badge bg-warning text-dark">Ngừng kinh doanh</span>';
@@ -398,7 +398,7 @@ class BrandProductsManager {
 
     generateStars(rating, reviewCount = 0) {
         console.log('generateStars called with rating:', rating, 'reviewCount:', reviewCount, 'type:', typeof rating);
-        
+
         // Logic đúng cho product card - giống generateStarsForModal trong category-products
         // Chỉ hiển thị sao rỗng khi rating = 0 hoặc không có rating
         if (!rating || rating === 0 || rating === '0' || rating === null || rating === undefined) {
@@ -426,7 +426,7 @@ class BrandProductsManager {
         for (let i = 0; i < emptyStars; i++) {
             stars += '<i class="far fa-star" style="color: #ccc !important; font-weight: 400 !important;"></i>';
         }
-        
+
         return stars;
     }
 
@@ -449,7 +449,7 @@ class BrandProductsManager {
 
     updatePagination(pageInfo) {
         this.totalPages = pageInfo.totalPages;
-        
+
         const paginationContainer = document.getElementById('pagination');
         if (!paginationContainer) return;
 
@@ -459,18 +459,18 @@ class BrandProductsManager {
         }
 
         let paginationHtml = '';
-        
+
         // Previous button
         paginationHtml += `
             <li class="page-item ${this.currentPage === 0 ? 'disabled' : ''}">
                 <a class="page-link" href="#" data-page="${this.currentPage - 1}">Trước</a>
             </li>
         `;
-        
+
         // Page numbers
         const startPage = Math.max(0, this.currentPage - 2);
         const endPage = Math.min(this.totalPages - 1, this.currentPage + 2);
-        
+
         for (let i = startPage; i <= endPage; i++) {
             paginationHtml += `
                 <li class="page-item ${i === this.currentPage ? 'active' : ''}">
@@ -478,14 +478,14 @@ class BrandProductsManager {
                 </li>
             `;
         }
-        
+
         // Next button
         paginationHtml += `
             <li class="page-item ${this.currentPage === this.totalPages - 1 ? 'disabled' : ''}">
                 <a class="page-link" href="#" data-page="${this.currentPage + 1}">Sau</a>
             </li>
         `;
-        
+
         paginationContainer.innerHTML = paginationHtml;
         paginationContainer.style.display = 'block';
     }
@@ -511,7 +511,7 @@ class BrandProductsManager {
                     return;
                 }
             }
-            
+
             // Fallback to simple categories
             await this.loadCategoriesSimple();
         } catch (error) {
@@ -579,7 +579,7 @@ class BrandProductsManager {
     handlePriceRangeChange() {
         const priceRange = document.getElementById('priceRange').value;
         console.log('Price range changed to:', priceRange);
-        
+
         if (priceRange && priceRange.includes(',')) {
             const [minPrice, maxPrice] = priceRange.split(',').map(Number);
             this.currentFilters.minPrice = minPrice;
@@ -590,7 +590,7 @@ class BrandProductsManager {
             this.currentFilters.maxPrice = null;
             console.log('Price filter cleared');
         }
-        
+
         // Don't auto-apply filter - wait for "Áp dụng bộ lọc" button
         console.log('Price range updated, waiting for apply button');
     }
@@ -598,15 +598,15 @@ class BrandProductsManager {
     applyFilters() {
         console.log('=== APPLY FILTERS CALLED ===');
         console.log('applyFilters method executed');
-        
+
         // Get filter values
         const priceRange = document.getElementById('priceRange');
         const ratingCheckboxes = document.querySelectorAll('input[type="checkbox"][id^="rating"]');
-        
+
         console.log('Price range element:', priceRange);
         console.log('Price range value:', priceRange ? priceRange.value : 'not found');
         console.log('Rating checkboxes found:', ratingCheckboxes.length);
-        
+
         // Update current filters - handle price range
         if (priceRange && priceRange.value && priceRange.value.includes(',')) {
             const [minPrice, maxPrice] = priceRange.value.split(',').map(Number);
@@ -618,23 +618,23 @@ class BrandProductsManager {
             this.currentFilters.maxPrice = null;
             console.log('No price filter');
         }
-        
+
         // Get selected categories (dynamic)
         const categoryCheckboxes = document.querySelectorAll('#categoryFilters input[type="checkbox"]');
         console.log('Category checkboxes found:', categoryCheckboxes.length);
         console.log('Category checkboxes:', categoryCheckboxes);
-        
+
         this.currentFilters.categories = Array.from(categoryCheckboxes)
             .filter(cb => cb.checked)
             .map(cb => cb.value);
         console.log('Selected categories:', this.currentFilters.categories);
-            
+
         // Get selected ratings
         this.currentFilters.ratings = Array.from(ratingCheckboxes)
             .filter(cb => cb.checked)
             .map(cb => parseInt(cb.value));
         console.log('Selected ratings:', this.currentFilters.ratings);
-        
+
         console.log('Final filters:', this.currentFilters);
         console.log('Resetting to page 0 and calling loadProducts()');
         this.currentPage = 0;
@@ -643,10 +643,10 @@ class BrandProductsManager {
     }
 
     hasActiveFilters() {
-        return this.currentFilters.minPrice !== null || 
-               this.currentFilters.maxPrice !== null || 
-               this.currentFilters.categories.length > 0 || 
-               this.currentFilters.ratings.length > 0;
+        return this.currentFilters.minPrice !== null ||
+            this.currentFilters.maxPrice !== null ||
+            this.currentFilters.categories.length > 0 ||
+            this.currentFilters.ratings.length > 0;
     }
 
     clearFilters() {
@@ -657,22 +657,22 @@ class BrandProductsManager {
             ratings: [],
             sort: ''
         };
-        
+
         // Reset form inputs
         const priceRangeSelect = document.getElementById('priceRange');
         if (priceRangeSelect) priceRangeSelect.value = '';
-        
+
         const sortSelect = document.getElementById('sortSelect');
         if (sortSelect) sortSelect.value = '';
-        
+
         // Reset category checkboxes
         const categoryCheckboxes = document.querySelectorAll('#categoryFilters input[type="checkbox"]');
         categoryCheckboxes.forEach(cb => cb.checked = false);
-        
+
         // Reset rating checkboxes
         const ratingCheckboxes = document.querySelectorAll('input[type="checkbox"][id^="rating"]');
         ratingCheckboxes.forEach(cb => cb.checked = false);
-        
+
         this.currentPage = 0;
         this.loadProducts();
     }
@@ -691,16 +691,16 @@ class BrandProductsManager {
         const grid = document.getElementById('productsGrid');
         const emptyState = document.getElementById('emptyState');
         const loadingSpinner = document.getElementById('loadingSpinner');
-        
+
         // Hide loading spinner
         if (loadingSpinner) {
             loadingSpinner.style.display = 'none';
         }
-        
+
         if (grid) grid.style.display = 'none';
         if (emptyState) {
             emptyState.style.display = 'block';
-            
+
             // Check if there are active filters
             const hasFilters = this.hasActiveFilters();
             if (hasFilters) {
@@ -747,7 +747,7 @@ class BrandProductsManager {
         const quantityElement = document.getElementById(`quantity-${productId}`);
         const quantity = quantityElement ? parseInt(quantityElement.textContent) : 1;
         console.log('Quantity:', quantity);
-        
+
         // Try to use cartManager if available (same as category-products.js)
         if (window.cartManager) {
             console.log('Using cartManager');
@@ -761,75 +761,34 @@ class BrandProductsManager {
                 console.error('Error adding to cart with cartManager:', error);
             }
         }
-        
-        // Fallback: Try to use global cart if available
-        if (window.app && window.app.cartItems) {
-            console.log('Using global cart as fallback');
-            // Find product in current products array
-            const product = this.products.find(p => p.productId === productId);
-            if (product) {
-                // Check if product already in cart
-                const existingItem = window.app.cartItems.find(item => item.id === productId);
-                
-                if (existingItem) {
-                    existingItem.quantity += quantity;
-                } else {
-                    window.app.cartItems.push({
-                        ...product,
-                        quantity: quantity
-                    });
-                }
-                
-                // Update cart display
-                if (window.app.updateCartDisplay) {
-                    window.app.updateCartDisplay();
-                }
-                
-                this.showNotification(`${quantity} x ${product.name} đã được thêm vào giỏ hàng thành công!`, 'success');
-                return;
-            }
-        }
-        
-        // Fallback to API
-        try {
-            const response = await fetch('/api/cart/add', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    productId: productId,
-                    quantity: quantity
-                })
-            });
 
-            const result = await response.json();
-            console.log('Add to cart response:', result);
-            
-            if (result.code === 200) {
-                this.showNotification(`${quantity} sản phẩm đã được thêm vào giỏ hàng!`, 'success');
-                // Reset quantity to 1
-                if (quantityElement) {
-                    quantityElement.textContent = '1';
-                }
-            } else {
-                this.showNotification(result.message || 'Không thể thêm vào giỏ hàng', 'error');
+        // Gọi backend thống nhất
+        if (window.app && typeof window.app.addProductToCartBackend === 'function') {
+            try {
+                await window.app.addProductToCartBackend(productId, quantity, false);
+                await window.app.refreshCartBadge?.();
+                const product = this.products.find(p => p.productId === productId);
+                const productName = product ? product.name : 'Sản phẩm';
+                this.showNotification(`${productName} đã được thêm vào giỏ hàng`, 'success');
+                return;
+            } catch (e) {
+                console.error('Backend addToCart failed:', e);
             }
-        } catch (error) {
-            console.error('Error adding to cart:', error);
-            this.showNotification('Có lỗi xảy ra khi thêm vào giỏ hàng', 'error');
         }
+
+        // Final fallback
+        this.showNotification('Không thể thêm vào giỏ hàng. Vui lòng thử lại.', 'error');
     }
 
     // Show quick view popup
     async showQuickView(productId) {
         let product = null;
-        
+
         // Try to find product in current products array first
         if (this.products && this.products.length > 0) {
             product = this.products.find(p => p.productId === productId);
         }
-        
+
         // If not found, fetch from API
         if (!product) {
             try {
@@ -844,12 +803,12 @@ class BrandProductsManager {
                 console.error('Error fetching product:', error);
             }
         }
-        
+
         if (!product) {
             this.showNotification('Không tìm thấy sản phẩm', 'error');
             return;
         }
-        
+
         // Load product images if not already loaded
         if (!product.images) {
             try {
@@ -863,7 +822,7 @@ class BrandProductsManager {
                 product.images = [];
             }
         }
-        
+
         this.createQuickViewModal(product);
     }
 
@@ -994,16 +953,16 @@ class BrandProductsManager {
 
         // Add modal to body
         document.body.insertAdjacentHTML('beforeend', modalHTML);
-        
+
         // Show modal
         const modal = new bootstrap.Modal(document.getElementById('quickViewModal'));
         modal.show();
-        
+
         // Add slider navigation event listeners
         this.setupSliderNavigation(product);
-        
+
         // Remove modal from DOM when hidden
-        document.getElementById('quickViewModal').addEventListener('hidden.bs.modal', function() {
+        document.getElementById('quickViewModal').addEventListener('hidden.bs.modal', function () {
             this.remove();
         });
     }
@@ -1029,7 +988,7 @@ class BrandProductsManager {
     generateImageThumbnails(product) {
         // Use product images if available, otherwise fallback to main image
         let images = [];
-        
+
         if (product.images && product.images.length > 0) {
             // Use actual product images
             images = product.images;
@@ -1037,11 +996,11 @@ class BrandProductsManager {
             // Fallback to main image
             images = [{ imageUrl: product.mainImageUrl }];
         }
-        
+
         if (images.length === 0) {
             return '<div class="thumbnail-item active"><img src="/uploads/products/default.jpg" class="img-thumbnail" alt="Default"></div>';
         }
-        
+
         return images.map((image, index) => `
             <div class="thumbnail-item ${index === 0 ? 'active' : ''}" onclick="brandProductsManager.changeMainImage('${image.imageUrl || image}')">
                 <img src="${image.imageUrl || image}" 
@@ -1055,7 +1014,7 @@ class BrandProductsManager {
     getQuickViewActions(product) {
         const status = this.getProductStatus(product);
         const isDisabled = status !== 'available';
-        
+
         if (status === 'deactivated') {
             return `
                 <div class="alert alert-warning text-center">
@@ -1073,7 +1032,7 @@ class BrandProductsManager {
                 </div>
             `;
         }
-        
+
         return `
             <!-- Buy Now & Add to Cart Buttons (Same Row) -->
             <div class="row g-2">
@@ -1100,29 +1059,29 @@ class BrandProductsManager {
         const nextBtn = document.getElementById('nextBtn');
         const mainImage = document.getElementById('mainProductImage');
         const thumbnails = document.querySelectorAll('.thumbnail-item');
-        
+
         if (!product.images || product.images.length <= 1) {
             // Hide navigation buttons if only one image
             if (prevBtn) prevBtn.style.display = 'none';
             if (nextBtn) nextBtn.style.display = 'none';
             return;
         }
-        
+
         let currentImageIndex = 0;
-        
+
         // Update main image
         const updateMainImage = (index) => {
             if (product.images && product.images[index]) {
                 mainImage.src = product.images[index].imageUrl;
                 mainImage.alt = product.name;
-                
+
                 // Update thumbnail selection
                 thumbnails.forEach((thumb, i) => {
                     thumb.classList.toggle('active', i === index);
                 });
             }
         };
-        
+
         // Previous button
         if (prevBtn) {
             prevBtn.addEventListener('click', () => {
@@ -1130,7 +1089,7 @@ class BrandProductsManager {
                 updateMainImage(currentImageIndex);
             });
         }
-        
+
         // Next button
         if (nextBtn) {
             nextBtn.addEventListener('click', () => {
@@ -1142,7 +1101,7 @@ class BrandProductsManager {
 
     generateStarsForModal(rating, reviewCount = 0) {
         console.log('generateStarsForModal called with rating:', rating, 'reviewCount:', reviewCount);
-        
+
         // Logic đúng cho Quick View modal
         if (!rating || rating === 0 || rating === '0' || rating === null || rating === undefined) {
             console.log('Modal: Rating is 0 or no reviews, showing empty stars');
@@ -1169,7 +1128,7 @@ class BrandProductsManager {
         for (let i = 0; i < emptyStars; i++) {
             stars += '<i class="far fa-star" style="color: #ccc !important; font-weight: 400 !important;"></i>';
         }
-        
+
         return stars;
     }
 
@@ -1179,7 +1138,7 @@ class BrandProductsManager {
         if (mainImage) {
             mainImage.src = imageSrc;
         }
-        
+
         // Update active thumbnail
         document.querySelectorAll('.thumbnail-item').forEach(item => {
             item.classList.remove('active');
@@ -1191,12 +1150,12 @@ class BrandProductsManager {
     async addToCartWithQuantity(productId) {
         const quantityInput = document.getElementById('quantityInput');
         const quantity = quantityInput ? parseInt(quantityInput.value) : 1;
-        
+
         let product = null;
         if (this.products && this.products.length > 0) {
             product = this.products.find(p => p.productId === productId);
         }
-        
+
         // If not found, fetch from API
         if (!product) {
             try {
@@ -1211,7 +1170,7 @@ class BrandProductsManager {
                 console.error('Error fetching product:', error);
             }
         }
-        
+
         if (!product) {
             this.showNotification('Không tìm thấy sản phẩm', 'error');
             return;
@@ -1227,7 +1186,7 @@ class BrandProductsManager {
         if (window.app && window.app.cartItems) {
             // Check if product already in cart
             const existingItem = window.app.cartItems.find(item => item.id === productId);
-            
+
             if (existingItem) {
                 const newTotalQuantity = existingItem.quantity + quantity;
                 if (newTotalQuantity > product.stock) {
@@ -1241,12 +1200,12 @@ class BrandProductsManager {
                     quantity: quantity
                 });
             }
-            
+
             // Update cart display
             if (window.app.updateCartDisplay) {
                 window.app.updateCartDisplay();
             }
-            
+
             this.showNotification(`${quantity} x ${product.name} đã được thêm vào giỏ hàng thành công!`, 'success');
         } else {
             // Fallback to simple add to cart
@@ -1257,13 +1216,11 @@ class BrandProductsManager {
     async buyNow(productId) {
         const quantityInput = document.getElementById('quantityInput');
         const quantity = quantityInput ? parseInt(quantityInput.value) : 1;
-        
+
         let product = null;
         if (this.products && this.products.length > 0) {
             product = this.products.find(p => p.productId === productId);
         }
-        
-        // If not found, fetch from API
         if (!product) {
             try {
                 const response = await fetch(`/api/products/${productId}`);
@@ -1277,41 +1234,23 @@ class BrandProductsManager {
                 console.error('Error fetching product:', error);
             }
         }
-        
         if (!product) {
             this.showNotification('Không tìm thấy sản phẩm', 'error');
             return;
         }
-
-        // Validate quantity against stock
         if (quantity > product.stock) {
             this.showNotification(`Số lượng bạn chọn (${quantity}) vượt quá số lượng tồn kho hiện có (${product.stock} sản phẩm). Vui lòng chọn số lượng phù hợp.`, 'error');
             return;
         }
 
-        // Add to cart silently
-        if (window.app && window.app.cartItems) {
-            // Check if product already in cart
-            const existingItem = window.app.cartItems.find(item => item.id === productId);
-            
-            if (existingItem) {
-                const newTotalQuantity = existingItem.quantity + quantity;
-                if (newTotalQuantity > product.stock) {
-                    this.showNotification(`Tổng số lượng trong giỏ hàng (${newTotalQuantity}) vượt quá tồn kho hiện có (${product.stock} sản phẩm). Vui lòng giảm số lượng.`, 'error');
-                    return;
-                }
-                existingItem.quantity = newTotalQuantity;
-            } else {
-                window.app.cartItems.push({
-                    ...product,
-                    quantity: quantity
-                });
+        try {
+            if (window.app && typeof window.app.buyNowBackend === 'function') {
+                await window.app.buyNowBackend(productId, quantity);
+                return;
             }
-            
-            // Update cart display
-            if (window.app.updateCartDisplay) {
-                window.app.updateCartDisplay();
-            }
+            this.showNotification('Không thể thực hiện Mua ngay. Vui lòng thử lại.', 'error');
+        } catch (_) {
+            this.showNotification('Không thể thực hiện Mua ngay. Vui lòng thử lại.', 'error');
         }
         
         // Show success message
@@ -1364,7 +1303,7 @@ class BrandProductsManager {
 }
 
 // Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     if (window.location.pathname.includes('/brand/')) {
         window.brandProductsManager = new BrandProductsManager();
     }

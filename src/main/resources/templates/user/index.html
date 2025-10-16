@@ -95,56 +95,39 @@
             <!-- Danh mục nổi bật -->
             <section class="py-5 bg-light">
                 <div class="container">
-                    <div class="d-flex align-items-center justify-content-between mb-4">
-                        <h2 class="fw-bold mb-0 text-uppercase">Danh mục nổi bật</h2>
-                        <a href="/categories" class="text-pink-primary fw-semibold">Xem tất cả</a>
+                    <div class="text-center mb-4">
+                        <h2 class="fw-bold text-uppercase">Danh mục nổi bật</h2>
                     </div>
                     <div class="row g-4">
                         <div class="col-6 col-md-3">
                             <a href="/categories/skincare" class="text-decoration-none text-dark">
                                 <div class="card border-0 shadow-sm h-100">
-                                    <img class="card-img-top"
-                                        src="https://images.unsplash.com/photo-1585237001925-83865001e31b?w=800&q=80"
-                                        alt="Skincare">
-                                    <div class="card-body text-center">
-                                        <div class="fw-semibold">Chăm sóc da</div>
-                                    </div>
+                                    <img class="card-img-top" th:src="@{/user/img/chamsocda.jpg}" alt="Chăm sóc da">
+
                                 </div>
                             </a>
                         </div>
                         <div class="col-6 col-md-3">
                             <a href="/categories/makeup" class="text-decoration-none text-dark">
                                 <div class="card border-0 shadow-sm h-100">
-                                    <img class="card-img-top"
-                                        src="https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=800&q=80"
-                                        alt="Makeup">
-                                    <div class="card-body text-center">
-                                        <div class="fw-semibold">Trang điểm</div>
-                                    </div>
+                                    <img class="card-img-top" th:src="@{/user/img/trangdiem.jpg}" alt="Trang điểm">
+
                                 </div>
                             </a>
                         </div>
                         <div class="col-6 col-md-3">
                             <a href="/categories/hair" class="text-decoration-none text-dark">
                                 <div class="card border-0 shadow-sm h-100">
-                                    <img class="card-img-top"
-                                        src="https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=800&q=80"
-                                        alt="Hair">
-                                    <div class="card-body text-center">
-                                        <div class="fw-semibold">Tóc</div>
-                                    </div>
+                                    <img class="card-img-top" th:src="@{/user/img/chamsoctoc.jpg}" alt="Tóc">
+
                                 </div>
                             </a>
                         </div>
                         <div class="col-6 col-md-3">
                             <a href="/categories/body" class="text-decoration-none text-dark">
                                 <div class="card border-0 shadow-sm h-100">
-                                    <img class="card-img-top"
-                                        src="https://images.unsplash.com/photo-1613929720948-5b39c886d9c2?w=800&q=80"
-                                        alt="Body care">
-                                    <div class="card-body text-center">
-                                        <div class="fw-semibold">Cơ thể</div>
-                                    </div>
+                                    <img class="card-img-top" th:src="@{/user/img/chamsoccothe.png}" alt="Cơ thể">
+
                                 </div>
                             </a>
                         </div>
@@ -156,111 +139,52 @@
             <section class="py-5">
                 <div class="container">
                     <h2 class="fw-bold mb-4 text-center text-uppercase">Khuyến mãi dành cho bạn</h2>
-                    <div class="row g-3">
-                        <!-- Coupon 1 -->
-                        <div class="col-12 col-md-6 col-lg-3">
-                            <div class="d-flex align-items-center gap-3 p-3 bg-white border rounded-3 shadow-sm h-100">
-                                <div class="rounded-3 d-flex align-items-center justify-content-center"
-                                    style="width:72px;height:72px;background:#ffc0cb33;">
-                                    <i class="mdi mdi-ticket-percent-outline fs-2 text-pink-primary"></i>
+
+                    <!-- Discount Slider Container -->
+                    <div class="discount-slider-container position-relative">
+                        <!-- Navigation Arrows -->
+                        <button class="discount-slider-btn discount-slider-prev" id="discountPrevBtn">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+
+                        <div class="discount-slider-wrapper">
+                            <div id="discounts-container" class="discount-slider">
+                                <div th:each="discount : ${availableDiscounts}" class="discount-slide-item">
+                                    <div class="discount-card-custom">
+                                        <div class="discount-icon-section">
+                                            <i class="mdi mdi-ticket-percent-outline fs-1 text-dark"></i>
+                                        </div>
+                                        <div class="discount-content-section">
+                                            <div class="discount-header-custom">
+                                                <div class="discount-title-custom" th:text="${discount.name}">GIẢM 15K
+                                                </div>
+                                                <i class="mdi mdi-information-outline text-muted"></i>
+                                            </div>
+                                            <div class="discount-description-custom" th:text="${discount.description}">
+                                                Đơn hàng bất kỳ từ 399k</div>
+                                            <div class="discount-expiry-custom"
+                                                th:text="'HSD: ' + ${#temporals.format(discount.endDate, 'dd/MM/yyyy')}">
+                                                HSD: 31/10/2025</div>
+                                            <button class="discount-copy-btn-custom copy-discount-btn"
+                                                th:data-discount-name="${discount.name}">SAO CHÉP MÃ</button>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="flex-grow-1">
-                                    <div class="d-flex align-items-center justify-content-between">
-                                        <div class="fw-bold">GIẢM 15K</div>
-                                        <i class="mdi mdi-information-outline text-muted"></i>
-                                    </div>
-                                    <div class="small text-muted">Đơn hàng bất kỳ từ 399k</div>
-                                    <div class="mt-2 d-flex align-items-center gap-2">
-                                        <span class="badge bg-light text-dark border">Mã: <span
-                                                class="fw-semibold">MOI15</span></span>
-                                        <small class="text-muted">HSD: 31/10/2025</small>
-                                    </div>
-                                    <div class="mt-2">
-                                        <button class="btn btn-sm btn-outline-pink rounded-pill fw-semibold"
-                                            onclick="navigator.clipboard.writeText('MOI15'); this.innerText='ĐÃ SAO CHÉP';">SAO
-                                            CHÉP MÃ</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Coupon 2 -->
-                        <div class="col-12 col-md-6 col-lg-3">
-                            <div class="d-flex align-items-center gap-3 p-3 bg-white border rounded-3 shadow-sm h-100">
-                                <div class="rounded-3 d-flex align-items-center justify-content-center"
-                                    style="width:72px;height:72px;background:#ffc0cb33;">
-                                    <i class="mdi mdi-ticket-percent-outline fs-2 text-pink-primary"></i>
-                                </div>
-                                <div class="flex-grow-1">
-                                    <div class="d-flex align-items-center justify-content-between">
-                                        <div class="fw-bold">GIẢM 15K</div>
-                                        <i class="mdi mdi-information-outline text-muted"></i>
-                                    </div>
-                                    <div class="small text-muted">Đơn hàng từ 189k áp dụng khách hàng mới</div>
-                                    <div class="mt-2 d-flex align-items-center gap-2">
-                                        <span class="badge bg-light text-dark border">Mã: <span
-                                                class="fw-semibold">MOICGAUIU</span></span>
-                                        <small class="text-muted">HSD: 31/10/2025</small>
-                                    </div>
-                                    <div class="mt-2">
-                                        <button class="btn btn-sm btn-outline-pink rounded-pill fw-semibold"
-                                            onclick="navigator.clipboard.writeText('MOICGAUIU'); this.innerText='ĐÃ SAO CHÉP';">SAO
-                                            CHÉP MÃ</button>
+
+                                <!-- Empty state nếu không có mã khuyến mãi -->
+                                <div class="col-12" th:if="${#lists.isEmpty(availableDiscounts)}">
+                                    <div class="text-center py-5">
+                                        <i class="mdi mdi-ticket-percent-outline fs-1 text-muted mb-3"></i>
+                                        <h5 class="text-muted">Hiện tại chưa có mã khuyến mãi nào</h5>
+                                        <p class="text-muted">Hãy quay lại sau để không bỏ lỡ những ưu đãi hấp dẫn!</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <!-- Coupon 3 -->
-                        <div class="col-12 col-md-6 col-lg-3">
-                            <div class="d-flex align-items-center gap-3 p-3 bg-white border rounded-3 shadow-sm h-100">
-                                <div class="rounded-3 d-flex align-items-center justify-content-center"
-                                    style="width:72px;height:72px;background:#ffc0cb33;">
-                                    <i class="mdi mdi-fire-circle fs-2 text-pink-primary"></i>
-                                </div>
-                                <div class="flex-grow-1">
-                                    <div class="d-flex align-items-center justify-content-between">
-                                        <div class="fw-bold">GIẢM 50K</div>
-                                        <i class="mdi mdi-information-outline text-muted"></i>
-                                    </div>
-                                    <div class="small text-muted">Khi mua combo Premium</div>
-                                    <div class="mt-2 d-flex align-items-center gap-2">
-                                        <span class="badge bg-light text-dark border">Mã: <span
-                                                class="fw-semibold">COMBO</span></span>
-                                        <small class="text-muted">HSD: 31/10/2025</small>
-                                    </div>
-                                    <div class="mt-2">
-                                        <button class="btn btn-sm btn-outline-pink rounded-pill fw-semibold"
-                                            onclick="navigator.clipboard.writeText('COMBO'); this.innerText='ĐÃ SAO CHÉP';">SAO
-                                            CHÉP MÃ</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Coupon 4 -->
-                        <div class="col-12 col-md-6 col-lg-3">
-                            <div class="d-flex align-items-center gap-3 p-3 bg-white border rounded-3 shadow-sm h-100">
-                                <div class="rounded-3 d-flex align-items-center justify-content-center"
-                                    style="width:72px;height:72px;background:#ffc0cb33;">
-                                    <i class="mdi mdi-fire-circle fs-2 text-pink-primary"></i>
-                                </div>
-                                <div class="flex-grow-1">
-                                    <div class="d-flex align-items-center justify-content-between">
-                                        <div class="fw-bold">GIẢM 50K</div>
-                                        <i class="mdi mdi-information-outline text-muted"></i>
-                                    </div>
-                                    <div class="small text-muted">Khi mua bộ trang điểm căng bóng</div>
-                                    <div class="mt-2 d-flex align-items-center gap-2">
-                                        <span class="badge bg-light text-dark border">Mã: <span
-                                                class="fw-semibold">COMBOBBC</span></span>
-                                        <small class="text-muted">HSD: 31/10/2025</small>
-                                    </div>
-                                    <div class="mt-2">
-                                        <button class="btn btn-sm btn-outline-pink rounded-pill fw-semibold"
-                                            onclick="navigator.clipboard.writeText('COMBOBBC'); this.innerText='ĐÃ SAO CHÉP';">SAO
-                                            CHÉP MÃ</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+
+                        <button class="discount-slider-btn discount-slider-next" id="discountNextBtn">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
                     </div>
                 </div>
             </section>
@@ -289,13 +213,17 @@
                     <div class="brand-slider position-relative">
                         <div class="brand-track d-flex align-items-center">
                             <div class="brand-item px-4 opacity-1" th:each="brand : ${activeBrands}">
-                                <img class="img-fluid" th:src="${brand.logoUrl}" th:alt="${brand.name}"
-                                    style="max-height:80px">
+                                <a th:href="@{'/brand/' + ${brand.brandId}}" class="text-decoration-none">
+                                    <img class="img-fluid" th:src="${brand.logoUrl}" th:alt="${brand.name}"
+                                        style="max-height:80px">
+                                </a>
                             </div>
                             <!-- Duplicate for seamless loop -->
                             <div class="brand-item px-4 opacity-1" th:each="brand : ${activeBrands}">
-                                <img class="img-fluid" th:src="${brand.logoUrl}" th:alt="${brand.name}"
-                                    style="max-height:80px">
+                                <a th:href="@{'/brand/' + ${brand.brandId}}" class="text-decoration-none">
+                                    <img class="img-fluid" th:src="${brand.logoUrl}" th:alt="${brand.name}"
+                                        style="max-height:80px">
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -423,6 +351,166 @@
     <script th:src="@{/user/js/newest-products-homepage.js}"></script>
     <script th:src="@{/user/js/auth.js}"></script>
 
+    <!-- Discount Slider Styles -->
+    <style>
+        .discount-slider-container {
+            position: relative;
+            padding: 0 50px;
+        }
+
+        .discount-slider-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: transparent;
+            border: none;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+
+        .discount-slider-btn:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .discount-slider-prev {
+            left: 10px;
+        }
+
+        .discount-slider-next {
+            right: 10px;
+        }
+
+        .discount-slider-btn i {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .discount-slider-wrapper {
+            overflow: hidden;
+        }
+
+        .discount-slider {
+            display: flex;
+            transition: transform 0.3s ease;
+            gap: 20px;
+        }
+
+        .discount-slide-item {
+            flex: 0 0 calc(25% - 15px);
+            min-width: 280px;
+        }
+
+        /* Custom Discount Card Styles */
+        .discount-card-custom {
+            display: flex;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            height: 140px;
+            overflow: hidden;
+        }
+
+        .discount-icon-section {
+            width: 30%;
+            background: #ffc0cb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .discount-content-section {
+            flex: 1;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .discount-header-custom {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+
+        .discount-title-custom {
+            font-weight: bold;
+            font-size: 16px;
+            color: #333;
+        }
+
+        .discount-description-custom {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 4px;
+        }
+
+        .discount-expiry-custom {
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 8px;
+        }
+
+        .discount-copy-btn-custom {
+            background: #ff6b9d;
+            color: white;
+            border: none;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            align-self: flex-start;
+        }
+
+        .discount-copy-btn-custom:hover {
+            background: #e55a8a;
+            transform: translateY(-1px);
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .discount-slide-item {
+                flex: 0 0 calc(33.333% - 14px);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .discount-slider-container {
+                padding: 0 40px;
+            }
+
+            .discount-slider-btn {
+                width: 35px;
+                height: 35px;
+            }
+
+            .discount-slider-btn i {
+                font-size: 12px;
+            }
+
+            .discount-slide-item {
+                flex: 0 0 calc(50% - 10px);
+                min-width: 250px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .discount-slide-item {
+                flex: 0 0 100%;
+                min-width: 200px;
+            }
+        }
+    </style>
+
     <!-- Initialize Banner Slider -->
     <script>
         // Initialize banner slider when DOM is loaded
@@ -430,12 +518,15 @@
             if (window.BannerSlider) {
                 new BannerSlider();
             }
+            if (window.DiscountSlider) {
+                new DiscountSlider('discounts-container', 'discountPrevBtn', 'discountNextBtn');
+            }
         });
     </script>
 
     <script>
-        $(document).ready(function() {
-            $('.btn-cart').click(function(e) {
+        $(document).ready(function () {
+            $('.btn-cart').click(function (e) {
                 e.preventDefault();
                 window.location.href = '/cart';
             });

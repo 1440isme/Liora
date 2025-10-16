@@ -18,7 +18,6 @@ public class ProductCreationRequest {
     private String name;
 
     @NotBlank(message = "VALIDATION_REQUIRED_FIELD")
-    @Size(max = 500, message = "VALIDATION_DESCRIPTION_TOO_LONG")
     private String description;
 
     @NotNull(message = "VALIDATION_REQUIRED_FIELD")
@@ -40,6 +39,5 @@ public class ProductCreationRequest {
 
     @Builder.Default
     private Boolean isActive = true;
-
 
 }
