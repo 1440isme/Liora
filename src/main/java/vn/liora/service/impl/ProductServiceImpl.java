@@ -1,12 +1,14 @@
 package vn.liora.service.impl;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.liora.dto.request.ProductCreationRequest;
 import vn.liora.dto.request.ProductUpdateRequest;
 import vn.liora.dto.response.ProductResponse;
+import vn.liora.dto.response.BrandResponse;
 import vn.liora.entity.Brand;
 import vn.liora.entity.Category;
 import vn.liora.entity.Product;
@@ -21,7 +23,9 @@ import vn.liora.service.IProductService;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 @Service
 public class ProductServiceImpl implements IProductService {
     private final ProductRepository productRepository;
@@ -321,11 +325,6 @@ public class ProductServiceImpl implements IProductService {
     public List<Product> findHighRatedProductsWithPagination(BigDecimal minRating, Pageable pageable) {
         return productRepository.findHighRatedProducts(minRating, pageable);
     }
-
-    @Override
-    public List<Product> findNewestProducts(Pageable pageable) {
-        return productRepository.findNewestProducts(pageable);
-    }
     // ========== ADMIN QUERIES ==========
     @Override
     public Page<Product> findActiveProductsWithPagination(Pageable pageable) {
@@ -452,4 +451,122 @@ public class ProductServiceImpl implements IProductService {
     public List<Product> findByCategoryAndIdNot(Long categoryId, Long productId) {
         return productRepository.findByCategoryCategoryIdAndProductIdNotAndIsActiveTrue(categoryId, productId);
     }
+    
+    // ========== OPTIMIZED FRONTEND QUERIES ==========
+    @Override
+    public List<Product> findBestSellingProducts(Pageable pageable) {
+        return productRepository.findBestSellingProducts(pageable);
+    }
+    
+    @Override
+    public List<Product> findNewestProducts(Pageable pageable) {
+        System.out.println("=== findNewestProducts called ===");
+        System.out.println("Page: " + pageable.getPageNumber() + ", Size: " + pageable.getPageSize());
+        
+        List<Product> products = productRepository.findNewestProducts(pageable);
+        System.out.println("Found " + products.size() + " newest products");
+        
+        if (products.isEmpty()) {
+            System.out.println("No newest products found - checking if any products exist...");
+            // Check if there are any products at all
+            List<Product> allProducts = productRepository.findAll();
+            System.out.println("Total products in database: " + allProducts.size());
+            
+            if (!allProducts.isEmpty()) {
+                System.out.println("Sample product: " + allProducts.get(0).getName() + 
+                    " - isActive: " + allProducts.get(0).getIsActive() + 
+                    " - available: " + allProducts.get(0).getAvailable());
+            }
+        }
+        
+        return products;
+    }
+    
+    @Override
+    public List<Product> findBestSellingByCategory(Long categoryId, Pageable pageable) {
+        return productRepository.findBestSellingByCategory(categoryId, pageable);
+    }
+    
+    @Override
+    public List<Product> findBestSellingByBrand(Long brandId, Pageable pageable) {
+        return productRepository.findBestSellingByBrand(brandId, pageable);
+    }
+    
+    @Override
+    public List<BrandResponse> getBestSellingBrands() {
+        System.out.println("=== getBestSellingBrands called ===");
+        
+        // Get all best selling products
+        List<Product> bestSellingProducts = productRepository.findBestSellingProducts(PageRequest.of(0, 1000));
+        System.out.println("Found " + bestSellingProducts.size() + " best selling products");
+        
+        if (bestSellingProducts.isEmpty()) {
+            System.out.println("No best selling products found, returning empty list");
+            return List.of();
+        }
+        
+        // Group by brand and count
+        Map<Brand, Long> brandCounts = bestSellingProducts.stream()
+            .collect(Collectors.groupingBy(Product::getBrand, Collectors.counting()));
+        
+        System.out.println("Brand counts: " + brandCounts.size() + " brands");
+        
+        // Convert to BrandResponse and sort by count
+        List<BrandResponse> result = brandCounts.entrySet().stream()
+            .sorted(Map.Entry.<Brand, Long>comparingByValue().reversed())
+            .map(entry -> {
+                Brand brand = entry.getKey();
+                BrandResponse brandResponse = new BrandResponse();
+                brandResponse.setBrandId(brand.getBrandId());
+                brandResponse.setName(brand.getName());
+                // BrandResponse doesn't have description field
+                brandResponse.setLogoUrl(brand.getLogoUrl());
+                System.out.println("Brand: " + brand.getName() + " (ID: " + brand.getBrandId() + ")");
+                return brandResponse;
+            })
+            .toList();
+            
+        System.out.println("Returning " + result.size() + " brands");
+        return result;
+    }
+
+    @Override
+    public List<BrandResponse> getNewestBrands() {
+        System.out.println("=== getNewestBrands called ===");
+        
+        // Get all newest products
+        List<Product> newestProducts = productRepository.findNewestProducts(PageRequest.of(0, 1000));
+        System.out.println("Found " + newestProducts.size() + " newest products");
+        
+        if (newestProducts.isEmpty()) {
+            System.out.println("No newest products found, returning empty list");
+            return List.of();
+        }
+        
+        // Group by brand and count
+        Map<Brand, Long> brandCounts = newestProducts.stream()
+            .collect(Collectors.groupingBy(Product::getBrand, Collectors.counting()));
+        
+        System.out.println("Brand counts: " + brandCounts.size() + " brands");
+        
+        // Convert to BrandResponse and sort by count
+        List<BrandResponse> result = brandCounts.entrySet().stream()
+            .sorted(Map.Entry.<Brand, Long>comparingByValue().reversed())
+            .map(entry -> {
+                Brand brand = entry.getKey();
+                BrandResponse brandResponse = new BrandResponse();
+                brandResponse.setBrandId(brand.getBrandId());
+                brandResponse.setName(brand.getName());
+                brandResponse.setLogoUrl(brand.getLogoUrl());
+                brandResponse.setIsActive(brand.getIsActive());
+                System.out.println("Newest Brand: " + brand.getName() + " (ID: " + brand.getBrandId() + ")");
+                return brandResponse;
+            })
+            .toList();
+            
+        System.out.println("Returning " + result.size() + " newest brands");
+        return result;
+    }
+
+
 }

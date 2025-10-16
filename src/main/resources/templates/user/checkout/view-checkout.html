@@ -13,7 +13,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800&display=swap"
-          rel="stylesheet">
+        rel="stylesheet">
 
     <!-- Font Awesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -24,7 +24,7 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" th:href="@{/user/css/style.css}">
     <link rel="stylesheet" th:href="@{/user/css/checkout.css}">
-    
+
     <!-- Loading Overlay Styles -->
     <style>
         .loading-overlay {
@@ -40,12 +40,12 @@
             align-items: center;
             z-index: 9999;
         }
-        
+
         .selected-item {
             border-bottom: 1px solid #eee;
             padding-bottom: 15px;
         }
-        
+
         .selected-item:last-child {
             border-bottom: none;
         }
@@ -81,163 +81,185 @@
         </section>
 
 
-        <div class="row g-4">
-            <div class="col-lg-7">
-                <form id="checkoutForm">
+            <div class="row g-4">
+                <div class="col-lg-7">
+                    <form id="checkoutForm">
 
-                    <div class="box-section account-box-section">
-                        <h5 class="section-title-small text-dark-gray mb-3">Tài khoản</h5>
-                        <div class="account-box">
-                            <!-- Account info will be loaded here -->
+                        <div class="box-section account-box-section">
+                            <h5 class="section-title-small text-dark-gray mb-3">Tài khoản</h5>
+                            <div class="account-box">
+                                <!-- Account info will be loaded here -->
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="box-section shipping-info-section">
-                        <div class="section-header">
-                            <h5 class="section-title-small text-dark-gray">Thông tin giao hàng</h5>
-                            <button type="button" class="btn-change" onclick="checkoutPage.showAddressSelector()">Thay đổi</button>
-                        </div>
-                        <div class="row g-3">
-                            <div class="col-12">
-                                <div class="form-floating">
-                                    <input type="text" class="form-control" id="shippingFullName" placeholder="Họ và tên" required>
-                                    <label for="shippingFullName">Họ và tên</label>
+                        <div class="box-section shipping-info-section">
+                            <div class="section-header">
+                                <h5 class="section-title-small text-dark-gray">Thông tin giao hàng</h5>
+                                <button type="button" class="btn-change"
+                                    onclick="checkoutPage.showAddressSelector()">Thay đổi</button>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <div class="form-floating">
+                                        <input type="text" class="form-control" id="shippingFullName"
+                                            placeholder="Họ và tên" required>
+                                        <label for="shippingFullName">Họ và tên</label>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-floating">
+                                        <input type="tel" class="form-control" id="shippingPhone"
+                                            placeholder="Số điện thoại" required>
+                                        <label for="shippingPhone">Số điện thoại</label>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-floating">
+                                        <input type="email" class="form-control" id="shippingGmail" placeholder="Email"
+                                            required>
+                                        <label for="shippingGmail">Email</label>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <div class="form-floating">
+                                        <select class="form-select" id="shippingProvince" required>
+                                            <option value="">Chọn Tỉnh/Thành phố</option>
+                                        </select>
+                                        <label for="shippingProvince">Tỉnh/Thành phố</label>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <div class="form-floating">
+                                        <select class="form-select" id="shippingDistrict" required disabled>
+                                            <option value="">Chọn Quận/Huyện</option>
+                                        </select>
+                                        <label for="shippingDistrict">Quận/Huyện</label>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <div class="form-floating">
+                                        <select class="form-select" id="shippingWard" required disabled>
+                                            <option value="">Chọn Phường/Xã</option>
+                                        </select>
+                                        <label for="shippingWard">Phường/Xã</label>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-floating">
+                                        <input type="text" class="form-control" id="shippingAddressDetail"
+                                            placeholder="Địa chỉ, tên đường" required>
+                                        <label for="shippingAddressDetail">Địa chỉ, tên đường</label>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="col-12">
-                                <div class="form-floating">
-                                    <input type="tel" class="form-control" id="shippingPhone" placeholder="Số điện thoại" required>
-                                    <label for="shippingPhone">Số điện thoại</label>
-                                </div>
-                            </div>
-                            <div class="col-12">
-                                <div class="form-floating">
-                                    <input type="email" class="form-control" id="shippingGmail" placeholder="Email" required>
-                                    <label for="shippingGmail">Email</label>
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <div class="form-floating">
-                                    <select class="form-select" id="shippingProvince" required>
-                                        <option value="">Chọn Tỉnh/Thành phố</option>
-                                    </select>
-                                    <label for="shippingProvince">Tỉnh/Thành phố</label>
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <div class="form-floating">
-                                    <select class="form-select" id="shippingWard" required disabled>
-                                        <option value="">Chọn Phường/Xã</option>
-                                    </select>
-                                    <label for="shippingWard">Phường/Xã</label>
-                                </div>
-                            </div>
-                            <div class="col-12">
-                                <div class="form-floating">
-                                    <input type="text" class="form-control" id="shippingAddressDetail" placeholder="Địa chỉ, tên đường" required>
-                                    <label for="shippingAddressDetail">Địa chỉ, tên đường</label>
+                        </div>
+
+                        <div class="box-section delivery-method-section">
+                            <h5 class="section-title-small text-dark-gray mb-3">Phương thức giao hàng</h5>
+                            <div class="delivery-option active">
+                                <input type="radio" name="deliveryMethod" value="express" checked hidden>
+                                <div class="option-details">
+                                    <i class="fas fa-rocket"></i>
+                                    <span>Vận chuyển Hỏa tốc</span>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="box-section delivery-method-section">
-                        <h5 class="section-title-small text-dark-gray mb-3">Phương thức giao hàng</h5>
-                        <div class="delivery-option active">
-                            <input type="radio" name="deliveryMethod" value="express" checked hidden>
-                            <div class="option-details">
-                                <i class="fas fa-rocket"></i>
-                                <span>Vận chuyển Hỏa tốc</span>
+
+                        <div class="box-section payment-method-section">
+                            <h5 class="section-title-small text-dark-gray mb-3">Phương thức thanh toán</h5>
+
+                            <div class="payment-option-row active">
+                                <input type="radio" name="paymentMethod" value="COD" checked hidden>
+                                <div class="option-details">
+                                    <img src="https://www.svgrepo.com/show/425138/cash-on-delivery.svg" alt="COD Logo">
+                                    <span>Thanh toán khi nhận hàng (COD)</span>
+                                </div>
                             </div>
-                        </div>
-                    </div>
 
-
-                    <div class="box-section payment-method-section">
-                        <h5 class="section-title-small text-dark-gray mb-3">Phương thức thanh toán</h5>
-
-                        <div class="payment-option-row active">
-                            <input type="radio" name="paymentMethod" value="COD" checked hidden>
-                            <div class="option-details">
-                                <img src="https://www.svgrepo.com/show/425138/cash-on-delivery.svg" alt="COD Logo">
-                                <span>Thanh toán khi nhận hàng (COD)</span>
+                            <div class="payment-option-row">
+                                <input type="radio" name="paymentMethod" value="MoMo" hidden>
+                                <div class="option-details">
+                                    <img src="https://developers.momo.vn/v2/images/logo.svg" alt="MoMo Logo">
+                                    <span>Thanh toán bằng ví MoMo</span>
+                                </div>
                             </div>
-                        </div>
 
-                        <div class="payment-option-row">
-                            <input type="radio" name="paymentMethod" value="MoMo" hidden>
-                            <div class="option-details">
-                                <img src="https://developers.momo.vn/v2/images/logo.svg" alt="MoMo Logo">
-                                <span>Thanh toán bằng ví MoMo</span>
+                            <div class="payment-option-row">
+                                <input type="radio" name="paymentMethod" value="VNPay" hidden>
+                                <div class="option-details">
+                                    <img src="https://cdn.cdnlogo.com/logos/v/99/vnpay.svg" alt="VNPAY Logo">
+                                    <span>Thanh toán qua VNPAY</span>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="payment-option-row">
-                            <input type="radio" name="paymentMethod" value="VNPay" hidden>
-                            <div class="option-details">
-                                <img src="https://cdn.cdnlogo.com/logos/v/99/vnpay.svg" alt="VNPAY Logo">
-                                <span>Thanh toán qua VNPAY</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="box-section order-notes-section">
-                        <h5 class="section-title-small text-dark-gray mb-3">Ghi chú đơn hàng</h5>
-                        <div class="form-group">
-                            <textarea 
-                                class="form-control" 
-                                id="orderNotes" 
-                                name="orderNotes"
-                                rows="3" 
-                                placeholder="Nhập ghi chú cho đơn hàng (tùy chọn)..."
-                                style="resize: vertical; min-height: 80px;">
+                        <div class="box-section order-notes-section">
+                            <h5 class="section-title-small text-dark-gray mb-3">Ghi chú đơn hàng</h5>
+                            <div class="form-group">
+                                <textarea class="form-control" id="orderNotes" name="orderNotes" rows="3"
+                                    placeholder="Nhập ghi chú cho đơn hàng (tùy chọn)..."
+                                    style="resize: vertical; min-height: 80px;">
                             </textarea>
-                            <small class="form-text text-muted mt-2">
+                                <small class="form-text text-muted mt-2">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Bạn có thể ghi chú về địa chỉ giao hàng, thời gian nhận hàng, hoặc yêu cầu đặc biệt
+                                </small>
+                            </div>
+                        </div>
+
+                    </form>
+                </div>
+
+                <div class="col-lg-5">
+                    <div class="sticky-sidebar">
+                        <div class="box-section cart-summary-section">
+                            <div class="cart-header">
+                                <h5 class="text-dark-gray">Sản phẩm</h5>
+                            </div>
+
+                            <div id="selected-items-container">
+                                <!-- Sản phẩm đã chọn sẽ được load động từ API -->
+                                <div class="text-center py-4">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <p class="text-muted mt-2">Đang tải sản phẩm...</p>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <div class="box-section coupon-box-section mt-3">
+                            <h6 class="section-title-small fw-bold mb-3">
+                                <i class="fas fa-tag me-2"></i>
+                                Mã giảm giá
+                            </h6>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="promoCode" placeholder="Nhập mã giảm giá">
+                                <button class="btn btn-outline-pink" type="button" id="applyPromoBtn">
+                                    Áp dụng
+                                </button>
+                            </div>
+                            <small class="text-muted mt-2 d-block">
                                 <i class="fas fa-info-circle me-1"></i>
-                                Bạn có thể ghi chú về địa chỉ giao hàng, thời gian nhận hàng, hoặc yêu cầu đặc biệt
+                                Nhập mã để được giảm giá thêm
                             </small>
                         </div>
-                    </div>
 
-                </form>
-            </div>
-
-            <div class="col-lg-5"><div class="sticky-sidebar">
-                <div class="box-section cart-summary-section">
-                    <div class="cart-header">
-                        <h5 class="text-dark-gray">Sản phẩm</h5>
-                    </div>
-
-                    <div id="selected-items-container">
-                        <!-- Sản phẩm đã chọn sẽ được load động từ API -->
-                        <div class="text-center py-4">
-                            <div class="spinner-border text-primary" role="status">
-                                <span class="visually-hidden">Loading...</span>
+                        <div class="box-section summary-box-section mt-3">
+                            <h5 class="section-title-small text-dark-gray">Tóm tắt đơn hàng</h5>
+                            <div class="summary-row">
+                                <span>Tổng tiền hàng</span>
+                                <span id="summary-subtotal" class="fw-medium">1,798,000đ</span>
                             </div>
-                            <p class="text-muted mt-2">Đang tải sản phẩm...</p>
-                        </div>
-                    </div>
-
-                </div>
-
-                <div class="box-section coupon-box-section mt-3">
-                    <h6 class="section-title-small fw-bold mb-3">
-                        <i class="fas fa-tag me-2"></i>
-                        Mã giảm giá
-                    </h6>
-                    <div class="input-group">
-                        <input type="text" class="form-control" id="promoCode" placeholder="Nhập mã giảm giá">
-                        <button class="btn btn-outline-pink" type="button" id="applyPromoBtn">
-                            Áp dụng
-                        </button>
-                    </div>
-                    <small class="text-muted mt-2 d-block">
-                        <i class="fas fa-info-circle me-1"></i>
-                        Nhập mã để được giảm giá thêm
-                    </small>
-                </div>
+                            <div class="summary-row">
+                                <span>Phí vận chuyển</span>
+                                <span id="summary-shipping" class="fw-medium">0đ</span>
+                            </div>
 
                 <div class="box-section summary-box-section mt-3">
                     <h5 class="section-title-small text-dark-gray">Tóm tắt đơn hàng</h5>
@@ -289,81 +311,7 @@
     </div>
 </div>
 
-<!-- Auth Modal -->
-<div class="modal fade" id="authModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg">
-            <div class="modal-header border-0 text-center">
-                <h5 class="modal-title fw-bold fs-4 text-dark w-100" id="authModalTitle">
-                    Welcome Back! 💕
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body px-4 pb-4">
-                <form id="authForm">
-                    <a class="google-btn" href="/oauth2/authorization/google">
-                        <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google">
-                        Đăng nhập với Google
-                    </a>
-                    
-                    <div class="divider">
-                        <span>hoặc</span>
-                    </div>
-                    
-                    <div class="form-floating mb-3">
-                        <input type="text" class="form-control" id="authUsername" placeholder="Tên đăng nhập" required>
-                        <label for="authUsername">Tên đăng nhập</label>
-                    </div>
-                    
-                    <div class="form-floating mb-3" id="authEmailContainer" style="display: none;">
-                        <input type="email" class="form-control" id="authEmail" placeholder="Email">
-                        <label for="authEmail">Email</label>
-                    </div>
-                    
-                    <div class="form-floating mb-3" id="authFirstNameContainer" style="display: none;">
-                        <input type="text" class="form-control" id="authFirstName" placeholder="Họ">
-                        <label for="authFirstName">Họ</label>
-                    </div>
-                    
-                    <div class="form-floating mb-3" id="authLastNameContainer" style="display: none;">
-                        <input type="text" class="form-control" id="authLastName" placeholder="Tên">
-                        <label for="authLastName">Tên</label>
-                    </div>
-                    
-                    <div class="form-floating mb-3">
-                        <input type="password" class="form-control" id="authPassword" placeholder="Mật khẩu" required>
-                        <label for="authPassword">Mật khẩu</label>
-                    </div>
-                    
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div class="form-check" id="rememberMeContainer">
-                            <input class="form-check-input" type="checkbox" id="rememberMe">
-                            <label class="form-check-label" for="rememberMe">
-                                Ghi nhớ đăng nhập
-                            </label>
-                        </div>
-                        <a href="#" class="text-decoration-none" id="forgotPasswordLink" style="display: none;">
-                            Quên mật khẩu?
-                        </a>
-                    </div>
-                    
-                    <button type="submit" class="btn btn-primary w-100 mb-3" id="authSubmitBtn">
-                        Đăng nhập
-                    </button>
-                    
-                    <div class="text-center">
-                        <span class="text-muted" id="authSwitchText">
-                            Chưa có tài khoản?
-                        </span>
-                        <a href="#" class="text-decoration-none ms-1" id="authSwitchLink">
-                            Đăng ký ngay
-                        </a>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>>
+
                             <div class="col-12">
                                 <div class="form-floating">
                                     <input type="tel" class="form-control" id="shippingPhone" placeholder="Số điện thoại" required>
@@ -514,30 +462,26 @@
                         <span>Tổng thanh toán</span>
                         <span id="summary-total" class="fw-bold">0đ</span>
                     </div>
-
-                    <button type="submit" form="checkoutForm" class="btn btn-checkout">
-                        ĐẶT HÀNG
-                    </button>
                 </div>
-            </div> </div>
+            </div>
+            <div class="sidebar-stopper"></div>
         </div>
-        <div class="sidebar-stopper"></div>
+    </main>
+    <!---->
+    <div th:replace="user/layout/user-footer :: footer"></div>
+
+
+    <!-- Toast Container -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastContainer">
+        <!-- Toasts will be added here dynamically -->
     </div>
-</main>
-<!---->
-<div th:replace="user/layout/user-footer :: footer"></div>
 
-
-<!-- Toast Container -->
-<div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastContainer">
-    <!-- Toasts will be added here dynamically -->
-</div>
-
-<!-- Loading Overlay -->
-<div id="loading-overlay" class="loading-overlay" style="display: none;">
-    <div class="loading-spinner">
-        <div class="spinner-border" role="status"></div>
-        <div class="loading-text">Đang xử lý...</div>
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay" style="display: none;">
+        <div class="loading-spinner">
+            <div class="spinner-border" role="status"></div>
+            <div class="loading-text">Đang xử lý...</div>
+        </div>
     </div>
 </div>
 

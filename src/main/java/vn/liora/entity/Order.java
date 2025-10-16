@@ -30,9 +30,15 @@ public class Order {
     @Column(name = "PaymentMethod", nullable = false)
     String paymentMethod;
 
-
     @Column(name = "OrderStatus", nullable = false)
     String orderStatus;
+
+    @Column(name = "PaymentStatus", nullable = false)
+    String paymentStatus; // PENDING, PAID, FAILED, CANCELLED
+
+    @Column(name = "ShippingFee", nullable = false)
+    @Builder.Default
+    BigDecimal shippingFee = BigDecimal.ZERO;
 
     @Column(name = "Name", nullable = false, columnDefinition = "NVARCHAR(255)")
     String name;
@@ -40,11 +46,21 @@ public class Order {
     String phone;
     @Column(name = "AddressDetail", nullable = false, columnDefinition = "NVARCHAR(255)")
     String addressDetail;
+
+    @Column(name = "Ward", nullable = false, columnDefinition = "NVARCHAR(100)")
+    String ward;
+
+    @Column(name = "District", nullable = false, columnDefinition = "NVARCHAR(100)")
+    String district;
+
+    @Column(name = "Province", nullable = false, columnDefinition = "NVARCHAR(100)")
+    String province;
+
     @Column(name = "Email")
     String email;
+
     @Column(name = "Note", columnDefinition = "NVARCHAR(255)")
     String note;
-
 
     @ManyToOne
     @JoinColumn(name = "IdUser", nullable = true)
@@ -56,5 +72,32 @@ public class Order {
     @JsonIgnore
     private Discount discount;
 
-}
+    // Relationships with separate payment and shipping tables
+    @OneToOne(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
+    private VnpayPayment vnpayPayment;
 
+    @OneToOne(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
+    private GhnShipping ghnShipping;
+
+    @PrePersist
+    @PreUpdate
+    private void ensureNonNullMonetaryFields() {
+        if (totalDiscount == null) {
+            totalDiscount = BigDecimal.ZERO;
+        }
+        if (shippingFee == null) {
+            shippingFee = BigDecimal.ZERO;
+        }
+        if (total == null) {
+            total = BigDecimal.ZERO;
+        }
+        if (paymentStatus == null) {
+            paymentStatus = "PENDING";
+        }
+        if (orderStatus == null) {
+            orderStatus = "PENDING";
+        }
+    }
+}

@@ -14,9 +14,8 @@ import jakarta.validation.constraints.NotBlank;
 
 public class OrderCreationRequest {
 
-
     @NotBlank(message = "VALIDATION_REQUIRED_FIELD")
-    String  paymentMethod;
+    String paymentMethod;
     @NotNull(message = "VALIDATION_REQUIRED_FIELD")
     String name;
     @NotNull(message = "VALIDATION_REQUIRED_FIELD")
@@ -27,4 +26,12 @@ public class OrderCreationRequest {
     String note;
 
     Long discountId;
+
+    // Thông tin địa chỉ để tính phí & lưu Order
+    // districtId: GHN DistrictID (number as string/int), wardCode: GHN WardCode
+    Integer districtId;
+    String wardCode;
+    String provinceName;
+
+    // Tổng tiền FE sẽ KHÔNG gửi nữa; BE tự tính và lưu duy nhất.
 }

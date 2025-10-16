@@ -12,10 +12,15 @@ class LioraApp {
     // Backend-integrated add to cart: đảm bảo tạo cart (guest/user) và thêm sản phẩm vào DB
     async addProductToCartBackend(productId, quantity = 1, showMessage = true) {
         try {
+            const token = localStorage.getItem('access_token');
             // 1) Lấy/khởi tạo cart hiện tại (sẽ tạo cart guest nếu chưa có)
             const cartResp = await fetch('/cart/api/current', {
                 method: 'GET',
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                },
+                credentials: 'include'
             });
             if (!cartResp.ok) throw new Error('Cannot get cart');
             const cartData = await cartResp.json();
@@ -25,7 +30,12 @@ class LioraApp {
             // 2) Gọi API thêm sản phẩm vào giỏ
             const addResp = await fetch(`/CartProduct/${cartId}`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                },
+                credentials: 'include',
                 body: JSON.stringify({ idProduct: Number(productId), quantity: Number(quantity) })
             });
             if (!addResp.ok) throw new Error('Cannot add to cart');
@@ -1411,14 +1421,14 @@ class LioraApp {
                                             <label class="form-label mb-0" style="margin-right: 2rem;">Số lượng:</label>
                                             <div class="input-group" style="max-width: 150px;">
                                                 <button class="btn btn-outline-secondary" type="button" onclick="app.decrementQuantity()">-</button>
-                                                <input type="number" class="form-control text-center" value="1" min="1" max="${product.stock || 10}" id="quantityInput" onchange="app.validateQuantity()" oninput="app.validateQuantity()" onblur="app.validateQuantityOnBlur()">
+                                                <input type="number" class="form-control text-center" value="1" min="1" max="${Math.min(product.stock || 10, 99)}" id="quantityInput" onchange="app.validateQuantity()" oninput="app.validateQuantity()" onblur="app.validateQuantityOnBlur()">
                                                 <button class="btn btn-outline-secondary" type="button" onclick="app.incrementQuantity()">+</button>
                                             </div>
                                         </div>
                                         <!-- Error Message -->
                                         <div id="quantityError" class="text-danger mt-2" style="display: none;">
                                             <i class="fas fa-info-circle me-1"></i>
-                                            <span id="quantityErrorMessage">Số lượng tối đa bạn có thể mua là ${product.stock || 10}.</span>
+                                            <span id="quantityErrorMessage">Số lượng tối đa bạn có thể mua là ${Math.min(product.stock || 10, 99)}.</span>
                                         </div>
                                     </div>
                                     
@@ -1624,7 +1634,8 @@ class LioraApp {
 
         const currentValue = parseInt(quantityInput.value) || 0;
         const maxStock = parseInt(quantityInput.getAttribute('max')) || 10;
-
+        const maxAllowed = Math.min(maxStock, 99); // Tối đa 99 sản phẩm
+        
         // Allow empty input for better UX (user can clear and type new number)
         if (quantityInput.value === '' || quantityInput.value === '0') {
             // Hide error message when input is empty (user is typing)
@@ -1632,15 +1643,15 @@ class LioraApp {
             quantityInput.classList.remove('is-invalid');
             return;
         }
-
-        if (currentValue > maxStock) {
+        
+        if (currentValue > maxAllowed) {
             // Show error message
             errorDiv.style.display = 'block';
-            errorMessage.textContent = `Số lượng tối đa bạn có thể mua là ${maxStock}.`;
+            errorMessage.textContent = `Số lượng tối đa là ${maxAllowed} sản phẩm.`;
             quantityInput.classList.add('is-invalid');
-
-            // Reset to max stock
-            quantityInput.value = maxStock;
+            
+            // Reset to max allowed
+            quantityInput.value = maxAllowed;
         } else if (currentValue < 1) {
             // Show error for minimum
             errorDiv.style.display = 'block';
@@ -1677,8 +1688,9 @@ class LioraApp {
 
         const currentValue = parseInt(quantityInput.value) || 0;
         const maxStock = parseInt(quantityInput.getAttribute('max')) || 10;
-
-        if (currentValue < maxStock) {
+        const maxAllowed = Math.min(maxStock, 99); // Tối đa 99 sản phẩm
+        
+        if (currentValue < maxAllowed) {
             quantityInput.value = currentValue + 1;
             this.validateQuantity();
         }

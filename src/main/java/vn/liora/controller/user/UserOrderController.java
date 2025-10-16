@@ -31,10 +31,9 @@ public class UserOrderController {
         return ResponseEntity.ok(response);
     }
 
-
     // ✅ 3. Xem chi tiết đơn hàng của chính người dùng
     @GetMapping("/{userId}/{idOrder}")
-    public ResponseEntity<OrderResponse> getOrderById(@PathVariable Long idOrder) {
+    public ResponseEntity<OrderResponse> getOrderById(@PathVariable Long userId, @PathVariable Long idOrder) {
         OrderResponse response = orderService.getOrderById(idOrder);
         return ResponseEntity.ok(response);
     }

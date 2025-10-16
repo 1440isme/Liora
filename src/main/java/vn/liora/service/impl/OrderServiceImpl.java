@@ -5,10 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+// removed unused imports
 
 import java.util.ArrayList;
 import org.springframework.stereotype.Service;
@@ -26,6 +23,7 @@ import vn.liora.repository.*;
 import vn.liora.service.IImageService;
 import vn.liora.service.IOrderService;
 import vn.liora.service.IProductService;
+import vn.liora.service.IGhnShippingService;
 import vn.liora.entity.Discount;
 import vn.liora.repository.DiscountRepository;
 
@@ -43,6 +41,7 @@ public class OrderServiceImpl implements IOrderService {
     OrderRepository orderRepository;
     UserRepository userRepository;
     CartRepository cartRepository;
+    @SuppressWarnings("unused")
     AddressRepository addressRepository;
     OrderProductRepository orderProductRepository;
     OrderProductMapper orderProductMapper;
@@ -50,6 +49,7 @@ public class OrderServiceImpl implements IOrderService {
     OrderMapper orderMapper;
     IImageService imageService;
     IProductService productService;
+    IGhnShippingService ghnShippingService;
 
     @Override
     @Transactional
@@ -63,11 +63,22 @@ public class OrderServiceImpl implements IOrderService {
                 throw new AppException(ErrorCode.NO_SELECTED_PRODUCT);
             }
 
-
             Order order = orderMapper.toOrder(request);
-            order.setUser(user);
+            order.setUser(user); // user có thể null khi guest; các thao tác phía dưới phải null-safe
             order.setOrderDate(LocalDateTime.now());
             order.setOrderStatus("PENDING");
+            order.setPaymentStatus("PENDING");
+
+            // Map địa chỉ GHN từ request (nếu FE gửi) để tính phí chuẩn
+            if (request.getDistrictId() != null) {
+                order.setDistrict(String.valueOf(request.getDistrictId()));
+            }
+            if (request.getWardCode() != null) {
+                order.setWard(request.getWardCode());
+            }
+            if (request.getProvinceName() != null) {
+                order.setProvince(request.getProvinceName());
+            }
 
             List<OrderProduct> orderProducts = selected.stream()
                     .map(cp -> {
@@ -84,7 +95,7 @@ public class OrderServiceImpl implements IOrderService {
             BigDecimal totalDiscount = BigDecimal.ZERO;
             BigDecimal total = subtotal;
 
-            if (request.getDiscountId() != null) {
+            if (request.getDiscountId() != null && user != null) {
                 try {
                     // Kiểm tra discount có tồn tại không
                     Discount discount = discountRepository.findById(request.getDiscountId())
@@ -115,9 +126,25 @@ public class OrderServiceImpl implements IOrderService {
                 }
             }
 
-            // 9. Set tổng tiền cho order
+            // 9. Tính phí ship từ GHN theo combobox FE (chỉ dựa vào khoảng cách) - dùng 1
+            // nơi duy nhất
+            BigDecimal shippingFee = BigDecimal.ZERO;
+            try {
+                Integer toDistrictId = request.getDistrictId();
+                String toWardCode = request.getWardCode();
+                if (toDistrictId != null && toWardCode != null) {
+                    shippingFee = ghnShippingService.calculateFeeByLocation(toDistrictId, toWardCode);
+                }
+            } catch (Exception ex) {
+                log.warn("Calculate GHN fee by location failed, fallback 0: {}", ex.getMessage());
+                shippingFee = BigDecimal.ZERO;
+            }
+            order.setShippingFee(shippingFee);
+
+            // 10. Set tổng tiền cho order (bao gồm phí ship)
             order.setTotalDiscount(totalDiscount);
-            order.setTotal(total);
+            BigDecimal computedTotal = total.add(shippingFee);
+            order.setTotal(computedTotal);
 
             final Order savedOrder = orderRepository.save(order);
             orderProducts.forEach(op -> op.setOrder(savedOrder));
@@ -145,8 +172,24 @@ public class OrderServiceImpl implements IOrderService {
             }
             
             cartProductRepository.deleteAll(selected);
+
+            // Tạo vận đơn GHN ngay khi đặt hàng nếu không dùng VNPAY (COD)
+            try {
+                if (request.getPaymentMethod() != null && !"VNPAY".equalsIgnoreCase(request.getPaymentMethod())) {
+                    if (savedOrder.getDistrict() != null && savedOrder.getWard() != null) {
+                        ghnShippingService.createShippingOrder(savedOrder);
+                        log.info("Created GHN shipping order (COD) for Order {}", savedOrder.getIdOrder());
+                    } else {
+                        log.warn("Skip GHN create (COD): Order missing district/ward.");
+                    }
+                }
+            } catch (Exception e) {
+                log.error("Failed to create GHN shipping order (COD) for Order {}: {}", savedOrder.getIdOrder(),
+                        e.getMessage());
+            }
+            Long userIdLog = (user != null ? user.getUserId() : null);
             log.info("Order created successfully. Order ID: {}, User: {}, Total: {}, Discount: {}",
-                    savedOrder.getIdOrder(), user != null ? user.getUserId() : "Guest", total, totalDiscount);
+                    savedOrder.getIdOrder(), userIdLog, total, totalDiscount);
 
             return orderMapper.toOrderResponse(savedOrder);
 
@@ -258,21 +301,23 @@ public class OrderServiceImpl implements IOrderService {
         return orderMapper.toOrderResponseList(orders);
     }
 
+    @Autowired
+    private ReviewRepository reviewRepository;
     @Override
     public List<OrderResponse> getMyOrdersPaginated(Long userId, int page, int size) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
 
         List<Order> orders = orderRepository.findByUserOrderByOrderDateDesc(user);
-        
+
         // Manual pagination
         int start = page * size;
         int end = Math.min(start + size, orders.size());
-        
+
         if (start >= orders.size()) {
             return new ArrayList<>();
         }
-        
+
         List<Order> paginatedOrders = orders.subList(start, end);
         return orderMapper.toOrderResponseList(paginatedOrders);
     }
@@ -288,6 +333,20 @@ public class OrderServiceImpl implements IOrderService {
     public List<OrderResponse> getAllOrders() {
         List<Order> orders = orderRepository.findAll();
         return orderMapper.toOrderResponseList(orders);
+//        List<Order> orders = orderRepository.findAll();
+//        List<OrderResponse> responses = orderMapper.toOrderResponseList(orders);
+//
+//        // Set hasReview cho từng order
+//        for (int i = 0; i < orders.size(); i++) {
+//            Order order = orders.get(i);
+//            OrderResponse response = responses.get(i);
+//
+//            // Kiểm tra xem có review nào cho đơn hàng này không
+//            boolean hasReview = reviewRepository.existsByOrderId(order.getIdOrder());
+//            response.setHasReview(hasReview);
+//        }
+//
+//        return responses;
     }
 
     @Override

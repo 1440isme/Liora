@@ -22,6 +22,7 @@ public class OrderResponse {
     String orderStatus;
     String paymentMethod;
     BigDecimal totalDiscount;
+    BigDecimal shippingFee;
     BigDecimal total;
     Long userId;
     String customerName;
@@ -29,4 +30,5 @@ public class OrderResponse {
     Long discountId;
     String discountName;
     BigDecimal discountValue;
+    private Boolean hasReview = false;
 }

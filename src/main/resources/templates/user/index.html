@@ -23,6 +23,8 @@
 
     <!-- Custom CSS -->
     <link rel="stylesheet" th:href="@{/user/css/style.css}">
+    <link rel="stylesheet" th:href="@{/user/css/bestseller-products-homepage.css}">
+    <link rel="stylesheet" th:href="@{/user/css/newest-products-homepage.css}">
 
 </head>
 
@@ -190,26 +192,14 @@
             <!-- Best Sellers -->
             <section class="py-5">
                 <div class="container">
-                    <div class="d-flex align-items-center justify-content-between mb-4">
-                        <h2 class="fw-bold mb-0 text-uppercase">Best Sellers</h2>
-                        <a href="/products?sort=bestseller" class="text-pink-primary fw-semibold">Xem tất cả</a>
-                    </div>
-                    <div id="best-sellers-grid" class="row g-4">
-                        <!-- Nội dung sản phẩm bestseller sẽ được render bằng JS -->
-                    </div>
+                    <div th:replace="user/products/fragments/_bestseller-products-homepage :: bestsellerProductsHomepageSection"></div>
                 </div>
             </section>
 
             <!-- Hàng mới về -->
             <section class="py-5 bg-light">
                 <div class="container">
-                    <div class="d-flex align-items-center justify-content-between mb-4">
-                        <h2 class="fw-bold mb-0 text-uppercase">Hàng mới về</h2>
-                        <a href="/products?sort=new" class="text-pink-primary fw-semibold">Xem tất cả</a>
-                    </div>
-                    <div id="new-arrivals-grid" class="row g-4">
-                        <!-- Nội dung sản phẩm mới sẽ được render bằng JS -->
-                    </div>
+                    <div th:replace="user/products/fragments/_newest-products-homepage :: newestProductsHomepageSection"></div>
                 </div>
             </section>
 
@@ -357,6 +347,8 @@
     <script th:src="@{/user/js/main.js}"></script>
     <script th:src="@{/user/js/products.js}"></script>
     <script th:src="@{/user/js/reviews.js}"></script>
+    <script th:src="@{/user/js/bestseller-products-homepage.js}"></script>
+    <script th:src="@{/user/js/newest-products-homepage.js}"></script>
     <script th:src="@{/user/js/auth.js}"></script>
 
     <!-- Discount Slider Styles -->

@@ -233,8 +233,15 @@ class BrandProductsManager {
 
         console.log('Rendering products - clearing grid first');
         if (emptyState) emptyState.style.display = 'none';
-        container.style.display = 'block';
-
+        container.style.display = 'grid';
+        container.style.gridTemplateColumns = 'repeat(4, 1fr)';
+        container.style.gap = '1rem';
+        container.style.padding = '1rem 1rem';
+        container.style.width = '100%';
+        container.style.maxWidth = '2500px';
+        container.style.margin = '0 auto';
+        container.style.justifyContent = 'stretch';
+        
         const html = products.map(product => this.createProductCard(product)).join('');
         container.innerHTML = html;
 
@@ -914,14 +921,14 @@ class BrandProductsManager {
                                             <label class="form-label mb-0" style="margin-right: 2rem;">Số lượng:</label>
                                             <div class="input-group" style="max-width: 150px;">
                                                 <button class="btn btn-outline-secondary" type="button" onclick="app.decrementQuantity()">-</button>
-                                                <input type="number" class="form-control text-center" value="1" min="1" max="${product.stock || 10}" id="quantityInput" onchange="app.validateQuantity()" oninput="app.validateQuantity()" onblur="app.validateQuantityOnBlur()">
+                                                <input type="number" class="form-control text-center" value="1" min="1" max="${Math.min(product.stock || 10, 99)}" id="quantityInput" onchange="app.validateQuantity()" oninput="app.validateQuantity()" onblur="app.validateQuantityOnBlur()">
                                                 <button class="btn btn-outline-secondary" type="button" onclick="app.incrementQuantity()">+</button>
                                             </div>
                                         </div>
                                         <!-- Error Message -->
                                         <div id="quantityError" class="text-danger mt-2" style="display: none;">
                                             <i class="fas fa-info-circle me-1"></i>
-                                            <span id="quantityErrorMessage">Số lượng tối đa bạn có thể mua là ${product.stock || 10}.</span>
+                                            <span id="quantityErrorMessage">Số lượng tối đa bạn có thể mua là ${Math.min(product.stock || 10, 99)}.</span>
                                         </div>
                                     </div>
                                     
@@ -1245,6 +1252,20 @@ class BrandProductsManager {
         } catch (_) {
             this.showNotification('Không thể thực hiện Mua ngay. Vui lòng thử lại.', 'error');
         }
+        
+        // Show success message
+        this.showNotification(`${quantity} x ${product.name} đã được thêm vào giỏ hàng! Đang chuyển đến trang thanh toán...`, 'success');
+        
+        // Close modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('quickViewModal'));
+        if (modal) {
+            modal.hide();
+        }
+        
+        // Redirect to checkout after a short delay
+        setTimeout(() => {
+            window.location.href = '/checkout';
+        }, 1500);
     }
 
     showNotification(message, type = 'info') {

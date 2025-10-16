@@ -1,6 +1,5 @@
 package vn.liora.controller.admin;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -17,6 +16,7 @@ import vn.liora.entity.Brand;
 import vn.liora.mapper.BrandMapper;
 import vn.liora.service.IBrandService;
 
+import java.util.Comparator;
 import java.util.List;
 
 @RestController
@@ -112,6 +112,10 @@ public class AdminBrandController {
         ApiResponse<List<BrandResponse>> response = new ApiResponse<>();
         try {
             List<Brand> brands = brandService.findActiveBrands();
+            
+            // Sort brands alphabetically by name
+            brands.sort(Comparator.comparing(Brand::getName));
+            
             List<BrandResponse> brandResponses = brands.stream()
                     .map(brandMapper::toBrandResponse)
                     .toList();
