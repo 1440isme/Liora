@@ -5,6 +5,7 @@ import org.springframework.data.domain.Pageable;
 import vn.liora.dto.request.ProductCreationRequest;
 import vn.liora.dto.request.ProductUpdateRequest;
 import vn.liora.dto.response.ProductResponse;
+import vn.liora.dto.response.BrandResponse;
 import vn.liora.entity.Product;
 
 import java.math.BigDecimal;
@@ -106,5 +107,10 @@ public interface IProductService {
     List<Product> findNewestProducts(Pageable pageable);
     List<Product> findBestSellingByCategory(Long categoryId, Pageable pageable);
     List<Product> findBestSellingByBrand(Long brandId, Pageable pageable);
+    List<BrandResponse> getBestSellingBrands();
+    List<BrandResponse> getNewestBrands();
+    
+    // Advanced APIs for dedicated pages with filtering
+    // Note: newest-advanced now uses direct controller logic like best-selling-advanced
 
 }

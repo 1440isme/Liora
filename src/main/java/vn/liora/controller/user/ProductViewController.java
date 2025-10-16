@@ -39,6 +39,30 @@ public class ProductViewController {
         }
     }
 
+    @GetMapping("/bestseller-products")
+    public String getBestsellerProducts(Model model) {
+        try {
+            // Add categories for navigation
+            model.addAttribute("parentCategories", categoryService.getCategoryTree());
+            return "user/products/bestseller-products";
+        } catch (Exception e) {
+            // If error, redirect to home
+            return "redirect:/";
+        }
+    }
+
+    @GetMapping("/newest-products")
+    public String getNewestProducts(Model model) {
+        try {
+            // Add categories for navigation
+            model.addAttribute("parentCategories", categoryService.getCategoryTree());
+            return "user/products/newest-products";
+        } catch (Exception e) {
+            // If error, redirect to home
+            return "redirect:/";
+        }
+    }
+
     @GetMapping("/{id}")
     public String productDetail(@PathVariable Long id, 
                                @RequestParam(required = false) String from,
