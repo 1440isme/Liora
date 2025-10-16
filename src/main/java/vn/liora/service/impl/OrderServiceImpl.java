@@ -234,10 +234,26 @@ public class OrderServiceImpl implements IOrderService {
         return orderMapper.toOrderResponseList(orders);
     }
 
+    @Autowired
+    private ReviewRepository reviewRepository;
     @Override
     public List<OrderResponse> getAllOrders() {
         List<Order> orders = orderRepository.findAll();
         return orderMapper.toOrderResponseList(orders);
+//        List<Order> orders = orderRepository.findAll();
+//        List<OrderResponse> responses = orderMapper.toOrderResponseList(orders);
+//
+//        // Set hasReview cho từng order
+//        for (int i = 0; i < orders.size(); i++) {
+//            Order order = orders.get(i);
+//            OrderResponse response = responses.get(i);
+//
+//            // Kiểm tra xem có review nào cho đơn hàng này không
+//            boolean hasReview = reviewRepository.existsByOrderId(order.getIdOrder());
+//            response.setHasReview(hasReview);
+//        }
+//
+//        return responses;
     }
 
     @Override
