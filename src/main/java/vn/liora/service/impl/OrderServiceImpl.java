@@ -25,6 +25,7 @@ import vn.liora.mapper.OrderProductMapper;
 import vn.liora.repository.*;
 import vn.liora.service.IImageService;
 import vn.liora.service.IOrderService;
+import vn.liora.service.IProductService;
 import vn.liora.entity.Discount;
 import vn.liora.repository.DiscountRepository;
 
@@ -48,6 +49,7 @@ public class OrderServiceImpl implements IOrderService {
     CartProductRepository cartProductRepository;
     OrderMapper orderMapper;
     IImageService imageService;
+    IProductService productService;
 
     @Override
     @Transactional
@@ -65,7 +67,7 @@ public class OrderServiceImpl implements IOrderService {
             Order order = orderMapper.toOrder(request);
             order.setUser(user);
             order.setOrderDate(LocalDateTime.now());
-            order.setOrderStatus("Pending");
+            order.setOrderStatus("PENDING");
 
             List<OrderProduct> orderProducts = selected.stream()
                     .map(cp -> {
@@ -88,8 +90,8 @@ public class OrderServiceImpl implements IOrderService {
                     Discount discount = discountRepository.findById(request.getDiscountId())
                             .orElseThrow(() -> new AppException(ErrorCode.DISCOUNT_NOT_FOUND));
 
-                    // Kiểm tra có thể áp dụng discount không
-                    if (discountService.canApplyDiscount(request.getDiscountId(), user.getUserId(), subtotal)) {
+                    // Kiểm tra có thể áp dụng discount không (chỉ cho user đã đăng nhập)
+                    if (user != null && discountService.canApplyDiscount(request.getDiscountId(), user.getUserId(), subtotal)) {
                         // Tính discount amount
                         totalDiscount = discountService.calculateDiscountAmount(request.getDiscountId(), subtotal);
                         total = subtotal.subtract(totalDiscount);
@@ -104,7 +106,7 @@ public class OrderServiceImpl implements IOrderService {
                                 request.getDiscountId(), totalDiscount);
                     } else {
                         log.warn("Cannot apply discount {} to order. User: {}, Subtotal: {}",
-                                request.getDiscountId(), user.getUserId(), subtotal);
+                                request.getDiscountId(), user != null ? user.getUserId() : "Guest", subtotal);
                     }
                 } catch (Exception e) {
                     log.warn("Error applying discount {}: {}. Order will be created without discount.",
@@ -120,9 +122,31 @@ public class OrderServiceImpl implements IOrderService {
             final Order savedOrder = orderRepository.save(order);
             orderProducts.forEach(op -> op.setOrder(savedOrder));
             orderProductRepository.saveAll(orderProducts);
+            
+            // Cập nhật stock cho từng sản phẩm trong đơn hàng
+            for (OrderProduct orderProduct : orderProducts) {
+                try {
+                    Product product = orderProduct.getProduct();
+                    Integer currentStock = product.getStock();
+                    Integer orderedQuantity = orderProduct.getQuantity();
+                    Integer newStock = currentStock - orderedQuantity;
+                    // Cập nhật stock và sold count
+                    productService.updateStock(product.getProductId(), newStock);
+                    productService.updateSoldCount(product.getProductId(), product.getSoldCount() + orderedQuantity);
+                    
+                    log.info("Updated stock for product {}: {} -> {} (ordered: {})", 
+                            product.getProductId(), currentStock, newStock, orderedQuantity);
+                            
+                } catch (Exception e) {
+                    log.error("Error updating stock for product {}: {}", 
+                            orderProduct.getProduct().getProductId(), e.getMessage());
+                    // Không throw exception để không rollback toàn bộ đơn hàng
+                }
+            }
+            
             cartProductRepository.deleteAll(selected);
             log.info("Order created successfully. Order ID: {}, User: {}, Total: {}, Discount: {}",
-                    savedOrder.getIdOrder(), user.getUserId(), total, totalDiscount);
+                    savedOrder.getIdOrder(), user != null ? user.getUserId() : "Guest", total, totalDiscount);
 
             return orderMapper.toOrderResponse(savedOrder);
 
@@ -312,6 +336,13 @@ public class OrderServiceImpl implements IOrderService {
     public BigDecimal getTotalRevenueByUser(User user) {
         // Tính tổng doanh thu từ các đơn hàng của một người dùng
         BigDecimal total = orderRepository.getTotalRevenueByUser(user);
+        return total != null ? total : BigDecimal.ZERO;
+    }
+
+    @Override
+    public BigDecimal getTotalRevenueByUserCompleted(User user) {
+        // Tính tổng doanh thu từ các đơn hàng đã hoàn tất của một người dùng
+        BigDecimal total = orderRepository.getTotalRevenueByUserCompleted(user);
         return total != null ? total : BigDecimal.ZERO;
     }
 

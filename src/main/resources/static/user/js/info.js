@@ -453,6 +453,11 @@ class UserInfoManager {
                         <i class="fas fa-mouse-pointer"></i>
                         <span>Click để xem chi tiết</span>
                     </div>
+                    ${order.orderStatus === 'COMPLETED' ? `
+                    <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); userInfoManager.openReviewModal(${order.idOrder})">
+                        <i class="fas fa-star"></i> Đánh giá
+                    </button>
+                    ` : ''}
                     ${order.orderStatus === 'COMPLETED' || order.orderStatus === 'CANCELLED' ? `
                     <button class="btn btn-outline-success btn-sm" onclick="event.stopPropagation(); userInfoManager.reorder(${order.idOrder})">
                         <i class="fas fa-redo"></i> Mua lại
@@ -641,6 +646,11 @@ class UserInfoManager {
     async reorder(orderId) {
         // TODO: Implement reorder functionality
         this.showToast('Tính năng mua lại sẽ được cập nhật sớm', 'info');
+    }
+
+    async openReviewModal(orderId) {
+        // Chuyển đến trang chi tiết đơn hàng với modal đánh giá
+        window.location.href = `/user/order-detail/${orderId}#review`;
     }
 
 

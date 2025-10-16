@@ -421,12 +421,15 @@
 .btn-outline-secondary {
     color: #6c757d;
     border-color: #6c757d;
+    cursor: pointer;
 }
 
 .btn-outline-secondary:hover {
-    background-color: #6c757d;
-    border-color: #6c757d;
-    color: white;
+    background-color: transparent !important;
+    border-color: #6c757d !important;
+    color: #6c757d !important;
+    cursor: pointer !important;
+    transform: none !important;
 }
 
 .btn-outline-primary {
@@ -438,6 +441,70 @@
     background-color: var(--pink-primary);
     border-color: transparent;
     color: white;
+}
+
+/* Nút đánh giá - màu vàng */
+.order-actions .btn-primary,
+.order-actions button.btn-primary {
+    background-color: #ff9800 !important;
+    border-color: #ff9800 !important;
+    color: #fff !important;
+}
+
+.order-actions .btn-primary:hover,
+.order-actions button.btn-primary:hover {
+    background-color: #ff9800 !important;
+    border-color: #ff9800 !important;
+    color: #fff !important;
+}
+
+/* Nút "Gửi đánh giá" trong modal */
+.modal-footer .btn-primary,
+.modal-footer button.btn-primary {
+    background-color: #ff9800 !important;
+    border-color: #ff9800 !important;
+    color: #fff !important;
+}
+
+.modal-footer .btn-primary:hover,
+.modal-footer button.btn-primary:hover {
+    background-color: #e68900 !important;
+    border-color: #e68900 !important;
+    color: #fff !important;
+}
+
+/* Override tất cả nút primary trong trang order detail */
+.btn-primary {
+    background-color: #ff9800 !important;
+    border-color: #ff9800 !important;
+    color: #fff !important;
+}
+
+/* Bỏ hiệu ứng hover */
+.btn-primary:hover {
+    background-color: #ff9800 !important;
+    border-color: #ff9800 !important;
+    color: #fff !important;
+}
+
+/* Icon ngôi sao màu trắng */
+.btn-primary .fas,
+.btn-primary .fa,
+.btn-primary i {
+    color: #fff !important;
+}
+
+/* Ngoại lệ cho modal footer */
+.modal-footer .btn-primary {
+    background-color: #ff9800 !important;
+    border-color: #ff9800 !important;
+    color: #fff !important;
+}
+
+.modal-footer .btn-primary:hover {
+    background-color: #ff9800 !important;
+    border-color: #ff9800 !important;
+    color: #fff !important;
 }
 
 /* Status Badges */

@@ -533,10 +533,13 @@
     </script>
 
     <script>
-        $(document).ready(function () {
-            $('.btn-cart').click(function (e) {
-                e.preventDefault();
-                window.location.href = '/cart';
+        document.addEventListener('DOMContentLoaded', function () {
+            const cartButtons = document.querySelectorAll('.btn-cart');
+            cartButtons.forEach(function(button) {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    window.location.href = '/cart';
+                });
             });
         });
     </script>

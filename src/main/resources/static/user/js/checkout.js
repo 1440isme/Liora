@@ -126,6 +126,7 @@ class CheckoutPage {
             await this.loadAddresses();
         } catch (error) {
             this.renderLoginPrompt();
+            await this.loadShippingProvinces();
         }
     }
 

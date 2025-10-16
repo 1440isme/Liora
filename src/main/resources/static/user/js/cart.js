@@ -184,13 +184,13 @@ class CartPage {
                         </div>
                     </div>
                     <div class="col-auto">
-                        <a href="/product-detail" style="text-decoration: none;">
+                        <a href="/product/${item.idProduct}" style="text-decoration: none;">
                             <img src="${item.mainImageUrl || '/uploads/products/placeholder.jpg'}" alt="${item.productName || 'Sản phẩm'}" class="cart-product-image">
                         </a>
                     </div>
                     <div class="col">
                         <div class="cart-product-info">
-                            <a href="/product-detail" style="text-decoration: none; color: inherit;">
+                            <a href="/product/${item.idProduct}" style="text-decoration: none; color: inherit;">
                                 <h6 class="cart-product-title">${item.productName || 'Tên sản phẩm'}</h6>
                             </a>
                             <div class="cart-product-brand">${item.brandName || 'Thương hiệu'}</div>
@@ -267,11 +267,15 @@ class CartPage {
                         </div>
                     </div>
                     <div class="col-auto">
-                        <img src="${item.mainImageUrl || '/uploads/products/placeholder.jpg'}" alt="${item.productName || 'Sản phẩm'}" class="unavailable-product-image">
+                        <a href="/product/${item.idProduct}" style="text-decoration: none;">
+                            <img src="${item.mainImageUrl || '/uploads/products/placeholder.jpg'}" alt="${item.productName || 'Sản phẩm'}" class="unavailable-product-image">
+                        </a>
                     </div>
                     <div class="col">
                         <div class="unavailable-product-info">
-                            <h6 class="unavailable-product-title">${item.productName || 'Tên sản phẩm'}</h6>
+                            <a href="/product/${item.idProduct}" style="text-decoration: none; color: inherit;">
+                                <h6 class="unavailable-product-title">${item.productName || 'Tên sản phẩm'}</h6>
+                            </a>
                             <div class="unavailable-product-brand">${item.brandName || 'Thương hiệu'}</div>
                             <span class="product-status-tag ${statusClass}">${statusText}</span>
                         </div>
@@ -330,7 +334,7 @@ class CartPage {
             }
         } else if (action === 'decrease') {
             if (value > 1) {
-                value--;
+            value--;
             } else {
                 this.showToast(`Số lượng tối thiểu là 1 sản phẩm`, 'warning');
             }
