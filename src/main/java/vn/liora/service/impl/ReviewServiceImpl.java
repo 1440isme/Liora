@@ -54,6 +54,12 @@ public class ReviewServiceImpl implements IReviewService {
             throw new AppException(ErrorCode.REVIEW_ACCESS_DENIED);
         }
 
+        // THÊM: Kiểm tra đơn hàng đã được giao chưa
+        String orderStatus = orderProduct.getOrder().getOrderStatus();
+        if (!"DELIVERED".equals(orderStatus)) {
+            throw new AppException(ErrorCode.ORDER_NOT_DELIVERED);
+        }
+
         // Kiểm tra đã review chưa
         if (reviewRepository.existsByOrderProduct_IdOrderProduct(request.getOrderProductId())) {
             throw new AppException(ErrorCode.REVIEW_ALREADY_EXISTS);

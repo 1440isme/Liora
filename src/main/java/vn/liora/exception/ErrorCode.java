@@ -99,6 +99,7 @@ public enum ErrorCode {
     VALIDATION_DISCOUNT_TYPE_TOO_LONG(410, "Discount type must not exceed 50 characters", HttpStatus.BAD_REQUEST),
     DISCOUNT_NOT_APPLIED_TO_ORDER(411, "Discount is not applied to this order", HttpStatus.BAD_REQUEST),
     INTERNAL_SERVER_ERROR(412, "Internal server error", HttpStatus.INTERNAL_SERVER_ERROR),
+    ORDER_NOT_DELIVERED(413, "Order has not been delivered yet", HttpStatus.BAD_REQUEST),
     ;
 
     private int code;
