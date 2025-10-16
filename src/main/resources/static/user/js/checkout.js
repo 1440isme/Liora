@@ -35,16 +35,27 @@ class CheckoutPage {
         });
 
 
-        // Province change -> load wards for add address
+        // Province change -> load districts for add/edit address
         $(document).on('change', '#addrProvince', (e) => {
-            const provinceCode = e.target.value;
-            this.loadWards(provinceCode);
+            const provinceId = parseInt(e.target.value, 10);
+            this.loadDistricts(provinceId);
+            const wardSelect = document.getElementById('addrWard');
+            if (wardSelect) { wardSelect.innerHTML = '<option value="">Chọn Quận/Huyện trước</option>'; wardSelect.disabled = true; }
+        });
+        $(document).on('change', '#addrDistrict', (e) => {
+            const districtId = parseInt(e.target.value, 10);
+            this.loadWardsByDistrict(districtId);
         });
 
-        // Province change -> load wards for edit address
         $(document).on('change', '#editAddrProvince', (e) => {
-            const provinceCode = e.target.value;
-            this.loadEditWards(provinceCode);
+            const provinceId = parseInt(e.target.value, 10);
+            this.loadEditDistricts(provinceId);
+            const wardSelect = document.getElementById('editAddrWard');
+            if (wardSelect) { wardSelect.innerHTML = '<option value="">Chọn Quận/Huyện trước</option>'; wardSelect.disabled = true; }
+        });
+        $(document).on('change', '#editAddrDistrict', (e) => {
+            const districtId = parseInt(e.target.value, 10);
+            this.loadEditWards(districtId);
         });
 
         // Province change -> load districts for shipping form
@@ -155,6 +166,7 @@ class CheckoutPage {
         try {
             const addresses = await this.apiCall(`/addresses/${this.currentUser.userId}`, 'GET');
             this.addresses = addresses;
+            await this.resolveAddressesNames();
 
             // Load provinces first
             await this.loadShippingProvinces();
@@ -174,6 +186,68 @@ class CheckoutPage {
         }
     }
 
+    // Resolve names for display using GHN (similar to info.js)
+    async resolveAddressesNames() {
+        if (!Array.isArray(this.addresses)) return;
+        const resolved = await Promise.all(this.addresses.map(async (addr) => {
+            const provinceName = await this.getProvinceName(addr.provinceId);
+            const districtName = await this.getDistrictName(addr.provinceId, addr.districtId);
+            const wardName = await this.getWardName(addr.districtId, addr.wardCode);
+            return { ...addr, _provinceName: provinceName, _districtName: districtName, _wardName: wardName };
+        }));
+        this.addresses = resolved;
+    }
+
+    async getProvinceName(provinceId) {
+        try {
+            if (!provinceId) return '';
+            if (this.provincesCache && Array.isArray(this.provincesCache)) {
+                const found = this.provincesCache.find(p => (p.ProvinceID || p.provinceId || p.code) == provinceId);
+                if (found) return (found.ProvinceName || found.provinceName || found.name) || '';
+            }
+            const res = await fetch('/api/ghn/provinces');
+            if (!res.ok) return '';
+            const provinces = await res.json();
+            this.provincesCache = provinces;
+            const found = provinces.find(p => (p.ProvinceID || p.provinceId || p.code) == provinceId);
+            return found ? ((found.ProvinceName || found.provinceName || found.name) || '') : '';
+        } catch (_) { return ''; }
+    }
+
+    async getDistrictName(provinceId, districtId) {
+        try {
+            if (!provinceId || !districtId) return '';
+            this.districtsCacheByProvince = this.districtsCacheByProvince || new Map();
+            const key = String(provinceId);
+            let list = this.districtsCacheByProvince.get(key);
+            if (!list) {
+                const res = await fetch(`/api/ghn/districts/${provinceId}`);
+                if (!res.ok) return '';
+                list = await res.json();
+                this.districtsCacheByProvince.set(key, list);
+            }
+            const found = (list || []).find(d => (d.DistrictID || d.districtId) == districtId);
+            return found ? ((found.DistrictName || found.districtName || found.name) || '') : '';
+        } catch (_) { return ''; }
+    }
+
+    async getWardName(districtId, wardCode) {
+        try {
+            if (!districtId || !wardCode) return '';
+            this.wardsCacheByDistrict = this.wardsCacheByDistrict || new Map();
+            const key = String(districtId);
+            let list = this.wardsCacheByDistrict.get(key);
+            if (!list) {
+                const res = await fetch(`/api/ghn/wards/${districtId}`);
+                if (!res.ok) return '';
+                list = await res.json();
+                this.wardsCacheByDistrict.set(key, list);
+            }
+            const found = (list || []).find(w => (w.WardCode || w.wardCode) == wardCode);
+            return found ? ((found.WardName || found.wardName || found.name) || '') : '';
+        } catch (_) { return ''; }
+    }
+
     async fillAddressToForm(address) {
         if (!address) return;
 
@@ -189,16 +263,18 @@ class CheckoutPage {
         $('#shippingPhone').val(address.phone || '');
         $('#shippingAddressDetail').val(address.addressDetail || '');
 
-        // Fill province and ward dropdowns
-        if (address.province) {
-            // Find province code from province name
-            const matchingProvince = this.provincesCache?.find(p => (p.provinceName ?? p.ProvinceName) === address.province);
-            if (matchingProvince) {
-                const provinceId = matchingProvince.provinceId ?? matchingProvince.ProvinceID;
-                $('#shippingProvince').val(provinceId);
-                // Load districts for this province
-                await this.loadShippingDistricts(provinceId);
+        // Fill province/district/ward by IDs (GHN)
+        if (address.provinceId) {
+            $('#shippingProvince').val(address.provinceId);
+            await this.loadShippingDistricts(address.provinceId);
+            if (address.districtId) {
+                $('#shippingDistrict').val(address.districtId);
+                await this.loadShippingWards(address.districtId);
+                if (address.wardCode) {
+                    $('#shippingWard').val(address.wardCode);
+                }
             }
+            try { this.updateShippingFee(); } catch (_) { }
         }
     }
 
@@ -239,11 +315,31 @@ class CheckoutPage {
         `;
 
         $('body').append(modalHTML);
+        // Render immediately with current data to avoid blocking UI
+        try {
+            const initialHtml = (this.addresses || []).map(addr => this.createAddressOption(addr)).join('');
+            $('.address-list').html(initialHtml);
+        } catch (_) { $('.address-list').html(''); }
+        // Resolve names in background, then update if modal still open
+        Promise.resolve()
+            .then(() => this.resolveAddressesNames())
+            .then(() => {
+                if ($('#addressSelectorModal').length) {
+                    const listHtml = (this.addresses || []).map(addr => this.createAddressOption(addr)).join('');
+                    $('.address-list').html(listHtml);
+                }
+            })
+            .catch(() => { /* no-op to keep modal responsive */ });
     }
 
     createAddressOption(address) {
         const isDefault = address.isDefault ? '<span class="badge bg-success ms-2">Mặc định</span>' : '';
-        const fullAddress = [address.addressDetail, address.ward, address.province].filter(Boolean).join(', ');
+        const fullAddress = [
+            address.addressDetail,
+            address._wardName || '',
+            address._districtName || '',
+            address._provinceName || ''
+        ].filter(Boolean).join(', ');
         const isSelected = this.selectedAddressId === address.idAddress ? 'checked' : '';
 
         return `
@@ -321,7 +417,7 @@ class CheckoutPage {
         provinceSelect.innerHTML = '<option value="">Đang tải tỉnh/thành...</option>';
 
         try {
-            const res = await fetch(`${this.ghnBase}/provinces`);
+            const res = await fetch(`/api/ghn/provinces`);
             if (!res.ok) throw new Error('Không thể tải tỉnh/thành');
             const provinces = await res.json();
 
@@ -369,7 +465,7 @@ class CheckoutPage {
             districtSelect.disabled = true;
             districtSelect.innerHTML = '<option value="">Đang tải Quận/Huyện...</option>';
 
-            const res = await fetch(`${this.ghnBase}/districts/${provinceId}`);
+            const res = await fetch(`/api/ghn/districts/${provinceId}`);
             if (!res.ok) throw new Error('Không thể tải quận/huyện');
             const districts = await res.json();
 
@@ -428,7 +524,7 @@ class CheckoutPage {
             wardSelect.disabled = true;
             wardSelect.innerHTML = '<option value="">Đang tải Phường/Xã...</option>';
 
-            const res = await fetch(`${this.ghnBase}/wards/${districtId}`);
+            const res = await fetch(`/api/ghn/wards/${districtId}`);
             if (!res.ok) throw new Error('Không thể tải phường/xã');
             const wards = await res.json();
 
@@ -546,16 +642,22 @@ class CheckoutPage {
                                     <textarea class="form-control" id="addrDetail" rows="2" required></textarea>
                                 </div>
                                 <div class="row">
-                                    <div class="col-md-6 mb-3">
+                                    <div class="col-md-4 mb-3">
                                         <label for="addrProvince" class="form-label">Tỉnh/Thành phố *</label>
                                         <select class="form-control" id="addrProvince" required>
                                             <option value="">Chọn Tỉnh/Thành phố</option>
                                         </select>
                                     </div>
-                                    <div class="col-md-6 mb-3">
+                                    <div class="col-md-4 mb-3">
+                                        <label for="addrDistrict" class="form-label">Quận/Huyện *</label>
+                                        <select class="form-control" id="addrDistrict" required disabled>
+                                            <option value="">Chọn Quận/Huyện</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
                                         <label for="addrWard" class="form-label">Phường/Xã *</label>
                                         <select class="form-control" id="addrWard" required disabled>
-                                            <option value="">Chọn Tỉnh/Thành phố trước</option>
+                                            <option value="">Chọn Quận/Huyện trước</option>
                                         </select>
                                     </div>
                                 </div>
@@ -609,16 +711,22 @@ class CheckoutPage {
                                     <textarea class="form-control" id="editAddrDetail" rows="2" required>${this.escapeHtml(address.addressDetail || '')}</textarea>
                                 </div>
                                 <div class="row">
-                                    <div class="col-md-6 mb-3">
+                                    <div class="col-md-4 mb-3">
                                         <label for="editAddrProvince" class="form-label">Tỉnh/Thành phố *</label>
                                         <select class="form-control" id="editAddrProvince" required>
                                             <option value="">Chọn Tỉnh/Thành phố</option>
                                         </select>
                                     </div>
-                                    <div class="col-md-6 mb-3">
+                                    <div class="col-md-4 mb-3">
+                                        <label for="editAddrDistrict" class="form-label">Quận/Huyện *</label>
+                                        <select class="form-control" id="editAddrDistrict" required disabled>
+                                            <option value="">Chọn Quận/Huyện</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
                                         <label for="editAddrWard" class="form-label">Phường/Xã *</label>
                                         <select class="form-control" id="editAddrWard" required disabled>
-                                            <option value="">Chọn Tỉnh/Thành phố trước</option>
+                                            <option value="">Chọn Quận/Huyện trước</option>
                                         </select>
                                     </div>
                                 </div>
@@ -642,7 +750,7 @@ class CheckoutPage {
         `;
 
         $('body').append(modalHTML);
-        this.loadEditProvincesWithMapping(address.province, address.ward);
+        this.loadEditProvinces(address.provinceId, address.districtId, address.wardCode);
     }
 
     closeAddAddressModal() {
@@ -663,7 +771,7 @@ class CheckoutPage {
         if (this.isCacheValid('provinces') && this.provincesCache) {
             this.populateSelect(
                 provinceSelect,
-                this.provincesCache.map(p => ({ value: p.provinceId, label: p.provinceName })),
+                this.provincesCache.map(p => ({ value: (p.ProvinceID || p.provinceId || p.code), label: (p.ProvinceName || p.name) })),
                 'Chọn Tỉnh/Thành phố'
             );
             return;
@@ -672,7 +780,7 @@ class CheckoutPage {
         provinceSelect.innerHTML = '<option value="">Đang tải tỉnh/thành...</option>';
 
         try {
-            const res = await fetch(`${this.ghnBase}/provinces`);
+            const res = await fetch(`/api/ghn/provinces`);
             if (!res.ok) throw new Error('Không thể tải tỉnh/thành');
             const provinces = await res.json();
 
@@ -683,7 +791,7 @@ class CheckoutPage {
 
                 this.populateSelect(
                     provinceSelect,
-                    provinces.map(p => ({ value: p.provinceId, label: p.provinceName })),
+                    provinces.map(p => ({ value: (p.ProvinceID || p.provinceId || p.code), label: (p.ProvinceName || p.name) })),
                     'Chọn Tỉnh/Thành phố'
                 );
             } else {
@@ -695,7 +803,7 @@ class CheckoutPage {
         }
     }
 
-    async loadEditProvincesWithMapping(provinceName = null, wardName = null) {
+    async loadEditProvinces(selectedProvinceId = null, selectedDistrictId = null, selectedWardCode = null) {
         const provinceSelect = document.getElementById('editAddrProvince');
         if (!provinceSelect) return;
 
@@ -703,16 +811,19 @@ class CheckoutPage {
         if (this.isCacheValid('provinces') && this.provincesCache) {
             this.populateSelect(
                 provinceSelect,
-                this.provincesCache.map(p => ({ value: p.code, label: p.name })),
+                this.provincesCache.map(p => ({ value: (p.ProvinceID || p.provinceId || p.code), label: (p.ProvinceName || p.name) })),
                 'Chọn Tỉnh/Thành phố'
             );
 
-            if (provinceName) {
-                // Find province code from province name
-                const matchingProvince = this.provincesCache.find(p => p.name === provinceName);
-                if (matchingProvince) {
-                    provinceSelect.value = matchingProvince.code;
-                    this.loadEditWards(matchingProvince.code, wardName);
+            if (selectedProvinceId) {
+                provinceSelect.value = selectedProvinceId;
+                if (selectedDistrictId) {
+                    if (typeof this.loadEditDistricts === 'function') {
+                        await this.loadEditDistricts(selectedProvinceId, selectedDistrictId, selectedWardCode);
+                    } else {
+                        // Fallback: load wards directly by district when method is missing
+                        await this.loadEditWards(selectedDistrictId, selectedWardCode);
+                    }
                 }
             }
             return;
@@ -721,7 +832,7 @@ class CheckoutPage {
         provinceSelect.innerHTML = '<option value="">Đang tải tỉnh/thành...</option>';
 
         try {
-            const res = await fetch(`${this.ghnBase}/provinces`);
+            const res = await fetch(`/api/ghn/provinces`);
             if (!res.ok) throw new Error('Không thể tải tỉnh/thành');
             const provinces = await res.json();
 
@@ -731,16 +842,18 @@ class CheckoutPage {
 
                 this.populateSelect(
                     provinceSelect,
-                    provinces.map(p => ({ value: p.provinceId, label: p.provinceName })),
+                    provinces.map(p => ({ value: (p.ProvinceID || p.provinceId || p.code), label: (p.ProvinceName || p.name) })),
                     'Chọn Tỉnh/Thành phố'
                 );
 
-                if (provinceName) {
-                    // Find province code from province name
-                    const matchingProvince = provinces.find(p => p.name === provinceName);
-                    if (matchingProvince) {
-                        provinceSelect.value = matchingProvince.code;
-                        this.loadEditWards(matchingProvince.code, wardName);
+                if (selectedProvinceId) {
+                    provinceSelect.value = selectedProvinceId;
+                    if (selectedDistrictId) {
+                        if (typeof this.loadEditDistricts === 'function') {
+                            await this.loadEditDistricts(selectedProvinceId, selectedDistrictId, selectedWardCode);
+                        } else {
+                            await this.loadEditWards(selectedDistrictId, selectedWardCode);
+                        }
                     }
                 }
             } else {
@@ -752,31 +865,61 @@ class CheckoutPage {
         }
     }
 
-    async loadEditWards(provinceId, selectedWard = null) {
+    async loadEditDistricts(provinceId, selectedDistrictId = null, selectedWardCode = null) {
+        const districtSelect = document.getElementById('editAddrDistrict');
         const wardSelect = document.getElementById('editAddrWard');
-        if (!provinceId || !wardSelect) return;
+        if (!districtSelect) return;
+        if (!provinceId) {
+            districtSelect.innerHTML = '<option value="">Chọn Tỉnh/Thành phố</option>';
+            districtSelect.disabled = true;
+            if (wardSelect) { wardSelect.innerHTML = '<option value="">Chọn Quận/Huyện trước</option>'; wardSelect.disabled = true; }
+            return;
+        }
 
-        // Nếu đã có cache theo province -> cần lấy districts rồi wards theo district đầu tiên (tương tự loadWards)
+        try {
+            districtSelect.disabled = true;
+            districtSelect.innerHTML = '<option value="">Đang tải Quận/Huyện...</option>';
+            const res = await fetch(`/api/ghn/districts/${provinceId}`);
+            if (!res.ok) throw new Error('Không thể tải quận/huyện');
+            const districts = await res.json();
+            this.populateSelect(districtSelect, districts.map(d => ({ value: (d.DistrictID || d.districtId), label: (d.DistrictName || d.name) })), 'Chọn Quận/Huyện');
+            districtSelect.disabled = false;
+
+            if (selectedDistrictId) {
+                districtSelect.value = selectedDistrictId;
+                await this.loadEditWards(selectedDistrictId, selectedWardCode);
+            } else if (wardSelect) {
+                wardSelect.innerHTML = '<option value="">Chọn Quận/Huyện trước</option>';
+                wardSelect.disabled = true;
+            }
+        } catch (e) {
+            this.showToast('Lỗi tải quận/huyện', 'error');
+            districtSelect.innerHTML = '<option value="">Không có dữ liệu quận/huyện</option>';
+            districtSelect.disabled = true;
+        }
+    }
+
+    async loadEditWards(districtId, selectedWardCode = null) {
+        const wardSelect = document.getElementById('editAddrWard');
+        if (!wardSelect) return;
+        if (!districtId) {
+            wardSelect.innerHTML = '<option value="">Chọn Quận/Huyện trước</option>';
+            wardSelect.disabled = true;
+            return;
+        }
+
         try {
             wardSelect.disabled = true;
             wardSelect.innerHTML = '<option value="">Đang tải Phường/Xã...</option>';
 
-            const districtRes = await fetch(`${this.ghnBase}/districts/${provinceId}`);
-            if (!districtRes.ok) throw new Error('Không thể tải quận/huyện');
-            const districts = await districtRes.json();
-            if (!Array.isArray(districts) || districts.length === 0) {
-                throw new Error('Không có quận/huyện nào');
-            }
-
-            const firstDistrict = districts[0];
-            const wardRes = await fetch(`${this.ghnBase}/wards/${firstDistrict.districtId}`);
-            if (!wardRes.ok) throw new Error('Không thể tải phường/xã');
-            const wards = await wardRes.json();
+            const res = await fetch(`/api/ghn/wards/${districtId}`);
+            if (!res.ok) throw new Error('Không thể tải phường/xã');
+            const wards = await res.json();
 
             if (Array.isArray(wards) && wards.length > 0) {
-                this.populateSelect(wardSelect, wards.map(w => ({ value: w.wardCode, label: w.wardName })), 'Chọn Phường/Xã');
-                if (selectedWard) {
-                    wardSelect.value = selectedWard;
+                this.populateSelect(wardSelect, wards.map(w => ({ value: (w.WardCode || w.wardCode), label: (w.WardName || w.name) })), 'Chọn Phường/Xã');
+                if (selectedWardCode) {
+                    wardSelect.value = selectedWardCode;
                 }
             } else {
                 throw new Error('Dữ liệu phường/xã không hợp lệ');
@@ -789,56 +932,27 @@ class CheckoutPage {
         }
     }
 
-    async loadWards(provinceId) {
+    async loadDistricts(provinceId) {
         const wardSelect = document.getElementById('addrWard');
-        if (!wardSelect) return;
+        const districtSelect = document.getElementById('addrDistrict');
+        if (!districtSelect) return;
         if (!provinceId) {
-            wardSelect.innerHTML = '<option value="">Chọn Tỉnh/Thành phố trước</option>';
-            wardSelect.disabled = true;
+            districtSelect.innerHTML = '<option value="">Chọn Tỉnh/Thành phố</option>';
+            districtSelect.disabled = true;
             return;
         }
-
-        // Check cache first
-        if (this.isCacheValid(`wards_${provinceId}`) && this.wardsCacheByProvince.has(provinceId)) {
-            const cachedWards = this.wardsCacheByProvince.get(provinceId);
-            this.populateSelect(wardSelect, cachedWards.map(w => ({ value: w.wardCode, label: w.wardName })), 'Chọn Phường/Xã');
-            wardSelect.disabled = false;
-            return;
-        }
-
         try {
-            wardSelect.disabled = true;
-            wardSelect.innerHTML = '<option value="">Đang tải Phường/Xã...</option>';
-
-            // First load districts for this province
-            const districtRes = await fetch(`${this.ghnBase}/districts/${provinceId}`);
-            if (!districtRes.ok) throw new Error('Không thể tải quận/huyện');
-            const districts = await districtRes.json();
-
-            if (!Array.isArray(districts) || districts.length === 0) {
-                throw new Error('Không có quận/huyện nào');
-            }
-
-            // Load wards for the first district (or let user select district first)
-            const firstDistrict = districts[0];
-            const wardRes = await fetch(`${this.ghnBase}/wards/${firstDistrict.districtId}`);
-            if (!wardRes.ok) throw new Error('Không thể tải phường/xã');
-            const wards = await wardRes.json();
-
-            if (Array.isArray(wards) && wards.length > 0) {
-                // Save to cache
-                this.wardsCacheByProvince.set(provinceId, wards);
-                this.cacheTimestamp.set(`wards_${provinceId}`, Date.now());
-
-                this.populateSelect(wardSelect, wards.map(w => ({ value: w.wardCode, label: w.wardName })), 'Chọn Phường/Xã');
-            } else {
-                throw new Error('Dữ liệu phường/xã không hợp lệ');
-            }
-            wardSelect.disabled = false;
+            districtSelect.disabled = true;
+            districtSelect.innerHTML = '<option value="">Đang tải Quận/Huyện...</option>';
+            const res = await fetch(`/api/ghn/districts/${provinceId}`);
+            if (!res.ok) throw new Error('Không thể tải quận/huyện');
+            const districts = await res.json();
+            this.populateSelect(districtSelect, districts.map(d => ({ value: (d.DistrictID || d.districtId), label: (d.DistrictName || d.name) })), 'Chọn Quận/Huyện');
+            districtSelect.disabled = false;
         } catch (e) {
-            this.showToast('Lỗi tải phường/xã', 'error');
-            wardSelect.innerHTML = '<option value="">Không có dữ liệu phường/xã</option>';
-            wardSelect.disabled = true;
+            this.showToast('Lỗi tải quận/huyện', 'error');
+            districtSelect.innerHTML = '<option value="">Không có dữ liệu quận/huyện</option>';
+            districtSelect.disabled = true;
         }
     }
 
@@ -865,24 +979,24 @@ class CheckoutPage {
             const name = document.getElementById('addrName')?.value?.trim();
             const phone = document.getElementById('addrPhone')?.value?.trim();
             const addressDetail = document.getElementById('addrDetail')?.value?.trim();
-            const provinceCode = document.getElementById('addrProvince')?.value;
-            const wardName = document.getElementById('addrWard')?.value;
+            const provinceId = parseInt(document.getElementById('addrProvince')?.value, 10);
+            const districtId = parseInt(document.getElementById('addrDistrict')?.value, 10);
+            const wardCode = document.getElementById('addrWard')?.value;
             const isDefault = document.getElementById('addrDefault')?.checked || false;
 
-            if (!name || !phone || !addressDetail || !provinceCode || !wardName) {
+            if (!name || !phone || !addressDetail || !provinceId || !districtId || !wardCode) {
                 this.showToast('Vui lòng điền đầy đủ thông tin địa chỉ', 'error');
                 return;
             }
 
             // Province text for storage
-            const provinceText = document.querySelector('#addrProvince option:checked')?.textContent?.trim() || '';
-
             const payload = {
                 name,
                 phone,
                 addressDetail,
-                ward: wardName,
-                province: provinceText,
+                provinceId,
+                districtId,
+                wardCode,
                 isDefault
             };
 
@@ -916,30 +1030,16 @@ class CheckoutPage {
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang cập nhật...';
 
-            const provinceCode = document.getElementById('editAddrProvince').value.trim();
-            const wardName = document.getElementById('editAddrWard').value.trim();
+            const provinceId = parseInt(document.getElementById('editAddrProvince').value, 10);
+            const districtId = parseInt(document.getElementById('editAddrDistrict').value, 10);
+            const wardCode = document.getElementById('editAddrWard').value.trim();
 
             // Validation
             if (!document.getElementById('editAddrName').value.trim() ||
                 !document.getElementById('editAddrPhone').value.trim() ||
                 !document.getElementById('editAddrDetail').value.trim() ||
-                !wardName || !provinceCode) {
+                !provinceId || !districtId || !wardCode) {
                 this.showToast('Vui lòng điền đầy đủ thông tin', 'error');
-                return;
-            }
-
-            // Map province code back to province name
-            let provinceName = '';
-            if (this.provincesCache) {
-                const matchingProvince = this.provincesCache.find(p => p.code === provinceCode);
-                if (matchingProvince) {
-                    provinceName = matchingProvince.name;
-                } else {
-                    this.showToast('Không tìm thấy tên tỉnh/thành phố', 'error');
-                    return;
-                }
-            } else {
-                this.showToast('Dữ liệu tỉnh/thành không khả dụng', 'error');
                 return;
             }
 
@@ -947,8 +1047,9 @@ class CheckoutPage {
                 name: document.getElementById('editAddrName').value.trim(),
                 phone: document.getElementById('editAddrPhone').value.trim(),
                 addressDetail: document.getElementById('editAddrDetail').value.trim(),
-                ward: wardName,
-                province: provinceName,
+                provinceId,
+                districtId,
+                wardCode,
                 isDefault: document.getElementById('editAddrDefault').checked
             };
 
