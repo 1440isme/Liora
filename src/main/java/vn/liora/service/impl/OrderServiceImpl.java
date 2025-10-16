@@ -22,6 +22,7 @@ import vn.liora.mapper.OrderProductMapper;
 import vn.liora.repository.*;
 import vn.liora.service.IImageService;
 import vn.liora.service.IOrderService;
+import vn.liora.service.IGhnShippingService;
 import vn.liora.entity.Discount;
 import vn.liora.repository.DiscountRepository;
 
@@ -46,6 +47,7 @@ public class OrderServiceImpl implements IOrderService {
     CartProductRepository cartProductRepository;
     OrderMapper orderMapper;
     IImageService imageService;
+    IGhnShippingService ghnShippingService;
 
     @Override
     @Transactional
@@ -60,10 +62,21 @@ public class OrderServiceImpl implements IOrderService {
             }
 
             Order order = orderMapper.toOrder(request);
-            order.setUser(user);
+            order.setUser(user); // user có thể null khi guest; các thao tác phía dưới phải null-safe
             order.setOrderDate(LocalDateTime.now());
-            order.setOrderStatus("Pending");
+            order.setOrderStatus("PENDING");
             order.setPaymentStatus("PENDING");
+
+            // Map địa chỉ GHN từ request (nếu FE gửi) để tính phí chuẩn
+            if (request.getDistrictId() != null) {
+                order.setDistrict(String.valueOf(request.getDistrictId()));
+            }
+            if (request.getWardCode() != null) {
+                order.setWard(request.getWardCode());
+            }
+            if (request.getProvinceName() != null) {
+                order.setProvince(request.getProvinceName());
+            }
 
             List<OrderProduct> orderProducts = selected.stream()
                     .map(cp -> {
@@ -80,7 +93,7 @@ public class OrderServiceImpl implements IOrderService {
             BigDecimal totalDiscount = BigDecimal.ZERO;
             BigDecimal total = subtotal;
 
-            if (request.getDiscountId() != null) {
+            if (request.getDiscountId() != null && user != null) {
                 try {
                     // Kiểm tra discount có tồn tại không
                     Discount discount = discountRepository.findById(request.getDiscountId())
@@ -111,16 +124,48 @@ public class OrderServiceImpl implements IOrderService {
                 }
             }
 
-            // 9. Set tổng tiền cho order
+            // 9. Tính phí ship từ GHN theo combobox FE (chỉ dựa vào khoảng cách) - dùng 1
+            // nơi duy nhất
+            BigDecimal shippingFee = BigDecimal.ZERO;
+            try {
+                Integer toDistrictId = request.getDistrictId();
+                String toWardCode = request.getWardCode();
+                if (toDistrictId != null && toWardCode != null) {
+                    shippingFee = ghnShippingService.calculateFeeByLocation(toDistrictId, toWardCode);
+                }
+            } catch (Exception ex) {
+                log.warn("Calculate GHN fee by location failed, fallback 0: {}", ex.getMessage());
+                shippingFee = BigDecimal.ZERO;
+            }
+            order.setShippingFee(shippingFee);
+
+            // 10. Set tổng tiền cho order (bao gồm phí ship)
             order.setTotalDiscount(totalDiscount);
-            order.setTotal(total);
+            BigDecimal computedTotal = total.add(shippingFee);
+            order.setTotal(computedTotal);
 
             final Order savedOrder = orderRepository.save(order);
             orderProducts.forEach(op -> op.setOrder(savedOrder));
             orderProductRepository.saveAll(orderProducts);
             cartProductRepository.deleteAll(selected);
+
+            // Tạo vận đơn GHN ngay khi đặt hàng nếu không dùng VNPAY (COD)
+            try {
+                if (request.getPaymentMethod() != null && !"VNPAY".equalsIgnoreCase(request.getPaymentMethod())) {
+                    if (savedOrder.getDistrict() != null && savedOrder.getWard() != null) {
+                        ghnShippingService.createShippingOrder(savedOrder);
+                        log.info("Created GHN shipping order (COD) for Order {}", savedOrder.getIdOrder());
+                    } else {
+                        log.warn("Skip GHN create (COD): Order missing district/ward.");
+                    }
+                }
+            } catch (Exception e) {
+                log.error("Failed to create GHN shipping order (COD) for Order {}: {}", savedOrder.getIdOrder(),
+                        e.getMessage());
+            }
+            Long userIdLog = (user != null ? user.getUserId() : null);
             log.info("Order created successfully. Order ID: {}, User: {}, Total: {}, Discount: {}",
-                    savedOrder.getIdOrder(), user.getUserId(), total, totalDiscount);
+                    savedOrder.getIdOrder(), userIdLog, total, totalDiscount);
 
             return orderMapper.toOrderResponse(savedOrder);
 

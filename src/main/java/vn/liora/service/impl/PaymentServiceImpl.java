@@ -8,10 +8,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.liora.entity.Order;
+import vn.liora.entity.VnpayPayment;
 import vn.liora.exception.AppException;
 import vn.liora.exception.ErrorCode;
 import vn.liora.repository.OrderRepository;
+import vn.liora.repository.VnpayPaymentRepository;
 import vn.liora.service.PaymentService;
+import vn.liora.service.IGhnShippingService;
 import vn.liora.util.VnpayUtil;
 
 import java.math.BigDecimal;
@@ -26,6 +29,8 @@ import java.util.*;
 public class PaymentServiceImpl implements PaymentService {
 
     final OrderRepository orderRepository;
+    final VnpayPaymentRepository vnpayPaymentRepository;
+    final IGhnShippingService ghnShippingService;
 
     @Value("${vnpay.tmnCode}")
     String vnpTmnCode;
@@ -62,7 +67,7 @@ public class PaymentServiceImpl implements PaymentService {
         String vnpAmount = amount.multiply(BigDecimal.valueOf(100)).setScale(0, java.math.RoundingMode.DOWN)
                 .toPlainString();
         fields.put("vnp_Amount", vnpAmount);
-        fields.put("vnp_CurrCode", "VND");
+        fields.put("vnp_CurrCode", vnpCurrCode);
         fields.put("vnp_TxnRef", generateOrReuseTxnRef(order));
         fields.put("vnp_OrderInfo", "Thanh toan don hang #" + order.getIdOrder());
         fields.put("vnp_OrderType", "other");
@@ -113,13 +118,23 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     private String generateOrReuseTxnRef(Order order) {
-        if (order.getVnpTxnRef() != null && !order.getVnpTxnRef().isEmpty()) {
-            return order.getVnpTxnRef();
+        // Check if VnpayPayment already exists for this order
+        VnpayPayment existingPayment = vnpayPaymentRepository.findByIdOrder(order.getIdOrder()).orElse(null);
+        if (existingPayment != null) {
+            return existingPayment.getVnpTxnRef();
         }
+
         String txnRef = String.format("%s%06d", DateTimeFormatter.ofPattern("yyMMdd").format(LocalDateTime.now()),
                 order.getIdOrder());
-        order.setVnpTxnRef(txnRef);
-        orderRepository.save(order);
+
+        // Create new VnpayPayment entity
+        VnpayPayment vnpayPayment = VnpayPayment.builder()
+                .idOrder(order.getIdOrder())
+                .vnpTxnRef(txnRef)
+                .vnpAmount(order.getTotal())
+                .build();
+
+        vnpayPaymentRepository.save(vnpayPayment);
         return txnRef;
     }
 
@@ -152,7 +167,10 @@ public class PaymentServiceImpl implements PaymentService {
         String bankCode = params.get("vnp_BankCode");
         String amountStr = params.get("vnp_Amount");
 
-        Order order = orderRepository.findByVnpTxnRef(txnRef)
+        VnpayPayment vnpayPayment = vnpayPaymentRepository.findByVnpTxnRef(txnRef)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+
+        Order order = orderRepository.findById(vnpayPayment.getIdOrder())
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
 
         // Idempotent: if already PAID, ignore
@@ -172,16 +190,38 @@ public class PaymentServiceImpl implements PaymentService {
 
         if ("00".equals(responseCode)) {
             order.setPaymentStatus("PAID");
-            order.setOrderStatus("Paid");
-            order.setVnpTransactionNo(transactionNo);
-            order.setVnpBankCode(bankCode);
-            order.setPaidAmount(paidAmount);
-            order.setPaidAt(LocalDateTime.now());
-            order.setFailureReason(null);
+            order.setOrderStatus("PAID");
+
+            // Auto create GHN shipping order sau khi thanh toán thành công
+            try {
+                // Đảm bảo Order đã có đủ thông tin địa chỉ (district/ward)
+                // Nếu thiếu thì bỏ qua tạo GHN để không chặn IPN
+                if (order.getDistrict() != null && order.getWard() != null) {
+                    ghnShippingService.createShippingOrder(order);
+                    log.info("Created GHN shipping order for Order {}", order.getIdOrder());
+                } else {
+                    log.warn("Skip GHN create: Order missing district/ward.");
+                }
+            } catch (Exception ex) {
+                log.error("Failed to auto create GHN order after payment: {}", ex.getMessage());
+            }
+
+            // Update VnpayPayment entity
+            vnpayPayment.setVnpTransactionNo(transactionNo);
+            vnpayPayment.setVnpBankCode(bankCode);
+            vnpayPayment.setVnpResponseCode(responseCode);
+            vnpayPayment.setPaidAmount(paidAmount);
+            vnpayPayment.setPaidAt(LocalDateTime.now());
+            vnpayPayment.setFailureReason(null);
         } else {
             order.setPaymentStatus("FAILED");
-            order.setFailureReason("VNPAY code=" + responseCode);
+
+            // Update VnpayPayment entity
+            vnpayPayment.setVnpResponseCode(responseCode);
+            vnpayPayment.setFailureReason("VNPAY code=" + responseCode);
         }
+
         orderRepository.save(order);
+        vnpayPaymentRepository.save(vnpayPayment);
     }
 }

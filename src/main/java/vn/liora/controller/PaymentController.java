@@ -3,6 +3,7 @@ package vn.liora.controller;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import lombok.AccessLevel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -10,6 +11,7 @@ import vn.liora.entity.Order;
 import vn.liora.exception.AppException;
 import vn.liora.exception.ErrorCode;
 import vn.liora.repository.OrderRepository;
+import vn.liora.repository.VnpayPaymentRepository;
 import vn.liora.service.PaymentService;
 
 import java.util.HashMap;
@@ -18,14 +20,17 @@ import java.util.Map;
 @RestController
 @RequestMapping("/payment/vnpay")
 @RequiredArgsConstructor
+@Slf4j
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class PaymentController {
 
     PaymentService paymentService;
     OrderRepository orderRepository;
+    VnpayPaymentRepository vnpayPaymentRepository;
 
     @PostMapping("/create/{orderId}")
-    public ResponseEntity<Map<String, String>> createPayment(@PathVariable Long orderId, HttpServletRequest request) {
+    public ResponseEntity<Map<String, String>> createPayment(@PathVariable Long orderId,
+            HttpServletRequest request) {
         Order order = orderRepository.findById(orderId).orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
         String clientIp = getClientIp(request);
         String url = paymentService.createVnpayPaymentUrl(order, clientIp);
@@ -36,12 +41,23 @@ public class PaymentController {
 
     @GetMapping("/return")
     public org.springframework.web.servlet.view.RedirectView returnPage(@RequestParam Map<String, String> params) {
+        try {
+            // Best-effort: xử lý IPN ngay khi user được redirect về (trong môi trường
+            // dev/local
+            // VNPAY có thể không gọi IPN server-to-server). Service đã tự verify chữ ký.
+            paymentService.handleVnpayIpn(params);
+        } catch (Exception e) {
+            // Không chặn luồng hiển thị kết quả cho user
+            log.warn("Return handler could not process IPN inline: {}", e.getMessage());
+        }
         String code = params.getOrDefault("vnp_ResponseCode", "");
         String orderRef = params.getOrDefault("vnp_TxnRef", "");
         String bankCode = params.getOrDefault("vnp_BankCode", "");
         String amount = params.getOrDefault("vnp_Amount", "");
         // Map orderRef (vnp_TxnRef) -> orderId để view có thể điều hướng đúng
-        Long orderId = orderRepository.findByVnpTxnRef(orderRef).map(Order::getIdOrder).orElse(null);
+        Long orderId = vnpayPaymentRepository.findByVnpTxnRef(orderRef)
+                .map(vnpayPayment -> vnpayPayment.getIdOrder())
+                .orElse(null);
         String redirectUrl = String.format("/payment/result?code=%s&orderRef=%s&orderId=%s&bank=%s&amount=%s",
                 urlEncode(code), urlEncode(orderRef),
                 urlEncode(orderId == null ? "" : String.valueOf(orderId)),

@@ -33,9 +33,9 @@ public class VnpayUtil {
             String field = fieldNames.get(i);
             String value = params.get(field);
             if (value != null && value.length() > 0) {
-                sb.append(urlEncode(field));
+                sb.append(urlEncodeAscii(field));
                 sb.append('=');
-                sb.append(urlEncode(value));
+                sb.append(urlEncodeAscii(value));
                 if (i < fieldNames.size() - 1)
                     sb.append('&');
             }
@@ -46,5 +46,10 @@ public class VnpayUtil {
     public static String urlEncode(String input) {
         // Follow VNPAY sample: encode then only replace '+' with '%20'
         return URLEncoder.encode(input, StandardCharsets.UTF_8).replace("+", "%20");
+    }
+
+    // VNPAY sample (JSP) dùng US_ASCII khi ký dữ liệu
+    public static String urlEncodeAscii(String input) {
+        return URLEncoder.encode(input, java.nio.charset.StandardCharsets.US_ASCII).replace("+", "%20");
     }
 }

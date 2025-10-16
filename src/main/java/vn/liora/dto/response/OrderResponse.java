@@ -22,6 +22,7 @@ public class OrderResponse {
     String orderStatus;
     String paymentMethod;
     BigDecimal totalDiscount;
+    BigDecimal shippingFee;
     BigDecimal total;
     Long userId;
     String customerName;
