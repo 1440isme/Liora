@@ -231,7 +231,7 @@ class ProductEditManager {
                             '<span class="badge bg-primary">Chính</span>' :
                             '<button class="btn btn-sm btn-outline-primary" onclick="window.productEditManager.setAsMain(' + image.imageId + ')">Đặt làm chính</button>'
                         }
-                                    '<button class="btn btn-sm btn-outline-danger ms-1" onclick="window.productEditManager.deleteImage(${image.imageId})">'
+                                    <button class="btn btn-sm btn-outline-danger ms-1" onclick="window.productEditManager.deleteImage(${image.imageId})">
                                         <i class="mdi mdi-delete"></i>
                                     </button>
                                 </div>
