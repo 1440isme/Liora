@@ -626,16 +626,16 @@
                                        onmouseout="this.style.color='var(--pink-primary) !important'">Category Name</a>
                                 </div>
                             </div>
+                        </div>
 
-
-                            <!-- Price -->
-                            <div class="mb-4">
-                                <div class="d-flex align-items-center">
-                                    <span class="h2 fw-bold text-dark me-3"
-                                        th:text="${#numbers.formatDecimal(product.price, 0, 'COMMA', 0, 'POINT')} + ' ₫'">0
-                                        ₫</span>
-                                </div>
+                        <!-- Price -->
+                        <div class="mb-4">
+                            <div class="d-flex align-items-center">
+                                <span class="h2 fw-bold text-dark me-3"
+                                    th:text="${#numbers.formatDecimal(product.price, 0, 'COMMA', 0, 'POINT')} + ' ₫'">0
+                                    ₫</span>
                             </div>
+                        </div>
 
 
                             <!-- Quantity -->
