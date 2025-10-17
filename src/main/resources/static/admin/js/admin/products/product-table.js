@@ -410,8 +410,8 @@ class ProductTableManager {
                 this.loadProducts();
             } else {
                 const error = await response.json();
-                if (error.message && error.message.includes('has been sold')) {
-                    this.showNotification('Không thể xóa sản phẩm đã có đơn hàng. Vui lòng tạm dừng sản phẩm thay vì xóa.', 'error');
+                if (error.message && (error.message.includes('đã có lịch sử bán hàng') || error.message.includes('has been sold'))) {
+                    this.showNotification(error.message || 'Không thể xóa sản phẩm đã có lịch sử bán hàng. Vui lòng tạm dừng sản phẩm thay vì xóa.', 'error');
                 } else {
                     this.showNotification(error.message || 'Có lỗi xảy ra', 'error');
                 }
