@@ -221,12 +221,12 @@ class ProductTableManager {
                 <td>${product.brandName || 'N/A'}</td>
                 <td>${this.formatCurrency(product.price)}</td>
                 <td>
-                    <div class="d-flex align-items-center justify-content-center gap-1">
-                        <span>${product.stock || 0}</span>
+                    <div class="d-flex align-items-center gap-1">
+                        <span class="${(product.stock || 0) <= 10 ? '' : 'text-start'}">${product.stock || 0}</span>
                         ${(product.stock || 0) <= 10 ? '<i class="mdi mdi-alert-circle text-warning" title="Sắp hết hàng" data-bs-toggle="tooltip"></i>' : ''}
                     </div>
                 </td>
-                <td>${product.soldCount || 0}</td>
+                <td class="text-start">${product.soldCount || 0}</td>
                 <td>${this.renderStockStatus(product.stock)}</td>
                 <td>${this.renderStatus(product.isActive)}</td>
                 <td>${this.formatDate(product.createdDate)}</td>

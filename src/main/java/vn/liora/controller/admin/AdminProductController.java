@@ -832,6 +832,11 @@ public class AdminProductController {
             // Set image làm main
             imageService.setMainImage(productId, imageId);
             
+            // Update product timestamp
+            Product product = productOpt.get();
+            product.setUpdatedDate(LocalDateTime.now());
+            productService.save(product);
+            
             response.setCode(200);
             response.setMessage("Đặt làm ảnh chính thành công");
             response.setResult("success");
@@ -894,6 +899,11 @@ public class AdminProductController {
             
             // Xóa ảnh
             imageService.deleteImage(imageId);
+            
+            // Update product timestamp
+            Product product = productOpt.get();
+            product.setUpdatedDate(LocalDateTime.now());
+            productService.save(product);
             
             response.setCode(200);
             response.setMessage("Xóa hình ảnh thành công");
