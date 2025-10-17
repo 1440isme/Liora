@@ -190,6 +190,9 @@ class ProductTableManager {
         }
 
         tbody.innerHTML = products.map((product, index) => this.renderProduct(product, index)).join('');
+        
+        // Initialize tooltips for stock warning icons
+        this.initializeTooltips();
     }
 
     // Render single product row
@@ -217,7 +220,12 @@ class ProductTableManager {
                 <td>${product.categoryName || 'N/A'}</td>
                 <td>${product.brandName || 'N/A'}</td>
                 <td>${this.formatCurrency(product.price)}</td>
-                <td>${product.stock || 0}</td>
+                <td>
+                    <div class="d-flex align-items-center justify-content-center gap-1">
+                        <span>${product.stock || 0}</span>
+                        ${(product.stock || 0) <= 10 ? '<i class="mdi mdi-alert-circle text-warning" title="Sắp hết hàng" data-bs-toggle="tooltip"></i>' : ''}
+                    </div>
+                </td>
                 <td>${product.soldCount || 0}</td>
                 <td>${this.renderStockStatus(product.stock)}</td>
                 <td>${this.renderStatus(product.isActive)}</td>
@@ -455,6 +463,15 @@ class ProductTableManager {
                 notification.remove();
             }
         }, 3000);
+    }
+
+    // Initialize Bootstrap tooltips
+    initializeTooltips() {
+        // Initialize tooltips for stock warning icons
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
     }
 
     // Debounce function for search
