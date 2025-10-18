@@ -656,8 +656,20 @@ class UserInfoManager {
     }
 
     async viewOrderDetail(orderId) {
-        // Chuyển đến trang chi tiết đơn hàng
-        window.location.href = `/user/order-detail/${orderId}`;
+        // Chỉ user đã đăng nhập mới có thể xem chi tiết đơn hàng
+        const token = localStorage.getItem('access_token');
+        if (token) {
+            // User đã đăng nhập - sử dụng auth interceptor
+            if (window.authInterceptor) {
+                window.authInterceptor.navigateWithAuth(`/user/order-detail/${orderId}`);
+            } else {
+                // Fallback: gửi token qua URL parameter
+                window.location.href = `/user/order-detail/${orderId}?token=${encodeURIComponent(token)}`;
+            }
+        } else {
+            // Guest không thể xem chi tiết đơn hàng
+            this.showToast('Vui lòng đăng nhập để xem chi tiết đơn hàng', 'warning');
+        }
     }
 
     async reorder(orderId) {

@@ -1,14 +1,13 @@
 package vn.liora.controller.user;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import vn.liora.dto.request.ApiResponse;
+import vn.liora.dto.request.UserCreationRequest;
 import vn.liora.dto.response.UserResponse;
 import vn.liora.dto.response.OrderResponse;
 import vn.liora.dto.response.OrderProductResponse;
@@ -19,7 +18,10 @@ import vn.liora.exception.ErrorCode;
 import vn.liora.repository.UserRepository;
 import vn.liora.mapper.UserMapper;
 import vn.liora.service.IOrderService;
+import vn.liora.service.IUserService;
+import vn.liora.service.IAuthenticationService;
 
+import com.nimbusds.jose.JOSEException;
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -31,6 +33,8 @@ public class UserController {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final IOrderService orderService;
+    private final IUserService userService;
+    private final IAuthenticationService authenticationService;
 
     @GetMapping("/myInfo")
     public ResponseEntity<ApiResponse<UserResponse>> getMyInfo() {
@@ -40,9 +44,11 @@ public class UserController {
                 throw new AppException(ErrorCode.UNAUTHENTICATED);
             }
 
-            String username = authentication.getName();
-            User user = userRepository.findByUsername(username)
-                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+            User user = findUserByPrincipal(authentication);
+
+            if (user == null) {
+                throw new AppException(ErrorCode.USER_NOT_FOUND);
+            }
 
             UserResponse userResponse = userMapper.toUserResponse(user);
 
@@ -66,9 +72,11 @@ public class UserController {
                 throw new AppException(ErrorCode.UNAUTHENTICATED);
             }
 
-            String username = authentication.getName();
-            User user = userRepository.findByUsername(username)
-                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+            User user = findUserByPrincipal(authentication);
+
+            if (user == null) {
+                throw new AppException(ErrorCode.USER_NOT_FOUND);
+            }
 
             List<OrderResponse> orders = orderService.getMyOrders(user.getUserId());
 
@@ -94,18 +102,20 @@ public class UserController {
                 throw new AppException(ErrorCode.UNAUTHENTICATED);
             }
 
-            String username = authentication.getName();
-            User user = userRepository.findByUsername(username)
-                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+            User user = findUserByPrincipal(authentication);
+
+            if (user == null) {
+                throw new AppException(ErrorCode.USER_NOT_FOUND);
+            }
 
             List<OrderResponse> orders = orderService.getMyOrdersPaginated(user.getUserId(), page, size);
-            
+
             // Tạo response với thông tin sản phẩm đầu tiên
             List<Object> ordersWithProducts = orders.stream().map(order -> {
                 try {
                     List<OrderProductResponse> products = orderService.getProductsByOrderId(order.getIdOrder());
                     OrderProductResponse firstProduct = products.isEmpty() ? null : products.get(0);
-                    
+
                     class OrderWithProduct {
                         @SuppressWarnings("unused")
                         public final OrderResponse order;
@@ -113,14 +123,15 @@ public class UserController {
                         public final OrderProductResponse firstProduct;
                         @SuppressWarnings("unused")
                         public final Integer totalProducts;
-                        
-                        public OrderWithProduct(OrderResponse order, OrderProductResponse firstProduct, Integer totalProducts) {
+
+                        public OrderWithProduct(OrderResponse order, OrderProductResponse firstProduct,
+                                Integer totalProducts) {
                             this.order = order;
                             this.firstProduct = firstProduct;
                             this.totalProducts = totalProducts;
                         }
                     }
-                    
+
                     return new OrderWithProduct(order, firstProduct, products.size());
                 } catch (Exception e) {
                     // Nếu không lấy được sản phẩm, trả về order không có sản phẩm
@@ -131,8 +142,9 @@ public class UserController {
                         public final OrderProductResponse firstProduct = null;
                         @SuppressWarnings("unused")
                         public final Integer totalProducts = 0;
-                        
-                        public OrderWithProduct(OrderResponse order, OrderProductResponse firstProduct, Integer totalProducts) {
+
+                        public OrderWithProduct(OrderResponse order, OrderProductResponse firstProduct,
+                                Integer totalProducts) {
                             this.order = order;
                         }
                     }
@@ -143,7 +155,7 @@ public class UserController {
             // Tính toán thông tin phân trang
             long totalElements = orderService.countMyOrders(user.getUserId());
             int totalPages = (int) Math.ceil((double) totalElements / size);
-            
+
             PaginatedResponse<Object> paginatedResponse = PaginatedResponse.<Object>builder()
                     .content(ordersWithProducts)
                     .currentPage(page)
@@ -176,9 +188,11 @@ public class UserController {
                 throw new AppException(ErrorCode.UNAUTHENTICATED);
             }
 
-            String username = authentication.getName();
-            User user = userRepository.findByUsername(username)
-                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+            User user = findUserByPrincipal(authentication);
+
+            if (user == null) {
+                throw new AppException(ErrorCode.USER_NOT_FOUND);
+            }
 
             Long totalOrders = orderService.countByUser(user);
             BigDecimal totalSpent = orderService.getTotalRevenueByUser(user);
@@ -189,13 +203,13 @@ public class UserController {
                 public final Long totalOrders;
                 @SuppressWarnings("unused")
                 public final BigDecimal totalSpent;
-                
+
                 public OrderStats(Long totalOrders, BigDecimal totalSpent) {
                     this.totalOrders = totalOrders;
                     this.totalSpent = totalSpent;
                 }
             }
-            
+
             OrderStats stats = new OrderStats(totalOrders, totalSpent);
 
             ApiResponse<Object> response = new ApiResponse<>();
@@ -208,5 +222,84 @@ public class UserController {
         } catch (Exception e) {
             throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
         }
+    }
+
+    /**
+     * API đăng ký tài khoản công khai cho user
+     */
+    @PostMapping
+    public ResponseEntity<ApiResponse<Object>> registerUser(@Valid @RequestBody UserCreationRequest request) {
+        try {
+            // Tạo user mới
+            UserResponse userResponse = userService.createUser(request);
+
+            // Tạo JWT token cho user vừa đăng ký
+            User user = userRepository.findByUsername(userResponse.getUsername())
+                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+            String token;
+            try {
+                token = authenticationService.generateTokenForOAuth2User(user);
+            } catch (JOSEException e) {
+                throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+            }
+
+            // Tạo response chứa cả user info và token
+            class RegistrationResponse {
+                @SuppressWarnings("unused")
+                public final UserResponse user;
+                @SuppressWarnings("unused")
+                public final String token;
+                @SuppressWarnings("unused")
+                public final String tokenType = "Bearer";
+
+                public RegistrationResponse(UserResponse user, String token) {
+                    this.user = user;
+                    this.token = token;
+                }
+            }
+
+            RegistrationResponse registrationResponse = new RegistrationResponse(userResponse, token);
+
+            ApiResponse<Object> response = new ApiResponse<>();
+            response.setResult(registrationResponse);
+            response.setMessage("Đăng ký tài khoản thành công");
+            response.setCode(1000);
+
+            return ResponseEntity.ok(response);
+        } catch (AppException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        }
+    }
+
+    /**
+     * Tìm user từ authentication, hỗ trợ cả JWT và OAuth2
+     */
+    private User findUserByPrincipal(Authentication authentication) {
+        String principalName = authentication.getName();
+
+        // 1. Thử tìm bằng username trước
+        User user = userRepository.findByUsername(principalName).orElse(null);
+        if (user != null) {
+            return user;
+        }
+
+        // 2. Thử tìm bằng email nếu principal name chứa @
+        if (principalName != null && principalName.contains("@")) {
+            user = userRepository.findByEmail(principalName).orElse(null);
+            if (user != null) {
+                return user;
+            }
+        }
+
+        // 3. Nếu là OAuth2 user, lấy user từ CustomOAuth2User
+        if (authentication.getPrincipal() instanceof vn.liora.dto.CustomOAuth2User) {
+            vn.liora.dto.CustomOAuth2User customOAuth2User = (vn.liora.dto.CustomOAuth2User) authentication
+                    .getPrincipal();
+            return customOAuth2User.getUser();
+        }
+
+        return null;
     }
 }

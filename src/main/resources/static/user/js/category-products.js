@@ -363,29 +363,19 @@ class CategoryProductsManager {
     }
 
     getProductStatus(product) {
-        // Debug: Log giá trị để kiểm tra
-        console.log('Product status debug:', {
-            productId: product.productId,
-            name: product.name,
-            isActive: product.isActive,
-            available: product.available,
-            stock: product.stock
-        });
+        // Product status validation
 
         // 1. Kiểm tra ngừng kinh doanh (ưu tiên cao nhất)
         if (!product.isActive) {
-            console.log('Product is deactivated:', product.name);
             return 'deactivated';
         }
 
         // 2. Kiểm tra hết hàng (chỉ khi sản phẩm còn active)
         if (product.stock <= 0) {
-            console.log('Product is out of stock:', product.name);
             return 'out_of_stock';
         }
 
         // 3. Còn hàng (isActive = true và stock > 0)
-        console.log('Product is available:', product.name);
         return 'available';
     }
 
@@ -468,21 +458,17 @@ class CategoryProductsManager {
     }
 
     generateStars(rating, reviewCount = 0) {
-        console.log('generateStars called with rating:', rating, 'reviewCount:', reviewCount, 'type:', typeof rating);
 
         // Logic đúng cho product card - giống generateStarsForModal
         // Chỉ hiển thị sao rỗng khi rating = 0 hoặc không có rating
         if (!rating || rating === 0 || rating === '0' || rating === null || rating === undefined) {
-            console.log('Rating is 0 or no rating, showing empty stars');
             let stars = '';
             for (let i = 0; i < 5; i++) {
                 stars += '<i class="far fa-star" style="color: #ccc !important; font-weight: 400 !important;"></i>';
             }
-            console.log('Generated empty stars HTML:', stars);
             return stars;
         }
 
-        console.log('Rating is not 0, showing stars based on rating:', rating);
         const fullStars = Math.floor(rating);
         const hasHalfStar = rating % 1 >= 0.5;
         const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
@@ -503,11 +489,9 @@ class CategoryProductsManager {
 
     // Method riêng cho Quick View modal
     generateStarsForModal(rating, reviewCount = 0) {
-        console.log('generateStarsForModal called with rating:', rating, 'reviewCount:', reviewCount);
 
         // Logic đúng cho Quick View modal
         if (!rating || rating === 0 || rating === '0' || rating === null || rating === undefined) {
-            console.log('Modal: Rating is 0 or no reviews, showing empty stars');
             let stars = '';
             for (let i = 0; i < 5; i++) {
                 stars += '<i class="far fa-star" style="color: #ccc !important; font-weight: 400 !important;"></i>';
@@ -1273,16 +1257,16 @@ class CategoryProductsManager {
         } catch (_) {
             this.showNotification('Không thể thực hiện Mua ngay. Vui lòng thử lại.', 'error');
         }
-        
+
         // Show success message
         this.showNotification(`${quantity} x ${product.name} đã được thêm vào giỏ hàng! Đang chuyển đến trang thanh toán...`, 'success');
-        
+
         // Close modal
         const modal = bootstrap.Modal.getInstance(document.getElementById('quickViewModal'));
         if (modal) {
             modal.hide();
         }
-        
+
         // Redirect to checkout after a short delay
         setTimeout(() => {
             window.location.href = '/checkout';

@@ -1454,15 +1454,7 @@ class CheckoutPage {
         const paymentMethod = $('input[name="paymentMethod"]:checked').val();
         const notes = $('#orderNotes').val() || 'Không có ghi chú';
 
-        // Debug: Log tất cả values để kiểm tra
-        console.log('Order Data Debug:', {
-            fullName,
-            phone,
-            email,
-            fullAddress,
-            paymentMethod,
-            notes
-        });
+        // Order data validation
 
         // Validation: Kiểm tra các field required
         if (!fullName || fullName.trim() === '') {
