@@ -24,6 +24,7 @@ import vn.liora.service.IImageService;
 import vn.liora.service.IOrderService;
 import vn.liora.service.IProductService;
 import vn.liora.service.IGhnShippingService;
+import vn.liora.service.EmailService;
 import vn.liora.entity.Discount;
 import vn.liora.repository.DiscountRepository;
 
@@ -50,6 +51,7 @@ public class OrderServiceImpl implements IOrderService {
     IImageService imageService;
     IProductService productService;
     IGhnShippingService ghnShippingService;
+    EmailService emailService;
 
     @Override
     @Transactional
@@ -191,6 +193,32 @@ public class OrderServiceImpl implements IOrderService {
             Long userIdLog = (user != null ? user.getUserId() : null);
             log.info("Order created successfully. Order ID: {}, User: {}, Total: {}, Discount: {}",
                     savedOrder.getIdOrder(), userIdLog, total, totalDiscount);
+
+            // Gửi email xác nhận đơn hàng
+            try {
+                OrderResponse orderResponse = orderMapper.toOrderResponse(savedOrder);
+                List<OrderProductResponse> orderProductResponses = orderProducts.stream()
+                        .map(orderProductMapper::toOrderProductResponse)
+                        .collect(Collectors.toList());
+
+                if (user != null) {
+                    // User đã đăng nhập
+                    emailService.sendOrderConfirmationEmail(
+                            user.getEmail(),
+                            user.getFirstname() + " " + user.getLastname(),
+                            orderResponse,
+                            orderProductResponses);
+                } else {
+                    // Guest user
+                    emailService.sendGuestOrderConfirmationEmail(
+                            request.getEmail(),
+                            orderResponse,
+                            orderProductResponses);
+                }
+            } catch (Exception e) {
+                log.error("Failed to send order confirmation email: {}", e.getMessage());
+                // Không throw exception để không rollback đơn hàng
+            }
 
             return orderMapper.toOrderResponse(savedOrder);
 

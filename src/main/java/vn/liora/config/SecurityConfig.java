@@ -31,7 +31,12 @@ public class SecurityConfig {
 
         private final String[] PUBLIC_ENDPOINTS = {
                         "/users", "/auth/token", "/auth/introspect", "/auth/logout", "/auth/refresh",
-                        "/brands/**", "/brand/**", "/categories/**", "/products/**", "/admin/login", "/home",
+                        "/api/auth/forgot-password", "/api/auth/reset-password", "/api/auth/validate-token",
+                        "/reset-password", "/user/order-detail/access", "/user/order-detail/set-session",
+                        "/user/order-detail-view", "/brands/**", "/brand/**",
+                        "/categories/**",
+                        "/products/**", "/admin/login",
+                        "/home",
                         "/admin/permission/*", "/admin/roles/*",
                         // static resources
                         "/", "/favicon.ico", "/static/**", "/user/**", "/css/**", "/js/**", "/images/**", "/webjars/**",

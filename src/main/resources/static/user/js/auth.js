@@ -565,6 +565,85 @@ class AuthManager {
             }, 1000);
         });
     }
+
+    // Forgot Password
+    async handleForgotPassword() {
+        const email = document.getElementById('forgotEmail').value;
+
+        console.log('Forgot password clicked, email:', email);
+
+        if (!email) {
+            this.showToast('Vui lòng nhập email', 'warning');
+            return;
+        }
+
+        try {
+            console.log('Sending forgot password request...');
+            const response = await fetch('/api/auth/forgot-password', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email: email })
+            });
+
+            console.log('Response status:', response.status);
+            const data = await response.json();
+            console.log('Response data:', data);
+
+            if (data.code === 1000) {
+                this.showToast('Email đặt lại mật khẩu đã được gửi! Vui lòng kiểm tra hộp thư.', 'success');
+                // Close forgot password modal
+                const forgotModal = bootstrap.Modal.getInstance(document.getElementById('forgotPasswordModal'));
+                if (forgotModal) {
+                    forgotModal.hide();
+                }
+            } else {
+                this.showToast(data.message || 'Có lỗi xảy ra', 'error');
+            }
+        } catch (error) {
+            console.error('Forgot password error:', error);
+            this.showToast('Có lỗi xảy ra khi gửi email', 'error');
+        }
+    }
+
+    showToast(message, type = 'info') {
+        // Create toast element
+        const toastId = 'toast-' + Date.now();
+        const toastHtml = `
+            <div id="${toastId}" class="toast align-items-center text-white bg-${type === 'success' ? 'success' : type === 'error' ? 'danger' : type === 'warning' ? 'warning' : 'info'} border-0" role="alert">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            </div>
+        `;
+
+        // Add to toast container
+        let toastContainer = document.getElementById('toastContainer');
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.id = 'toastContainer';
+            toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+            toastContainer.style.zIndex = '9999';
+            document.body.appendChild(toastContainer);
+        }
+
+        toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+
+        // Show toast
+        const toastElement = document.getElementById(toastId);
+        const toast = new bootstrap.Toast(toastElement);
+        toast.show();
+
+        // Remove toast element after it's hidden
+        toastElement.addEventListener('hidden.bs.toast', () => {
+            toastElement.remove();
+        });
+    }
 }
 
 // Initialize auth manager when DOM is loaded

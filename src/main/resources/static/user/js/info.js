@@ -659,13 +659,21 @@ class UserInfoManager {
         // Chỉ user đã đăng nhập mới có thể xem chi tiết đơn hàng
         const token = localStorage.getItem('access_token');
         if (token) {
-            // User đã đăng nhập - sử dụng auth interceptor
-            if (window.authInterceptor) {
-                window.authInterceptor.navigateWithAuth(`/user/order-detail/${orderId}`);
-            } else {
+            // User đã đăng nhập - lưu orderId vào session và redirect trực tiếp
+            fetch('/user/order-detail/set-session', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ orderId: orderId })
+            }).then(() => {
+                // Redirect trực tiếp đến URL mới
+                window.location.href = `/user/order-detail-view?orderId=${orderId}`;
+            }).catch(error => {
+                console.error('Error setting session:', error);
                 // Fallback: gửi token qua URL parameter
                 window.location.href = `/user/order-detail/${orderId}?token=${encodeURIComponent(token)}`;
-            }
+            });
         } else {
             // Guest không thể xem chi tiết đơn hàng
             this.showToast('Vui lòng đăng nhập để xem chi tiết đơn hàng', 'warning');

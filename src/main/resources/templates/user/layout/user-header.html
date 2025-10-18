@@ -395,11 +395,42 @@
                             <button type="submit" class="btn btn-pink-primary w-100 fw-semibold py-3 rounded-pill mb-3"
                                 id="authSubmitBtn">Đăng nhập</button>
                             <div class="forgot-password">
-                                <a href="#!">Quên mật khẩu?</a>
+                                <a href="#!" data-bs-toggle="modal" data-bs-target="#forgotPasswordModal">Quên mật
+                                    khẩu?</a>
                             </div>
                             <div class="text-center">
                                 <button type="button" class="btn btn-link text-pink-primary fw-medium"
                                     id="authToggle">Chưa có tài khoản? Đăng ký</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Forgot Password Modal -->
+        <div class="modal fade" id="forgotPasswordModal" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow-lg">
+                    <div class="modal-header border-0 text-center">
+                        <h5 class="modal-title fw-bold fs-4 text-dark w-100">Quên mật khẩu? 🔐</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body px-4 pb-4">
+                        <form id="forgotPasswordForm">
+                            <div class="mb-3">
+                                <label class="form-label fw-medium text-dark">Email</label>
+                                <input type="email" class="form-control rounded-pill" placeholder="Nhập email của bạn"
+                                    id="forgotEmail" required>
+                            </div>
+                            <button type="submit" class="btn btn-pink-primary w-100 fw-semibold py-3 rounded-pill mb-3">
+                                Gửi email đặt lại mật khẩu
+                            </button>
+                            <div class="text-center">
+                                <button type="button" class="btn btn-link text-pink-primary fw-medium"
+                                    data-bs-dismiss="modal">
+                                    Quay lại đăng nhập
+                                </button>
                             </div>
                         </form>
                     </div>
@@ -416,26 +447,69 @@
             .modal-backdrop {
                 z-index: 1990;
             }
+
+            /* Ensure forgot password modal appears at same level as auth modal */
+            #forgotPasswordModal {
+                z-index: 2000 !important;
+            }
+
+            #forgotPasswordModal .modal-backdrop {
+                z-index: 1990 !important;
+            }
+
+            /* Ensure modals stack properly when opened */
+            .modal.show {
+                z-index: 2000;
+            }
+
+            .modal-backdrop.show {
+                z-index: 1990;
+            }
+
+            /* Force forgot password modal to appear on top */
+            #forgotPasswordModal.modal {
+                z-index: 2010 !important;
+            }
+
+            #forgotPasswordModal+.modal-backdrop {
+                z-index: 2000 !important;
+            }
+
+            /* Ensure proper stacking when multiple modals are open */
+            .modal.fade.show {
+                z-index: 2010;
+            }
+
+            .modal-backdrop.fade.show {
+                z-index: 2000;
+            }
         </style>
 
         <!-- Ensure auth.js is available globally when header is included -->
         <script th:src="@{/user/js/auth.js}"></script>
         <script>
-            // Move modal to body to avoid being constrained by header's stacking context
+            // Move modals to body to avoid being constrained by header's stacking context
             (function () {
-                function moveAuthModalToBody() {
+                function moveModalsToBody() {
                     try {
-                        var modal = document.getElementById('authModal');
-                        if (modal && modal.parentElement !== document.body) {
-                            document.body.appendChild(modal);
+                        // Move auth modal
+                        var authModal = document.getElementById('authModal');
+                        if (authModal && authModal.parentElement !== document.body) {
+                            document.body.appendChild(authModal);
+                        }
+
+                        // Move forgot password modal
+                        var forgotModal = document.getElementById('forgotPasswordModal');
+                        if (forgotModal && forgotModal.parentElement !== document.body) {
+                            document.body.appendChild(forgotModal);
                         }
                     } catch (e) { /* noop */ }
                 }
 
                 if (document.readyState === 'loading') {
-                    document.addEventListener('DOMContentLoaded', moveAuthModalToBody);
+                    document.addEventListener('DOMContentLoaded', moveModalsToBody);
                 } else {
-                    moveAuthModalToBody();
+                    moveModalsToBody();
                 }
             })();
         </script>

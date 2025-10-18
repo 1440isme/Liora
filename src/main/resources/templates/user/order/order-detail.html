@@ -37,13 +37,22 @@
 
 
             <div class="container my-5">
+                <!-- Guest Notice -->
+                <div th:if="${isGuest != null and isGuest}" class="alert alert-info mb-4">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Thông báo:</strong> Bạn đang xem đơn hàng với tư cách khách hàng.
+                    Để quản lý đơn hàng tốt hơn, hãy <a href="/login" class="alert-link">đăng nhập</a> hoặc
+                    <a href="/register" class="alert-link">đăng ký tài khoản</a>.
+                </div>
+
                 <!-- Page Header -->
                 <div class="d-sm-flex align-items-center justify-content-between border-bottom mb-4">
                     <h1 class="h3 mb-0 text-gray-800">
                         <i class="fas fa-shopping-cart me-2"></i>Chi tiết đơn hàng
                     </h1>
                     <div class="btn-wrapper">
-                        <a href="/info#orders" class="btn btn-outline-secondary me-2">
+                        <a th:href="${isGuest != null and isGuest ? '/' : '/info#orders'}"
+                            class="btn btn-outline-secondary me-2">
                             <i class="fas fa-arrow-left me-1"></i> Quay lại
                         </a>
 

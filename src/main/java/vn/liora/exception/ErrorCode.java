@@ -23,28 +23,32 @@ public enum ErrorCode {
     UNAUTHENTICATED(1007, "Unauthenticated", HttpStatus.UNAUTHORIZED),
     UNAUTHORIZED(1008, "You do not have permission", HttpStatus.FORBIDDEN),
     INVALID_DOB(1009, "Your age has must be at least {min}", HttpStatus.BAD_REQUEST),
+    PASSWORD_NOT_MATCH(1012, "Mật khẩu xác nhận không khớp", HttpStatus.BAD_REQUEST),
+    INVALID_TOKEN(1013, "Token không hợp lệ", HttpStatus.BAD_REQUEST),
+    TOKEN_EXPIRED(1014, "Token đã hết hạn", HttpStatus.BAD_REQUEST),
     // Dai: 2000 - 2999
     BRAND_EXISTED(400, "Brand existed", HttpStatus.BAD_REQUEST),
     BRAND_NOT_FOUND(404, "Brand not found", HttpStatus.NOT_FOUND),
-    
+
     // Category errors
     CATEGORY_NOT_FOUND(404, "Category not found", HttpStatus.NOT_FOUND),
     CATEGORY_EXISTED(400, "Category existed", HttpStatus.BAD_REQUEST),
-    CATEGORY_PARENT_INACTIVE(400, "Cannot activate category because parent category is inactive", HttpStatus.BAD_REQUEST),
+    CATEGORY_PARENT_INACTIVE(400, "Cannot activate category because parent category is inactive",
+            HttpStatus.BAD_REQUEST),
     CATEGORY_CIRCULAR_REFERENCE(400, "Category cannot be parent of itself", HttpStatus.BAD_REQUEST),
     CATEGORY_INVALID_PARENT_LOGIC(400, "Category with parent cannot be parent category", HttpStatus.BAD_REQUEST),
-    
+
     // Product errors
     PRODUCT_EXISTED(400, "Product existed", HttpStatus.BAD_REQUEST),
     PRODUCT_NOT_FOUND(404, "Product not found", HttpStatus.NOT_FOUND),
     PRODUCT_NAME_ALREADY_EXISTS(409, "Product name already exists", HttpStatus.CONFLICT),
     PRODUCT_HAS_ORDERS(400, "Cannot delete product that has been sold", HttpStatus.BAD_REQUEST),
-    
+
     // Validation errors
     VALIDATION_NAME_TOO_LONG(400, "Name must not exceed 255 characters", HttpStatus.BAD_REQUEST),
     VALIDATION_ICON_TOO_LONG(400, "Icon path must not exceed 255 characters", HttpStatus.BAD_REQUEST),
     VALIDATION_REQUIRED_FIELD(400, "This field is required", HttpStatus.BAD_REQUEST),
-    
+
     // Product validation errors
     PRODUCT_NAME_REQUIRED(400, "Product name is required", HttpStatus.BAD_REQUEST),
     PRODUCT_DESCRIPTION_REQUIRED(400, "Product description is required", HttpStatus.BAD_REQUEST),
@@ -67,7 +71,8 @@ public enum ErrorCode {
     // Hanh: 3000 - 3999
     // Thêm các error codes này vào enum ErrorCode
     ADDRESS_NOT_FOUND(3000, "Address not found", HttpStatus.NOT_FOUND),
-    CANNOT_DELETE_DEFAULT_ADDRESS(3001, "Cannot delete default address when other addresses exist", HttpStatus.BAD_REQUEST),
+    CANNOT_DELETE_DEFAULT_ADDRESS(3001, "Cannot delete default address when other addresses exist",
+            HttpStatus.BAD_REQUEST),
     DEFAULT_ADDRESS_NOT_FOUND(3002, "Default address not found", HttpStatus.NOT_FOUND),
     CART_NOT_FOUND(3003, "Cart not found", HttpStatus.NOT_FOUND),
     CART_PRODUCT_NOT_FOUND(3004, "Cart product not found", HttpStatus.NOT_FOUND),
@@ -84,7 +89,7 @@ public enum ErrorCode {
 
     VALIDATION_QUANTITY_MIN_ONE(3014, "Quantity must be at least 1", HttpStatus.BAD_REQUEST),
     NO_SELECTED_PRODUCT(400, "No selected product", HttpStatus.BAD_REQUEST),
-    CANNOT_REMOVE_DEFAULT_ADDRESS(400,  "Cannot remove default address", HttpStatus.BAD_REQUEST),
+    CANNOT_REMOVE_DEFAULT_ADDRESS(400, "Cannot remove default address", HttpStatus.BAD_REQUEST),
     // Khoi: 4000 - 4999 (Review & Discount)
     REVIEW_NOT_FOUND(400, "Review not found", HttpStatus.NOT_FOUND),
     REVIEW_NOT_ALLOWED(401, "User is not allowed to review this product", HttpStatus.BAD_REQUEST),

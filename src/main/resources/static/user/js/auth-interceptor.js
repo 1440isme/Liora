@@ -95,9 +95,25 @@ class AuthInterceptor {
     navigateWithAuth(url) {
         const token = localStorage.getItem('access_token');
         if (token) {
-            const separator = url.includes('?') ? '&' : '?';
-            const finalUrl = `${url}${separator}token=${encodeURIComponent(token)}`;
-            window.location.href = finalUrl;
+            // Sử dụng POST request thay vì GET với token trong URL
+            this.requestWithAuth(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ token: token })
+            }).then(response => {
+                if (response.ok) {
+                    // Redirect đến URL mới thay vì URL cũ
+                    window.location.href = '/user/order-detail-view';
+                } else {
+                    console.error('Authentication failed');
+                    window.location.href = url;
+                }
+            }).catch(error => {
+                console.error('Error:', error);
+                window.location.href = url;
+            });
         } else {
             // Không có token - chuyển hướng bình thường
             window.location.href = url;
