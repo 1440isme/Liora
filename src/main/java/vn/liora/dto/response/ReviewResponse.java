@@ -45,6 +45,11 @@ public class ReviewResponse {
     private String orderCode; // Thêm mã đơn hàng
     private LocalDateTime orderDate; // Thêm ngày đặt hàng
 
+    private String orderCustomerName;    // Tên khách hàng từ đơn hàng
+    private String orderCustomerPhone;   // SĐT khách hàng từ đơn hàng  
+    private String orderCustomerEmail;   // Email khách hàng từ đơn hàng
+    private String orderCustomerAddress; // Địa chỉ khách hàng từ đơn hàng
+
     // Helper method to get display name
     public String getUserDisplayName() {
         if (Boolean.TRUE.equals(anonymous)) {
