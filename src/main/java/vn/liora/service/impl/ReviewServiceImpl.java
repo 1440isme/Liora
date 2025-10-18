@@ -56,7 +56,7 @@ public class ReviewServiceImpl implements IReviewService {
 
         // THÊM: Kiểm tra đơn hàng đã được giao chưa
         String orderStatus = orderProduct.getOrder().getOrderStatus();
-        if (!"DELIVERED".equals(orderStatus)) {
+        if (!"DELIVERED".equals(orderStatus) && !"COMPLETED".equals(orderStatus)) {
             throw new AppException(ErrorCode.ORDER_NOT_DELIVERED);
         }
 

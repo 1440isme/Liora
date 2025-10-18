@@ -249,6 +249,26 @@ async function loadOrderProductsForReview(orderId) {
 
         if (response.ok) {
             const products = await response.json();
+
+            // Kiểm tra review đã tồn tại cho từng sản phẩm
+            for (let product of products) {
+                const reviewCheckResponse = await fetch(`/api/reviews/check/${product.idOrderProduct}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (reviewCheckResponse.ok) {
+                    const reviewData = await reviewCheckResponse.json();
+                    product.hasReview = reviewData.exists;
+                    product.existingReview = reviewData.review;
+                } else {
+                    product.hasReview = false;
+                }
+            }
+
             orderProducts = products;
             renderReviewProducts(products);
             $('#reviewModal').modal('show');
@@ -271,51 +291,85 @@ function renderReviewProducts(products) {
     }
 
     products.forEach((product, index) => {
+        const isReviewed = product.hasReview;
+        const existingReview = product.existingReview;
+
         const productHtml = `
-            <div class="card mb-3" data-order-product-id="${product.idOrderProduct}">
+            <div class="card mb-4 ${isReviewed ? 'border-success' : ''}" data-order-product-id="${product.idOrderProduct}">
                 <div class="card-body">
-                    <div class="row align-items-center">
+                    <!-- Hình ảnh và tên sản phẩm -->
+                    <div class="row align-items-center mb-3">
                         <div class="col-md-2">
                             <img src="${product.mainImageUrl || '/uploads/products/placeholder.jpg'}" 
                                  alt="${product.productName}" 
                                  class="img-thumbnail" 
-                                 style="width: 80px; height: 80px; object-fit: cover;">
+                                 style="width: 100px; height: 100px; object-fit: cover;">
                         </div>
-                        <div class="col-md-4">
-                            <h6 class="mb-1">${product.productName}</h6>
+                        <div class="col-md-10">
+                            <h6 class="mb-1 fw-bold">${product.productName}</h6>
                             <small class="text-muted">${product.brandName || ''}</small>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="rating-section">
-                                <label class="form-label small">Đánh giá:</label>
-                                <div class="star-rating">
-                                    ${[1,2,3,4,5].map(star => `
-                                        <i class="fas fa-star star" data-rating="${star}" style="cursor: pointer; color: #ddd; font-size: 1.2em;"></i>
-                                    `).join('')}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="review-content">
-                                <label class="form-label small">Nhận xét:</label>
-                                <textarea class="form-control form-control-sm" 
-                                          rows="2" 
-                                          placeholder="Nhập nhận xét của bạn..." 
-                                          data-order-product-id="${product.idOrderProduct}"></textarea>
-                            </div>
+                            ${isReviewed ? '<span class="badge bg-success ms-2">Đã đánh giá</span>' : ''}
                         </div>
                     </div>
+                    
+                    <!-- Phần đánh giá sao -->
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">Đánh giá:</label>
+                        <div class="star-rating">
+                            ${[1,2,3,4,5].map(star => `
+                                <i class="fas fa-star star" data-rating="${star}" 
+                                   style="cursor: ${isReviewed ? 'default' : 'pointer'}; 
+                                          color: ${isReviewed && existingReview && star <= existingReview.rating ? '#ffc107' : '#ddd'}; 
+                                          font-size: 1.5em; margin-right: 5px;"></i>
+                            `).join('')}
+                        </div>
+                    </div>
+                    
+                    <!-- Ô nhập nội dung -->
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">Nhận xét:</label>
+                        <textarea class="form-control" 
+                                  rows="3" 
+                                  placeholder="${isReviewed ? 'Đã đánh giá' : 'Nhập nhận xét của bạn...'}" 
+                                  data-order-product-id="${product.idOrderProduct}"
+                                  ${isReviewed ? 'readonly' : ''}>${isReviewed && existingReview ? existingReview.content : ''}</textarea>
+                    </div>
+                    
+                    <!-- Checkbox ẩn danh -->
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" 
+                               id="anonymous_${product.idOrderProduct}" 
+                               data-order-product-id="${product.idOrderProduct}"
+                               ${isReviewed && existingReview && existingReview.anonymous ? 'checked' : ''}
+                               ${isReviewed ? 'disabled' : ''}>
+                        <label class="form-check-label text-muted small" 
+                               for="anonymous_${product.idOrderProduct}">
+                            Ẩn danh khi đánh giá
+                        </label>
+                    </div>
+                    
+                    ${isReviewed ? `
+                        <div class="mt-3">
+                            <button type="button" class="btn btn-outline-primary btn-sm" 
+                                    onclick="editReview(${product.idOrderProduct})">
+                                <i class="fas fa-edit me-1"></i> Sửa đánh giá
+                            </button>
+                        </div>
+                    ` : ''}
                 </div>
             </div>
         `;
         container.append(productHtml);
     });
 
-    // Add star rating functionality
+    // Add star rating functionality (chỉ cho sản phẩm chưa đánh giá)
     $('.star-rating .star').click(function() {
+        const card = $(this).closest('.card');
+        if (card.hasClass('border-success')) return; // Đã đánh giá rồi
+
         const rating = $(this).data('rating');
         const stars = $(this).parent().find('.star');
-        
+
         // Update star colors
         stars.each(function(index) {
             if (index < rating) {
@@ -324,9 +378,9 @@ function renderReviewProducts(products) {
                 $(this).css('color', '#ddd');
             }
         });
-        
+
         // Store rating
-        $(this).closest('.card').data('rating', rating);
+        card.data('rating', rating);
     });
 }
 
@@ -339,22 +393,37 @@ async function submitAllReviews() {
 
     const reviews = [];
     let hasValidReview = false;
+    let hasInvalidReview = false;
 
     $('.card[data-order-product-id]').each(function() {
         const orderProductId = $(this).data('order-product-id');
         const rating = $(this).data('rating');
         const content = $(this).find('textarea').val().trim();
+        const anonymous = $(this).find('input[type="checkbox"]').is(':checked');
 
+        // Kiểm tra nếu có nội dung mà không có rating
+        if (content && (!rating || rating < 1 || rating > 5)) {
+            hasInvalidReview = true;
+            return;
+        }
+
+        // Chỉ submit nếu có rating
         if (rating && rating >= 1 && rating <= 5) {
             reviews.push({
                 orderProductId: orderProductId,
                 rating: rating,
                 content: content || '',
-                anonymous: false
+                anonymous: anonymous
             });
             hasValidReview = true;
         }
     });
+
+    // Validation
+    if (hasInvalidReview) {
+        alert('Lỗi: Bạn không thể ghi nội dung mà không đánh giá sao. Vui lòng chọn số sao hoặc xóa nội dung.');
+        return;
+    }
 
     if (!hasValidReview) {
         alert('Vui lòng đánh giá ít nhất một sản phẩm');
@@ -378,10 +447,16 @@ async function submitAllReviews() {
                 throw new Error(errorData.message || 'Không thể gửi đánh giá');
             }
         }
-
-        alert('Đánh giá thành công! Cảm ơn bạn đã đánh giá sản phẩm.');
+        // Đóng modal trước
         $('#reviewModal').modal('hide');
-        
+
+        // Hiển thị thông báo thành công
+        alert('Đánh giá thành công! Cảm ơn bạn đã đánh giá sản phẩm.');
+
+        // Reload trang sau một chút để đảm bảo modal đã đóng
+        setTimeout(() => {
+            window.location.reload();
+        }, 500);
     } catch (error) {
         console.error('Error submitting reviews:', error);
         alert('Lỗi: ' + error.message);

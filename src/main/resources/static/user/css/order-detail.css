@@ -593,3 +593,29 @@
     color: white !important;
 }
 
+.modal-xl {
+    max-width: 900px;
+}
+
+.star-rating .star {
+    transition: color 0.2s ease;
+}
+
+.star-rating .star:hover {
+    color: #ffc107 !important;
+}
+
+.review-product-card {
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    transition: box-shadow 0.2s ease;
+}
+
+.review-product-card:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.form-check-input:checked {
+    background-color: #e8a2b0;
+    border-color: #e8a2b0;
+}
