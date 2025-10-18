@@ -193,6 +193,14 @@ public class UserDiscountController {
                 return ResponseEntity.badRequest().body(response);
             }
 
+            // ✅ THÊM: Kiểm tra điều kiện áp dụng
+            if (request.getOrderTotal() == null || request.getOrderTotal().compareTo(discount.getMinOrderValue()) < 0) {
+                response.setCode(400);
+                response.setMessage(String.format("Đơn hàng phải có giá trị tối thiểu %s để áp dụng mã này",
+                        discount.getMinOrderValue()));
+                return ResponseEntity.badRequest().body(response);
+            }
+
             // Tính số tiền giảm giá
             BigDecimal discountAmount = discountService.calculateDiscountAmount(discount.getDiscountId(), request.getOrderTotal());
 

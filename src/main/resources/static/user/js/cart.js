@@ -27,6 +27,15 @@ class CartPage {
             this.handleQuantityInputChange(e);
         });
 
+        // Apply/Remove promo code
+        $('#applyPromoBtn').on('click', () => {
+            if (this.appliedDiscount) {
+                this.handleRemovePromo();
+            } else {
+                this.handleApplyPromo();
+            }
+        });
+
         // Chỉ validation khi nhấn Enter hoặc blur (không validation real-time)
         $(document).on('keypress', '.quantity-input', (e) => {
             if (e.which === 13) { // Enter key
@@ -783,7 +792,7 @@ class CartPage {
         const promoCode = $('#promoCode').val().trim();
 
         if (!promoCode) {
-            this.showToast('Vui lòng nhập mã giảm giá', 'warning');
+            // this.showToast('Vui lòng nhập mã giảm giá', 'warning');
             return;
         }
 
@@ -796,24 +805,49 @@ class CartPage {
                 orderTotal: this.calculateCartTotal()
             });
 
-            // ✅ SỬA: Xử lý response đúng cách
             if (response.result) {
                 // Lưu thông tin discount
                 this.appliedDiscount = response.result;
-
                 this.showToast('Áp dụng mã giảm giá thành công!', 'success');
-                $('#promoCode').val('').attr('placeholder', `Đã áp dụng: ${promoCode}`);
-                $('#applyPromoBtn').text('Đã áp dụng').prop('disabled', true);
+                $('#promoCode').val('').attr('placeholder', `${promoCode}`).prop('disabled', true);
+                $('#applyPromoBtn').text('Gỡ mã').removeClass('btn-primary').addClass('btn-outline-danger');
 
                 // Cập nhật summary với thông tin discount
                 this.updateCartSummary();
             }
             
         } catch (error) {
-            this.showToast('Mã giảm giá không hợp lệ hoặc đã hết hạn', 'error');
+            // Hiển thị thông báo lỗi chi tiết
+            let errorMessage = 'Mã giảm giá không hợp lệ';
+
+            try {
+                const errorData = JSON.parse(error.message);
+                if (errorData.message) {
+                    errorMessage = errorData.message;
+                }
+            } catch (e) {
+                // Nếu không parse được JSON, dùng message gốc
+                if (error.message) {
+                    errorMessage = error.message;
+                }
+            }
+
+            this.showToast(errorMessage, 'error');
         } finally {
             this.showLoading(false);
         }
+    }
+
+    // gỡ mã giảm giá
+    handleRemovePromo() {
+        this.appliedDiscount = null;
+        this.showToast('Đã gỡ mã giảm giá', 'info');
+
+        // ✅ SỬA: Reset UI về trạng thái ban đầu
+        $('#promoCode').val('').attr('placeholder', 'Nhập mã giảm giá').prop('disabled', false);
+        $('#applyPromoBtn').text('Áp dụng').removeClass('btn-outline-danger');
+
+        this.updateCartSummary();
     }
 
     showConfirmDialog(title, message, onConfirm) {
