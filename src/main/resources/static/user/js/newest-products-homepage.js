@@ -113,7 +113,9 @@ class NewestProductsHomepageManager {
                     <img src="${mainImageUrl}" 
                          class="card-img-top" 
                          alt="${productName}"
-                         onerror="this.src='/uploads/products/default.jpg'">
+                         onerror="this.src='/uploads/products/default.jpg'"
+                         onclick="window.location.href='/product/${productId}'"
+                         style="cursor: pointer;">
                     
                     <div class="product-actions">
                         <button class="quick-view-btn" 
@@ -145,6 +147,20 @@ class NewestProductsHomepageManager {
                     </div>
                     
                     <div class="mt-auto">
+                        <!-- Sales Progress Bar -->
+                        <div class="sales-progress mb-3">
+                            <div class="sales-info d-flex justify-content-between align-items-center mb-1">
+                                <span class="sales-label">Đã bán</span>
+                                <span class="sales-count">${this.formatNumber(product.soldCount || 0)}</span>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar" 
+                                     style="width: ${this.calculateSalesProgress(product.soldCount || 0)}%"
+                                     role="progressbar">
+                                </div>
+                            </div>
+                        </div>
+                        
                         <div class="price-section d-flex justify-content-between align-items-center">
                             <span class="current-price">
                                 ${this.formatPrice(price)}
@@ -911,6 +927,40 @@ class NewestProductsHomepageManager {
                 toast.parentNode.removeChild(toast);
             }
         }, 3000);
+    }
+
+    calculateSalesProgress(soldCount) {
+        // Define different thresholds for progress calculation - optimized for better visual appeal
+        const thresholds = [
+            { max: 50, percentage: 30 },     // 0-50: 0-30% (tăng từ 20%)
+            { max: 100, percentage: 40 },    // 50-100: 30-40%
+            { max: 500, percentage: 55 },   // 100-500: 40-55%
+            { max: 1000, percentage: 70 },   // 500-1000: 55-70%
+            { max: 5000, percentage: 85 },   // 1000-5000: 70-85%
+            { max: 10000, percentage: 95 },  // 5000-10000: 85-95%
+            { max: Infinity, percentage: 100 } // >10000: 95-100%
+        ];
+
+        for (const threshold of thresholds) {
+            if (soldCount <= threshold.max) {
+                // Get previous threshold percentage
+                const prevThreshold = thresholds[thresholds.indexOf(threshold) - 1];
+                const basePercentage = prevThreshold ? prevThreshold.percentage : 0;
+                
+                // Calculate progress within this threshold
+                const prevMax = prevThreshold ? prevThreshold.max : 0;
+                const range = threshold.max - prevMax;
+                const progress = ((soldCount - prevMax) / range) * (threshold.percentage - basePercentage);
+                
+                return Math.min(100, basePercentage + progress);
+            }
+        }
+        
+        return 100; // For very high sales
+    }
+
+    formatNumber(number) {
+        return new Intl.NumberFormat('vi-VN').format(number);
     }
 }
 

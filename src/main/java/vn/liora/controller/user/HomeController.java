@@ -67,4 +67,13 @@ public class HomeController {
         return "user/user/info";
     }
 
+    @GetMapping("/search-results")
+    public String searchResults(Model model) {
+        // Thêm danh mục cha với cây con vào model để sử dụng trong header
+        model.addAttribute("parentCategories", categoryService.getCategoryTree());
+        // Thêm danh sách thương hiệu active cho filter
+        model.addAttribute("activeBrands", brandService.findActiveBrands());
+        return "user/search-results";
+    }
+
 }
