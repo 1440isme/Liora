@@ -19,6 +19,7 @@ import vn.liora.exception.ErrorCode;
 import vn.liora.mapper.ReviewMapper;
 import vn.liora.repository.*;
 import vn.liora.service.IReviewService;
+import vn.liora.service.IProductService;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -39,6 +40,7 @@ public class ReviewServiceImpl implements IReviewService {
     BrandRepository brandRepository; // Thêm vào constructor
     CategoryRepository categoryRepository; // Thêm vào constructor
     ProductRepository productRepository; // Thêm vào constructor
+    IProductService productService; // Thêm vào constructor
 
     // ========== BASIC CRUD ==========
     
@@ -76,6 +78,15 @@ public class ReviewServiceImpl implements IReviewService {
 
         // Lưu review
         Review savedReview = reviewRepository.save(review);
+        
+        // Cập nhật average rating cho product
+        try {
+            productService.updateProductAverageRating(orderProduct.getProduct().getProductId());
+        } catch (Exception e) {
+            log.error("Error updating product average rating: {}", e.getMessage());
+            // Không throw exception để không ảnh hưởng đến việc tạo review
+        }
+        
         return reviewMapper.toReviewResponse(savedReview);
     }
 
@@ -96,6 +107,14 @@ public class ReviewServiceImpl implements IReviewService {
         review.setLastUpdate(LocalDateTime.now());
 
         Review savedReview = reviewRepository.save(review);
+        
+        // Cập nhật average rating cho product
+        try {
+            productService.updateProductAverageRating(review.getProductId());
+        } catch (Exception e) {
+            log.error("Error updating product average rating: {}", e.getMessage());
+        }
+        
         return reviewMapper.toReviewResponse(savedReview);
     }
 
@@ -104,7 +123,16 @@ public class ReviewServiceImpl implements IReviewService {
     public void deleteById(Long id) {
         Review review = reviewRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.REVIEW_NOT_FOUND));
+        
+        Long productId = review.getProductId();
         reviewRepository.delete(review);
+        
+        // Cập nhật average rating cho product
+        try {
+            productService.updateProductAverageRating(productId);
+        } catch (Exception e) {
+            log.error("Error updating product average rating: {}", e.getMessage());
+        }
     }
 
     @Override

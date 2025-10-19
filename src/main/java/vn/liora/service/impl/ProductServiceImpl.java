@@ -18,6 +18,7 @@ import vn.liora.mapper.ProductMapper;
 import vn.liora.repository.BrandRepository;
 import vn.liora.repository.CategoryRepository;
 import vn.liora.repository.ProductRepository;
+import vn.liora.repository.ReviewRepository;
 import vn.liora.service.IProductService;
 
 import java.math.BigDecimal;
@@ -32,15 +33,18 @@ public class ProductServiceImpl implements IProductService {
     private final CategoryRepository categoryRepository;
     private final BrandRepository brandRepository;
     private final ProductMapper productMapper;
+    private final ReviewRepository reviewRepository;
 
     public ProductServiceImpl(ProductRepository productRepository,
                               CategoryRepository categoryRepository,
                               BrandRepository brandRepository,
-                              ProductMapper productMapper) {
+                              ProductMapper productMapper,
+                              ReviewRepository reviewRepository) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.brandRepository = brandRepository;
         this.productMapper = productMapper;
+        this.reviewRepository = reviewRepository;
     }
 
     // ========== BASIC CRUD ==========
@@ -571,6 +575,75 @@ public class ProductServiceImpl implements IProductService {
             
         System.out.println("Returning " + result.size() + " newest brands");
         return result;
+    }
+
+    // ========== RATING MANAGEMENT ==========
+    
+    @Override
+    @Transactional
+    public void updateProductAverageRating(Long productId) {
+        try {
+            // Lấy product
+            Product product = productRepository.findById(productId)
+                    .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
+            
+            // Tính average rating từ reviews
+            Double averageRating = reviewRepository.getAverageRatingByProductId(productId);
+            
+            // Cập nhật average rating
+            if (averageRating != null) {
+                product.setAverageRating(BigDecimal.valueOf(averageRating));
+            } else {
+                product.setAverageRating(BigDecimal.ZERO);
+            }
+            
+            // Cập nhật updated date
+            product.setUpdatedDate(LocalDateTime.now());
+            
+            // Lưu product
+            productRepository.save(product);
+            
+            System.out.println("Updated average rating for product " + productId + ": " + product.getAverageRating());
+            
+        } catch (Exception e) {
+            System.err.println("Error updating average rating for product " + productId + ": " + e.getMessage());
+            throw e;
+        }
+    }
+    
+    @Override
+    @Transactional
+    public void updateAllProductsAverageRating() {
+        try {
+            // Lấy tất cả products
+            List<Product> products = productRepository.findAll();
+            
+            System.out.println("Updating average rating for " + products.size() + " products...");
+            
+            for (Product product : products) {
+                // Tính average rating từ reviews
+                Double averageRating = reviewRepository.getAverageRatingByProductId(product.getProductId());
+                
+                // Cập nhật average rating
+                if (averageRating != null) {
+                    product.setAverageRating(BigDecimal.valueOf(averageRating));
+                } else {
+                    product.setAverageRating(BigDecimal.ZERO);
+                }
+                
+                // Cập nhật updated date
+                product.setUpdatedDate(LocalDateTime.now());
+            }
+            
+            // Lưu tất cả products
+            productRepository.saveAll(products);
+            
+            System.out.println("Successfully updated average rating for all products");
+            
+        } catch (Exception e) {
+            System.err.println("Error updating average rating for all products: " + e.getMessage());
+            throw e;
+        }
     }
 
 

@@ -112,5 +112,9 @@ public interface IProductService {
     
     // Advanced APIs for dedicated pages with filtering
     // Note: newest-advanced now uses direct controller logic like best-selling-advanced
+    
+    // ========== RATING MANAGEMENT ==========
+    void updateProductAverageRating(Long productId);
+    void updateAllProductsAverageRating();
 
 }
