@@ -2,7 +2,7 @@ class CheckoutPage {
     constructor() {
         this.cartId = null;
         this.selectedItems = [];
-        this.appliedDiscount =  null;
+        this.appliedDiscount = null;
         this.shippingFee = 0;
         this.discount = 0;
         this.currentUser = null;
@@ -1219,8 +1219,8 @@ class CheckoutPage {
 
         // Luôn hiển thị dòng giảm giá
         if (!$('#discount-row').length) {
-                    // Thêm dòng giảm giá vào summary (luôn hiển thị)
-                    $('#summary-shipping').parent().after(`
+            // Thêm dòng giảm giá vào summary (luôn hiển thị)
+            $('#summary-shipping').parent().after(`
                 <div class="summary-row" id="discount-row">
                     <span>Giảm giá:</span>
                     <span class="fw-medium text-success">-${this.formatCurrency(discountAmount)}</span>
@@ -1543,8 +1543,7 @@ class CheckoutPage {
             // Thông tin GHN để BE tính phí và lưu vào order.shippingFee
             districtId: Number.isFinite(districtId) ? districtId : null,
             wardCode: wardCode || null,
-            provinceId: Number.isFinite(provinceId) ? provinceId : null
-        };
+            provinceId: Number.isFinite(provinceId) ? provinceId : null,
 
             // Thông tin giỏ hàng
             cartId: this.cartId
