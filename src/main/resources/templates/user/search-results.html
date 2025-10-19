@@ -24,25 +24,26 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" th:href="@{/user/css/newest-products-page.css}">
     <link rel="stylesheet" th:href="@{/user/css/style.css}">
-    
+
     <!-- Inline CSS for hover effect -->
     <style>
         .product-name-link:hover {
             color: #E8A2B0 !important;
             text-decoration: none !important;
         }
+
         .brand-link:hover {
             color: #E8A2B0 !important;
             text-decoration: none !important;
         }
-        
+
         /* Hide numeric input arrows */
         #quickViewModal input[type="number"]::-webkit-outer-spin-button,
         #quickViewModal input[type="number"]::-webkit-inner-spin-button {
             -webkit-appearance: none;
             margin: 0;
         }
-        
+
         #quickViewModal input[type="number"] {
             -moz-appearance: textfield;
         }
@@ -53,12 +54,12 @@
         #quickViewModal {
             z-index: 9999 !important;
         }
-        
+
         #quickViewModal .modal-backdrop {
             z-index: 9998 !important;
             background-color: rgba(0, 0, 0, 0.5) !important;
         }
-        
+
         #quickViewModal .modal-content {
             z-index: 9999 !important;
         }
@@ -69,7 +70,7 @@
             -webkit-appearance: none;
             margin: 0;
         }
-        
+
         #quickViewModal input[type="number"] {
             -moz-appearance: textfield;
         }
@@ -78,7 +79,7 @@
         .filter-spacer {
             display: block;
         }
-        
+
         @media (max-width: 768px) {
             .filter-spacer {
                 display: none;
@@ -92,28 +93,29 @@
             padding: 8px 0;
             box-shadow: none;
         }
-        
+
         .breadcrumb-item a {
             color: #6c757d;
             transition: color 0.3s ease;
         }
-        
+
         .breadcrumb-item a:hover {
             color: #E8A2B0;
         }
-        
+
         .breadcrumb-item.active {
             color: #495057;
             font-weight: 500;
         }
-        
-        .breadcrumb-item + .breadcrumb-item::before {
+
+        .breadcrumb-item+.breadcrumb-item::before {
             content: "›";
             color: #adb5bd;
             font-weight: bold;
         }
     </style>
 </head>
+
 <body>
     <!-- Navigation -->
     <div th:replace="~{user/layout/user-header :: header}"></div>
@@ -204,7 +206,8 @@
                 <!-- Results Info and Sort -->
                 <div class="d-flex justify-content-between align-items-center mb-1 mt-0">
                     <div>
-                        <h5 class="text-dark fw-bold mb-2">Kết quả tìm kiếm cho: "<span id="searchQueryDisplay"></span>"</h5>
+                        <h5 class="text-dark fw-bold mb-2">Kết quả tìm kiếm cho: "<span id="searchQueryDisplay"></span>"
+                        </h5>
                         <span id="resultsCount" class="fw-bold text-dark">Hiển thị 0 sản phẩm</span>
                     </div>
                     <div>
@@ -272,16 +275,13 @@
                                     <button class="slider-nav slider-prev" id="prevBtn">
                                         <i class="fas fa-chevron-left"></i>
                                     </button>
-                                    <img id="mainProductImage" 
-                                         src="" 
-                                         class="img-fluid rounded" 
-                                         alt="Product Image"
-                                         onerror="this.src='/uploads/products/default.jpg'">
+                                    <img id="mainProductImage" src="" class="img-fluid rounded" alt="Product Image"
+                                        onerror="this.src='/user/img/default-product.jpg'">
                                     <button class="slider-nav slider-next" id="nextBtn">
                                         <i class="fas fa-chevron-right"></i>
                                     </button>
                                 </div>
-                                
+
                                 <!-- Thumbnail Slider -->
                                 <div class="thumbnail-slider">
                                     <div class="thumbnail-container d-flex gap-2">
@@ -290,7 +290,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <!-- Product Info -->
                         <div class="col-md-6">
                             <h4 class="product-name mb-3">
@@ -299,13 +299,13 @@
                                 </a>
                             </h4>
                             <p class="brand-name text-muted mb-2">Brand Name</p>
-                            
+
                             <!-- Product Status -->
                             <div class="product-status mb-3">
                                 <span class="badge bg-success">Còn hàng</span>
                                 <span class="ms-2 text-muted">Mã sản phẩm: 123</span>
                             </div>
-                            
+
                             <!-- Rating -->
                             <div class="rating mb-3">
                                 <span class="stars">
@@ -317,7 +317,7 @@
                                 </span>
                                 <span class="review-count ms-2">(0 đánh giá)</span>
                             </div>
-                            
+
                             <!-- Sales Progress -->
                             <div class="sales-progress mb-3">
                                 <div class="sales-info d-flex justify-content-between align-items-center mb-1">
@@ -325,29 +325,32 @@
                                     <span class="sales-count">0</span>
                                 </div>
                                 <div class="progress">
-                                    <div class="progress-bar" 
-                                         style="width: 0%"
-                                         role="progressbar">
+                                    <div class="progress-bar" style="width: 0%" role="progressbar">
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <!-- Price -->
                             <div class="price-section mb-4">
                                 <span class="current-price h4 text-primary">
                                     0 ₫
                                 </span>
                             </div>
-                            
+
                             <!-- Quantity Selector -->
                             <div class="quantity-selector mb-4">
                                 <div class="d-flex align-items-center">
                                     <label class="form-label mb-0" style="margin-right: 2rem;">Số lượng:</label>
                                     <div class="input-group" style="max-width: 150px;">
-                                        <button class="btn btn-outline-secondary" type="button" onclick="window.searchResultsManager.decrementQuantity()">-</button>
-                                        <input type="number" class="form-control text-center" value="1" min="1" max="99" id="quantityInput" onchange="window.searchResultsManager.validateQuantity()" oninput="window.searchResultsManager.validateQuantity()" onblur="window.searchResultsManager.validateQuantityOnBlur()">
-                                        <button class="btn btn-outline-secondary" type="button" onclick="window.searchResultsManager.incrementQuantity()">+</button>
-            </div>
+                                        <button class="btn btn-outline-secondary" type="button"
+                                            onclick="window.searchResultsManager.decrementQuantity()">-</button>
+                                        <input type="number" class="form-control text-center" value="1" min="1" max="99"
+                                            id="quantityInput" onchange="window.searchResultsManager.validateQuantity()"
+                                            oninput="window.searchResultsManager.validateQuantity()"
+                                            onblur="window.searchResultsManager.validateQuantityOnBlur()">
+                                        <button class="btn btn-outline-secondary" type="button"
+                                            onclick="window.searchResultsManager.incrementQuantity()">+</button>
+                                    </div>
                                 </div>
                                 <!-- Error Message -->
                                 <div id="quantityError" class="text-danger mt-2" style="display: none;">
@@ -355,27 +358,28 @@
                                     <span id="quantityErrorMessage">Số lượng tối đa bạn có thể mua là 99.</span>
                                 </div>
                             </div>
-                            
+
                             <!-- Actions -->
                             <div class="row g-2">
                                 <div class="col-6">
-                                    <button class="btn btn-danger btn-lg w-100" onclick="window.searchResultsManager.buyNow(0)">
+                                    <button class="btn btn-danger btn-lg w-100"
+                                        onclick="window.searchResultsManager.buyNow(0)">
                                         <i class="fas fa-bolt me-1"></i>
                                         Mua ngay
                                     </button>
                                 </div>
                                 <div class="col-6">
-                                    <button class="btn btn-primary btn-lg w-100" onclick="window.searchResultsManager.addToCartWithQuantity(0)">
+                                    <button class="btn btn-primary btn-lg w-100"
+                                        onclick="window.searchResultsManager.addToCartWithQuantity(0)">
                                         <i class="fas fa-shopping-cart me-1"></i>
                                         Thêm vào giỏ
                                     </button>
                                 </div>
                             </div>
-                            
+
                             <!-- View Details Button -->
                             <div class="mt-3">
-                                <a href="#" 
-                                   class="btn btn-outline-primary btn-lg w-100">
+                                <a href="#" class="btn btn-outline-primary btn-lg w-100">
                                     <i class="fas fa-info-circle me-2"></i>
                                     Xem chi tiết sản phẩm
                                 </a>
@@ -396,18 +400,18 @@
     <!-- Custom JavaScript -->
     <script th:src="@{/user/js/main.js}"></script>
     <script th:src="@{/user/js/search-results.js}"></script>
-    
+
     <script>
         // Initialize the search results page manager
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             console.log('DOM loaded, initializing search results page manager');
             console.log('SearchResultsManager class:', typeof SearchResultsManager);
-            
+
             if (typeof SearchResultsManager === 'undefined') {
                 console.error('SearchResultsManager class not found!');
                 return;
             }
-            
+
             try {
                 window.searchResultsManager = new SearchResultsManager();
                 console.log('SearchResultsManager instance created');

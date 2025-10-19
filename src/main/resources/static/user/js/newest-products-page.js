@@ -138,7 +138,7 @@ class NewestProductsPageManager {
             // Use first image as main image
             return product.images[0].imageUrl || product.images[0];
         }
-        return product.mainImageUrl || '/uploads/products/default.jpg';
+        return product.mainImageUrl || '/user/img/default-product.jpg';
     }
 
     // Generate image thumbnails for slider
@@ -154,7 +154,7 @@ class NewestProductsPageManager {
             images = [{ imageUrl: product.mainImageUrl }];
         } else {
             // Default image
-            images = [{ imageUrl: '/uploads/products/default.jpg' }];
+            images = [{ imageUrl: '/user/img/default-product.jpg' }];
         }
 
         return images.map((image, index) => `
@@ -162,7 +162,7 @@ class NewestProductsPageManager {
                 <img src="${image.imageUrl || image}" 
                      alt="${product.name}" 
                      class="img-fluid rounded"
-                     onerror="this.src='/uploads/products/default.jpg'">
+                     onerror="this.src='/user/img/default-product.jpg'">
             </div>
         `).join('');
     }
@@ -755,10 +755,10 @@ class NewestProductsPageManager {
         return `
             <div class="product-card ${statusClass}">
                     <div class="position-relative">
-                        <img src="${product.mainImageUrl || '/uploads/products/default.jpg'}" 
+                        <img src="${product.mainImageUrl || '/user/img/default-product.jpg'}" 
                              class="card-img-top" 
                              alt="${product.name}"
-                             onerror="this.src='/uploads/products/default.jpg'">
+                             onerror="this.src='/user/img/default-product.jpg'">
                         
                     <!-- Product Status Badge - Removed to avoid overlapping with image -->
                         
@@ -1213,7 +1213,7 @@ class NewestProductsPageManager {
                                                  src="${this.getMainImageUrl(product)}" 
                                                  class="img-fluid rounded" 
                                                  alt="${product.name}"
-                                                 onerror="this.src='/uploads/products/default.jpg'">
+                                                 onerror="this.src='/user/img/default-product.jpg'">
                                             <button class="slider-nav slider-next" id="nextBtn">
                                                 <i class="fas fa-chevron-right"></i>
                                             </button>

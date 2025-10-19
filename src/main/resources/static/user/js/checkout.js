@@ -1401,7 +1401,7 @@ class CheckoutPage {
             // Nếu không phải VNPAY hoặc VNPAY thất bại, chuyển đến trang thành công
             this.showToast('Đặt hàng thành công!', 'success');
             setTimeout(() => {
-                window.location.href = `/order/${response.idOrder}`;
+                this.redirectToOrderDetail(response.idOrder);
             }, 1500);
 
         } catch (error) {
@@ -1409,6 +1409,21 @@ class CheckoutPage {
             this.showToast('Không thể đặt hàng. Vui lòng thử lại!', 'error');
         } finally {
             this.showLoading(false);
+        }
+    }
+
+    redirectToOrderDetail(orderId) {
+        // Xác định loại user và redirect phù hợp
+        const token = localStorage.getItem('access_token');
+        const userData = localStorage.getItem('liora_user');
+
+        if (token && userData) {
+            // User đã đăng nhập (cả user thường và Google)
+            // Sử dụng endpoint cho user đã đăng nhập
+            window.location.href = `/user/order-detail/${orderId}`;
+        } else {
+            // Guest user - redirect đến trang tra cứu đơn hàng
+            window.location.href = `/user/order-detail/access?orderId=${orderId}`;
         }
     }
 

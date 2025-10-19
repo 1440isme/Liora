@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import jakarta.annotation.security.PermitAll;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.util.Map;
@@ -32,6 +33,7 @@ public class OrderDetailController {
 
     // Các endpoint cụ thể phải đặt TRƯỚC endpoint có path variable
     @GetMapping("/order-detail/access")
+    @PermitAll
     public String guestOrderAccessPage(Model model) {
         return "user/auth/guest-order-access";
     }
@@ -69,7 +71,12 @@ public class OrderDetailController {
             HttpServletRequest httpRequest) {
         try {
             Long orderId = Long.valueOf(request.get("orderId").toString());
+            String token = request.get("token") != null ? request.get("token").toString() : null;
+
             httpRequest.getSession().setAttribute("currentOrderId", orderId);
+            if (token != null) {
+                httpRequest.getSession().setAttribute("authToken", token);
+            }
             return ResponseEntity.ok("Session set successfully");
         } catch (Exception e) {
             log.error("Error setting session: {}", e.getMessage(), e);
@@ -78,6 +85,7 @@ public class OrderDetailController {
     }
 
     @PostMapping("/order-detail/access")
+    @PermitAll
     public String handleGuestOrderAccess(@Valid @RequestBody GuestOrderAccessRequest request,
             HttpServletRequest httpRequest, Model model) {
         try {
@@ -115,6 +123,38 @@ public class OrderDetailController {
             log.error("Error in handleGuestOrderAccess: {}", e.getMessage(), e);
             model.addAttribute("error", "Có lỗi xảy ra khi truy cập đơn hàng");
             return "user/auth/guest-order-access";
+        }
+    }
+
+    // Endpoint mới cho tra cứu đơn hàng công khai
+    @PostMapping("/order-lookup")
+    @PermitAll
+    public ResponseEntity<?> lookupOrder(@RequestBody Map<String, Object> request) {
+        try {
+            Long orderId = Long.valueOf(request.get("orderId").toString());
+            String email = request.get("email").toString();
+
+            log.info("Order lookup request - OrderId: {}, Email: {}", orderId, email);
+
+            // Kiểm tra đơn hàng có tồn tại không
+            var orderResponse = orderService.getOrderById(orderId);
+            if (orderResponse == null) {
+                log.warn("Order not found: {}", orderId);
+                return ResponseEntity.badRequest().body(Map.of("message", "Không tìm thấy đơn hàng"));
+            }
+
+            // Kiểm tra email có khớp với đơn hàng không
+            if (!email.equalsIgnoreCase(orderResponse.getEmail())) {
+                log.warn("Email mismatch - Provided: {}, Order: {}", email, orderResponse.getEmail());
+                return ResponseEntity.badRequest().body(Map.of("message", "Email không khớp với đơn hàng"));
+            }
+
+            log.info("Order lookup successful for order: {}", orderId);
+            return ResponseEntity.ok(Map.of("message", "Tra cứu thành công", "orderId", orderId));
+
+        } catch (Exception e) {
+            log.error("Error in order lookup: {}", e.getMessage(), e);
+            return ResponseEntity.badRequest().body(Map.of("message", "Có lỗi xảy ra khi tra cứu đơn hàng"));
         }
     }
 
@@ -166,6 +206,7 @@ public class OrderDetailController {
 
     // Endpoint có path variable phải đặt CUỐI CÙNG
     @GetMapping("/order-detail/{orderId}")
+    @PermitAll
     public String viewOrderDetail(@PathVariable Long orderId, @RequestParam(required = false) String token,
             @RequestParam(required = false) String guestEmail, HttpServletRequest httpRequest, Model model) {
         try {

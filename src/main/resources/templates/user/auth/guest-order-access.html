@@ -4,180 +4,261 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Xem đơn hàng - Liora</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <title>Tra cứu đơn hàng - Liora</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" th:href="@{/user/css/style.css}">
+
     <style>
-        body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
+        .order-lookup-container {
+            min-height: 80vh;
             display: flex;
             align-items: center;
             justify-content: center;
+            padding: 2rem 0;
         }
 
-        .access-card {
+        .lookup-card {
             background: white;
             border-radius: 15px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
-            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            padding: 3rem;
             width: 100%;
-            max-width: 450px;
+            max-width: 500px;
+            border: 1px solid #e9ecef;
         }
 
-        .access-header {
+        .lookup-header {
             text-align: center;
-            margin-bottom: 2rem;
+            margin-bottom: 2.5rem;
         }
 
-        .access-header h2 {
+        .lookup-header h1 {
             color: #333;
-            font-weight: 600;
+            font-weight: 700;
             margin-bottom: 0.5rem;
+            font-size: 2rem;
         }
 
-        .access-header p {
+        .lookup-header p {
             color: #666;
-            font-size: 0.9rem;
+            font-size: 1rem;
+            margin-bottom: 0;
         }
 
         .form-floating {
-            margin-bottom: 1rem;
+            margin-bottom: 1.5rem;
         }
 
-        .btn-access {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        .btn-lookup {
+            background: linear-gradient(135deg, #e91e63 0%, #f06292 100%);
             border: none;
-            border-radius: 8px;
-            padding: 12px;
+            border-radius: 10px;
+            padding: 15px;
             font-weight: 600;
             width: 100%;
             margin-top: 1rem;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
         }
 
-        .btn-access:hover {
+        .btn-lookup:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 8px 25px rgba(233, 30, 99, 0.3);
+            background: linear-gradient(135deg, #c2185b 0%, #e91e63 100%);
         }
 
         .alert {
-            border-radius: 8px;
+            border-radius: 10px;
+            margin-bottom: 1.5rem;
+            border: none;
+        }
+
+        .info-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .info-section h6 {
+            color: #495057;
+            font-weight: 600;
             margin-bottom: 1rem;
         }
 
-        .back-link {
-            text-align: center;
-            margin-top: 1.5rem;
+        .info-section ul {
+            margin-bottom: 0;
+            padding-left: 1.2rem;
         }
 
-        .back-link a {
-            color: #667eea;
-            text-decoration: none;
-            font-weight: 500;
-        }
-
-        .back-link a:hover {
-            text-decoration: underline;
+        .info-section li {
+            color: #6c757d;
+            margin-bottom: 0.5rem;
         }
     </style>
 </head>
 
 <body>
-    <div class="container">
-        <div class="access-card">
-            <div class="access-header">
-                <i class="fas fa-shopping-bag fa-3x text-primary mb-3"></i>
-                <h2>Xem đơn hàng</h2>
-                <p>Nhập thông tin để xem chi tiết đơn hàng của bạn</p>
-            </div>
+    <!-- Navigation -->
+    <div th:replace="user/layout/user-header :: header"></div>
 
-            <!-- Alert Messages -->
-            <div id="alertContainer">
-                <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
-                    <i class="fas fa-exclamation-circle me-2"></i>
-                    <span th:text="${error}"></span>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    <!-- Main Content -->
+    <main class="order-lookup-container">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-6">
+                    <div class="lookup-card">
+                        <div class="lookup-header">
+                            <i class="fas fa-search fa-3x text-primary mb-3"></i>
+                            <h1>Tra cứu đơn hàng</h1>
+                            <p>Nhập mã đơn hàng và email để xem chi tiết đơn hàng của bạn</p>
+                        </div>
+
+                        <!-- Alert Messages -->
+                        <div id="alertContainer">
+                            <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                                <i class="fas fa-exclamation-circle me-2"></i>
+                                <span th:text="${error}"></span>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        </div>
+
+                        <form id="orderLookupForm">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="orderId" placeholder="Mã đơn hàng" required>
+                                <label for="orderId">
+                                    <i class="fas fa-receipt me-2"></i>Mã đơn hàng
+                                </label>
+                            </div>
+
+                            <div class="form-floating">
+                                <input type="email" class="form-control" id="guestEmail" placeholder="Email đặt hàng"
+                                    required>
+                                <label for="guestEmail">
+                                    <i class="fas fa-envelope me-2"></i>Email đặt hàng
+                                </label>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary btn-lookup">
+                                <i class="fas fa-search me-2"></i>Tra cứu đơn hàng
+                            </button>
+                        </form>
+
+                        <div class="info-section">
+                            <h6><i class="fas fa-info-circle me-2"></i>Hướng dẫn tra cứu</h6>
+                            <ul>
+                                <li>Nhập mã đơn hàng (số thứ tự đơn hàng)</li>
+                                <li>Nhập email đã sử dụng khi đặt hàng</li>
+                                <li>Hệ thống sẽ hiển thị chi tiết đơn hàng nếu thông tin chính xác</li>
+                                <li>Bạn có thể tra cứu đơn hàng bất kỳ lúc nào</li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
-            </div>
-
-            <form id="guestOrderAccessForm">
-                <div class="form-floating">
-                    <input type="text" class="form-control" id="orderId" placeholder="Mã đơn hàng" required>
-                    <label for="orderId">
-                        <i class="fas fa-receipt me-2"></i>Mã đơn hàng
-                    </label>
-                </div>
-
-                <div class="form-floating">
-                    <input type="email" class="form-control" id="guestEmail" placeholder="Email đặt hàng" required>
-                    <label for="guestEmail">
-                        <i class="fas fa-envelope me-2"></i>Email đặt hàng
-                    </label>
-                </div>
-
-                <button type="submit" class="btn btn-primary btn-access">
-                    <i class="fas fa-eye me-2"></i>Xem đơn hàng
-                </button>
-            </form>
-
-            <div class="back-link">
-                <a href="/">
-                    <i class="fas fa-arrow-left me-2"></i>Quay lại trang chủ
-                </a>
             </div>
         </div>
-    </div>
+    </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Footer -->
+    <div th:replace="user/layout/user-footer :: footer"></div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Custom JavaScript -->
+    <script th:src="@{/user/js/main.js}"></script>
+    <script th:src="@{/user/js/auth.js}"></script>
+    <script th:src="@{/user/js/auth-interceptor.js}"></script>
+
     <script>
-        class GuestOrderAccess {
+        class OrderLookup {
             constructor() {
                 this.init();
             }
 
             init() {
                 this.bindEvents();
+                this.loadOrderIdFromUrl();
             }
 
             bindEvents() {
-                document.getElementById('guestOrderAccessForm').addEventListener('submit', (e) => {
+                document.getElementById('orderLookupForm').addEventListener('submit', (e) => {
                     e.preventDefault();
-                    this.handleOrderAccess();
+                    this.handleOrderLookup();
                 });
             }
 
-            async handleOrderAccess() {
-                const orderId = document.getElementById('orderId').value;
-                const guestEmail = document.getElementById('guestEmail').value;
+            loadOrderIdFromUrl() {
+                // Tự động điền orderId nếu có trong URL parameter
+                const urlParams = new URLSearchParams(window.location.search);
+                const orderId = urlParams.get('orderId');
+                if (orderId) {
+                    document.getElementById('orderId').value = orderId;
+                }
+            }
+
+            async handleOrderLookup() {
+                const orderId = document.getElementById('orderId').value.trim();
+                const guestEmail = document.getElementById('guestEmail').value.trim();
 
                 if (!orderId || !guestEmail) {
                     this.showAlert('Vui lòng nhập đầy đủ thông tin', 'warning');
                     return;
                 }
 
+                // Validate orderId is numeric
+                if (!/^\d+$/.test(orderId)) {
+                    this.showAlert('Mã đơn hàng phải là số', 'warning');
+                    return;
+                }
+
+                // Validate email format
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(guestEmail)) {
+                    this.showAlert('Email không đúng định dạng', 'warning');
+                    return;
+                }
+
                 try {
-                    // Sử dụng POST request thay vì GET với token trong URL
-                    const response = await fetch('/user/order-detail/access', {
+                    this.showLoading(true);
+
+                    // Gọi API tra cứu đơn hàng công khai
+                    const response = await fetch('/user/order-lookup', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                         },
                         body: JSON.stringify({
-                            orderId: orderId,
-                            guestEmail: guestEmail
+                            orderId: parseInt(orderId),
+                            email: guestEmail
                         })
                     });
 
                     if (response.ok) {
-                        // Redirect đến trang order detail
-                        window.location.href = `/user/order-detail/${orderId}`;
+                        // Redirect đến trang order detail với thông tin guest
+                        window.location.href = `/user/order-detail/${orderId}?guestEmail=${encodeURIComponent(guestEmail)}`;
                     } else {
                         const data = await response.json();
-                        this.showAlert(data.message || 'Không thể truy cập đơn hàng', 'danger');
+                        this.showAlert(data.message || 'Không tìm thấy đơn hàng với thông tin đã nhập', 'danger');
                     }
                 } catch (error) {
-                    console.error('Error accessing order:', error);
-                    this.showAlert('Có lỗi xảy ra khi truy cập đơn hàng', 'danger');
+                    console.error('Error looking up order:', error);
+                    this.showAlert('Có lỗi xảy ra khi tra cứu đơn hàng. Vui lòng thử lại!', 'danger');
+                } finally {
+                    this.showLoading(false);
                 }
             }
 
@@ -203,11 +284,22 @@
                     }
                 }, 5000);
             }
+
+            showLoading(show) {
+                const submitBtn = document.querySelector('#orderLookupForm button[type="submit"]');
+                if (show) {
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang tra cứu...';
+                } else {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-search me-2"></i>Tra cứu đơn hàng';
+                }
+            }
         }
 
         // Initialize when page loads
         document.addEventListener('DOMContentLoaded', () => {
-            new GuestOrderAccess();
+            new OrderLookup();
         });
     </script>
 </body>
