@@ -119,7 +119,7 @@ class NewestProductsHomepageManager {
                     
                     <div class="product-actions">
                         <button class="quick-view-btn" 
-                                onclick="if(window.newestProductsHomepageManager) window.newestProductsHomepageManager.showQuickView(${productId}); else alert('Chức năng đang được tải...');"
+                                onclick="if(window.app) window.app.showQuickView(${productId}); else alert('Chức năng đang được tải...');"
                                 title="Xem nhanh">
                             <i class="fas fa-eye"></i>
                         </button>
@@ -170,7 +170,7 @@ class NewestProductsHomepageManager {
                                     data-product-name="${productName}"
                                     data-product-price="${price}"
                                     title="Thêm vào giỏ"
-                                    onclick="event.preventDefault(); event.stopPropagation(); window.newestProductsHomepageManager.addToCart(${productId}, '${productName}', ${price})">
+                                    onclick="event.preventDefault(); event.stopPropagation(); if(window.app) window.app.addToCart(${productId}); else alert('Chức năng đang được tải...');">
                                 <i class="fas fa-shopping-cart"></i>
                             </button>
                         </div>

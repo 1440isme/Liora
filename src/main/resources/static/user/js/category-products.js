@@ -282,7 +282,7 @@ class CategoryProductsManager {
                         
                         <div class="product-actions">
                         <button class="quick-view-btn" 
-                                onclick="window.categoryProductsManager.showQuickView(${product.productId})"
+                                onclick="if(window.app) window.app.showQuickView(${product.productId}); else alert('Chức năng đang được tải...');"
                                 title="Xem nhanh">
                             <i class="fas fa-eye"></i>
                             </button>
@@ -335,7 +335,7 @@ class CategoryProductsManager {
                                         ${productStatus !== 'available' ? 'disabled' : ''}
                                         title="${productStatus === 'out_of_stock' ? 'Hết hàng' :
                 productStatus === 'deactivated' ? 'Ngừng kinh doanh' : 'Thêm vào giỏ'}"
-                                        onclick="window.categoryProductsManager.addToCart(${product.productId}, '${product.name}', ${product.price})">
+                                        onclick="if(window.app) window.app.addToCart(${product.productId}); else alert('Chức năng đang được tải...');">
                                     <i class="fas fa-shopping-cart"></i>
                             </button>
                         </div>

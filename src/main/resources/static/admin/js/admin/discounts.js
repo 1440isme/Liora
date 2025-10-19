@@ -405,10 +405,10 @@ class DiscountManager {
                     }
                 }
 
-                // If refresh failed, redirect to login
+                // If refresh failed, redirect to home
                 this.showAlert('error', 'Phiên đăng nhập hết hạn', 'Vui lòng đăng nhập lại');
                 setTimeout(() => {
-                    window.location.href = '/login';
+                    window.location.href = '/home';
                 }, 2000);
                 return;
             }
@@ -870,7 +870,7 @@ class DiscountManager {
             }
 
             const newStatus = !discount.isActive;
-            
+
             const response = await fetch(`${this.baseUrl}/${discountId}`, {
                 method: 'PUT',
                 headers: {
@@ -886,7 +886,7 @@ class DiscountManager {
             }
 
             this.showAlert('success', 'Thành công', 'Cập nhật trạng thái mã giảm giá thành công');
-            
+
             // Tải lại dữ liệu và áp dụng lại bộ lọc hiện tại
             await this.loadDiscounts();
             this.filterDiscounts(); // Áp dụng lại bộ lọc hiện tại
@@ -897,7 +897,7 @@ class DiscountManager {
             this.showAlert('error', 'Lỗi', 'Không thể cập nhật trạng thái mã giảm giá');
         }
     }
-    
+
     async viewDiscountDetail(discountId) {
         try {
             const response = await fetch(`${this.baseUrl}/${discountId}`);

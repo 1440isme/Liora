@@ -23,6 +23,7 @@ import vn.liora.mapper.UserMapper;
 import vn.liora.repository.RoleRepository;
 import vn.liora.repository.UserRepository;
 import vn.liora.service.IUserService;
+import vn.liora.service.IAuthenticationService;
 
 import java.time.LocalDate;
 import java.util.HashSet;
@@ -39,6 +40,7 @@ public class UserServiceImpl implements IUserService {
     RoleRepository roleRepository;
     UserMapper userMapper;
     PasswordEncoder passwordEncoder;
+    IAuthenticationService authenticationService;
 
     @Override
     @Transactional
@@ -113,11 +115,27 @@ public class UserServiceImpl implements IUserService {
         }
         // Always keep original created date
         user.setCreatedDate(currentCreatedDate);
+        boolean rolesChanged = false;
         if (request.getRoles() != null) {
             var roles = roleRepository.findAllById(request.getRoles());
             user.setRoles(new HashSet<>(roles));
+            rolesChanged = true;
         }
-        return userMapper.toUserResponse(save(user));
+
+        User savedUser = save(user);
+
+        // Force refresh token if roles were changed
+        if (rolesChanged) {
+            try {
+                authenticationService.forceRefreshTokenForUser(savedUser.getUsername());
+            } catch (Exception e) {
+                // Log error but don't fail the update
+                System.err
+                        .println("Failed to refresh token for user " + savedUser.getUsername() + ": " + e.getMessage());
+            }
+        }
+
+        return userMapper.toUserResponse(savedUser);
     }
 
     // @PreAuthorize("hasRole('ADMIN')")

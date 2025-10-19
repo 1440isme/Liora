@@ -109,7 +109,7 @@ class BestsellerProductsHomepageManager {
                     
                     <div class="product-actions">
                         <button class="quick-view-btn" 
-                                onclick="if(window.homepageBestsellerProductsManager) window.homepageBestsellerProductsManager.showQuickView(${productId}); else alert('Chức năng đang được tải...');"
+                                onclick="if(window.app) window.app.showQuickView(${productId}); else alert('Chức năng đang được tải...');"
                                 title="Xem nhanh">
                             <i class="fas fa-eye"></i>
                         </button>
@@ -160,7 +160,7 @@ class BestsellerProductsHomepageManager {
                                         data-product-name="${productName}"
                                         data-product-price="${currentPrice}"
                                         title="Thêm vào giỏ"
-                                        onclick="event.preventDefault(); event.stopPropagation(); window.homepageBestsellerProductsManager.addToCart(${productId}, '${productName}', ${currentPrice})">
+                                        onclick="event.preventDefault(); event.stopPropagation(); if(window.app) window.app.addToCart(${productId}); else alert('Chức năng đang được tải...');">
                                     <i class="fas fa-shopping-cart"></i>
                                 </button>
                             </div>

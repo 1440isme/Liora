@@ -13,6 +13,8 @@ class RolesManager {
             sortBy: 'name'
         };
         this.currentRoleId = null; // For view/edit/delete
+        this.selectedRole = null; // For permission management
+        this.permissionsByCategory = {}; // Cache for permissions by category
         this.init();
     }
 
@@ -48,6 +50,17 @@ class RolesManager {
         const confirmDeleteBtn = document.getElementById('confirmDelete');
         if (confirmDeleteBtn) {
             confirmDeleteBtn.addEventListener('click', this.confirmDelete.bind(this));
+        }
+
+        // Permission management modal
+        const managePermissionsBtn = document.getElementById('managePermissionsBtn');
+        if (managePermissionsBtn) {
+            managePermissionsBtn.addEventListener('click', this.showPermissionModal.bind(this));
+        }
+
+        const savePermissionsBtn = document.getElementById('savePermissions');
+        if (savePermissionsBtn) {
+            savePermissionsBtn.addEventListener('click', this.savePermissions.bind(this));
         }
 
         // Event delegation for action buttons
@@ -425,6 +438,186 @@ class RolesManager {
             clearTimeout(timeout);
             timeout = setTimeout(later, wait);
         };
+    }
+
+    // Permission Management Methods
+    async showPermissionModal() {
+        try {
+            // Load roles and permissions
+            await this.loadRolesForPermissionModal();
+            await this.loadPermissionsByCategory();
+
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('permissionModal'));
+            modal.show();
+        } catch (error) {
+            console.error('Error showing permission modal:', error);
+            this.showNotification('Không thể tải dữ liệu quyền hạn', 'error');
+        }
+    }
+
+    async loadRolesForPermissionModal() {
+        try {
+            const response = await this.ajax.get('/roles');
+            if (response && response.result) {
+                const roles = response.result.content || response.result;
+                this.renderRoleList(roles);
+            }
+        } catch (error) {
+            console.error('Error loading roles for modal:', error);
+            throw error;
+        }
+    }
+
+    async loadPermissionsByCategory() {
+        try {
+            const response = await this.ajax.get('/roles/permissions/by-category');
+            if (response && response.result) {
+                this.permissionsByCategory = response.result;
+                this.renderPermissionCategories();
+            }
+        } catch (error) {
+            console.error('Error loading permissions by category:', error);
+            throw error;
+        }
+    }
+
+    renderRoleList(roles) {
+        const container = document.getElementById('roleList');
+        if (!container) return;
+
+        const html = roles.map(role => `
+            <a href="#" class="list-group-item list-group-item-action role-item" 
+               data-role-name="${role.name}">
+                <div class="d-flex w-100 justify-content-between">
+                    <h6 class="mb-1">${role.name}</h6>
+                    <small class="text-muted">${role.permissions ? role.permissions.length : 0} quyền</small>
+                </div>
+                <p class="mb-1 text-muted">${role.description || ''}</p>
+            </a>
+        `).join('');
+
+        container.innerHTML = html;
+
+        // Bind role selection events
+        container.querySelectorAll('.role-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.selectRole(item.dataset.roleName);
+            });
+        });
+    }
+
+    renderPermissionCategories() {
+        const container = document.getElementById('permissionCategories');
+        if (!container) return;
+
+        const html = Object.entries(this.permissionsByCategory).map(([category, permissions]) => `
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="mdi mdi-folder-outline me-2"></i>
+                        ${this.getCategoryDisplayName(category)}
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        ${permissions.map(permission => `
+                            <div class="col-md-6 mb-2">
+                                <div class="form-check">
+                                    <input class="form-check-input permission-checkbox" 
+                                           type="checkbox" 
+                                           value="${permission.name}"
+                                           id="perm_${permission.name}">
+                                    <label class="form-check-label" for="perm_${permission.name}">
+                                        ${permission.description}
+                                    </label>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            </div>
+        `).join('');
+
+        container.innerHTML = html;
+    }
+
+    getCategoryDisplayName(category) {
+        const categoryNames = {
+            'PRODUCTS': 'Sản phẩm',
+            'CATEGORIES': 'Danh mục',
+            'BRANDS': 'Thương hiệu',
+            'ORDERS': 'Đơn hàng',
+            'REVIEWS': 'Đánh giá',
+            'USERS': 'Người dùng',
+            'ROLES': 'Vai trò',
+            'PERMISSIONS': 'Quyền hạn',
+            'BANNERS': 'Banner',
+            'STATIC_PAGES': 'Trang tĩnh',
+            'HEADER_FOOTER': 'Header & Footer',
+            'DISCOUNTS': 'Mã giảm giá',
+            'SYSTEM': 'Hệ thống'
+        };
+        return categoryNames[category] || category;
+    }
+
+    async selectRole(roleName) {
+        try {
+            // Update selected role
+            this.selectedRole = roleName;
+
+            // Update UI
+            document.querySelectorAll('.role-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.querySelector(`[data-role-name="${roleName}"]`).classList.add('active');
+
+            // Load role permissions
+            const response = await this.ajax.get(`/roles/${roleName}/permissions`);
+            if (response && response.result) {
+                const rolePermissions = response.result.map(p => p.name);
+                this.updatePermissionCheckboxes(rolePermissions);
+            }
+        } catch (error) {
+            console.error('Error selecting role:', error);
+            this.showNotification('Không thể tải quyền hạn của vai trò', 'error');
+        }
+    }
+
+    updatePermissionCheckboxes(rolePermissions) {
+        document.querySelectorAll('.permission-checkbox').forEach(checkbox => {
+            checkbox.checked = rolePermissions.includes(checkbox.value);
+        });
+    }
+
+    async savePermissions() {
+        if (!this.selectedRole) {
+            this.showNotification('Vui lòng chọn vai trò', 'warning');
+            return;
+        }
+
+        try {
+            // Get selected permissions
+            const selectedPermissions = Array.from(document.querySelectorAll('.permission-checkbox:checked'))
+                .map(checkbox => checkbox.value);
+
+            // Save permissions
+            await this.ajax.put(`/roles/${this.selectedRole}/permissions`, selectedPermissions);
+
+            this.showNotification('Cập nhật quyền hạn thành công', 'success');
+
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('permissionModal'));
+            if (modal) modal.hide();
+
+            // Reload data
+            this.loadRoles();
+            this.loadStats();
+        } catch (error) {
+            console.error('Error saving permissions:', error);
+            this.showNotification('Không thể cập nhật quyền hạn', 'error');
+        }
     }
 }
 

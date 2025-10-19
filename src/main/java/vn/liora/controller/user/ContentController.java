@@ -2,6 +2,7 @@ package vn.liora.controller.user;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -103,6 +104,7 @@ public class ContentController {
     // API lấy danh sách banner active
     @GetMapping("/api/banners")
     @ResponseBody
+    @PreAuthorize("permitAll()")
     public ResponseEntity<List<BannerResponse>> getActiveBanners() {
         List<BannerResponse> banners = bannerService.getActiveBanners();
         return ResponseEntity.ok(banners);
@@ -111,6 +113,7 @@ public class ContentController {
     // API lấy static page theo slug
     @GetMapping("/api/page/{slug}")
     @ResponseBody
+    @PreAuthorize("permitAll()")
     public ResponseEntity<StaticPageResponse> getStaticPageBySlug(@PathVariable String slug) {
         try {
             StaticPageResponse staticPage = staticPageService.getStaticPageBySlug(slug);
@@ -123,6 +126,7 @@ public class ContentController {
     // API lấy danh sách static page active
     @GetMapping("/api/pages")
     @ResponseBody
+    @PreAuthorize("permitAll()")
     public ResponseEntity<List<StaticPageResponse>> getActiveStaticPages() {
         List<StaticPageResponse> staticPages = staticPageService.getActiveStaticPages();
         return ResponseEntity.ok(staticPages);
@@ -131,6 +135,7 @@ public class ContentController {
     // API tìm kiếm static page
     @GetMapping("/api/search")
     @ResponseBody
+    @PreAuthorize("permitAll()")
     public ResponseEntity<List<StaticPageResponse>> searchStaticPages(@RequestParam String keyword) {
         List<StaticPageResponse> staticPages = staticPageService.searchStaticPagesByKeyword(keyword);
         return ResponseEntity.ok(staticPages);
@@ -139,6 +144,7 @@ public class ContentController {
     // API lấy thông tin trang chủ (banner + static pages)
     @GetMapping("/api/home")
     @ResponseBody
+    @PreAuthorize("permitAll()")
     public ResponseEntity<Map<String, Object>> getHomeContent() {
         Map<String, Object> homeContent = new HashMap<>();
 
@@ -156,6 +162,7 @@ public class ContentController {
     // API lấy thông tin footer
     @GetMapping("/api/footer")
     @ResponseBody
+    @PreAuthorize("permitAll()")
     public ResponseEntity<Map<String, Object>> getFooterContent() {
         Map<String, Object> footerContent = new HashMap<>();
 
@@ -230,22 +237,28 @@ public class ContentController {
     // API lấy thông tin header tầng dưới
     @GetMapping("/api/header-bottom")
     @ResponseBody
+    @PreAuthorize("permitAll()")
     public ResponseEntity<Map<String, Object>> getHeaderNavigationContent() {
         Map<String, Object> headerContent = new HashMap<>();
 
         try {
+            System.out.println("=== DEBUG: getHeaderNavigationContent called ===");
             List<HeaderNavigationItem> navigationItems = headerNavigationService.getAllActiveItems();
+            System.out.println("Found " + navigationItems.size() + " navigation items");
             headerContent.put("navigationItems", navigationItems);
             return ResponseEntity.ok(headerContent);
         } catch (Exception e) {
             System.err.println("Error loading header navigation content: " + e.getMessage());
             e.printStackTrace();
-            return ResponseEntity.ok(headerContent);
+            // Return error response instead of empty content
+            headerContent.put("error", e.getMessage());
+            return ResponseEntity.status(500).body(headerContent);
         }
     }
 
     @GetMapping("/api/header-bottom/sub-items/{parentId}")
     @ResponseBody
+    @PreAuthorize("permitAll()")
     public ResponseEntity<List<HeaderNavigationItem>> getSubItems(@PathVariable Long parentId) {
         try {
             List<HeaderNavigationItem> subItems = headerNavigationService.getSubItemsByParentId(parentId);

@@ -8,6 +8,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import vn.liora.dto.request.ApiResponse;
 import vn.liora.dto.request.UserCreationRequest;
+import vn.liora.dto.request.UserUpdateRequest;
 import vn.liora.dto.response.UserResponse;
 import vn.liora.dto.response.OrderResponse;
 import vn.liora.dto.response.OrderProductResponse;
@@ -55,6 +56,35 @@ public class UserController {
             ApiResponse<UserResponse> response = new ApiResponse<>();
             response.setResult(userResponse);
             response.setMessage("Lấy thông tin người dùng thành công");
+
+            return ResponseEntity.ok(response);
+        } catch (AppException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        }
+    }
+
+    @PutMapping("/myInfo")
+    public ResponseEntity<ApiResponse<UserResponse>> updateMyInfo(@Valid @RequestBody UserUpdateRequest request) {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated()) {
+                throw new AppException(ErrorCode.UNAUTHENTICATED);
+            }
+
+            User currentUser = findUserByPrincipal(authentication);
+            if (currentUser == null) {
+                throw new AppException(ErrorCode.USER_NOT_FOUND);
+            }
+
+            // Cập nhật thông tin user
+            UserResponse updatedUser = userService.updateUser(currentUser.getUserId(), request);
+
+            ApiResponse<UserResponse> response = new ApiResponse<>();
+            response.setResult(updatedUser);
+            response.setMessage("Cập nhật thông tin thành công");
+            response.setCode(1000);
 
             return ResponseEntity.ok(response);
         } catch (AppException e) {

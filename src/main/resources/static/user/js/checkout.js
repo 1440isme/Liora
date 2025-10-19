@@ -1157,7 +1157,7 @@ class CheckoutPage {
         return `
             <div class="cart-item ${isDisabled ? 'disabled' : ''}" data-cart-product-id="${item.idCartProduct}" data-unit-price="${item.productPrice || 0}">
                 <div class="cart-item-image">
-                    <img src="${item.mainImageUrl || '/uploads/products/placeholder.jpg'}" alt="${item.productName}">
+                    <img src="${item.mainImageUrl || 'https://placehold.co/300x300'}" alt="${item.productName}">
                 </div>
                 <div class="cart-item-details">
                     <div class="item-header">

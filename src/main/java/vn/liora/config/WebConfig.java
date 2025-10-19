@@ -10,12 +10,31 @@ public class WebConfig implements WebMvcConfigurer {
 
         @Override
         public void addResourceHandlers(@NonNull ResourceHandlerRegistry registry) {
-                // Cấu hình static resources cho CSS, JS, images
-                registry.addResourceHandler("/user/**")
-                                .addResourceLocations("classpath:/static/user/")
+                // Đảm bảo static resources được ưu tiên hơn controller mapping
+                registry.setOrder(1);
+                // Cấu hình cho favicon (specific nhất)
+                registry.addResourceHandler("/favicon.ico")
+                                .addResourceLocations("classpath:/static/admin/images/")
                                 .setCachePeriod(3600);
 
-                // Admin static resources - SỬA LẠI
+                // User static resources (specific paths)
+                registry.addResourceHandler("/user/css/**")
+                                .addResourceLocations("classpath:/static/user/css/")
+                                .setCachePeriod(3600);
+
+                registry.addResourceHandler("/user/js/**")
+                                .addResourceLocations("classpath:/static/user/js/")
+                                .setCachePeriod(3600);
+
+                registry.addResourceHandler("/user/images/**")
+                                .addResourceLocations("classpath:/static/user/images/")
+                                .setCachePeriod(3600);
+
+                registry.addResourceHandler("/user/img/**")
+                                .addResourceLocations("classpath:/static/user/img/")
+                                .setCachePeriod(3600);
+
+                // Admin static resources (specific paths)
                 registry.addResourceHandler("/admin/css/**")
                                 .addResourceLocations("classpath:/static/admin/css/")
                                 .setCachePeriod(3600);
@@ -36,7 +55,28 @@ public class WebConfig implements WebMvcConfigurer {
                                 .addResourceLocations("classpath:/static/admin/vendors/")
                                 .setCachePeriod(3600);
 
-                // Other static resources
+                // Upload files (specific path) with fallback
+                registry.addResourceHandler("/uploads/**")
+                                .addResourceLocations("file:./uploads/")
+                                .setCachePeriod(3600)
+                                .resourceChain(true)
+                                .addResolver(new org.springframework.web.servlet.resource.PathResourceResolver() {
+                                        @Override
+                                        protected org.springframework.core.io.Resource getResource(String resourcePath,
+                                                        org.springframework.core.io.Resource location)
+                                                        throws java.io.IOException {
+                                                org.springframework.core.io.Resource resource = location
+                                                                .createRelative(resourcePath);
+                                                if (resource.exists() && resource.isReadable()) {
+                                                        return resource;
+                                                }
+                                                // Fallback to default image if file not found
+                                                return new org.springframework.core.io.ClassPathResource(
+                                                                "static/user/img/default-product.jpg");
+                                        }
+                                });
+
+                // Generic static resources (đặt cuối cùng để tránh conflict)
                 registry.addResourceHandler("/css/**")
                                 .addResourceLocations("classpath:/static/css/")
                                 .setCachePeriod(3600);
@@ -57,14 +97,9 @@ public class WebConfig implements WebMvcConfigurer {
                                 .addResourceLocations("classpath:/static/vendors/")
                                 .setCachePeriod(3600);
 
-                // Cấu hình cho favicon
-                registry.addResourceHandler("/favicon.ico")
-                                .addResourceLocations("classpath:/static/admin/images/")
-                                .setCachePeriod(3600);
-
-                // Cấu hình cho upload files
-                registry.addResourceHandler("/uploads/**")
-                                .addResourceLocations("file:./uploads/")
+                // Static resources fallback
+                registry.addResourceHandler("/static/**")
+                                .addResourceLocations("classpath:/static/")
                                 .setCachePeriod(3600);
         }
 }

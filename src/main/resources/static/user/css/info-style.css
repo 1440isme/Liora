@@ -1082,3 +1082,149 @@ html {
         font-size: 0.75rem;
     }
 }
+
+/* ==========================================
+   EDIT FORM STYLES
+   ========================================== */
+
+#editForm {
+    animation: slideDown 0.3s ease-out;
+    border: 2px solid var(--pink-light) !important;
+    box-shadow: 0 8px 25px rgba(232, 162, 176, 0.15);
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+#editForm .form-control:invalid {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+
+#editForm .form-control:valid {
+    border-color: #28a745;
+}
+
+#editForm .form-control:focus:invalid {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+
+#editForm .form-control:focus:valid {
+    border-color: #28a745;
+    box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+}
+
+#editForm .invalid-feedback {
+    display: block;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+#editForm .form-text {
+    font-size: 0.8rem;
+    color: #6c757d;
+    margin-top: 0.25rem;
+}
+
+#editForm .text-danger {
+    color: #dc3545 !important;
+}
+
+#editForm .btn-primary {
+    background: var(--pink-primary);
+    border-color: var(--pink-primary);
+    transition: all 0.3s ease;
+}
+
+#editForm .btn-primary:hover {
+    background: var(--pink-dark);
+    border-color: var(--pink-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(232, 162, 176, 0.4);
+}
+
+#editForm .btn-primary:disabled {
+    background: #6c757d;
+    border-color: #6c757d;
+    transform: none;
+    box-shadow: none;
+}
+
+#editForm .btn-outline-secondary {
+    border-color: #6c757d;
+    color: #6c757d;
+    transition: all 0.3s ease;
+}
+
+#editForm .btn-outline-secondary:hover {
+    background: #6c757d;
+    border-color: #6c757d;
+    color: white;
+    transform: translateY(-1px);
+}
+
+/* Form validation states */
+.was-validated .form-control:invalid {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+
+.was-validated .form-control:valid {
+    border-color: #28a745;
+}
+
+.was-validated .form-control:valid:focus {
+    border-color: #28a745;
+    box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+}
+
+/* Loading state for form */
+.form-loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.form-loading .btn {
+    position: relative;
+}
+
+.form-loading .btn::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 16px;
+    height: 16px;
+    margin: -8px 0 0 -8px;
+    border: 2px solid transparent;
+    border-top-color: currentColor;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/* Mobile form adjustments */
+@media (max-width: 768px) {
+    #editForm {
+        margin: 1rem 0;
+        padding: 1.5rem !important;
+    }
+
+    #editForm .d-flex.gap-2 {
+        flex-direction: column;
+        gap: 0.75rem !important;
+    }
+
+    #editForm .btn {
+        width: 100%;
+    }
+}

@@ -190,7 +190,7 @@ class ProductTableManager {
         }
 
         tbody.innerHTML = products.map((product, index) => this.renderProduct(product, index)).join('');
-        
+
         // Initialize tooltips for stock warning icons
         this.initializeTooltips();
     }
@@ -206,11 +206,11 @@ class ProductTableManager {
                 <td class="text-center">${stt}</td>
                 <td>
                     <div class="d-flex align-items-center justify-content-center">
-                        <img src="${product.mainImageUrl || '/admin/images/placeholder.jpg'}" 
+                        <img src="${product.mainImageUrl || 'https://placehold.co/300x300'}" 
                             class="rounded" 
                             style="width: 50px; height: 50px; object-fit: cover;"
                             alt="${product.name}"
-                            onerror="this.src='/admin/images/placeholder.jpg'">
+                            onerror="this.src='https://placehold.co/300x300'">
                     </div>
                 </td>
                 <td>

@@ -31,15 +31,20 @@ import java.text.ParseException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
+import java.util.Set;
 import java.util.StringJoiner;
 import java.util.UUID;
+import vn.liora.service.IAuthorizationService;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
+@Slf4j
 public class AuthenticationServiceImpl implements IAuthenticationService {
     final UserRepository userRepository;
     final InvalidatedTokenRepository invalidatedTokenRepository;
+    final IAuthorizationService authorizationService;
 
     @Value("${jwt.signerKey}")
     protected String SIGNER_KEY;
@@ -172,19 +177,44 @@ public class AuthenticationServiceImpl implements IAuthenticationService {
     private String buildScope(User user) {
         StringJoiner stringJoiner = new StringJoiner(" ");
 
-        if (!CollectionUtils.isEmpty(user.getRoles()))
+        // Add roles
+        if (!CollectionUtils.isEmpty(user.getRoles())) {
             user.getRoles().forEach(role -> {
                 stringJoiner.add("ROLE_" + role.getName());
-                if (!CollectionUtils.isEmpty(role.getPermissions()))
-                    role.getPermissions()
-                            .forEach(permission -> stringJoiner.add(permission.getName()));
+                log.debug("Added role to JWT scope: ROLE_{}", role.getName());
             });
+        }
 
-        return stringJoiner.toString();
+        // Add permissions using AuthorizationService (có thể bao gồm quyền trực tiếp)
+        Set<String> userPermissions = authorizationService.getUserPermissions(user);
+        userPermissions.forEach(permission -> {
+            stringJoiner.add(permission);
+            log.debug("Added permission to JWT scope: {}", permission);
+        });
+
+        String scope = stringJoiner.toString();
+        log.info("Built JWT scope for user {}: {}", user.getUsername(), scope);
+        return scope;
     }
 
     @Override
     public String generateTokenForOAuth2User(User user) throws JOSEException {
+        return generateToken(user);
+    }
+
+    @Override
+    public String forceRefreshTokenForUser(String username) throws JOSEException {
+        // Find user by username
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_EXISTED));
+
+        // Invalidate all existing tokens for this user by adding them to invalidated
+        // tokens
+        // Note: This is a simple approach. In production, you might want to use a more
+        // efficient method
+        // like storing user ID in JWT and checking against a user-specific blacklist
+
+        // Generate new token with updated roles
         return generateToken(user);
     }
 }

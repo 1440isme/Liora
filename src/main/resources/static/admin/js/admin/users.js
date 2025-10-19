@@ -86,7 +86,7 @@ class UsersManager {
         // filter by role
         if (this.currentFilters.role) {
             filtered = filtered.filter(u =>
-                (u.roles || []).some(r => r.name === this.currentFilters.role)
+                (u.roles || []).some(r => r === this.currentFilters.role)
             );
         }
 
@@ -158,7 +158,7 @@ class UsersManager {
     createRow(u, index = 0) {
         const fullName = `${u.firstname || ''} ${u.lastname || ''}`.trim() || 'N/A';
         const rolesHtml = (u.roles && u.roles.length)
-            ? u.roles.map(r => `<span class="badge bg-secondary">${r.name}</span>`).join(' ')
+            ? u.roles.map(r => `<span class="badge bg-secondary">${r}</span>`).join(' ')
             : '<span class="text-muted">-</span>';
         const activeBadge = u.active ? '<span class="badge bg-success">Hoạt động</span>' : '<span class="badge bg-secondary">Không hoạt động</span>';
         const created = u.createdDate ? this.formatDate(u.createdDate) : '-';
@@ -418,18 +418,28 @@ class UserFormManager {
         try {
             const res = await adminAjax.get('/roles');
             const roles = res.result;
+
+            // Load roles for single select (add user form)
             const roleSelect = document.getElementById('role');
-
             if (roleSelect) {
-                // Clear existing options except the first one
                 roleSelect.innerHTML = '<option value="">Chọn vai trò</option>';
-
-                // Add role options
                 roles.forEach(role => {
                     const option = document.createElement('option');
                     option.value = role.name;
                     option.textContent = role.description || role.name;
                     roleSelect.appendChild(option);
+                });
+            }
+
+            // Load roles for multiple select (edit user form)
+            const rolesSelect = document.getElementById('roles');
+            if (rolesSelect) {
+                rolesSelect.innerHTML = '';
+                roles.forEach(role => {
+                    const option = document.createElement('option');
+                    option.value = role.name;
+                    option.textContent = role.description || role.name;
+                    rolesSelect.appendChild(option);
                 });
             }
         } catch (error) {
@@ -463,6 +473,18 @@ class UserFormManager {
             const gender = document.getElementById('gender'); if (gender) gender.value = (u.gender === true ? 'MALE' : (u.gender === false ? 'FEMALE' : ''));
             const status = document.getElementById('status'); if (status) status.checked = !!u.active;
             const preview = document.getElementById('previewImg'); if (preview && u.avatar) preview.src = u.avatar;
+
+            // Set roles for multiple select
+            const rolesSelect = document.getElementById('roles');
+            if (rolesSelect && u.roles) {
+                // Clear all selections first
+                Array.from(rolesSelect.options).forEach(option => option.selected = false);
+                // Select user's roles
+                u.roles.forEach(roleName => {
+                    const option = Array.from(rolesSelect.options).find(opt => opt.value === roleName);
+                    if (option) option.selected = true;
+                });
+            }
         } catch (e) {
             console.error('Failed to load user', e);
             AdminUtils.showError('Không thể tải thông tin người dùng');
@@ -589,6 +611,10 @@ class UserFormManager {
         const active = this.getCheckbox('status');
         const avatarFile = document.getElementById('avatar')?.files?.[0] || null;
 
+        // Get selected roles
+        const rolesSelect = document.getElementById('roles');
+        const selectedRoles = rolesSelect ? Array.from(rolesSelect.selectedOptions).map(option => option.value) : [];
+
         if (password || confirmPassword) {
             if (password.length < 8) throw new Error('Mật khẩu tối thiểu 8 ký tự');
             if (password !== confirmPassword) throw new Error('Mật khẩu xác nhận không khớp');
@@ -603,6 +629,7 @@ class UserFormManager {
             dob: dob || null,
             gender: this.mapGenderToBoolean(genderRaw),
             active: typeof active === 'boolean' ? active : null,
+            roles: selectedRoles,
             avatar: null
         };
 
@@ -689,7 +716,7 @@ class UsersFilters {
             );
         }
         if (filters.role) {
-            result = result.filter(u => (u.roles || []).some(r => r.name === filters.role));
+            result = result.filter(u => (u.roles || []).some(r => r === filters.role));
         }
         if (filters.status) {
             if (filters.status === 'ACTIVE') result = result.filter(u => u.active === true);
@@ -710,7 +737,7 @@ class UsersFilters {
     static updateStats(allUsers) {
         const total = allUsers.length;
         const active = allUsers.filter(u => u.active === true).length;
-        const admins = allUsers.filter(u => (u.roles || []).some(r => r.name === 'ADMIN')).length;
+        const admins = allUsers.filter(u => (u.roles || []).some(r => r === 'ADMIN')).length;
         // New users (7 days)
         const now = new Date();
         const sevenDaysAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
@@ -759,7 +786,7 @@ class UsersFilters {
             // filter by role
             if (this.currentFilters.role) {
                 filtered = filtered.filter(u =>
-                    (u.roles || []).some(r => r.name === this.currentFilters.role)
+                    (u.roles || []).some(r => r === this.currentFilters.role)
                 );
             }
 
