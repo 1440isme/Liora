@@ -17,7 +17,6 @@ public interface AddressMapper {
     Address toAddress(AddressCreateRequest request);
 
     @Mapping(target = "userId", source = "user.userId")
-
     AddressResponse toAddressResponse(Address address);
 
     @Mapping(target = "idAddress", ignore = true)

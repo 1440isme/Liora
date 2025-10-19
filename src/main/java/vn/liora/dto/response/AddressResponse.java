@@ -13,10 +13,11 @@ public class AddressResponse {
     String name;
     String phone;
     String addressDetail;
-    String ward;
-    String province;
+    // GHN 3-level
+    Integer provinceId;
+    Integer districtId;
+    String wardCode;
     Boolean isDefault;
     Long userId;
-
 
 }

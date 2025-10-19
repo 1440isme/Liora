@@ -7,7 +7,6 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.config.annotation.web.configurers.oauth2.client.OAuth2LoginConfigurer;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -32,7 +31,12 @@ public class SecurityConfig {
 
         private final String[] PUBLIC_ENDPOINTS = {
                         "/users", "/auth/token", "/auth/introspect", "/auth/logout", "/auth/refresh",
-                        "/brands/**", "/brand/**", "/categories/**", "/products/**", "/admin/login", "/home",
+                        "/api/auth/forgot-password", "/api/auth/reset-password", "/api/auth/validate-token",
+                        "/reset-password", "/user/order-detail/access", "/user/order-detail/set-session",
+                        "/user/order-detail-view", "/brands/**", "/brand/**",
+                        "/categories/**",
+                        "/products/**", "/admin/login",
+                        "/home",
                         "/admin/permission/*", "/admin/roles/*",
                         // static resources
                         "/", "/favicon.ico", "/static/**", "/user/**", "/css/**", "/js/**", "/images/**", "/webjars/**",
@@ -45,6 +49,8 @@ public class SecurityConfig {
                         "/admin/orders/**", "/admin/users/**", "/admin/discounts/**", "/admin/reviews/**",
                         // API endpoints - CHO PHÉP TRUY CẬP KHÔNG CẦN XÁC THỰC
                         "/admin/api/**",
+                        // Cart API endpoints - CHO PHÉP TRUY CẬP CẢ GUEST VÀ USER
+                        "/cart/api/**", "/CartProduct/**",
                         "/oauth2/**", "/login/oauth2/**", "/authenticate", "/auth/google/**"
         };
 

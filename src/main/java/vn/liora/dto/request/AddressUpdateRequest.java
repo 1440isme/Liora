@@ -22,11 +22,10 @@ public class AddressUpdateRequest {
     @NotBlank(message = "VALIDATION_REQUIRED_FIELD")
     String addressDetail;
 
-    @NotBlank(message = "VALIDATION_REQUIRED_FIELD")
-    String ward;
-
-    @NotBlank(message = "VALIDATION_REQUIRED_FIELD")
-    String province;
+    // GHN 3-level
+    Integer provinceId;
+    Integer districtId;
+    String wardCode;
 
     Boolean isDefault;
 

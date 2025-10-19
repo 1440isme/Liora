@@ -22,15 +22,12 @@ public class AddressCreateRequest {
 
     String addressDetail;
 
-    @NotBlank(message = "VALIDATION_REQUIRED_FIELD")
-    String ward;
+    // GHN 3-level
+    Integer provinceId; // required
 
-    @NotBlank(message = "VALIDATION_REQUIRED_FIELD")
-    String province;
+    Integer districtId; // required
+    String wardCode; // required
 
     Boolean isDefault;
 
-
-
 }
-

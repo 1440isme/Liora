@@ -5,7 +5,6 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -24,10 +23,15 @@ public class Address {
     String phone;
     @Column(name = "AddressDetail", nullable = false, columnDefinition = "NVARCHAR(255)")
     String addressDetail;
-    @Column(name = "Ward", nullable = false, columnDefinition = "NVARCHAR(255)")
-    String ward;
-    @Column(name = "Province", nullable = false, columnDefinition = "NVARCHAR(255)")
-    String province;
+    @Column(name = "ProvinceId")
+    Integer provinceId; // GHN province_id
+
+    @Column(name = "DistrictId")
+    Integer districtId; // GHN district_id
+
+    @Column(name = "WardCode")
+    String wardCode; // GHN ward_code (string)
+
     @Column(name = "IsDefault")
     @Builder.Default
     Boolean isDefault = false;

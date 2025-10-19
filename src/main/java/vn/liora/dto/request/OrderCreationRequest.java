@@ -1,6 +1,5 @@
 package vn.liora.dto.request;
 
-import jakarta.persistence.Column;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -29,10 +28,12 @@ public class OrderCreationRequest {
     String discountCode;
 
     // Thông tin địa chỉ để tính phí & lưu Order
-    // districtId: GHN DistrictID (number as string/int), wardCode: GHN WardCode
+    // districtId: GHN DistrictID, wardCode: GHN WardCode, provinceId: GHN
+    // ProvinceID
     Integer districtId;
     String wardCode;
-    String provinceName;
+    Integer provinceId;
+    
     Long cartId;
 
     // Tổng tiền FE sẽ KHÔNG gửi nữa; BE tự tính và lưu duy nhất.

@@ -9,37 +9,57 @@ class LioraApp {
         this.init();
     }
 
+    // ========== API HELPER METHODS ==========
+
+    async apiCall(url, method = 'GET', data = null) {
+        const token = localStorage.getItem('access_token');
+        const headers = {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        };
+
+        // Thêm Authorization header nếu có token
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        const options = {
+            method: method,
+            headers: headers
+        };
+
+        if (data && (method === 'POST' || method === 'PUT')) {
+            options.body = JSON.stringify(data);
+        }
+
+        const response = await fetch(url, options);
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+        }
+
+        // Với DELETE request, response có thể là empty body
+        if (method === 'DELETE') {
+            return { success: true };
+        }
+
+        return await response.json();
+    }
+
     // Backend-integrated add to cart: đảm bảo tạo cart (guest/user) và thêm sản phẩm vào DB
     async addProductToCartBackend(productId, quantity = 1, showMessage = true) {
         try {
-            const token = localStorage.getItem('access_token');
             // 1) Lấy/khởi tạo cart hiện tại (sẽ tạo cart guest nếu chưa có)
-            const cartResp = await fetch('/cart/api/current', {
-                method: 'GET',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-                },
-                credentials: 'include'
-            });
-            if (!cartResp.ok) throw new Error('Cannot get cart');
-            const cartData = await cartResp.json();
+            const cartData = await this.apiCall('/cart/api/current', 'GET');
             const cartId = cartData.cartId;
             if (!cartId) throw new Error('Missing cartId');
 
             // 2) Gọi API thêm sản phẩm vào giỏ
-            const addResp = await fetch(`/CartProduct/${cartId}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-                },
-                credentials: 'include',
-                body: JSON.stringify({ idProduct: Number(productId), quantity: Number(quantity) })
+            const addRaw = await this.apiCall(`/CartProduct/${cartId}`, 'POST', {
+                idProduct: Number(productId),
+                quantity: Number(quantity)
             });
-            if (!addResp.ok) throw new Error('Cannot add to cart');
-            const addRaw = await addResp.json();
             const addData = (addRaw && (addRaw.result || addRaw.data?.result)) ? (addRaw.result || addRaw.data.result) : addRaw;
 
             // 3) Cập nhật badge header bằng số lượng thực tế từ server
@@ -65,48 +85,33 @@ class LioraApp {
     async buyNowBackend(productId, quantity = 1) {
         try {
             // 1) Lấy/khởi tạo cart
-            const cartResp = await fetch('/cart/api/current', {
-                method: 'GET',
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
-            });
-            if (!cartResp.ok) throw new Error('Cannot get cart');
-            const cartData = await cartResp.json();
+            const cartData = await this.apiCall('/cart/api/current', 'GET');
             const cartId = cartData.cartId;
             if (!cartId) throw new Error('Missing cartId');
 
             // 2) Thêm sản phẩm
-            const addResp = await fetch(`/CartProduct/${cartId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-                body: JSON.stringify({ idProduct: Number(productId), quantity: Number(quantity) })
+            const addData = await this.apiCall(`/CartProduct/${cartId}`, 'POST', {
+                idProduct: Number(productId),
+                quantity: Number(quantity)
             });
-            if (!addResp.ok) throw new Error('Cannot add to cart');
-            const addData = await addResp.json();
 
             // 3) Đánh dấu chọn (choose=true) để checkout hiển thị ngay item này
             let idCartProduct = addData && addData.idCartProduct ? addData.idCartProduct : null;
             if (!idCartProduct) {
                 // Fallback: lấy danh sách items trong giỏ để tìm idCartProduct theo idProduct
                 try {
-                    const itemsResp = await fetch(`/cart/api/${cartId}/items`, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
-                    if (itemsResp.ok) {
-                        const items = await itemsResp.json();
-                        const matches = Array.isArray(items) ? items.filter(it => Number(it.idProduct) === Number(productId)) : [];
-                        // Ưu tiên item mới nhất nếu có
-                        const matched = matches.length > 0 ? matches[matches.length - 1] : null;
-                        if (matched && matched.idCartProduct) {
-                            idCartProduct = matched.idCartProduct;
-                        } else if (matches.length > 0) {
-                            // Nếu vẫn không lấy được id, chọn tất cả matches (an toàn hơn cho UI checkout)
-                            for (const it of matches) {
-                                try {
-                                    await fetch(`/CartProduct/${cartId}/${it.idCartProduct}`, {
-                                        method: 'PUT',
-                                        headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-                                        body: JSON.stringify({ choose: true })
-                                    });
-                                } catch (_) { /* ignore */ }
-                            }
+                    const items = await this.apiCall(`/cart/api/${cartId}/items`, 'GET');
+                    const matches = Array.isArray(items) ? items.filter(it => Number(it.idProduct) === Number(productId)) : [];
+                    // Ưu tiên item mới nhất nếu có
+                    const matched = matches.length > 0 ? matches[matches.length - 1] : null;
+                    if (matched && matched.idCartProduct) {
+                        idCartProduct = matched.idCartProduct;
+                    } else if (matches.length > 0) {
+                        // Nếu vẫn không lấy được id, chọn tất cả matches (an toàn hơn cho UI checkout)
+                        for (const it of matches) {
+                            try {
+                                await this.apiCall(`/CartProduct/${cartId}/${it.idCartProduct}`, 'PUT', { choose: true });
+                            } catch (_) { /* ignore */ }
                         }
                     }
                 } catch (_) { /* ignore */ }
@@ -119,11 +124,7 @@ class LioraApp {
                     const body = { choose: true };
                     if (validQty !== undefined) body.quantity = validQty;
 
-                    await fetch(`/CartProduct/${cartId}/${idCartProduct}`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-                        body: JSON.stringify(body)
-                    });
+                    await this.apiCall(`/CartProduct/${cartId}/${idCartProduct}`, 'PUT', body);
                 } catch (_) { /* ignore */ }
             }
 
@@ -719,27 +720,11 @@ class LioraApp {
     // Đếm theo số loại sản phẩm (server-side): số dòng CartProduct
     async refreshCartBadge() {
         try {
-            const token = localStorage.getItem('access_token');
-            const headers = { 'X-Requested-With': 'XMLHttpRequest' };
-            if (token) {
-                headers['Authorization'] = `Bearer ${token}`;
-            }
-            
-            const cartResp = await fetch('/cart/api/current', {
-                method: 'GET',
-                headers: headers
-            });
-            if (!cartResp.ok) return;
-            const cartData = await cartResp.json();
+            const cartData = await this.apiCall('/cart/api/current', 'GET');
             const cartId = cartData && cartData.cartId;
             if (!cartId) return;
 
-            const countResp = await fetch(`/cart/api/${cartId}/count`, {
-                method: 'GET',
-                headers: headers
-            });
-            if (!countResp.ok) return;
-            const distinctCount = await countResp.json();
+            const distinctCount = await this.apiCall(`/cart/api/${cartId}/count`, 'GET');
             document.querySelectorAll('.cart-badge').forEach(badge => {
                 badge.textContent = distinctCount;
             });
@@ -1791,7 +1776,7 @@ class LioraApp {
         const currentValue = parseInt(quantityInput.value) || 0;
         const maxStock = parseInt(quantityInput.getAttribute('max')) || 10;
         const maxAllowed = Math.min(maxStock, 99); // Tối đa 99 sản phẩm
-        
+
         // Allow empty input for better UX (user can clear and type new number)
         if (quantityInput.value === '' || quantityInput.value === '0') {
             // Hide error message when input is empty (user is typing)
@@ -1799,13 +1784,13 @@ class LioraApp {
             quantityInput.classList.remove('is-invalid');
             return;
         }
-        
+
         if (currentValue > maxAllowed) {
             // Show error message
             errorDiv.style.display = 'block';
             errorMessage.textContent = `Số lượng tối đa là ${maxAllowed} sản phẩm.`;
             quantityInput.classList.add('is-invalid');
-            
+
             // Reset to max allowed
             quantityInput.value = maxAllowed;
         } else if (currentValue < 1) {
@@ -1845,7 +1830,7 @@ class LioraApp {
         const currentValue = parseInt(quantityInput.value) || 0;
         const maxStock = parseInt(quantityInput.getAttribute('max')) || 10;
         const maxAllowed = Math.min(maxStock, 99); // Tối đa 99 sản phẩm
-        
+
         if (currentValue < maxAllowed) {
             quantityInput.value = currentValue + 1;
             this.validateQuantity();

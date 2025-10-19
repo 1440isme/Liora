@@ -51,6 +51,9 @@ public class PaymentServiceImpl implements PaymentService {
     @Value("${vnpay.locale:vn}")
     String vnpLocale;
 
+    @Value("${vnpay.sendIpnParam:false}")
+    boolean vnpSendIpnParam;
+
     @Override
     public String createVnpayPaymentUrl(Order order, String clientIp) {
         if (order == null || order.getIdOrder() == null) {
@@ -73,6 +76,11 @@ public class PaymentServiceImpl implements PaymentService {
         fields.put("vnp_OrderType", "other");
         fields.put("vnp_Locale", (vnpLocale == null || vnpLocale.isBlank()) ? "vn" : vnpLocale);
         fields.put("vnp_ReturnUrl", vnpReturnUrl);
+        // Chỉ gửi tham số vnp_IpnUrl khi được bật qua cấu hình để tránh lỗi không tương
+        // thích cấu hình merchant
+        if (vnpSendIpnParam && vnpIpnUrl != null && !vnpIpnUrl.isBlank()) {
+            fields.put("vnp_IpnUrl", vnpIpnUrl);
+        }
         String ip = (clientIp == null || clientIp.isBlank()) ? "127.0.0.1" : clientIp;
         fields.put("vnp_IpAddr", ip);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
@@ -196,7 +204,7 @@ public class PaymentServiceImpl implements PaymentService {
             try {
                 // Đảm bảo Order đã có đủ thông tin địa chỉ (district/ward)
                 // Nếu thiếu thì bỏ qua tạo GHN để không chặn IPN
-                if (order.getDistrict() != null && order.getWard() != null) {
+                if (order.getDistrictId() != null && order.getWardCode() != null) {
                     ghnShippingService.createShippingOrder(order);
                     log.info("Created GHN shipping order for Order {}", order.getIdOrder());
                 } else {
