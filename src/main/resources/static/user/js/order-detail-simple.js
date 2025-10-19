@@ -7,7 +7,7 @@ function cancelOrder(orderId) {
             return;
         }
 
-        fetch(`/api/user/orders/${orderId}/cancel`, {
+        fetch(`/order/${orderId}/cancel`, {
             method: 'PUT',
             headers: {
                 'Authorization': `Bearer ${token}`,

@@ -123,9 +123,14 @@ public class ProductServiceImpl implements IProductService {
     @Transactional
     @Override
     public void deleteById(Long id) {
-        if (!productRepository.existsById(id)) {
-            throw new AppException(ErrorCode.PRODUCT_NOT_FOUND);
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
+        
+        // Kiểm tra xem sản phẩm đã được bán chưa
+        if (product.getSoldCount() != null && product.getSoldCount() > 0) {
+            throw new AppException(ErrorCode.PRODUCT_HAS_ORDERS);
         }
+        
         productRepository.deleteById(id);
     }
 

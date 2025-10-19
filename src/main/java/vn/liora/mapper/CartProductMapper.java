@@ -25,6 +25,7 @@ public interface CartProductMapper {
     @Mapping(target = "productName", source = "product.name")
     @Mapping(target = "productPrice", source = "product.price")
     @Mapping(target = "brandName", source = "product.brand.name")
+    @Mapping(target = "brandId", source = "product.brand.brandId")
     @Mapping(target = "available", source = "product.available")
     @Mapping(target = "isActive", source = "product.isActive")
     @Mapping(target = "stock", source = "product.stock")

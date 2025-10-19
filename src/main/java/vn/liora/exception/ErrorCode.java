@@ -26,6 +26,7 @@ public enum ErrorCode {
     // Dai: 2000 - 2999
     BRAND_EXISTED(400, "Brand existed", HttpStatus.BAD_REQUEST),
     BRAND_NOT_FOUND(404, "Brand not found", HttpStatus.NOT_FOUND),
+    BRAND_HAS_PRODUCTS(400, "Cannot delete brand that has products", HttpStatus.BAD_REQUEST),
     
     // Category errors
     CATEGORY_NOT_FOUND(404, "Category not found", HttpStatus.NOT_FOUND),
@@ -33,6 +34,7 @@ public enum ErrorCode {
     CATEGORY_PARENT_INACTIVE(400, "Cannot activate category because parent category is inactive", HttpStatus.BAD_REQUEST),
     CATEGORY_CIRCULAR_REFERENCE(400, "Category cannot be parent of itself", HttpStatus.BAD_REQUEST),
     CATEGORY_INVALID_PARENT_LOGIC(400, "Category with parent cannot be parent category", HttpStatus.BAD_REQUEST),
+    CATEGORY_HAS_PRODUCTS(400, "Cannot delete category that has products", HttpStatus.BAD_REQUEST),
     
     // Product errors
     PRODUCT_EXISTED(400, "Product existed", HttpStatus.BAD_REQUEST),

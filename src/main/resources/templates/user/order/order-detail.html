@@ -124,16 +124,30 @@
                                     <tbody>
                                         <tr th:each="product : ${orderProducts}">
                                             <td>
-                                                <img th:src="${product.mainImageUrl}" 
-                                                    th:alt="${product.productName}"
-                                                    class="img-thumbnail" 
-                                                    style="width: 60px; height: 60px; object-fit: cover;"
-                                                    onerror="this.src='https://placehold.co/60x60'">
+                                                <a th:href="@{/product/{id}(id=${product.idProduct})}" style="text-decoration: none;">
+                                                    <img th:src="${product.mainImageUrl}" 
+                                                        th:alt="${product.productName}"
+                                                        class="img-thumbnail" 
+                                                        style="width: 60px; height: 60px; object-fit: cover; cursor: pointer;"
+                                                        onerror="this.src='https://placehold.co/60x60'">
+                                                </a>
                                             </td>
                                             <td>
                                                 <div>
-                                                    <h6 class="mb-1" th:text="${product.productName}"></h6>
-                                                    <small class="text-muted" th:text="${product.brandName}"></small>
+                                                    <h6 class="mb-1">
+                                                        <a th:href="@{/product/{id}(id=${product.idProduct})}" 
+                                                           class="text-decoration-none text-dark" 
+                                                           style="cursor: pointer;">
+                                                            <span th:text="${product.productName}"></span>
+                                                        </a>
+                                                    </h6>
+                                                    <small class="text-muted">
+                                                        <a th:href="@{/brand/{id}(id=${product.brandId})}" 
+                                                           class="text-decoration-none brand-link" 
+                                                           style="color: var(--accent-color); cursor: pointer;">
+                                                            <span th:text="${product.brandName}"></span>
+                                                        </a>
+                                                    </small>
                                                 </div>
                                             </td>
                                             <td class="text-center" th:text="${#numbers.formatDecimal(product.totalPrice / product.quantity, 0, 'COMMA', 0, 'POINT')} + ' ₫'"></td>

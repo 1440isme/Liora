@@ -329,7 +329,7 @@ class AdminAjax {
     }
 
     async bulkDeleteProducts(ids) {
-        return await this.post('/products/bulk-delete', { ids });
+        return await this.delete('/products/bulk', ids);
     }
 
     async bulkUpdateOrders(ids, data) {

@@ -190,6 +190,9 @@ class ProductTableManager {
         }
 
         tbody.innerHTML = products.map((product, index) => this.renderProduct(product, index)).join('');
+        
+        // Initialize tooltips for stock warning icons
+        this.initializeTooltips();
     }
 
     // Render single product row
@@ -217,8 +220,13 @@ class ProductTableManager {
                 <td>${product.categoryName || 'N/A'}</td>
                 <td>${product.brandName || 'N/A'}</td>
                 <td>${this.formatCurrency(product.price)}</td>
-                <td>${product.stock || 0}</td>
-                <td>${product.soldCount || 0}</td>
+                <td>
+                    <div class="d-flex align-items-center gap-1">
+                        <span class="${(product.stock || 0) <= 10 ? '' : 'text-start'}">${product.stock || 0}</span>
+                        ${(product.stock || 0) <= 10 ? '<i class="mdi mdi-alert-circle text-warning" title="Sắp hết hàng" data-bs-toggle="tooltip"></i>' : ''}
+                    </div>
+                </td>
+                <td class="text-start">${product.soldCount || 0}</td>
                 <td>${this.renderStockStatus(product.stock)}</td>
                 <td>${this.renderStatus(product.isActive)}</td>
                 <td>${this.formatDate(product.createdDate)}</td>
@@ -402,8 +410,8 @@ class ProductTableManager {
                 this.loadProducts();
             } else {
                 const error = await response.json();
-                if (error.message && error.message.includes('has been sold')) {
-                    this.showNotification('Không thể xóa sản phẩm đã có đơn hàng. Vui lòng tạm dừng sản phẩm thay vì xóa.', 'error');
+                if (error.message && (error.message.includes('đã có lịch sử bán hàng') || error.message.includes('has been sold'))) {
+                    this.showNotification(error.message || 'Không thể xóa sản phẩm đã có lịch sử bán hàng. Vui lòng tạm dừng sản phẩm thay vì xóa.', 'error');
                 } else {
                     this.showNotification(error.message || 'Có lỗi xảy ra', 'error');
                 }
@@ -455,6 +463,15 @@ class ProductTableManager {
                 notification.remove();
             }
         }, 3000);
+    }
+
+    // Initialize Bootstrap tooltips
+    initializeTooltips() {
+        // Initialize tooltips for stock warning icons
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
     }
 
     // Debounce function for search

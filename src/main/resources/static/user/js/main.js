@@ -179,9 +179,31 @@ class LioraApp {
         // Search functionality
         const searchInputs = document.querySelectorAll('.search-input');
         searchInputs.forEach(input => {
+            let searchTimeout;
             input.addEventListener('input', (e) => {
-                this.handleSearch(e.target.value);
+                clearTimeout(searchTimeout);
+                const query = e.target.value.trim();
+                searchTimeout = setTimeout(() => {
+                    this.handleSearch(query);
+                }, 300); // Debounce search
             });
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            const dropdown = document.getElementById('searchResultsDropdown');
+            const searchContainer = e.target.closest('.search-container');
+            
+            if (dropdown && !searchContainer) {
+                this.hideSearchDropdown();
+            }
+        });
+
+        // Handle escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                this.hideSearchDropdown();
+            }
         });
 
         // Newsletter subscription
@@ -498,14 +520,142 @@ class LioraApp {
     }
 
     handleSearch(query) {
-        if (query.length < 2) return;
+        console.log('handleSearch called with query:', query);
+        
+        if (query.length < 2) {
+            console.log('Query too short, hiding dropdown');
+            this.hideSearchDropdown();
+            return;
+        }
 
-        // Implement search functionality
-        const results = ProductManager.searchProducts(query);
-        console.log('Search results:', results);
+        console.log('Showing search loading and calling API');
+        // Show loading state
+        this.showSearchLoading();
 
-        // You can implement search results display here
-        this.showToast(`Found ${results.length} products for "${query}"`, 'info');
+        // Call search API
+        this.searchProducts(query);
+    }
+
+    async searchProducts(query) {
+        try {
+            const response = await fetch(`/api/products/search?q=${encodeURIComponent(query)}&size=5`);
+            const data = await response.json();
+            
+            // Check for both success format (true/false) and code format (1000 for success)
+            const isSuccess = (data.success === true) || (data.code === 1000);
+            
+            if (isSuccess && data.result) {
+                this.displaySearchResults(query, data.result);
+            } else {
+                console.error('Search API error:', data);
+                this.showSearchError();
+            }
+        } catch (error) {
+            console.error('Search fetch error:', error);
+            this.showSearchError();
+        }
+    }
+
+    displaySearchResults(query, pageData) {
+        const dropdown = document.getElementById('searchResultsDropdown');
+        const resultsList = document.getElementById('searchResultsList');
+        const totalCount = document.getElementById('totalResultsCount');
+        const viewMoreLink = document.getElementById('viewMoreLink');
+
+        // Clear previous results
+        resultsList.innerHTML = '';
+
+        if (pageData.content && pageData.content.length > 0) {
+            // Display products
+            pageData.content.forEach(product => {
+                const productItem = this.createSearchResultItem(product);
+                resultsList.appendChild(productItem);
+            });
+
+            // Calculate remaining products
+            const totalElements = pageData.totalElements || 0;
+            const displayedCount = pageData.content.length;
+            const remainingCount = totalElements - displayedCount;
+
+            // Update view more link and count
+            if (remainingCount > 0) {
+                totalCount.textContent = remainingCount;
+                viewMoreLink.href = `/search-results?q=${encodeURIComponent(query)}`;
+                viewMoreLink.style.display = 'block';
+            } else {
+                viewMoreLink.style.display = 'none';
+            }
+
+            // Show dropdown
+            dropdown.classList.add('show');
+        } else {
+            // No results
+            resultsList.innerHTML = '<div class="search-no-results">Không tìm thấy sản phẩm nào</div>';
+            viewMoreLink.style.display = 'none';
+            dropdown.classList.add('show');
+        }
+    }
+
+    createSearchResultItem(product) {
+        const item = document.createElement('a');
+        item.className = 'search-result-item';
+        item.href = `/product/${product.productId}`;
+
+        const mainImage = product.mainImageUrl || '/admin/images/liora-pink.svg';
+        const priceDisplay = this.formatCurrency(product.price);
+
+        item.innerHTML = `
+            <img src="${mainImage}" alt="${product.name}" class="search-result-image" onerror="this.src='/admin/images/liora-pink.svg'">
+            <div class="search-result-info">
+                <div class="search-result-name">${product.name}</div>
+                <div class="search-result-price">
+                    <span class="search-result-current-price">${priceDisplay}</span>
+                </div>
+            </div>
+        `;
+
+        return item;
+    }
+
+    showSearchLoading() {
+        const dropdown = document.getElementById('searchResultsDropdown');
+        const resultsList = document.getElementById('searchResultsList');
+
+        if (resultsList) resultsList.innerHTML = '<div class="search-loading">Đang tìm kiếm...</div>';
+        if (dropdown) {
+            dropdown.classList.add('show');
+        }
+    }
+
+    showSearchError() {
+        const dropdown = document.getElementById('searchResultsDropdown');
+        const resultsList = document.getElementById('searchResultsList');
+
+        resultsList.innerHTML = '<div class="search-no-results">Có lỗi xảy ra khi tìm kiếm</div>';
+        dropdown.classList.add('show');
+    }
+
+    hideSearchDropdown() {
+        const dropdown = document.getElementById('searchResultsDropdown');
+        dropdown.classList.remove('show');
+    }
+
+    // Test function để kiểm tra dropdown
+    testDropdown() {
+        const dropdown = document.getElementById('searchResultsDropdown');
+        const resultsList = document.getElementById('searchResultsList');
+        
+        if (resultsList) resultsList.innerHTML = '<div class="search-loading">Test loading...</div>';
+        if (dropdown) {
+            dropdown.classList.add('show');
+        }
+    }
+
+    formatCurrency(amount) {
+        return new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND'
+        }).format(amount);
     }
 
     handleCategoryItemClick(itemName) {
@@ -569,9 +719,15 @@ class LioraApp {
     // Đếm theo số loại sản phẩm (server-side): số dòng CartProduct
     async refreshCartBadge() {
         try {
+            const token = localStorage.getItem('access_token');
+            const headers = { 'X-Requested-With': 'XMLHttpRequest' };
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+            
             const cartResp = await fetch('/cart/api/current', {
                 method: 'GET',
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                headers: headers
             });
             if (!cartResp.ok) return;
             const cartData = await cartResp.json();
@@ -580,7 +736,7 @@ class LioraApp {
 
             const countResp = await fetch(`/cart/api/${cartId}/count`, {
                 method: 'GET',
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                headers: headers
             });
             if (!countResp.ok) return;
             const distinctCount = await countResp.json();

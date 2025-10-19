@@ -293,7 +293,9 @@ class CategoryProductsManager {
                         <img src="${product.mainImageUrl || '/uploads/products/default.jpg'}" 
                              class="card-img-top" 
                              alt="${product.name}"
-                             onerror="this.src='/uploads/products/default.jpg'">
+                             onerror="this.src='/uploads/products/default.jpg'"
+                             onclick="window.location.href='/product/${product.productId}?from=category&categoryId=${this.currentCategoryId}'"
+                             style="cursor: pointer;">
                         
                     <!-- Product Status Badge - Removed to avoid overlapping with image -->
                         

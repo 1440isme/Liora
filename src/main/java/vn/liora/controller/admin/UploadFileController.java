@@ -136,6 +136,11 @@ public class UploadFileController {
                         Image image = new Image();
                         image.setImageUrl("/uploads/" + relativePath);
                         image.setProduct(product);
+                        
+                        // Set displayOrder dựa trên số ảnh hiện tại của sản phẩm
+                        Long currentImageCount = imageRepository.countByProductProductId(productId);
+                        image.setDisplayOrder(currentImageCount.intValue()); // 0, 1, 2, 3...
+                        
                         imageRepository.save(image);
                     }
                 }

@@ -49,71 +49,95 @@ public class UserProductController {
             @RequestParam(required = false) String q, // search query
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) Long brandId,
+            @RequestParam(required = false) List<Long> brands, // multiple brands
             @RequestParam(required = false) BigDecimal minPrice,
             @RequestParam(required = false) BigDecimal maxPrice,
             @RequestParam(required = false) BigDecimal minRating,
+            @RequestParam(required = false) List<BigDecimal> ratings, // multiple ratings
             @RequestParam(required = false) String sortBy,
             @RequestParam(required = false) String sortDir, // sort direction
             Pageable pageable) {
         ApiResponse<Page<ProductResponse>> response = new ApiResponse<>();
         try {
-            Page<Product> products;
-
-            // xử lý sort
-            if (sortBy != null && !sortBy.isEmpty()) {
-                pageable = this.createSortedPageable(pageable, sortBy, sortDir);
-            }
-
-            // tìm kiếm theo tên
+            // Tìm tất cả sản phẩm phù hợp trước (không phân trang)
+            List<Product> allProducts;
+            
             if (q != null && !q.trim().isEmpty()) {
-                products = productService.findByNameContaining(q.trim(), pageable);
+                allProducts = productService.findByNameContaining(q.trim());
+                System.out.println("Search query: " + q.trim());
+                System.out.println("Found products: " + allProducts.size());
             } else {
-                products = productService.findAll(pageable);
+                allProducts = productService.findAll();
+                System.out.println("No search query, getting all products: " + allProducts.size());
             }
 
-            // lọc sản phẩm - không filter theo isActive/available để hiển thị tất cả trạng thái
-            List<Product> filteredProducts = products.getContent();
+            // Lọc sản phẩm theo các điều kiện
+            List<Product> filteredProducts = allProducts.stream()
+                    .filter(product -> {
+                        // Lọc theo category
+                        if (categoryId != null && !product.getCategory().getCategoryId().equals(categoryId)) {
+                            return false;
+                        }
+                        
+                        // Lọc theo brand (hỗ trợ cả single và multiple brands)
+                        if (brandId != null && !product.getBrand().getBrandId().equals(brandId)) {
+                            return false;
+                        }
+                        if (brands != null && !brands.isEmpty() && !brands.contains(product.getBrand().getBrandId())) {
+                            return false;
+                        }
+                        
+                        // Lọc theo giá
+                        if (minPrice != null && product.getPrice().compareTo(minPrice) < 0) {
+                            return false;
+                        }
+                        if (maxPrice != null && product.getPrice().compareTo(maxPrice) > 0) {
+                            return false;
+                        }
+                        
+                        // Lọc theo rating (hỗ trợ cả single và multiple ratings)
+                        if (minRating != null && (product.getAverageRating() == null || 
+                                product.getAverageRating().compareTo(minRating) < 0)) {
+                            return false;
+                        }
+                        if (ratings != null && !ratings.isEmpty()) {
+                            BigDecimal productRating = product.getAverageRating();
+                            if (productRating == null) {
+                                return false;
+                            }
+                            boolean matchesRating = ratings.stream().anyMatch(rating -> 
+                                productRating.compareTo(rating) >= 0);
+                            if (!matchesRating) {
+                                return false;
+                            }
+                        }
+                        
+                        return true;
+                    })
+                    .collect(Collectors.toList());
 
-            // lọc theo category
-            if (categoryId != null) {
-                filteredProducts = filteredProducts.stream()
-                        .filter(product -> product.getCategory().getCategoryId().equals(categoryId))
-                        .toList();
+            // Áp dụng sorting sau khi đã lọc
+            if (sortBy != null && !sortBy.isEmpty()) {
+                filteredProducts = this.applySorting(filteredProducts, sortBy, sortDir);
             }
 
-            // lọc theo brand
-            if (brandId != null) {
-                filteredProducts = filteredProducts.stream()
-                        .filter(product -> product.getBrand().getBrandId().equals(brandId))
-                        .toList();
-            }
+            // Áp dụng pagination sau khi đã lọc và sắp xếp
+            int totalElements = filteredProducts.size();
+            int pageSize = pageable.getPageSize();
+            int currentPage = pageable.getPageNumber();
+            int startIndex = currentPage * pageSize;
+            int endIndex = Math.min(startIndex + pageSize, totalElements);
+            
+            List<Product> pageContent = startIndex < totalElements ? 
+                    filteredProducts.subList(startIndex, endIndex) : new ArrayList<>();
 
-            // lọc theo giá
-            if (minPrice != null || maxPrice != null) {
-                filteredProducts = filteredProducts.stream()
-                        .filter(product -> {
-                            BigDecimal price = product.getPrice();
-                            if (minPrice != null && price.compareTo(minPrice) < 0) return false;
-                            if (maxPrice != null && price.compareTo(maxPrice) > 0) return false;
-                            return true;
-                        })
-                        .toList();
-            }
-
-            // lọc theo rating
-            if (minRating != null) {
-                filteredProducts = filteredProducts.stream()
-                        .filter(product -> product.getAverageRating() != null &&
-                                product.getAverageRating().compareTo(minRating) >= 0)
-                        .toList();
-            }
-
-            // tạo page từ filtered
+            // Tạo page từ filtered và sorted
             Page<Product> filteredPage = new PageImpl<>(
-                    filteredProducts, pageable, filteredProducts.size()
+                    pageContent, pageable, totalElements
             );
 
             Page<ProductResponse> productResponses = filteredPage.map(productMapper::toProductResponse);
+            response.setCode(1000);
             response.setResult(productResponses);
             response.setMessage("Tìm kiếm sản phẩm thành công");
             return ResponseEntity.ok(response);
@@ -1028,6 +1052,106 @@ public class UserProductController {
 
 
 
+
+    // ========== HELPER METHODS ==========
+    private List<Product> applySorting(List<Product> products, String sortBy, String sortDir) {
+        if (products == null || products.isEmpty()) {
+            return products;
+        }
+        
+        boolean ascending = sortDir == null || !sortDir.equalsIgnoreCase("desc");
+        
+        switch (sortBy.toLowerCase()) {
+            case "name":
+                return products.stream()
+                        .sorted((p1, p2) -> {
+                            int result = p1.getName().compareToIgnoreCase(p2.getName());
+                            return ascending ? result : -result;
+                        })
+                        .collect(Collectors.toList());
+                        
+            case "price":
+                return products.stream()
+                        .sorted((p1, p2) -> {
+                            int result = p1.getPrice().compareTo(p2.getPrice());
+                            return ascending ? result : -result;
+                        })
+                        .collect(Collectors.toList());
+                        
+            case "rating":
+                return products.stream()
+                        .sorted((p1, p2) -> {
+                            BigDecimal rating1 = p1.getAverageRating() != null ? p1.getAverageRating() : BigDecimal.ZERO;
+                            BigDecimal rating2 = p2.getAverageRating() != null ? p2.getAverageRating() : BigDecimal.ZERO;
+                            int result = rating1.compareTo(rating2);
+                            return ascending ? result : -result;
+                        })
+                        .collect(Collectors.toList());
+                        
+            case "soldcount":
+            case "sold_count":
+                return products.stream()
+                        .sorted((p1, p2) -> {
+                            Integer sold1 = p1.getSoldCount() != null ? p1.getSoldCount() : 0;
+                            Integer sold2 = p2.getSoldCount() != null ? p2.getSoldCount() : 0;
+                            int result = sold1.compareTo(sold2);
+                            return ascending ? result : -result;
+                        })
+                        .collect(Collectors.toList());
+                        
+            case "created":
+            case "createddate":
+            case "created_date":
+                return products.stream()
+                        .sorted((p1, p2) -> {
+                            if (p1.getCreatedDate() == null && p2.getCreatedDate() == null) return 0;
+                            if (p1.getCreatedDate() == null) return ascending ? 1 : -1;
+                            if (p2.getCreatedDate() == null) return ascending ? -1 : 1;
+                            int result = p1.getCreatedDate().compareTo(p2.getCreatedDate());
+                            return ascending ? result : -result;
+                        })
+                        .collect(Collectors.toList());
+                        
+            default:
+                // Mặc định sắp xếp theo tên
+                return products.stream()
+                        .sorted((p1, p2) -> {
+                            int result = p1.getName().compareToIgnoreCase(p2.getName());
+                            return ascending ? result : -result;
+                        })
+                        .collect(Collectors.toList());
+        }
+    }
+
+    // ========== SEARCH BRANDS ==========
+    @GetMapping("/search-brands")
+    public ResponseEntity<ApiResponse<List<BrandResponse>>> getSearchBrands() {
+        ApiResponse<List<BrandResponse>> response = new ApiResponse<>();
+        try {
+            List<Product> allProducts = productService.findAll();
+            System.out.println("Total products for brands: " + allProducts.size());
+            List<BrandResponse> brands = allProducts.stream()
+                    .map(Product::getBrand)
+                    .distinct()
+                    .map(brand -> BrandResponse.builder()
+                            .brandId(brand.getBrandId())
+                            .name(brand.getName())
+                            .logoUrl(brand.getLogoUrl())
+                            .isActive(brand.getIsActive())
+                            .build())
+                    .sorted((b1, b2) -> b1.getName().compareTo(b2.getName()))
+                    .toList();
+
+            response.setCode(1000);
+            response.setMessage("Lấy danh sách thương hiệu thành công");
+            response.setResult(brands);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.setCode(500);
+            response.setMessage("Lỗi khi lấy danh sách thương hiệu: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(response);
+        }
+    }
 
     // ========== BRAND FILTERS ==========
     @GetMapping("/categories/{categoryId}/brands")

@@ -203,7 +203,11 @@ class CartPage {
                             <a href="/product/${item.idProduct}" style="text-decoration: none; color: inherit;">
                                 <h6 class="cart-product-title">${item.productName || 'Tên sản phẩm'}</h6>
                             </a>
-                            <div class="cart-product-brand">${item.brandName || 'Thương hiệu'}</div>
+                            <div class="cart-product-brand">
+                                <a href="/brand/${item.brandId}" class="text-decoration-none brand-link" style="color: var(--accent-color);">
+                                    ${item.brandName || 'Thương hiệu'}
+                                </a>
+                            </div>
                             <div class="cart-product-price" style="background-color: #f8f9fa; padding: 1px 4px; border-radius: 3px; font-size: 0.8rem; color: #6c757d; display: inline-block;">
                                 Đơn giá: ${this.formatCurrency(item.productPrice || 0)}
                             </div>
@@ -286,7 +290,11 @@ class CartPage {
                             <a href="/product/${item.idProduct}" style="text-decoration: none; color: inherit;">
                                 <h6 class="unavailable-product-title">${item.productName || 'Tên sản phẩm'}</h6>
                             </a>
-                            <div class="unavailable-product-brand">${item.brandName || 'Thương hiệu'}</div>
+                            <div class="unavailable-product-brand">
+                                <a href="/brand/${item.brandId}" class="text-decoration-none brand-link" style="color: var(--accent-color);">
+                                    ${item.brandName || 'Thương hiệu'}
+                                </a>
+                            </div>
                             <span class="product-status-tag ${statusClass}">${statusText}</span>
                         </div>
                     </div>

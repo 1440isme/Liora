@@ -119,9 +119,14 @@ public class CategoryServiceImpl implements ICategoryService {
 
     @Override
     public void deleteById(Long id) {
-        if (!categoryRepository.existsById(id)) {
-            throw new AppException(ErrorCode.CATEGORY_NOT_FOUND);
+        Category category = categoryRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
+        
+        // Kiểm tra xem danh mục có sản phẩm nào đang sử dụng không
+        if (productRepository.countByCategory(id) > 0) {
+            throw new AppException(ErrorCode.CATEGORY_HAS_PRODUCTS);
         }
+        
         categoryRepository.deleteById(id);
     }
 
