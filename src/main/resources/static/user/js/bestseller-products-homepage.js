@@ -83,6 +83,13 @@ class BestsellerProductsHomepageManager {
         if (this.loadingEl) this.loadingEl.style.display = 'none';
         if (this.emptyEl) this.emptyEl.style.display = 'none';
         if (this.gridEl) this.gridEl.style.display = 'flex';
+        
+        // Trigger rating load sau khi render xong
+        setTimeout(() => {
+            if (window.loadProductRatings) {
+                window.loadProductRatings();
+            }
+        }, 500);
     }
 
     createProductCard(product) {
@@ -98,7 +105,7 @@ class BestsellerProductsHomepageManager {
         const currentPrice = product.currentPrice || product.price || 0;
 
         return `
-            <div class="product-card ${statusClass}">
+            <div class="product-card ${statusClass}" data-product-id="${productId}">
                 <div class="position-relative">
                     <img src="${this.getMainImageUrl(product)}" 
                          class="card-img-top" 
@@ -129,11 +136,36 @@ class BestsellerProductsHomepageManager {
                         </a>
                     </p>
                     
-                    <div class="rating">
-                        <span class="stars">
-                            ${this.renderStars(product.averageRating || product.rating || 0, reviewCount)}
-                        </span>
-                        <span class="rating-count">(${reviewCount} đánh giá)</span>
+                    <!-- Rating sẽ được load bởi ProductRatingUtils -->
+                    <div class="product-rating" data-product-id="${productId}">
+                        <div class="star-rating">
+                            <div class="star empty">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="2">
+                                    <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                                </svg>
+                            </div>
+                            <div class="star empty">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="2">
+                                    <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                                </svg>
+                            </div>
+                            <div class="star empty">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="2">
+                                    <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                                </svg>
+                            </div>
+                            <div class="star empty">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="2">
+                                    <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                                </svg>
+                            </div>
+                            <div class="star empty">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="2">
+                                    <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                                </svg>
+                            </div>
+                        </div>
+                        <span class="rating-count">(0)</span>
                     </div>
                     
                         <div class="mt-auto">

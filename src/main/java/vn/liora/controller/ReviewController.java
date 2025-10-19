@@ -107,6 +107,22 @@ public class ReviewController {
         }
     }
 
+    /**
+     * Lấy thống kê đánh giá cho nhiều sản phẩm (để hiển thị trên product cards)
+     */
+    @PostMapping("/products/statistics")
+    public ResponseEntity<Map<String, Object>> getMultipleProductsReviewStatistics(@RequestBody List<Long> productIds) {
+        try {
+            Map<String, Object> statistics = reviewService.getMultipleProductsReviewStatistics(productIds);
+            return ResponseEntity.ok(statistics);
+        } catch (Exception e) {
+            log.error("Error getting multiple products review statistics: {}", e.getMessage());
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Không thể lấy thống kê đánh giá");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+
     // ========== USER ENDPOINTS ==========
 
     /**

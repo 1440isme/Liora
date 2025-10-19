@@ -242,6 +242,27 @@ public class ReviewServiceImpl implements IReviewService {
         
         return statistics;
     }
+
+    @Override
+    public Map<String, Object> getMultipleProductsReviewStatistics(List<Long> productIds) {
+        Map<String, Object> result = new HashMap<>();
+        
+        for (Long productId : productIds) {
+            Map<String, Object> productStats = new HashMap<>();
+            
+            // Lấy điểm trung bình
+            Double averageRating = reviewRepository.getAverageRatingByProductId(productId);
+            productStats.put("averageRating", averageRating != null ? averageRating : 0.0);
+            
+            // Lấy tổng số review
+            Long totalReviews = reviewRepository.getReviewCountByProductId(productId);
+            productStats.put("totalReviews", totalReviews != null ? totalReviews : 0L);
+            
+            result.put(productId.toString(), productStats);
+        }
+        
+        return result;
+    }
     
     // ========== ADMIN FUNCTIONS ==========
     

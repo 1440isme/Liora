@@ -170,6 +170,53 @@ h3 {
     margin-left: 0.25rem;
 }
 
+/* Product Rating Styles - New */
+.product-rating {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.star-rating {
+    display: flex;
+    gap: 2px;
+    align-items: center;
+}
+
+.star-rating .star {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.star-rating .star svg {
+    width: 16px;
+    height: 16px;
+    transition: all 0.2s ease;
+}
+
+.star-rating .star.filled svg {
+    fill: #ffc107;
+    stroke: #ffc107;
+}
+
+.star-rating .star.half svg {
+    fill: #ffc107;
+    stroke: #ffc107;
+}
+
+.star-rating .star.empty svg {
+    fill: none;
+    stroke: #ddd;
+}
+
+.rating-count {
+    font-size: 0.875rem;
+    color: #6c757d;
+    font-weight: 500;
+}
+
 .product-card .add-to-cart-btn {
     background: var(--pink-primary);
     border: none;
