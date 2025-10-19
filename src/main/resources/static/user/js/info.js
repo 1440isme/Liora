@@ -98,6 +98,7 @@ class UserInfoManager {
     populateUserData() {
         if (!this.currentUser) return;
 
+
         // Update profile header
         this.updateElement('profileName', this.getFullName());
         this.updateElement('profileEmail', this.currentUser.email || 'Chưa cập nhật');
@@ -113,14 +114,14 @@ class UserInfoManager {
         // Update profile stats (mock data for now)
         this.updateElement('totalOrders', '0');
         this.updateElement('totalSpent', '0');
-        this.updateElement('memberSince', this.formatDate(this.currentUser.createdDate));
-        this.updateElement('memberSinceText', this.formatDate(this.currentUser.createdDate));
+        this.updateElement('memberSince', this.formatDate(this.currentUser.createdAt || this.currentUser.createdDate));
+        this.updateElement('memberSinceText', this.formatDate(this.currentUser.createdAt || this.currentUser.createdDate));
 
         // Update personal information
         this.updateElement('displayName', this.getFullName());
         this.updateElement('displayEmail', this.currentUser.email || 'Chưa cập nhật');
         this.updateElement('displayPhone', this.currentUser.phone || 'Chưa cập nhật');
-        this.updateElement('displayDob', this.formatDate(this.currentUser.dob) || 'Chưa cập nhật');
+        this.updateElement('displayDob', this.formatDate(this.currentUser.dateOfBirth || this.currentUser.dob));
         this.updateElement('displayGender', this.getGenderText());
     }
 
@@ -134,7 +135,17 @@ class UserInfoManager {
         if (this.currentUser.gender === null || this.currentUser.gender === undefined) {
             return 'Chưa cập nhật';
         }
-        return this.currentUser.gender ? 'Nam' : 'Nữ';
+        if (this.currentUser.gender === true) {
+            return 'Nam';
+        } else if (this.currentUser.gender === false) {
+            return 'Nữ';
+        } else if (this.currentUser.gender === 'Nam') {
+            return 'Nam';
+        } else if (this.currentUser.gender === 'Nữ') {
+            return 'Nữ';
+        } else {
+            return 'Chưa cập nhật';
+        }
     }
 
     formatDate(date) {
@@ -246,13 +257,60 @@ class UserInfoManager {
             return;
         }
 
+        // Validation
+        const name = document.getElementById('editName').value.trim();
+        const email = document.getElementById('editEmail').value.trim();
+        const phone = document.getElementById('editPhone').value.trim();
+        const dob = document.getElementById('editDob').value;
+        const gender = document.getElementById('editGender').value;
+
+        // Validate required fields
+        if (!name) {
+            this.showError('Vui lòng nhập họ và tên');
+            document.getElementById('editName').focus();
+            return;
+        }
+
+        if (!email) {
+            this.showError('Vui lòng nhập email');
+            document.getElementById('editEmail').focus();
+            return;
+        }
+
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            this.showError('Email không hợp lệ');
+            document.getElementById('editEmail').focus();
+            return;
+        }
+
+        // Validate phone format (Vietnamese phone number)
+        if (phone && !/^(\+84|84|0)[1-9][0-9]{8,9}$/.test(phone.replace(/\s/g, ''))) {
+            this.showError('Số điện thoại không hợp lệ');
+            document.getElementById('editPhone').focus();
+            return;
+        }
+
+        // Validate date of birth
+        if (dob) {
+            const dobDate = new Date(dob);
+            const today = new Date();
+            const age = today.getFullYear() - dobDate.getFullYear();
+            if (age < 6 || age > 120) {
+                this.showError('Tuổi phải từ 6 đến 120');
+                document.getElementById('editDob').focus();
+                return;
+            }
+        }
+
         const formData = {
-            firstname: document.getElementById('editName').value.split(' ')[0] || '',
-            lastname: document.getElementById('editName').value.split(' ').slice(1).join(' ') || '',
-            email: document.getElementById('editEmail').value,
-            phone: document.getElementById('editPhone').value,
-            dob: document.getElementById('editDob').value ? new Date(document.getElementById('editDob').value).toISOString().split('T')[0] : null,
-            gender: document.getElementById('editGender').value === 'Nam' ? true : document.getElementById('editGender').value === 'Nữ' ? false : null
+            firstname: name.split(' ')[0] || '',
+            lastname: name.split(' ').slice(1).join(' ') || '',
+            email: email,
+            phone: phone || null,
+            dob: dob ? new Date(dob).toISOString().split('T')[0] : null,
+            gender: gender === 'Nam' ? true : gender === 'Nữ' ? false : null
         };
 
         this.updateUserInfo(formData);
@@ -266,7 +324,14 @@ class UserInfoManager {
                 return;
             }
 
-            const response = await fetch(`/users/${this.currentUser.userId}`, {
+            // Show loading state
+            const submitBtn = document.querySelector('#profileEditForm button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang cập nhật...';
+            }
+
+            const response = await fetch('/users/myInfo', {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -276,11 +341,25 @@ class UserInfoManager {
             });
 
             if (!response.ok) {
-                throw new Error('Failed to update user info');
+                const errorData = await response.json().catch(() => ({}));
+                const errorMessage = errorData.message || 'Không thể cập nhật thông tin';
+
+                if (response.status === 400) {
+                    this.showError(errorMessage);
+                } else if (response.status === 401 || response.status === 403) {
+                    this.showError('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+                    setTimeout(() => {
+                        window.location.href = '/home';
+                    }, 2000);
+                } else {
+                    this.showError(errorMessage);
+                }
+                return;
             }
 
             const data = await response.json();
             this.currentUser = data.result;
+
             // Re-sync header display after update
             try {
                 const existing = (() => { try { return JSON.parse(localStorage.getItem('liora_user')) || {}; } catch (_) { return {}; } })();
@@ -303,7 +382,14 @@ class UserInfoManager {
             this.showToast('Thông tin đã được cập nhật thành công!', 'success');
         } catch (error) {
             console.error('Error updating user info:', error);
-            this.showError('Không thể cập nhật thông tin');
+            this.showError('Không thể cập nhật thông tin. Vui lòng thử lại sau.');
+        } finally {
+            // Re-enable submit button
+            const submitBtn = document.querySelector('#profileEditForm button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-save"></i> Lưu thay đổi';
+            }
         }
     }
 
@@ -1511,10 +1597,29 @@ class UserInfoManager {
     async uploadAvatarFile(file) {
         try {
             if (!file) return;
+
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                this.showError('Vui lòng chọn file ảnh hợp lệ');
+                return;
+            }
+
+            // Validate file size (max 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                this.showError('Kích thước file không được vượt quá 5MB');
+                return;
+            }
+
             const token = localStorage.getItem('access_token');
             if (!token) {
                 this.showError('Vui lòng đăng nhập để cập nhật avatar');
                 return;
+            }
+
+            // Show loading state
+            const avatarImg = document.getElementById('profileAvatar');
+            if (avatarImg) {
+                avatarImg.style.opacity = '0.5';
             }
 
             const formData = new FormData();
@@ -1526,23 +1631,42 @@ class UserInfoManager {
                 body: formData
             });
 
-            if (!response.ok) throw new Error('Upload avatar thất bại');
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || 'Upload avatar thất bại');
+            }
 
             const data = await response.json();
             const avatarUrl = data?.result?.avatarUrl || data?.data?.result?.avatarUrl;
             if (!avatarUrl) throw new Error('Không nhận được URL avatar');
 
             // Update UI immediately
-            const img = document.getElementById('profileAvatar');
-            if (img) img.src = avatarUrl;
+            if (avatarImg) {
+                avatarImg.src = avatarUrl;
+                avatarImg.style.opacity = '1';
+            }
 
             // Persist to profile
-            await this.updateUserInfo({ avatar: avatarUrl, firstname: this.currentUser.firstname || '', lastname: this.currentUser.lastname || '' });
+            await this.updateUserInfo({
+                avatar: avatarUrl,
+                firstname: this.currentUser.firstname || '',
+                lastname: this.currentUser.lastname || '',
+                email: this.currentUser.email || '',
+                phone: this.currentUser.phone || null,
+                dob: this.currentUser.dob || null,
+                gender: this.currentUser.gender
+            });
 
             this.showToast('Cập nhật avatar thành công!', 'success');
         } catch (e) {
             console.error(e);
-            this.showError('Không thể cập nhật avatar');
+            this.showError(e.message || 'Không thể cập nhật avatar');
+
+            // Restore avatar opacity
+            const avatarImg = document.getElementById('profileAvatar');
+            if (avatarImg) {
+                avatarImg.style.opacity = '1';
+            }
         }
     }
 

@@ -21,6 +21,7 @@ public class UserResponse {
     private String phone;
     private String avatar;
     private LocalDateTime dateOfBirth;
+    private Boolean gender;
     private Boolean active;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

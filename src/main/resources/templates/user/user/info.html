@@ -164,41 +164,67 @@
                                     </div>
 
                                     <!-- Edit Form (Hidden by default) -->
-                                    <div id="editForm" style="display: none;" class="mt-4 p-4 bg-light rounded-3">
-                                        <h5 class="mb-3">Chỉnh sửa thông tin</h5>
+                                    <div id="editForm" style="display: none;"
+                                        class="mt-4 p-4 bg-light rounded-3 border">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <h5 class="mb-0">
+                                                <i class="fas fa-edit me-2"></i>Chỉnh sửa thông tin
+                                            </h5>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary"
+                                                onclick="cancelEdit()">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
                                         <form id="profileEditForm">
                                             <div class="row">
                                                 <div class="col-md-6">
                                                     <div class="form-floating mb-3">
                                                         <input type="text" class="form-control" id="editName"
-                                                            placeholder="Họ và tên">
-                                                        <label for="editName">Họ và tên</label>
+                                                            placeholder="Họ và tên" required>
+                                                        <label for="editName">Họ và tên <span
+                                                                class="text-danger">*</span></label>
+                                                        <div class="invalid-feedback">
+                                                            Vui lòng nhập họ và tên
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 <div class="col-md-6">
                                                     <div class="form-floating mb-3">
                                                         <input type="email" class="form-control" id="editEmail"
-                                                            placeholder="Email">
-                                                        <label for="editEmail">Email</label>
+                                                            placeholder="Email" required>
+                                                        <label for="editEmail">Email <span
+                                                                class="text-danger">*</span></label>
+                                                        <div class="invalid-feedback">
+                                                            Vui lòng nhập email hợp lệ
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 <div class="col-md-6">
                                                     <div class="form-floating mb-3">
                                                         <input type="tel" class="form-control" id="editPhone"
-                                                            placeholder="Số điện thoại">
+                                                            placeholder="Số điện thoại"
+                                                            pattern="^(\+84|84|0)[1-9][0-9]{8,9}$">
                                                         <label for="editPhone">Số điện thoại</label>
+                                                        <div class="invalid-feedback">
+                                                            Số điện thoại không hợp lệ
+                                                        </div>
+                                                        <div class="form-text">Ví dụ: 0123456789 hoặc +84123456789</div>
                                                     </div>
                                                 </div>
                                                 <div class="col-md-6">
                                                     <div class="form-floating mb-3">
                                                         <input type="date" class="form-control" id="editDob"
-                                                            placeholder="Ngày sinh">
+                                                            placeholder="Ngày sinh" max="2018-12-31" min="1904-01-01">
                                                         <label for="editDob">Ngày sinh</label>
+                                                        <div class="invalid-feedback">
+                                                            Tuổi phải từ 6 đến 120
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 <div class="col-md-6">
                                                     <div class="form-floating mb-3">
                                                         <select class="form-select" id="editGender">
+                                                            <option value="">Chọn giới tính</option>
                                                             <option value="Nam">Nam</option>
                                                             <option value="Nữ">Nữ</option>
                                                             <option value="Khác">Khác</option>
@@ -207,12 +233,13 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div class="d-flex gap-2">
-                                                <button type="submit" class="btn btn-save">
-                                                    <i class="fas fa-save"></i> Lưu thay đổi
-                                                </button>
-                                                <button type="button" class="btn btn-cancel" onclick="cancelEdit()">
+                                            <div class="d-flex gap-2 justify-content-end">
+                                                <button type="button" class="btn btn-outline-secondary"
+                                                    onclick="cancelEdit()">
                                                     <i class="fas fa-times"></i> Hủy
+                                                </button>
+                                                <button type="submit" class="btn btn-primary">
+                                                    <i class="fas fa-save"></i> Lưu thay đổi
                                                 </button>
                                             </div>
                                         </form>

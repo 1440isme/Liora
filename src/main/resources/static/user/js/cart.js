@@ -197,7 +197,7 @@ class CartPage {
                     </div>
                     <div class="col-auto">
                         <a href="/product/${item.idProduct}" style="text-decoration: none;">
-                            <img src="${item.mainImageUrl || '/uploads/products/placeholder.jpg'}" alt="${item.productName || 'Sản phẩm'}" class="cart-product-image">
+                            <img src="${item.mainImageUrl || 'https://placehold.co/300x300'}" alt="${item.productName || 'Sản phẩm'}" class="cart-product-image">
                         </a>
                     </div>
                     <div class="col">
@@ -284,7 +284,7 @@ class CartPage {
                     </div>
                     <div class="col-auto">
                         <a href="/product/${item.idProduct}" style="text-decoration: none;">
-                            <img src="${item.mainImageUrl || '/uploads/products/placeholder.jpg'}" alt="${item.productName || 'Sản phẩm'}" class="unavailable-product-image">
+                            <img src="${item.mainImageUrl || 'https://placehold.co/300x300'}" alt="${item.productName || 'Sản phẩm'}" class="unavailable-product-image">
                         </a>
                     </div>
                     <div class="col">
@@ -754,7 +754,7 @@ class CartPage {
 
         const discountAmount = this.appliedDiscount ? this.appliedDiscount.discountAmount : 0;
         const total = subtotal - discountAmount;
-    
+
         $('#selected-count').text(selectedCount);
         $('#subtotal').text(this.formatCurrency(subtotal));
         $('#total').text(this.formatCurrency(total));
@@ -772,7 +772,7 @@ class CartPage {
         } else if (selectedCount > availableSelectedCount) {
             this.showToast(`${selectedCount - availableSelectedCount} sản phẩm không khả dụng sẽ bị loại bỏ khỏi đơn hàng`, 'info');
         }
-        
+
         // $('#discount').parent().hide();
     }
 
@@ -827,7 +827,7 @@ class CartPage {
                 // Cập nhật summary với thông tin discount
                 this.updateCartSummary();
             }
-            
+
         } catch (error) {
             // Hiển thị thông báo lỗi chi tiết
             let errorMessage = 'Mã giảm giá không hợp lệ';

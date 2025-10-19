@@ -125,7 +125,7 @@ class BrandsManager {
                     <div class="card-body text-center">
                         <!-- Brand Logo -->
                         <div class="mb-3">
-                            <img src="${brand.logoUrl || '/admin/images/brands/placeholder.jpg'}" 
+                            <img src="${brand.logoUrl || 'https://placehold.co/300x300'}" 
                                  alt="${brand.name}" 
                                  class="img-fluid rounded-circle" 
                                  style="width: 60px; height: 60px; object-fit: cover; border: 2px solid #e9ecef;">
@@ -173,10 +173,10 @@ class BrandsManager {
 
     async handleFormSubmit(e) {
         e.preventDefault();
-        
+
         const form = e.target;
         const formData = new FormData(form);
-        
+
         // Upload logo first if file is selected
         let logoUrl = null;
         const logoFile = document.getElementById('logoFile');
@@ -200,7 +200,7 @@ class BrandsManager {
         try {
             const isEdit = form.dataset.brandId;
             let response;
-            
+
             if (isEdit) {
                 response = await this.ajax.put(`/brands/${isEdit}`, data);
                 this.showNotification('Cập nhật thương hiệu thành công', 'success');
@@ -208,12 +208,12 @@ class BrandsManager {
                 response = await this.ajax.post('/brands', data);
                 this.showNotification('Thêm thương hiệu thành công', 'success');
             }
-            
+
             // Redirect to list page
             setTimeout(() => {
                 window.location.href = '/admin/brands';
             }, 1500);
-            
+
         } catch (error) {
             console.error('Error saving brand:', error);
             this.showNotification('Có lỗi xảy ra khi lưu thương hiệu', 'error');
@@ -238,11 +238,11 @@ class BrandsManager {
     async handleToggleStatus(brandId, currentStatus) {
         const isActive = currentStatus === 'true';
         const action = isActive ? 'deactivate' : 'activate';
-        
+
         try {
             await this.ajax.put(`/brands/${brandId}/${action}`);
             this.showNotification(
-                isActive ? 'Ngừng hoạt động thương hiệu thành công' : 'Kích hoạt thương hiệu thành công', 
+                isActive ? 'Ngừng hoạt động thương hiệu thành công' : 'Kích hoạt thương hiệu thành công',
                 'success'
             );
             this.loadBrands(); // Reload the list
@@ -298,7 +298,7 @@ class BrandsManager {
         }
 
         let paginationHTML = '';
-        
+
         // Previous button
         paginationHTML += `
             <li class="page-item ${pageInfo.number === 0 ? 'disabled' : ''}">
@@ -373,8 +373,8 @@ class BrandsManager {
             <div class="toast-header">
                 <strong class="me-auto">
                     ${type === 'success' ? 'Thành công!' :
-            type === 'error' ? 'Lỗi!' :
-                type === 'warning' ? 'Cảnh báo!' : 'Thông báo'}
+                type === 'error' ? 'Lỗi!' :
+                    type === 'warning' ? 'Cảnh báo!' : 'Thông báo'}
                 </strong>
                 <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close">&times;</button>
             </div>
@@ -420,27 +420,27 @@ class BrandsManager {
     async uploadLogo(file) {
         const formData = new FormData();
         formData.append('file', file);
-    
+
         try {
             console.log('Starting upload for file:', file.name, 'Size:', file.size, 'Type:', file.type);
-            
+
             const response = await fetch('/admin/api/upload/brands', {
                 method: 'POST',
                 body: formData
             });
-    
+
             console.log('Response status:', response.status);
             console.log('Response headers:', response.headers);
-    
+
             if (!response.ok) {
                 const errorText = await response.text();
                 console.error('Upload failed:', response.status, errorText);
                 throw new Error(`Upload failed: ${response.status} - ${errorText}`);
             }
-    
+
             const result = await response.json();
             console.log('Upload response:', result);
-    
+
             // Kiểm tra cấu trúc response và xử lý lỗi
             if (result && result.result && result.result.originalUrl) {
                 return result.result.originalUrl;
@@ -465,14 +465,14 @@ class BrandsManager {
                 e.target.value = '';
                 return;
             }
-            
+
             // Validate file size (5MB)
             if (file.size > 5 * 1024 * 1024) {
                 this.showNotification('File quá lớn, tối đa 5MB', 'error');
                 e.target.value = '';
                 return;
             }
-            
+
             // Show preview
             const reader = new FileReader();
             reader.onload = (e) => {
@@ -488,7 +488,7 @@ class BrandsManager {
     handleRemoveLogo() {
         const logoFile = document.getElementById('logoFile');
         const preview = document.getElementById('logoPreview');
-        
+
         logoFile.value = '';
         preview.style.display = 'none';
     }
@@ -510,7 +510,7 @@ class BrandsManager {
 document.addEventListener('DOMContentLoaded', () => {
     if (document.querySelector('.brands-page') || document.querySelector('#brandForm')) {
         new BrandsManager();
-        
+
         // Load brand data if on edit page
         const path = window.location.pathname;
         if (path.includes('/edit')) {
@@ -524,7 +524,7 @@ async function loadBrandForEdit() {
         // Extract brand ID from URL
         const pathParts = window.location.pathname.split('/');
         const brandId = pathParts[pathParts.length - 2]; // /admin/brands/1/edit -> 1
-        
+
         const response = await fetch(`/admin/api/brands/${brandId}`, {
             method: 'GET',
             headers: {
@@ -532,15 +532,15 @@ async function loadBrandForEdit() {
                 'X-Requested-With': 'XMLHttpRequest'
             }
         });
-        
+
         if (response.ok) {
             const data = await response.json();
             const brand = data.result;
-            
+
             // Populate form
             document.getElementById('name').value = brand.name;
             document.getElementById('isActive').checked = brand.isActive;
-            
+
             // Set form as edit mode
             document.getElementById('brandForm').dataset.brandId = brand.brandId;
         }
