@@ -569,9 +569,15 @@ class LioraApp {
     // Đếm theo số loại sản phẩm (server-side): số dòng CartProduct
     async refreshCartBadge() {
         try {
+            const token = localStorage.getItem('access_token');
+            const headers = { 'X-Requested-With': 'XMLHttpRequest' };
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+            
             const cartResp = await fetch('/cart/api/current', {
                 method: 'GET',
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                headers: headers
             });
             if (!cartResp.ok) return;
             const cartData = await cartResp.json();
@@ -580,7 +586,7 @@ class LioraApp {
 
             const countResp = await fetch(`/cart/api/${cartId}/count`, {
                 method: 'GET',
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                headers: headers
             });
             if (!countResp.ok) return;
             const distinctCount = await countResp.json();

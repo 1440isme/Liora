@@ -27,6 +27,7 @@ public interface OrderProductMapper {
     @Mapping(target = "productPrice", source = "product.price")
     @Mapping(target = "categoryName", source = "product.category.name")
     @Mapping(target = "brandName", source = "product.brand.name")
+    @Mapping(target = "brandId", source = "product.brand.brandId")
     @Mapping(target = "mainImageUrl", ignore = true) // Sẽ set thủ công trong service
     OrderProductResponse toOrderProductResponse(OrderProduct orderProduct);
     List<OrderProductResponse> toOrderProductResponseList(List<OrderProduct> orderProducts);
