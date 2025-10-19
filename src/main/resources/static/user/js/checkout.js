@@ -1307,10 +1307,10 @@ class CheckoutPage {
 
             const response = await this.apiCall('/discounts/apply', 'POST', {
                 discountCode: promoCode,
-                orderTotal: this.calculateOrderTotal()
+                orderTotal: this.calculateSubtotalForDiscount()  // ✅ Chỉ gửi subtotal
             });
 
-            // ✅ SỬA: Xử lý response đúng cách
+            // Xử lý response đúng cách
             if (response.result) {
                 this.appliedDiscount = response.result;
                 this.updateOrderSummary();
@@ -1340,6 +1340,11 @@ class CheckoutPage {
         } finally {
             this.showLoading(false);
         }
+    }
+
+    // Tạo function riêng để tính subtotal cho API
+    calculateSubtotalForDiscount() {
+        return this.selectedItems.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0);
     }
 
     handleRemovePromo() {
