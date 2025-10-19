@@ -391,7 +391,7 @@ class UserInfoManager {
                 `;
             } else {
                 const ordersHTML = await Promise.all(
-                    ordersWithProducts.map(async orderWithProduct => 
+                    ordersWithProducts.map(async orderWithProduct =>
                         await this.createCompactOrderCard(orderWithProduct)
                     )
                 );
@@ -670,13 +670,13 @@ class UserInfoManager {
         // Chỉ user đã đăng nhập mới có thể xem chi tiết đơn hàng
         const token = localStorage.getItem('access_token');
         if (token) {
-            // User đã đăng nhập - lưu orderId vào session và redirect trực tiếp
+            // User đã đăng nhập - lưu orderId và token vào session và redirect trực tiếp
             fetch('/user/order-detail/set-session', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ orderId: orderId })
+                body: JSON.stringify({ orderId: orderId, token: token })
             }).then(() => {
                 // Redirect trực tiếp đến URL mới
                 window.location.href = `/user/order-detail-view?orderId=${orderId}`;

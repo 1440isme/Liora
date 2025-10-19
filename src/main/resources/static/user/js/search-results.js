@@ -16,24 +16,24 @@ class SearchResultsManager {
         this.products = [];
         this.totalElements = 0;
         this.totalPages = 0;
-        
+
         this.initialize();
     }
 
     initialize() {
         console.log('SearchResultsManager initialize() called');
         try {
-        // Parse URL parameters
-        this.parseUrlParameters();
-        
-        // Initialize event listeners
-        this.initializeEventListeners();
-            
+            // Parse URL parameters
+            this.parseUrlParameters();
+
+            // Initialize event listeners
+            this.initializeEventListeners();
+
             // Load brands
             this.loadBrands();
-        
-        // Load initial results
-        this.loadSearchResults();
+
+            // Load initial results
+            this.loadSearchResults();
         } catch (error) {
             console.error('Error in initialize():', error);
         }
@@ -42,7 +42,7 @@ class SearchResultsManager {
     parseUrlParameters() {
         const urlParams = new URLSearchParams(window.location.search);
         this.currentQuery = urlParams.get('q') || '';
-        
+
         // Update display
         const searchQueryDisplay = document.getElementById('searchQueryDisplay');
         if (searchQueryDisplay) {
@@ -98,7 +98,7 @@ class SearchResultsManager {
             this.currentFilters.minPrice = min;
             this.currentFilters.maxPrice = max;
         }
-        
+
         // Don't load products immediately - wait for apply button
         console.log('Price filter updated:', this.currentFilters.minPrice, this.currentFilters.maxPrice);
     }
@@ -106,7 +106,7 @@ class SearchResultsManager {
     handleBrandFilterChange(event) {
         const brandId = event.target.value;
         const isChecked = event.target.checked;
-        
+
         if (isChecked) {
             if (!this.currentFilters.brands.includes(brandId)) {
                 this.currentFilters.brands.push(brandId);
@@ -114,7 +114,7 @@ class SearchResultsManager {
         } else {
             this.currentFilters.brands = this.currentFilters.brands.filter(b => b !== brandId);
         }
-        
+
         // Don't load products immediately - wait for apply button
         console.log('Brand filter updated:', this.currentFilters.brands);
     }
@@ -122,7 +122,7 @@ class SearchResultsManager {
     handleRatingFilterChange(event) {
         const rating = parseInt(event.target.value);
         const isChecked = event.target.checked;
-        
+
         if (isChecked) {
             if (!this.currentFilters.ratings.includes(rating)) {
                 this.currentFilters.ratings.push(rating);
@@ -130,16 +130,16 @@ class SearchResultsManager {
         } else {
             this.currentFilters.ratings = this.currentFilters.ratings.filter(r => r !== rating);
         }
-        
+
         // Don't load products immediately - wait for apply button
         console.log('Rating filter updated:', this.currentFilters.ratings);
     }
 
     handleSortChange(event) {
         this.currentFilters.sort = event.target.value;
-                this.currentPage = 0;
+        this.currentPage = 0;
         console.log('Sort changed:', this.currentFilters.sort);
-                this.loadSearchResults();
+        this.loadSearchResults();
     }
 
     applyFilters() {
@@ -150,13 +150,13 @@ class SearchResultsManager {
     async loadSearchResults() {
         console.log('Loading search results...');
         this.showLoading();
-        
+
         try {
             const sortSelect = document.getElementById('sortSelect');
             const sortValue = sortSelect ? sortSelect.value : '';
             let sortBy = '';
             let sortDir = '';
-            
+
             if (sortValue && sortValue !== '') {
                 const [field, direction] = sortValue.split(',');
                 sortBy = field;
@@ -197,11 +197,11 @@ class SearchResultsManager {
             console.log('Loading search results with params:', params.toString());
             const response = await fetch(`/api/products/search?${params.toString()}`);
             console.log('Search API response:', response.status);
-            
+
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            
+
             const data = await response.json();
             console.log('Search API data:', data);
 
@@ -230,7 +230,7 @@ class SearchResultsManager {
         const grid = document.getElementById('productsGrid');
         const emptyState = document.getElementById('emptyState');
         const loadingSpinner = document.getElementById('loadingSpinner');
-        
+
         if (!grid) {
             console.log('Grid element not found');
             return;
@@ -248,7 +248,7 @@ class SearchResultsManager {
             if (emptyState) {
                 emptyState.style.display = 'block';
             }
-            
+
             // Update empty state message based on filters
             const hasFilters = this.hasActiveFilters();
             if (hasFilters) {
@@ -262,7 +262,7 @@ class SearchResultsManager {
                         </button>
                     `;
                 }
-        } else {
+            } else {
                 if (emptyState) {
                     emptyState.innerHTML = `
                         <i class="fas fa-search fa-3x text-muted mb-3"></i>
@@ -298,18 +298,18 @@ class SearchResultsManager {
                 return `<div class="error-card">Error loading product: ${product.name}</div>`;
             }
         }).join('');
-        
+
         console.log('Generated HTML length:', html.length);
         grid.innerHTML = html;
         console.log('Grid updated with', this.products.length, 'products');
     }
 
     hasActiveFilters() {
-        return this.currentFilters.minPrice !== null || 
-               this.currentFilters.maxPrice !== null || 
-               this.currentFilters.brands.length > 0 || 
-               this.currentFilters.ratings.length > 0 ||
-               this.currentFilters.search !== '';
+        return this.currentFilters.minPrice !== null ||
+            this.currentFilters.maxPrice !== null ||
+            this.currentFilters.brands.length > 0 ||
+            this.currentFilters.ratings.length > 0 ||
+            this.currentFilters.search !== '';
     }
 
     createProductCard(product) {
@@ -320,10 +320,10 @@ class SearchResultsManager {
         return `
             <div class="product-card ${statusClass}">
                     <div class="position-relative">
-                        <img src="${product.mainImageUrl || '/uploads/products/default.jpg'}" 
+                        <img src="${product.mainImageUrl || '/user/img/default-product.jpg'}" 
                              class="card-img-top" 
                          alt="${product.name}"
-                             onerror="this.src='/uploads/products/default.jpg'"
+                             onerror="this.src='/user/img/default-product.jpg'"
                              onclick="window.location.href='/product/${product.productId}?from=search'"
                              style="cursor: pointer;">
                         
@@ -382,8 +382,8 @@ class SearchResultsManager {
                                     data-product-name="${product.name}"
                                         data-product-price="${product.price}"
                                         ${productStatus !== 'available' ? 'disabled' : ''}
-                                        title="${productStatus === 'out_of_stock' ? 'Hết hàng' : 
-                                          productStatus === 'deactivated' ? 'Ngừng kinh doanh' : 'Thêm vào giỏ'}"
+                                        title="${productStatus === 'out_of_stock' ? 'Hết hàng' :
+                productStatus === 'deactivated' ? 'Ngừng kinh doanh' : 'Thêm vào giỏ'}"
                                         onclick="window.searchResultsManager.addToCart(${product.productId}, '${product.name}', ${product.price})">
                                 <i class="fas fa-shopping-cart"></i>
                             </button>
@@ -403,19 +403,19 @@ class SearchResultsManager {
             available: product.available,
             stock: product.stock
         });
-        
+
         // 1. Kiểm tra ngừng kinh doanh (ưu tiên cao nhất)
         if (!product.isActive) {
             console.log('Product is deactivated:', product.name);
             return 'deactivated';
         }
-        
+
         // 2. Kiểm tra hết hàng (chỉ khi sản phẩm còn active)
         if (product.stock <= 0) {
             console.log('Product is out of stock:', product.name);
             return 'out_of_stock';
         }
-        
+
         // 3. Sản phẩm có sẵn
         console.log('Product is available:', product.name);
         return 'available';
@@ -460,7 +460,7 @@ class SearchResultsManager {
             }
             return stars;
         }
-        
+
         const fullStars = Math.floor(rating);
         const hasHalfStar = rating % 1 >= 0.5;
         const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
@@ -482,12 +482,12 @@ class SearchResultsManager {
         if (!price || price === null || price === undefined) {
             return '0 ₫';
         }
-        
+
         const numPrice = parseFloat(price);
         if (isNaN(numPrice)) {
             return '0 ₫';
         }
-        
+
         return new Intl.NumberFormat('vi-VN', {
             style: 'currency',
             currency: 'VND',
@@ -513,16 +513,16 @@ class SearchResultsManager {
                 // Get previous threshold percentage
                 const prevThreshold = thresholds[thresholds.indexOf(threshold) - 1];
                 const basePercentage = prevThreshold ? prevThreshold.percentage : 0;
-                
+
                 // Calculate progress within this threshold
                 const prevMax = prevThreshold ? prevThreshold.max : 0;
                 const range = threshold.max - prevMax;
                 const progress = ((soldCount - prevMax) / range) * (threshold.percentage - basePercentage);
-                
+
                 return Math.min(100, basePercentage + progress);
             }
         }
-        
+
         return 100; // For very high sales
     }
 
@@ -538,12 +538,12 @@ class SearchResultsManager {
         pagination.style.display = 'block';
         const paginationList = pagination.querySelector('.pagination');
         if (!paginationList) return;
-        
+
         let paginationHTML = '';
 
         // Previous button
         const prevDisabled = this.currentPage === 0 ? 'disabled' : '';
-            paginationHTML += `
+        paginationHTML += `
             <li class="page-item ${prevDisabled}">
                 <a class="page-link" href="#" onclick="window.searchResultsManager.goToPage(${this.currentPage - 1}); return false;">
                     <i class="fas fa-chevron-left"></i>
@@ -566,7 +566,7 @@ class SearchResultsManager {
 
         // Next button
         const nextDisabled = this.currentPage >= this.totalPages - 1 ? 'disabled' : '';
-            paginationHTML += `
+        paginationHTML += `
             <li class="page-item ${nextDisabled}">
                 <a class="page-link" href="#" onclick="window.searchResultsManager.goToPage(${this.currentPage + 1}); return false;">
                     <i class="fas fa-chevron-right"></i>
@@ -599,17 +599,17 @@ class SearchResultsManager {
             ratings: [],
             sort: ''
         };
-        
+
         // Reset form elements
         const priceRangeSelect = document.getElementById('priceRange');
         if (priceRangeSelect) priceRangeSelect.value = '';
-        
+
         const brandCheckboxes = document.querySelectorAll('#brandFilters input[type="checkbox"]');
         brandCheckboxes.forEach(checkbox => checkbox.checked = false);
-        
+
         const ratingCheckboxes = document.querySelectorAll('input[type="checkbox"][value^="rating"], input[type="checkbox"][id^="rating"]');
         ratingCheckboxes.forEach(checkbox => checkbox.checked = false);
-        
+
         const sortSelect = document.getElementById('sortSelect');
         if (sortSelect) sortSelect.value = '';
 
@@ -621,7 +621,7 @@ class SearchResultsManager {
         const loading = document.getElementById('loadingSpinner');
         const grid = document.getElementById('productsGrid');
         const empty = document.getElementById('emptyState');
-        
+
         if (loading) loading.style.display = 'block';
         if (grid) grid.style.display = 'none';
         if (empty) empty.style.display = 'none';
@@ -630,7 +630,7 @@ class SearchResultsManager {
     hideLoading() {
         const loading = document.getElementById('loadingSpinner');
         const grid = document.getElementById('productsGrid');
-        
+
         if (loading) loading.style.display = 'none';
         if (grid) grid.style.display = 'block';
     }
@@ -639,11 +639,11 @@ class SearchResultsManager {
         const loading = document.getElementById('loadingSpinner');
         const grid = document.getElementById('productsGrid');
         const empty = document.getElementById('emptyState');
-        
+
         if (loading) loading.style.display = 'none';
         if (grid) grid.style.display = 'none';
         if (empty) empty.style.display = 'block';
-        
+
         this.updateResultsCount();
     }
 
@@ -667,32 +667,24 @@ class SearchResultsManager {
     async loadBrands() {
         try {
             console.log('Loading brands for search results...');
+
+            // Use search brands API with query parameter
+            const url = this.currentQuery ? 
+                `/api/products/search-brands?q=${encodeURIComponent(this.currentQuery)}` : 
+                '/api/products/search-brands';
             
-            // Try search brands API first
-            let response = await fetch('/api/products/search-brands');
+            const response = await fetch(url);
             if (response.ok) {
                 const data = await response.json();
+                console.log('Search brands API response:', data);
                 if (data.code === 1000 && data.result) {
                     console.log('Using search brands:', data.result);
                     this.displayBrandFilters(data.result);
                     return;
                 }
             }
-            
-            // Fallback: try all brands from admin API
-            console.log('Trying fallback: load all brands');
-            const fallbackResponse = await fetch('/admin/api/brands/all');
-            if (fallbackResponse.ok) {
-                const fallbackData = await fallbackResponse.json();
-                console.log('Fallback brands data:', fallbackData);
-                if (fallbackData.code === 1000 && fallbackData.result) {
-                    console.log('Using fallback brands:', fallbackData.result);
-                    this.displayBrandFilters(fallbackData.result);
-                    return;
-                }
-            }
-            
-            console.error('All brand loading attempts failed');
+
+            console.error('Search brands API failed');
             this.displayBrandFilters([]);
         } catch (error) {
             console.error('Error loading brands:', error);
@@ -737,7 +729,7 @@ class SearchResultsManager {
         console.log('addToCart called for productId:', productId, 'productName:', productName);
         console.log('window.cartManager exists:', !!window.cartManager);
         console.log('window.cartManager:', window.cartManager);
-        
+
         try {
             // Check if cart functionality exists
             if (window.cartManager && window.cartManager.addItem) {
@@ -746,14 +738,14 @@ class SearchResultsManager {
                 this.showNotification(`${productName} đã được thêm vào giỏ hàng!`, 'success');
                 return;
             }
-            
+
             // Fallback to app cart
             if (window.app && window.app.cartItems) {
                 console.log('Using app.cartItems fallback');
-                
+
                 // Check if product already in cart
                 const existingItem = window.app.cartItems.find(item => item.id === productId);
-                
+
                 if (existingItem) {
                     existingItem.quantity += 1;
                 } else {
@@ -775,16 +767,16 @@ class SearchResultsManager {
                         });
                     }
                 }
-                
+
                 // Update cart display
                 if (window.app.updateCartDisplay) {
                     window.app.updateCartDisplay();
                 }
-                
+
                 this.showNotification(`${productName} đã được thêm vào giỏ hàng!`, 'success');
                 return;
             }
-            
+
             // Final fallback: show notification
             console.log('Using final fallback - notification only');
             this.showNotification(`${productName} đã được thêm vào giỏ hàng`, 'success');
@@ -887,7 +879,7 @@ class SearchResultsManager {
                                                  src="${this.getMainImageUrl(product)}" 
                                                  class="img-fluid rounded" 
                                                  alt="${product.name}"
-                                                 onerror="this.src='/uploads/products/default.jpg'">
+                                                 onerror="this.src='/user/img/default-product.jpg'">
                                             <button class="slider-nav slider-next" id="nextBtn">
                                                 <i class="fas fa-chevron-right"></i>
                                             </button>
@@ -991,9 +983,9 @@ class SearchResultsManager {
 
         // Add slider navigation event listeners
         this.setupSliderNavigation(product);
-        
+
         // Remove modal from DOM when hidden
-        document.getElementById('quickViewModal').addEventListener('hidden.bs.modal', function() {
+        document.getElementById('quickViewModal').addEventListener('hidden.bs.modal', function () {
             this.remove();
         });
     }
@@ -1004,14 +996,14 @@ class SearchResultsManager {
             // Use first image as main image
             return product.images[0].imageUrl || product.images[0];
         }
-        return product.mainImageUrl || '/uploads/products/default.jpg';
+        return product.mainImageUrl || '/user/img/default-product.jpg';
     }
 
     // Generate image thumbnails for slider
     generateImageThumbnails(product) {
         // Use product images if available, otherwise fallback to main image
         let images = [];
-        
+
         if (product.images && product.images.length > 0) {
             // Use actual product images
             images = product.images;
@@ -1020,15 +1012,15 @@ class SearchResultsManager {
             images = [{ imageUrl: product.mainImageUrl }];
         } else {
             // Default image
-            images = [{ imageUrl: '/uploads/products/default.jpg' }];
+            images = [{ imageUrl: '/user/img/default-product.jpg' }];
         }
-        
+
         return images.map((image, index) => `
             <div class="thumbnail-item ${index === 0 ? 'active' : ''}" data-index="${index}">
                 <img src="${image.imageUrl || image}" 
                      alt="${product.name}" 
                      class="img-fluid rounded"
-                     onerror="this.src='/uploads/products/default.jpg'">
+                     onerror="this.src='/user/img/default-product.jpg'">
             </div>
         `).join('');
     }
@@ -1039,29 +1031,29 @@ class SearchResultsManager {
         const nextBtn = document.getElementById('nextBtn');
         const mainImage = document.getElementById('mainProductImage');
         const thumbnails = document.querySelectorAll('.thumbnail-item');
-        
+
         if (!product.images || product.images.length <= 1) {
             // Hide navigation buttons if only one image
             if (prevBtn) prevBtn.style.display = 'none';
             if (nextBtn) nextBtn.style.display = 'none';
             return;
         }
-        
+
         let currentImageIndex = 0;
-        
+
         // Update main image
         const updateMainImage = (index) => {
             if (product.images && product.images[index]) {
                 mainImage.src = product.images[index].imageUrl;
                 mainImage.alt = product.name;
-                
+
                 // Update thumbnail selection
                 thumbnails.forEach((thumb, i) => {
                     thumb.classList.toggle('active', i === index);
                 });
             }
         };
-        
+
         // Previous button
         if (prevBtn) {
             prevBtn.addEventListener('click', () => {
@@ -1069,7 +1061,7 @@ class SearchResultsManager {
                 updateMainImage(currentImageIndex);
             });
         }
-        
+
         // Next button
         if (nextBtn) {
             nextBtn.addEventListener('click', () => {
@@ -1077,7 +1069,7 @@ class SearchResultsManager {
                 updateMainImage(currentImageIndex);
             });
         }
-        
+
         // Thumbnail click handlers
         thumbnails.forEach((thumb, index) => {
             thumb.addEventListener('click', () => {
@@ -1090,7 +1082,7 @@ class SearchResultsManager {
     // Generate stars for modal
     generateStarsForModal(rating, reviewCount = 0) {
         console.log('generateStarsForModal called with rating:', rating, 'reviewCount:', reviewCount);
-        
+
         // Logic đúng cho Quick View modal
         if (!rating || rating === 0 || rating === '0' || rating === null || rating === undefined) {
             console.log('Modal: Rating is 0 or no reviews, showing empty stars');
@@ -1100,29 +1092,29 @@ class SearchResultsManager {
             }
             return stars;
         }
-        
+
         const numRating = parseFloat(rating);
         const fullStars = Math.floor(numRating);
         const hasHalfStar = numRating % 1 >= 0.5;
         const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
-        
+
         let stars = '';
-        
+
         // Full stars
         for (let i = 0; i < fullStars; i++) {
             stars += '<i class="fas fa-star"></i>';
         }
-        
+
         // Half star
         if (hasHalfStar) {
             stars += '<i class="fas fa-star-half-alt"></i>';
         }
-        
+
         // Empty stars
         for (let i = 0; i < emptyStars; i++) {
             stars += '<i class="far fa-star"></i>';
         }
-        
+
         return stars;
     }
 
@@ -1130,7 +1122,7 @@ class SearchResultsManager {
     getProductStatusBadge(product) {
         const status = this.getProductStatus(product);
         console.log('getProductStatusBadge called with status:', status);
-        
+
         switch (status) {
             case 'deactivated':
                 console.log('Returning deactivated badge');
@@ -1148,7 +1140,7 @@ class SearchResultsManager {
     getQuickViewActions(product) {
         const status = this.getProductStatus(product);
         const isDisabled = status !== 'available';
-        
+
         if (status === 'deactivated') {
             return `
                 <div class="alert alert-warning text-center">
@@ -1166,7 +1158,7 @@ class SearchResultsManager {
                 </div>
             `;
         }
-        
+
         return `
             <!-- Buy Now & Add to Cart Buttons (Same Row) -->
             <div class="row g-2">
@@ -1215,7 +1207,7 @@ class SearchResultsManager {
         if (quantityInput) {
             const value = parseInt(quantityInput.value);
             const maxValue = parseInt(quantityInput.max) || 99;
-            
+
             if (value < 1) {
                 quantityInput.value = 1;
             } else if (value > maxValue) {
@@ -1229,7 +1221,7 @@ class SearchResultsManager {
         if (quantityInput) {
             const value = parseInt(quantityInput.value);
             const maxValue = parseInt(quantityInput.max) || 99;
-            
+
             if (isNaN(value) || value < 1) {
                 quantityInput.value = 1;
             } else if (value > maxValue) {
@@ -1242,7 +1234,7 @@ class SearchResultsManager {
     addToCartWithQuantity(productId) {
         const quantityInput = document.getElementById('quantityInput');
         const quantity = quantityInput ? parseInt(quantityInput.value) : 1;
-        
+
         const product = this.products.find(p => p.productId === productId);
         if (!product) {
             this.showNotification('Không tìm thấy sản phẩm', 'error');
@@ -1259,7 +1251,7 @@ class SearchResultsManager {
         if (window.app && window.app.cartItems) {
             // Check if product already in cart
             const existingItem = window.app.cartItems.find(item => item.id === productId);
-            
+
             if (existingItem) {
                 const newTotalQuantity = existingItem.quantity + quantity;
                 if (newTotalQuantity > product.stock) {
@@ -1273,7 +1265,7 @@ class SearchResultsManager {
                     quantity: quantity
                 });
             }
-            
+
             // Update cart display
             if (window.app.updateCartDisplay) {
                 window.app.updateCartDisplay();
@@ -1288,7 +1280,7 @@ class SearchResultsManager {
     buyNow(productId) {
         const quantityInput = document.getElementById('quantityInput');
         const quantity = quantityInput ? parseInt(quantityInput.value) : 1;
-        
+
         const product = this.products.find(p => p.productId === productId);
         if (!product) {
             this.showNotification('Không tìm thấy sản phẩm', 'error');
@@ -1305,7 +1297,7 @@ class SearchResultsManager {
         if (window.app && window.app.cartItems) {
             // Check if product already in cart
             const existingItem = window.app.cartItems.find(item => item.id === productId);
-            
+
             if (existingItem) {
                 const newTotalQuantity = existingItem.quantity + quantity;
                 if (newTotalQuantity > product.stock) {
@@ -1319,22 +1311,22 @@ class SearchResultsManager {
                     quantity: quantity
                 });
             }
-            
+
             // Update cart display
             if (window.app.updateCartDisplay) {
                 window.app.updateCartDisplay();
             }
         }
-        
+
         // Show success message
         this.showNotification(`${quantity} x ${product.name} đã được thêm vào giỏ hàng! Đang chuyển đến trang thanh toán...`, 'success');
-        
+
         // Close modal
         const modal = bootstrap.Modal.getInstance(document.getElementById('quickViewModal'));
         if (modal) {
             modal.hide();
         }
-        
+
         // Redirect to checkout after a short delay
         setTimeout(() => {
             window.location.href = '/checkout';
@@ -1343,7 +1335,7 @@ class SearchResultsManager {
 }
 
 // Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     if (document.getElementById('productsGrid')) {
         window.searchResultsManager = new SearchResultsManager();
         console.log('SearchResultsManager instance created');

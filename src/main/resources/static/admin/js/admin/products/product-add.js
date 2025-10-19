@@ -105,7 +105,7 @@ class ProductAddManager {
 
     // Form validation
     validateForm() {
-        const requiredFields = ['name', 'description', 'price', 'brandId', 'categoryId', 'stock'];
+        const requiredFields = ['name', 'price', 'brandId', 'categoryId', 'stock'];
         let isValid = true;
         let errors = [];
 
@@ -119,6 +119,24 @@ class ProductAddManager {
                 field.classList.remove('is-invalid');
             }
         });
+
+        // Special validation for description (CKEditor)
+        const descriptionEl = document.getElementById('description');
+        const description = (window.productDescriptionEditor && typeof window.productDescriptionEditor.getData === 'function')
+            ? window.productDescriptionEditor.getData()
+            : (descriptionEl ? descriptionEl.value : '');
+        
+        if (!description || description.trim() === '' || description === '<p></p>') {
+            if (descriptionEl) {
+                descriptionEl.classList.add('is-invalid');
+            }
+            errors.push('Mô tả chi tiết là bắt buộc');
+            isValid = false;
+        } else {
+            if (descriptionEl) {
+                descriptionEl.classList.remove('is-invalid');
+            }
+        }
 
         // Price validation
         const priceField = document.getElementById('price');
@@ -224,7 +242,14 @@ class ProductAddManager {
         formData.append('brandId', document.getElementById('brandId').value);
         formData.append('price', document.getElementById('price').value);
         formData.append('stock', document.getElementById('stock').value);
-        formData.append('description', document.getElementById('description').value);
+        
+        // Get description from CKEditor if available, otherwise from textarea
+        const descriptionEl = document.getElementById('description');
+        const description = (window.productDescriptionEditor && typeof window.productDescriptionEditor.getData === 'function')
+            ? window.productDescriptionEditor.getData()
+            : (descriptionEl ? descriptionEl.value : '');
+        formData.append('description', description);
+        
         formData.append('isActive', document.getElementById('isActive').checked);
 
         // Add images
@@ -283,6 +308,23 @@ class ProductAddManager {
         
         // Reset form fields
         document.getElementById('productForm').reset();
+        
+        // Reset CKEditor (mô tả chi tiết)
+        if (window.productDescriptionEditor && typeof window.productDescriptionEditor.setData === 'function') {
+            try {
+                window.productDescriptionEditor.setData('');
+                console.log('CKEditor reset successfully');
+            } catch (e) {
+                console.error('Error resetting CKEditor:', e);
+                // Fallback: reset textarea directly
+                const descEl = document.getElementById('description');
+                if (descEl) descEl.value = '';
+            }
+        } else {
+            // Fallback: reset textarea directly if CKEditor not available
+            const descEl = document.getElementById('description');
+            if (descEl) descEl.value = '';
+        }
         
         // Clear image preview and reset file input
         const imagePreview = document.getElementById('imagePreview');

@@ -260,10 +260,10 @@ class BrandProductsManager {
         return `
             <div class="product-card ${statusClass}">
                     <div class="position-relative">
-                        <img src="${product.mainImageUrl || '/uploads/products/default.jpg'}" 
+                        <img src="${product.mainImageUrl || '/user/img/default-product.jpg'}" 
                              class="card-img-top" 
                              alt="${product.name}"
-                             onerror="this.src='/uploads/products/default.jpg'"
+                             onerror="this.src='/user/img/default-product.jpg'"
                              onclick="window.location.href='${productUrl}'"
                              style="cursor: pointer;">
                         
@@ -438,20 +438,27 @@ class BrandProductsManager {
     updatePagination(pageInfo) {
         this.totalPages = pageInfo.totalPages;
 
-        const paginationContainer = document.getElementById('pagination');
-        if (!paginationContainer) return;
+        const pagination = document.getElementById('pagination');
+        if (!pagination) return;
 
         if (this.totalPages <= 1) {
-            paginationContainer.style.display = 'none';
+            pagination.style.display = 'none';
             return;
         }
 
-        let paginationHtml = '';
+        pagination.style.display = 'block';
+        const paginationList = pagination.querySelector('.pagination');
+        if (!paginationList) return;
+
+        let paginationHTML = '';
 
         // Previous button
-        paginationHtml += `
-            <li class="page-item ${this.currentPage === 0 ? 'disabled' : ''}">
-                <a class="page-link" href="#" data-page="${this.currentPage - 1}">Trước</a>
+        const prevDisabled = this.currentPage === 0 ? 'disabled' : '';
+        paginationHTML += `
+            <li class="page-item ${prevDisabled}">
+                <a class="page-link" href="#" onclick="window.brandProductsManager.goToPage(${this.currentPage - 1}); return false;">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
             </li>
         `;
 
@@ -460,22 +467,31 @@ class BrandProductsManager {
         const endPage = Math.min(this.totalPages - 1, this.currentPage + 2);
 
         for (let i = startPage; i <= endPage; i++) {
-            paginationHtml += `
-                <li class="page-item ${i === this.currentPage ? 'active' : ''}">
-                    <a class="page-link" href="#" data-page="${i}">${i + 1}</a>
+            const activeClass = i === this.currentPage ? 'active' : '';
+            paginationHTML += `
+                <li class="page-item ${activeClass}">
+                    <a class="page-link" href="#" onclick="window.brandProductsManager.goToPage(${i}); return false;">${i + 1}</a>
                 </li>
             `;
         }
 
         // Next button
-        paginationHtml += `
-            <li class="page-item ${this.currentPage === this.totalPages - 1 ? 'disabled' : ''}">
-                <a class="page-link" href="#" data-page="${this.currentPage + 1}">Sau</a>
+        const nextDisabled = this.currentPage >= this.totalPages - 1 ? 'disabled' : '';
+        paginationHTML += `
+            <li class="page-item ${nextDisabled}">
+                <a class="page-link" href="#" onclick="window.brandProductsManager.goToPage(${this.currentPage + 1}); return false;">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
             </li>
         `;
 
-        paginationContainer.innerHTML = paginationHtml;
-        paginationContainer.style.display = 'block';
+        paginationList.innerHTML = paginationHTML;
+    }
+
+    goToPage(page) {
+        if (page < 0 || page >= this.totalPages) return;
+        this.currentPage = page;
+        this.loadProducts();
     }
 
     updateProductCount(total) {
@@ -844,7 +860,7 @@ class BrandProductsManager {
                                                  src="${this.getMainImageUrl(product)}" 
                                                  class="img-fluid rounded" 
                                                  alt="${product.name}"
-                                                 onerror="this.src='/uploads/products/default.jpg'">
+                                                 onerror="this.src='/user/img/default-product.jpg'">
                                             <button class="slider-nav slider-next" id="nextBtn">
                                                 <i class="fas fa-chevron-right"></i>
                                             </button>
@@ -970,7 +986,7 @@ class BrandProductsManager {
             // Use first image as main image
             return product.images[0].imageUrl || product.images[0];
         }
-        return product.mainImageUrl || '/uploads/products/default.jpg';
+        return product.mainImageUrl || '/user/img/default-product.jpg';
     }
 
     generateImageThumbnails(product) {
@@ -986,7 +1002,7 @@ class BrandProductsManager {
         }
 
         if (images.length === 0) {
-            return '<div class="thumbnail-item active"><img src="/uploads/products/default.jpg" class="img-thumbnail" alt="Default"></div>';
+            return '<div class="thumbnail-item active"><img src="/user/img/default-product.jpg" class="img-thumbnail" alt="Default"></div>';
         }
 
         return images.map((image, index) => `
@@ -994,7 +1010,7 @@ class BrandProductsManager {
                 <img src="${image.imageUrl || image}" 
                      class="img-thumbnail" 
                      alt="Thumbnail ${index + 1}"
-                     onerror="this.src='/uploads/products/default.jpg'">
+                     onerror="this.src='/user/img/default-product.jpg'">
             </div>
         `).join('');
     }

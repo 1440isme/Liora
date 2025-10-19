@@ -10,20 +10,20 @@ class BestsellerProductsHomepageManager {
         this.emptyEl = document.getElementById('homepageBestsellerProductsEmpty');
         this.prevBtn = document.getElementById('homepageBestsellerPrevBtn');
         this.nextBtn = document.getElementById('homepageBestsellerNextBtn');
-        
+
         if (!this.gridEl) {
             console.warn('Homepage bestseller products grid not found');
             return;
         }
-        
+
         this.init();
     }
-    
+
     init() {
         this.loadBestsellerProducts();
         this.setupEventListeners();
     }
-    
+
     setupEventListeners() {
         if (this.prevBtn) {
             this.prevBtn.addEventListener('click', () => this.scrollLeft());
@@ -32,24 +32,24 @@ class BestsellerProductsHomepageManager {
             this.nextBtn.addEventListener('click', () => this.scrollRight());
         }
     }
-    
+
     async loadBestsellerProducts() {
         try {
             this.showLoading();
-            
+
             console.log('Loading bestseller products...');
             const response = await fetch('/api/products/best-selling?limit=8');
             const data = await response.json();
-            
+
             console.log('API Response:', data);
-            
+
             if (data.code === 1000 && data.result && data.result.length > 0) {
                 this.allProducts = data.result;
                 console.log('Loaded products:', this.allProducts);
                 this.renderBestsellerProducts(this.allProducts);
-                
+
                 this.gridEl.addEventListener('scroll', () => this.updateNavigationButtons());
-                
+
                 // Update navigation buttons immediately after rendering
                 this.updateNavigationButtons();
             } else {
@@ -61,34 +61,34 @@ class BestsellerProductsHomepageManager {
             this.showEmpty();
         }
     }
-    
+
     showLoading() {
         if (this.loadingEl) this.loadingEl.style.display = 'block';
         if (this.emptyEl) this.emptyEl.style.display = 'none';
         if (this.gridEl) this.gridEl.style.display = 'none';
     }
-    
+
     showEmpty() {
         if (this.loadingEl) this.loadingEl.style.display = 'none';
         if (this.emptyEl) this.emptyEl.style.display = 'block';
         if (this.gridEl) this.gridEl.style.display = 'none';
     }
-    
+
     renderBestsellerProducts(products) {
         if (!this.gridEl) return;
-        
+
         const productsHTML = products.map(product => this.createProductCard(product)).join('');
         this.gridEl.innerHTML = productsHTML;
-        
+
         if (this.loadingEl) this.loadingEl.style.display = 'none';
         if (this.emptyEl) this.emptyEl.style.display = 'none';
         if (this.gridEl) this.gridEl.style.display = 'flex';
     }
-    
+
     createProductCard(product) {
         const productStatus = this.getProductStatus(product);
         const statusClass = this.getProductStatusClass(productStatus);
-        
+
         // Safe property access with fallbacks
         const productId = product.productId || product.id || 0;
         const productName = product.name || 'Tên sản phẩm';
@@ -96,14 +96,14 @@ class BestsellerProductsHomepageManager {
         const brandName = product.brandName || 'Thương hiệu';
         const reviewCount = product.reviewCount || product.ratingCount || 0;
         const currentPrice = product.currentPrice || product.price || 0;
-        
+
         return `
             <div class="product-card ${statusClass}">
                 <div class="position-relative">
                     <img src="${this.getMainImageUrl(product)}" 
                          class="card-img-top" 
                          alt="${productName}"
-                         onerror="this.src='/uploads/products/default.jpg'"
+                         onerror="this.src='/user/img/default-product.jpg'"
                          onclick="window.location.href='/product/${productId}'"
                          style="cursor: pointer;">
                     
@@ -169,21 +169,21 @@ class BestsellerProductsHomepageManager {
             </div>
         `;
     }
-    
+
     getMainImageUrl(product) {
         // Check for mainImageUrl first (from API response)
         if (product.mainImageUrl) {
             return product.mainImageUrl;
         }
-        
+
         // Fallback to images array
         if (product.images && product.images.length > 0) {
             return product.images[0].imageUrl;
         }
-        
-        return '/uploads/products/default.jpg';
+
+        return '/user/img/default-product.jpg';
     }
-    
+
     getProductStatus(product) {
         if (!product.available) return 'out-of-stock';
         if (product.stock <= 0) return 'out-of-stock';
@@ -224,26 +224,26 @@ class BestsellerProductsHomepageManager {
         for (let i = 0; i < emptyStars; i++) {
             stars += '<i class="far fa-star" style="color: #ccc !important; font-weight: 400 !important;"></i>';
         }
-        
+
         return stars;
     }
-    
+
     formatPrice(price) {
         if (!price || price === null || price === undefined) {
             return '0 ₫';
         }
-        
+
         const numPrice = parseFloat(price);
         if (isNaN(numPrice)) {
             return '0 ₫';
         }
-        
+
         return new Intl.NumberFormat('vi-VN', {
             style: 'currency',
             currency: 'VND'
         }).format(numPrice);
     }
-    
+
     scrollLeft() {
         if (this.gridEl) {
             const cardWidth = 280 + 24; // card width + gap
@@ -251,14 +251,14 @@ class BestsellerProductsHomepageManager {
                 left: -cardWidth,
                 behavior: 'smooth'
             });
-            
+
             // Update buttons after scroll animation
             setTimeout(() => {
                 this.updateNavigationButtons();
             }, 300);
         }
     }
-    
+
     scrollRight() {
         if (this.gridEl) {
             const cardWidth = 280 + 24; // card width + gap
@@ -266,19 +266,19 @@ class BestsellerProductsHomepageManager {
                 left: cardWidth,
                 behavior: 'smooth'
             });
-            
+
             // Update buttons after scroll animation
             setTimeout(() => {
                 this.updateNavigationButtons();
             }, 300);
         }
     }
-    
+
     updateNavigationButtons() {
         if (!this.gridEl || !this.allProducts) return;
-        
+
         const navigationContainer = document.querySelector('.bestseller-products-homepage-section .navigation-buttons');
-        
+
         if (this.allProducts.length <= 4) {
             console.log('Hiding navigation buttons - 4 or fewer products');
             if (navigationContainer) {
@@ -292,19 +292,19 @@ class BestsellerProductsHomepageManager {
             }
             return;
         }
-        
+
         console.log('Showing navigation buttons - more than 4 products');
         if (navigationContainer) {
             navigationContainer.classList.remove('hidden');
         }
-        
+
         const scrollLeft = this.gridEl.scrollLeft;
         const maxScrollLeft = this.gridEl.scrollWidth - this.gridEl.clientWidth;
-        
+
         // Add small tolerance for floating point precision
         const isAtStart = scrollLeft <= 1;
         const isAtEnd = scrollLeft >= (maxScrollLeft - 1);
-        
+
         console.log('Bestseller navigation buttons update:', {
             scrollLeft,
             maxScrollLeft,
@@ -316,7 +316,7 @@ class BestsellerProductsHomepageManager {
             prevBtnExists: !!this.prevBtn,
             nextBtnExists: !!this.nextBtn
         });
-        
+
         if (this.prevBtn) {
             this.prevBtn.disabled = isAtStart;
             console.log('Bestseller prev button disabled:', isAtStart);
@@ -326,11 +326,11 @@ class BestsellerProductsHomepageManager {
             console.log('Bestseller next button disabled:', isAtEnd);
         }
     }
-    
+
     async addToCart(productId, productName, price) {
         try {
             let success = false;
-            
+
             // Check if cart functionality exists
             if (window.cartManager) {
                 await window.cartManager.addItem(productId, 1);
@@ -341,7 +341,7 @@ class BestsellerProductsHomepageManager {
                 const product = this.allProducts.find(p => (p.productId || p.id) === productId);
                 if (product) {
                     const existingItem = window.app.cartItems.find(item => item.id === productId);
-                    
+
                     if (existingItem) {
                         existingItem.quantity += 1;
                     } else {
@@ -350,14 +350,14 @@ class BestsellerProductsHomepageManager {
                             quantity: 1
                         });
                     }
-                    
+
                     if (window.app.updateCartDisplay) {
                         window.app.updateCartDisplay();
                     }
                     success = true;
                 }
             }
-            
+
             // Show single notification based on success
             if (success) {
                 this.showNotification(`${productName} đã được thêm vào giỏ hàng thành công!`, 'success');
@@ -369,14 +369,14 @@ class BestsellerProductsHomepageManager {
             this.showNotification('Có lỗi xảy ra khi thêm vào giỏ hàng', 'error');
         }
     }
-    
+
     async showQuickView(productId) {
         const product = this.allProducts.find(p => (p.productId || p.id) === productId);
         if (!product) {
             this.showNotification('Không tìm thấy sản phẩm', 'error');
             return;
         }
-        
+
         // Load product images if not already loaded
         if (!product.images) {
             try {
@@ -389,17 +389,17 @@ class BestsellerProductsHomepageManager {
                 product.images = [];
             }
         }
-        
+
         this.createQuickViewModal(product);
     }
-    
+
     createQuickViewModal(product) {
         // Remove existing modal and backdrop if any
         const existingModal = document.getElementById('homepageBestsellerQuickViewModal');
         if (existingModal) {
             existingModal.remove();
         }
-        
+
         // Remove any existing backdrop
         const existingBackdrop = document.querySelector('.modal-backdrop');
         if (existingBackdrop) {
@@ -428,7 +428,7 @@ class BestsellerProductsHomepageManager {
                                                  src="${this.getMainImageUrl(product)}" 
                                                  class="img-fluid rounded" 
                                                  alt="${product.name}"
-                                                 onerror="this.src='/uploads/products/default.jpg'">
+                                                 onerror="this.src='/user/img/default-product.jpg'">
                                             <button class="slider-nav slider-next" id="homepageBestsellerModalNextBtn">
                                                 <i class="fas fa-chevron-right"></i>
                                             </button>
@@ -511,7 +511,7 @@ class BestsellerProductsHomepageManager {
 
         // Add modal to body
         document.body.insertAdjacentHTML('beforeend', modalHTML);
-        
+
         // Show modal with proper backdrop
         const modal = new bootstrap.Modal(document.getElementById('homepageBestsellerQuickViewModal'), {
             backdrop: true,
@@ -519,7 +519,7 @@ class BestsellerProductsHomepageManager {
             focus: true
         });
         modal.show();
-        
+
         // Ensure backdrop has proper z-index
         setTimeout(() => {
             const backdrop = document.querySelector('.modal-backdrop');
@@ -528,10 +528,10 @@ class BestsellerProductsHomepageManager {
                 backdrop.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
             }
         }, 10);
-        
+
         // Add slider navigation event listeners
         this.setupSliderNavigation(product);
-        
+
         // Clean up when modal is hidden
         document.getElementById('homepageBestsellerQuickViewModal').addEventListener('hidden.bs.modal', () => {
             const modalElement = document.getElementById('homepageBestsellerQuickViewModal');
@@ -547,7 +547,7 @@ class BestsellerProductsHomepageManager {
             document.body.style.paddingRight = '';
         }, { once: true });
     }
-    
+
     generateImageThumbnails(product) {
         if (!product.images || product.images.length === 0) {
             return `
@@ -570,7 +570,7 @@ class BestsellerProductsHomepageManager {
 
     getProductStatusBadge(product) {
         const status = this.getProductStatus(product);
-        
+
         switch (status) {
             case 'out-of-stock':
                 return '<span class="badge bg-danger">Hết hàng</span>';
@@ -584,7 +584,7 @@ class BestsellerProductsHomepageManager {
     getQuickViewActions(product) {
         const status = this.getProductStatus(product);
         const isDisabled = status !== 'available';
-        
+
         if (status === 'out-of-stock') {
             return `
                 <div class="alert alert-danger text-center">
@@ -593,7 +593,7 @@ class BestsellerProductsHomepageManager {
                 </div>
             `;
         }
-        
+
         return `
             <!-- Buy Now & Add to Cart Buttons (Same Row) -->
             <div class="row g-2">
@@ -629,25 +629,25 @@ class BestsellerProductsHomepageManager {
         const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
 
         let stars = '';
-        
+
         // Full stars
         for (let i = 0; i < fullStars; i++) {
             stars += '<i class="fas fa-star" style="color: #ffc107 !important;"></i>';
         }
-        
+
         // Half star
         if (hasHalfStar) {
             stars += '<i class="fas fa-star-half-alt" style="color: #ffc107 !important;"></i>';
         }
-        
+
         // Empty stars
         for (let i = 0; i < emptyStars; i++) {
             stars += '<i class="far fa-star" style="color: #ccc !important; font-weight: 400 !important;"></i>';
         }
-        
+
         return stars;
     }
-    
+
     setupSliderNavigation(product) {
         // Wait for modal to be fully rendered
         setTimeout(() => {
@@ -655,7 +655,7 @@ class BestsellerProductsHomepageManager {
             const nextBtn = document.getElementById('homepageBestsellerModalNextBtn');
             const mainImage = document.getElementById('homepageBestsellerModalMainProductImage');
             const thumbnails = document.querySelectorAll('#homepageBestsellerQuickViewModal .thumbnail-item');
-            
+
             console.log('Setting up slider navigation:', {
                 prevBtn: !!prevBtn,
                 nextBtn: !!nextBtn,
@@ -663,29 +663,29 @@ class BestsellerProductsHomepageManager {
                 thumbnails: thumbnails.length,
                 productImages: product.images ? product.images.length : 0
             });
-            
+
             if (!product.images || product.images.length <= 1) {
                 // Hide navigation buttons if only one image
                 if (prevBtn) prevBtn.style.display = 'none';
                 if (nextBtn) nextBtn.style.display = 'none';
                 return;
             }
-            
+
             let currentImageIndex = 0;
-            
+
             // Update main image
             const updateMainImage = (index) => {
                 if (product.images && product.images[index] && mainImage) {
                     mainImage.src = product.images[index].imageUrl;
                     mainImage.alt = product.name;
-                    
+
                     // Update thumbnail selection
                     thumbnails.forEach((thumb, i) => {
                         thumb.classList.toggle('active', i === index);
                     });
                 }
             };
-            
+
             // Previous button
             if (prevBtn) {
                 prevBtn.addEventListener('click', (e) => {
@@ -695,7 +695,7 @@ class BestsellerProductsHomepageManager {
                     updateMainImage(currentImageIndex);
                 });
             }
-            
+
             // Next button
             if (nextBtn) {
                 nextBtn.addEventListener('click', (e) => {
@@ -705,7 +705,7 @@ class BestsellerProductsHomepageManager {
                     updateMainImage(currentImageIndex);
                 });
             }
-            
+
             // Thumbnail click handlers
             thumbnails.forEach((thumb, index) => {
                 thumb.addEventListener('click', (e) => {
@@ -717,7 +717,7 @@ class BestsellerProductsHomepageManager {
             });
         }, 100); // Small delay to ensure modal is rendered
     }
-    
+
     // Quantity management methods for quick view modal
     decrementQuantity(productId) {
         const quantityInput = document.getElementById(`homepageBestsellerQuantityInput_${productId}`);
@@ -794,7 +794,7 @@ class BestsellerProductsHomepageManager {
 
         // Add to cart first
         await this.addToCart(productId, product.name, product.currentPrice || product.price);
-        
+
         // Redirect to checkout
         window.location.href = '/checkout';
     }
@@ -813,7 +813,7 @@ class BestsellerProductsHomepageManager {
 
         // Add to cart with quantity
         this.addToCartWithQuantityValue(productId, product.name, product.currentPrice || product.price, quantity);
-        
+
         // Close modal
         const modal = bootstrap.Modal.getInstance(document.getElementById('homepageBestsellerQuickViewModal'));
         if (modal) {
@@ -825,7 +825,7 @@ class BestsellerProductsHomepageManager {
     async addToCartWithQuantityValue(productId, productName, price, quantity) {
         try {
             let success = false;
-            
+
             // Check if cart functionality exists
             if (window.cartManager && typeof window.cartManager.addItem === 'function') {
                 await window.cartManager.addItem(productId, quantity);
@@ -838,7 +838,7 @@ class BestsellerProductsHomepageManager {
                     const product = this.allProducts.find(p => (p.productId || p.id) === productId);
                     if (product) {
                         const existingItem = window.app.cartItems.find(item => item.id === productId);
-                        
+
                         if (existingItem) {
                             existingItem.quantity += quantity;
                         } else {
@@ -850,7 +850,7 @@ class BestsellerProductsHomepageManager {
                                 image: product.images && product.images.length > 0 ? product.images[0].imageUrl : '/static/user/images/no-image.png'
                             });
                         }
-                        
+
                         if (window.app.updateCartDisplay) {
                             window.app.updateCartDisplay();
                         }
@@ -858,7 +858,7 @@ class BestsellerProductsHomepageManager {
                     }
                 }
             }
-            
+
             // Show single notification based on success
             if (success) {
                 this.showNotification(`${quantity} x ${productName} đã được thêm vào giỏ hàng thành công!`, 'success');
@@ -869,8 +869,8 @@ class BestsellerProductsHomepageManager {
             this.showNotification('Có lỗi xảy ra khi thêm vào giỏ hàng', 'error');
         }
     }
-    
-    
+
+
     showNotification(message, type = 'info') {
         const toast = document.createElement('div');
         toast.className = `toast align-items-center text-white bg-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} border-0`;
@@ -918,16 +918,16 @@ class BestsellerProductsHomepageManager {
                 // Get previous threshold percentage
                 const prevThreshold = thresholds[thresholds.indexOf(threshold) - 1];
                 const basePercentage = prevThreshold ? prevThreshold.percentage : 0;
-                
+
                 // Calculate progress within this threshold
                 const prevMax = prevThreshold ? prevThreshold.max : 0;
                 const range = threshold.max - prevMax;
                 const progress = ((soldCount - prevMax) / range) * (threshold.percentage - basePercentage);
-                
+
                 return Math.min(100, basePercentage + progress);
             }
         }
-        
+
         return 100; // For very high sales
     }
 

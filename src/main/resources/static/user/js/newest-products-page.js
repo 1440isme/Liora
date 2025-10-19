@@ -138,7 +138,7 @@ class NewestProductsPageManager {
             // Use first image as main image
             return product.images[0].imageUrl || product.images[0];
         }
-        return product.mainImageUrl || '/uploads/products/default.jpg';
+        return product.mainImageUrl || '/user/img/default-product.jpg';
     }
 
     // Generate image thumbnails for slider
@@ -154,7 +154,7 @@ class NewestProductsPageManager {
             images = [{ imageUrl: product.mainImageUrl }];
         } else {
             // Default image
-            images = [{ imageUrl: '/uploads/products/default.jpg' }];
+            images = [{ imageUrl: '/user/img/default-product.jpg' }];
         }
 
         return images.map((image, index) => `
@@ -162,7 +162,7 @@ class NewestProductsPageManager {
                 <img src="${image.imageUrl || image}" 
                      alt="${product.name}" 
                      class="img-fluid rounded"
-                     onerror="this.src='/uploads/products/default.jpg'">
+                     onerror="this.src='/user/img/default-product.jpg'">
             </div>
         `).join('');
     }
@@ -513,8 +513,8 @@ class NewestProductsPageManager {
             this.currentFilters.minPrice = min;
             this.currentFilters.maxPrice = max;
         }
-        this.currentPage = 0;
-        this.loadProducts();
+        // Don't load products immediately - wait for apply button
+        console.log('Price range updated:', this.currentFilters.minPrice, this.currentFilters.maxPrice);
     }
 
     handleBrandFilterChange(event) {
@@ -551,6 +551,7 @@ class NewestProductsPageManager {
 
     handleSortChange(event) {
         this.currentFilters.sort = event.target.value;
+        // Load products immediately when sort changes
         this.currentPage = 0;
         this.loadProducts();
     }
@@ -592,8 +593,12 @@ class NewestProductsPageManager {
         this.showLoading();
 
         try {
-            const sortSelect = document.getElementById('sortSelect');
-            const sortValue = sortSelect ? sortSelect.value : 'created,desc';
+            // Use sort from currentFilters, fallback to sortSelect value, then default
+            let sortValue = this.currentFilters.sort;
+            if (!sortValue) {
+                const sortSelect = document.getElementById('sortSelect');
+                sortValue = sortSelect ? sortSelect.value : 'created,desc';
+            }
             const [sortBy, sortDir] = sortValue.split(',');
 
             const params = new URLSearchParams({
@@ -755,10 +760,10 @@ class NewestProductsPageManager {
         return `
             <div class="product-card ${statusClass}">
                     <div class="position-relative">
-                        <img src="${product.mainImageUrl || '/uploads/products/default.jpg'}" 
+                        <img src="${product.mainImageUrl || '/user/img/default-product.jpg'}" 
                              class="card-img-top" 
                              alt="${product.name}"
-                             onerror="this.src='/uploads/products/default.jpg'">
+                             onerror="this.src='/user/img/default-product.jpg'">
                         
                     <!-- Product Status Badge - Removed to avoid overlapping with image -->
                         
@@ -1064,25 +1069,47 @@ class NewestProductsPageManager {
         try {
             console.log('Loading brands for newest products...');
 
-            // Try newest brands API first
-            let response = await fetch('/api/products/newest-brands');
+            // Load both brands and counts, then combine them
+            const [brandsResponse, countsResponse] = await Promise.all([
+                fetch('/api/products/newest-brands'),
+                fetch('/api/products/newest-brands-with-count')
+            ]);
+
+            let brands = [];
+            let brandCounts = {};
+
+            // Get brands with IDs
+            if (brandsResponse.ok) {
+                const brandsData = await brandsResponse.json();
+                if (brandsData.code === 1000 && brandsData.result) {
+                    brands = brandsData.result;
+                    console.log('Loaded brands with IDs:', brands);
+                }
+            }
+
+            // Get brand counts
+            if (countsResponse.ok) {
+                const countsData = await countsResponse.json();
+                if (countsData.code === 1000 && countsData.result) {
+                    brandCounts = countsData.result;
+                    console.log('Loaded brand counts:', brandCounts);
+                }
+            }
+
+            // Combine brands with counts
+            if (brands.length > 0) {
+                this.displayBrandFiltersWithCountAndIds(brands, brandCounts);
+                return;
+            }
+
+            // Fallback: try newest brands API only
+            console.log('Trying fallback: newest brands');
+            const response = await fetch('/api/products/newest-brands');
             if (response.ok) {
                 const data = await response.json();
                 if (data.code === 1000 && data.result) {
                     console.log('Using newest brands:', data.result);
                     this.displayBrandFilters(data.result);
-                    return;
-                }
-            }
-
-            // Fallback: try newest brands with count
-            console.log('Trying fallback: newest brands with count');
-            response = await fetch('/api/products/newest-brands-with-count');
-            if (response.ok) {
-                const data = await response.json();
-                if (data.code === 1000 && data.result) {
-                    console.log('Using newest brands with count:', data.result);
-                    this.displayBrandFiltersWithCount(data.result);
                     return;
                 }
             }
@@ -1128,7 +1155,7 @@ class NewestProductsPageManager {
             <div class="form-check">
                 <input class="form-check-input" type="checkbox" value="${brand.brandId}" id="brand-${brand.brandId}">
                 <label class="form-check-label" for="brand-${brand.brandId}">
-                    ${brand.brandName || brand.name}
+                    ${brand.brandName || brand.name} (${brand.productCount || 0})
                 </label>
             </div>
         `).join('');
@@ -1154,6 +1181,31 @@ class NewestProductsPageManager {
                 </label>
             </div>
         `).join('');
+
+        brandFilters.innerHTML = brandHTML;
+    }
+
+    displayBrandFiltersWithCountAndIds(brands, brandCounts) {
+        const brandFilters = document.getElementById('brandFilters');
+        if (!brandFilters) return;
+
+        if (brands.length === 0) {
+            brandFilters.innerHTML = '<p class="text-muted">Không có thương hiệu nào</p>';
+            return;
+        }
+
+        const brandHTML = brands.map(brand => {
+            const brandName = brand.name || brand.brandName;
+            const count = brandCounts[brandName] || 0;
+            return `
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" value="${brand.brandId}" id="brand-${brand.brandId}">
+                    <label class="form-check-label" for="brand-${brand.brandId}">
+                        ${brandName} (${count})
+                    </label>
+                </div>
+            `;
+        }).join('');
 
         brandFilters.innerHTML = brandHTML;
     }
@@ -1213,7 +1265,7 @@ class NewestProductsPageManager {
                                                  src="${this.getMainImageUrl(product)}" 
                                                  class="img-fluid rounded" 
                                                  alt="${product.name}"
-                                                 onerror="this.src='/uploads/products/default.jpg'">
+                                                 onerror="this.src='/user/img/default-product.jpg'">
                                             <button class="slider-nav slider-next" id="nextBtn">
                                                 <i class="fas fa-chevron-right"></i>
                                             </button>
