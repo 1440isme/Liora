@@ -597,7 +597,7 @@ function renderViewReviewProducts(products) {
                         </div>
                         
                         <div class="d-flex gap-2">
-                            <button class="btn btn-outline-primary btn-sm" onclick="editReview(${product.idOrderProduct})">
+                            <button class="btn btn-outline-primary btn-sm edit-btn" onclick="editReview(${product.idOrderProduct})">
                                 <i class="fas fa-edit"></i> Sửa
                             </button>
                         </div>
@@ -693,6 +693,9 @@ function renderViewReviewProducts(products) {
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
         <button type="button" class="btn btn-primary" onclick="submitAllReviews()">Gửi đánh giá</button>
     `);
+    
+    // Đảm bảo tất cả nút "Sửa" đều hiển thị khi reload
+    $('.edit-btn').show();
 }
 
 // Thêm function edit review
@@ -749,9 +752,6 @@ function editReview(orderProductId) {
             </div>
             
             <div class="d-flex gap-2">
-                <button class="btn btn-success btn-sm" onclick="saveReview(${orderProductId})">
-                    <i class="fas fa-save"></i> Lưu
-                </button>
                 <button class="btn btn-secondary btn-sm" onclick="cancelEdit(${orderProductId})">
                     <i class="fas fa-times"></i> Hủy
                 </button>
@@ -782,58 +782,56 @@ function editReview(orderProductId) {
             }
         });
         card.data('rating', rating);
+        
+        // Lưu thay đổi rating
+        saveReviewChanges(orderProductId);
     });
+
+    // Add change handlers để lưu thay đổi vào pending-changes
+    card.find('textarea').on('input', function() {
+        saveReviewChanges(orderProductId);
+    });
+    
+    card.find('input[type="checkbox"]').on('change', function() {
+        saveReviewChanges(orderProductId);
+    });
+
+    // Ẩn nút "Sửa" khi đang edit
+    card.find('.edit-btn').hide();
 }
 
-// Thêm function save review
-async function saveReview(orderProductId) {
+// Function để lưu thay đổi review (chỉ lưu vào data, không gửi API)
+function saveReviewChanges(orderProductId) {
     const card = $(`.card[data-order-product-id="${orderProductId}"]`);
-    const existingReview = card.data('existing-review');
     const rating = card.data('rating');
     const content = card.find('textarea').val().trim();
     const anonymous = card.find('input[type="checkbox"]').is(':checked');
 
     if (!rating || rating < 1) {
         alert('Vui lòng chọn ít nhất 1 sao');
-        return;
+        return false;
     }
     
-    if (!existingReview || !existingReview.reviewId) {
-        alert('Không tìm thấy thông tin đánh giá để cập nhật');
-        return;
-    }
+    // Lưu thay đổi vào data của card
+    card.data('pending-changes', {
+        rating: rating,
+        content: content,
+        anonymous: anonymous
+    });
     
-    try {
-        const token = localStorage.getItem('access_token');
-        const response = await fetch(`/api/reviews/${existingReview.reviewId}`, {
-            method: 'PUT',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                rating: rating,
-                content: content,
-                anonymous: anonymous
-            })
-        });
-
-        if (response.ok) {
-            showToast('Cập nhật đánh giá thành công! ✨', 'success');
-            // Reload view
-            openViewReviewModal(currentOrderId);
-        } else {
-            const errorData = await response.json();
-            alert(`Lỗi khi cập nhật đánh giá: ${errorData.message || 'Có lỗi xảy ra'}`);
-        }
-    } catch (error) {
-        console.error('Error saving review:', error);
-        alert('Lỗi khi cập nhật đánh giá');
-    }
+    return true;
 }
 
 // Thêm function cancel edit review
 function cancelEdit(orderProductId) {
+    const card = $(`.card[data-order-product-id="${orderProductId}"]`);
+    
+    // Xóa pending changes
+    card.removeData('pending-changes');
+    
+    // Hiện lại nút "Sửa"
+    card.find('.edit-btn').show();
+    
     // Reload view để quay về trạng thái ban đầu
     openViewReviewModal(currentOrderId);
 }
@@ -981,14 +979,34 @@ async function submitAllReviews() {
         return;
     }
 
-    const reviews = [];
+    const newReviews = [];
+    const updatedReviews = [];
     let hasValidReview = false;
     let hasInvalidReview = false;
 
     $('.card[data-order-product-id]').each(function () {
         const orderProductId = $(this).data('order-product-id');
         const rating = $(this).data('rating');
+        const existingReview = $(this).data('existing-review');
+        const pendingChanges = $(this).data('pending-changes');
         
+        // Xử lý review đã sửa (có pending changes)
+        if (pendingChanges) {
+            if (!pendingChanges.rating || pendingChanges.rating < 1) {
+                hasInvalidReview = true;
+                return;
+            }
+            
+            updatedReviews.push({
+                reviewId: existingReview.reviewId,
+                rating: pendingChanges.rating,
+                content: pendingChanges.content || '',
+                anonymous: pendingChanges.anonymous
+            });
+            hasValidReview = true;
+            return;
+        }
+
         // Chỉ xét điều kiện với sản phẩm chưa đánh giá (không có class border-success)
         const isAlreadyReviewed = $(this).hasClass('border-success');
         if (isAlreadyReviewed) {
@@ -1012,7 +1030,7 @@ async function submitAllReviews() {
 
         // Chỉ submit nếu có rating
         if (rating && rating >= 1 && rating <= 5) {
-            reviews.push({
+            newReviews.push({
                 orderProductId: orderProductId,
                 rating: rating,
                 content: content || '',
@@ -1029,13 +1047,13 @@ async function submitAllReviews() {
     }
 
     if (!hasValidReview) {
-        alert('Vui lòng đánh giá ít nhất một sản phẩm chưa được đánh giá');
+        alert('Vui lòng đánh giá ít nhất một sản phẩm hoặc sửa đánh giá hiện có');
         return;
     }
 
     try {
-        // Submit each review
-        for (const review of reviews) {
+        // Submit new reviews
+        for (const review of newReviews) {
             const response = await fetch('/api/reviews', {
                 method: 'POST',
                 headers: {
@@ -1047,7 +1065,28 @@ async function submitAllReviews() {
 
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.message || 'Không thể gửi đánh giá');
+                throw new Error(errorData.message || 'Không thể gửi đánh giá mới');
+            }
+        }
+
+        // Update existing reviews
+        for (const review of updatedReviews) {
+            const response = await fetch(`/api/reviews/${review.reviewId}`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    rating: review.rating,
+                    content: review.content,
+                    anonymous: review.anonymous
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Không thể cập nhật đánh giá');
             }
         }
         
@@ -1055,7 +1094,12 @@ async function submitAllReviews() {
         $('#reviewModal').modal('hide');
 
         // Hiển thị toast thông báo thành công
-        showToast('Đánh giá thành công! ✨', 'success');
+        const message = newReviews.length > 0 && updatedReviews.length > 0 
+            ? 'Đánh giá và cập nhật thành công! ✨'
+            : newReviews.length > 0 
+            ? 'Đánh giá thành công! ✨'
+            : 'Cập nhật đánh giá thành công! ✨';
+        showToast(message, 'success');
 
         // Cập nhật trạng thái nút đánh giá
         setTimeout(() => {
