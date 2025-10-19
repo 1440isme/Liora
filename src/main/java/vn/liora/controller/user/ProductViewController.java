@@ -78,6 +78,9 @@ public class ProductViewController {
             return "user/products/similar-products";
         } catch (Exception e) {
             // If error, redirect to home
+            return "redirect:/";
+        }
+    }
     @GetMapping("/featured-category/{categoryId}")
     public String getFeaturedCategoryProducts(@PathVariable Long categoryId, Model model) {
         try {
