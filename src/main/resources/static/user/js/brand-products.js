@@ -438,20 +438,27 @@ class BrandProductsManager {
     updatePagination(pageInfo) {
         this.totalPages = pageInfo.totalPages;
 
-        const paginationContainer = document.getElementById('pagination');
-        if (!paginationContainer) return;
+        const pagination = document.getElementById('pagination');
+        if (!pagination) return;
 
         if (this.totalPages <= 1) {
-            paginationContainer.style.display = 'none';
+            pagination.style.display = 'none';
             return;
         }
 
-        let paginationHtml = '';
+        pagination.style.display = 'block';
+        const paginationList = pagination.querySelector('.pagination');
+        if (!paginationList) return;
+
+        let paginationHTML = '';
 
         // Previous button
-        paginationHtml += `
-            <li class="page-item ${this.currentPage === 0 ? 'disabled' : ''}">
-                <a class="page-link" href="#" data-page="${this.currentPage - 1}">Trước</a>
+        const prevDisabled = this.currentPage === 0 ? 'disabled' : '';
+        paginationHTML += `
+            <li class="page-item ${prevDisabled}">
+                <a class="page-link" href="#" onclick="window.brandProductsManager.goToPage(${this.currentPage - 1}); return false;">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
             </li>
         `;
 
@@ -460,22 +467,31 @@ class BrandProductsManager {
         const endPage = Math.min(this.totalPages - 1, this.currentPage + 2);
 
         for (let i = startPage; i <= endPage; i++) {
-            paginationHtml += `
-                <li class="page-item ${i === this.currentPage ? 'active' : ''}">
-                    <a class="page-link" href="#" data-page="${i}">${i + 1}</a>
+            const activeClass = i === this.currentPage ? 'active' : '';
+            paginationHTML += `
+                <li class="page-item ${activeClass}">
+                    <a class="page-link" href="#" onclick="window.brandProductsManager.goToPage(${i}); return false;">${i + 1}</a>
                 </li>
             `;
         }
 
         // Next button
-        paginationHtml += `
-            <li class="page-item ${this.currentPage === this.totalPages - 1 ? 'disabled' : ''}">
-                <a class="page-link" href="#" data-page="${this.currentPage + 1}">Sau</a>
+        const nextDisabled = this.currentPage >= this.totalPages - 1 ? 'disabled' : '';
+        paginationHTML += `
+            <li class="page-item ${nextDisabled}">
+                <a class="page-link" href="#" onclick="window.brandProductsManager.goToPage(${this.currentPage + 1}); return false;">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
             </li>
         `;
 
-        paginationContainer.innerHTML = paginationHtml;
-        paginationContainer.style.display = 'block';
+        paginationList.innerHTML = paginationHTML;
+    }
+
+    goToPage(page) {
+        if (page < 0 || page >= this.totalPages) return;
+        this.currentPage = page;
+        this.loadProducts();
     }
 
     updateProductCount(total) {

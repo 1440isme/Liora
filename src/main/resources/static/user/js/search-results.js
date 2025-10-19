@@ -668,10 +668,15 @@ class SearchResultsManager {
         try {
             console.log('Loading brands for search results...');
 
-            // Try search brands API first
-            let response = await fetch('/api/products/search-brands');
+            // Use search brands API with query parameter
+            const url = this.currentQuery ? 
+                `/api/products/search-brands?q=${encodeURIComponent(this.currentQuery)}` : 
+                '/api/products/search-brands';
+            
+            const response = await fetch(url);
             if (response.ok) {
                 const data = await response.json();
+                console.log('Search brands API response:', data);
                 if (data.code === 1000 && data.result) {
                     console.log('Using search brands:', data.result);
                     this.displayBrandFilters(data.result);
@@ -679,20 +684,7 @@ class SearchResultsManager {
                 }
             }
 
-            // Fallback: try all brands from admin API
-            console.log('Trying fallback: load all brands');
-            const fallbackResponse = await fetch('/admin/api/brands/all');
-            if (fallbackResponse.ok) {
-                const fallbackData = await fallbackResponse.json();
-                console.log('Fallback brands data:', fallbackData);
-                if (fallbackData.code === 1000 && fallbackData.result) {
-                    console.log('Using fallback brands:', fallbackData.result);
-                    this.displayBrandFilters(fallbackData.result);
-                    return;
-                }
-            }
-
-            console.error('All brand loading attempts failed');
+            console.error('Search brands API failed');
             this.displayBrandFilters([]);
         } catch (error) {
             console.error('Error loading brands:', error);
