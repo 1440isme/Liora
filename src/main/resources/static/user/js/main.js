@@ -194,7 +194,7 @@ class LioraApp {
         document.addEventListener('click', (e) => {
             const dropdown = document.getElementById('searchResultsDropdown');
             const searchContainer = e.target.closest('.search-container');
-            
+
             if (dropdown && !searchContainer) {
                 this.hideSearchDropdown();
             }
@@ -522,7 +522,7 @@ class LioraApp {
 
     handleSearch(query) {
         console.log('handleSearch called with query:', query);
-        
+
         if (query.length < 2) {
             console.log('Query too short, hiding dropdown');
             this.hideSearchDropdown();
@@ -541,10 +541,10 @@ class LioraApp {
         try {
             const response = await fetch(`/api/products/search?q=${encodeURIComponent(query)}&size=5`);
             const data = await response.json();
-            
+
             // Check for both success format (true/false) and code format (1000 for success)
             const isSuccess = (data.success === true) || (data.code === 1000);
-            
+
             if (isSuccess && data.result) {
                 this.displaySearchResults(query, data.result);
             } else {
@@ -645,7 +645,7 @@ class LioraApp {
     testDropdown() {
         const dropdown = document.getElementById('searchResultsDropdown');
         const resultsList = document.getElementById('searchResultsList');
-        
+
         if (resultsList) resultsList.innerHTML = '<div class="search-loading">Test loading...</div>';
         if (dropdown) {
             dropdown.classList.add('show');
@@ -1498,7 +1498,7 @@ class LioraApp {
                                                  src="${this.getMainImageUrl(product)}" 
                                                  class="img-fluid rounded" 
                                                  alt="${product.name}"
-                                                 onerror="this.src='/uploads/products/default.jpg'">
+                                                 onerror="this.src='/user/img/default-product.jpg'">
                                             <button class="slider-nav slider-next" id="nextBtn">
                                                 <i class="fas fa-chevron-right"></i>
                                             </button>
@@ -1690,7 +1690,7 @@ class LioraApp {
             images = product.images.map(img => img.imageUrl || img);
         } else {
             // Fallback to main image repeated
-            const mainImage = product.image || '/uploads/products/default.jpg';
+            const mainImage = product.image || '/user/img/default-product.jpg';
             images = [mainImage];
         }
 
@@ -1700,7 +1700,7 @@ class LioraApp {
                 <img src="${image}" 
                      class="thumbnail-img" 
                      alt="Thumbnail ${index + 1}"
-                     onerror="this.src='/uploads/products/default.jpg'">
+                     onerror="this.src='/user/img/default-product.jpg'">
             </div>
         `).join('');
     }
@@ -1762,7 +1762,7 @@ class LioraApp {
             // Use first image as main image
             return product.images[0].imageUrl || product.images[0];
         }
-        return product.image || '/uploads/products/default.jpg';
+        return product.image || '/user/img/default-product.jpg';
     }
 
     // Quantity validation methods
