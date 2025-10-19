@@ -400,4 +400,16 @@ public class ReviewServiceImpl implements IReviewService {
 
         reviewRepository.save(review);
     }
+
+    @Override
+    public boolean existsByOrderProductIdAndUserId(Long orderProductId, Long userId) {
+        return reviewRepository.existsByOrderProductIdOrderProductAndUserId(orderProductId, userId);
+    }
+
+    @Override
+    public ReviewResponse findByOrderProductIdAndUserId(Long orderProductId, Long userId) {
+        Review review = reviewRepository.findByOrderProductIdOrderProductAndUserId(orderProductId, userId)
+                .orElseThrow(() -> new AppException(ErrorCode.REVIEW_NOT_FOUND));
+        return reviewMapper.toReviewResponse(review);
+    }
 }

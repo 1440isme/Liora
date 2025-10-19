@@ -78,4 +78,6 @@ public interface IReviewService {
     List<Map<String, Object>> getProductsForFilter(Long brandId, Long categoryId);
 
     void updateReviewVisibility(Long reviewId, Boolean isVisible);
+    boolean existsByOrderProductIdAndUserId(Long orderProductId, Long userId);
+    ReviewResponse findByOrderProductIdAndUserId(Long orderProductId, Long userId);
 }

@@ -54,10 +54,11 @@
                      </button>
                      
                      <button class="btn btn-primary me-2" 
-                             th:if="${order.orderStatus == 'COMPLETED'}"
-                             th:onclick="'openReviewModal(' + ${order.idOrder} + ')'">
-                         <i class="fas fa-star me-1"></i> Đánh giá
-                     </button>
+                            th:if="${order.orderStatus == 'COMPLETED'}"
+                            th:id="'reviewButton_' + ${order.idOrder}"
+                            th:onclick="'checkReviewStatusAndOpen(' + ${order.idOrder} + ')'">
+                        <i class="fas fa-star me-1"></i> <span id="reviewButtonText">Đánh giá</span>
+                    </button>
                      
                      <button class="btn btn-success" 
                              th:if="${order.orderStatus == 'COMPLETED' or order.orderStatus == 'CANCELLED'}"
