@@ -23,6 +23,7 @@ public class CartProductResponse {
     BigDecimal productPrice;
     String mainImageUrl;
     String brandName;
+    Long brandId;
     
     // Thông tin trạng thái sản phẩm
     Boolean available;
