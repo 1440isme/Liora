@@ -287,7 +287,7 @@ class ProductDetailManager {
         const productsHTML = products.slice(0, 4).map(product => `
             <div class="col-lg-3 col-md-6">
                 <div class="card h-100">
-                    <img src="${product.image || '/uploads/products/default.jpg'}" 
+                    <img src="${product.image || '/user/img/default-product.jpg'}" 
                          class="card-img-top" 
                          alt="${product.name}">
                     <div class="card-body">

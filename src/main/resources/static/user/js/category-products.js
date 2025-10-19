@@ -290,10 +290,10 @@ class CategoryProductsManager {
         return `
             <div class="product-card ${statusClass}">
                     <div class="position-relative">
-                        <img src="${product.mainImageUrl || '/uploads/products/default.jpg'}" 
+                        <img src="${product.mainImageUrl || '/user/img/default-product.jpg'}" 
                              class="card-img-top" 
                              alt="${product.name}"
-                             onerror="this.src='/uploads/products/default.jpg'"
+                             onerror="this.src='/user/img/default-product.jpg'"
                              onclick="window.location.href='/product/${product.productId}?from=category&categoryId=${this.currentCategoryId}'"
                              style="cursor: pointer;">
                         
@@ -620,7 +620,7 @@ class CategoryProductsManager {
                                                  src="${this.getMainImageUrl(product)}" 
                                                  class="img-fluid rounded" 
                                                  alt="${product.name}"
-                                                 onerror="this.src='/uploads/products/default.jpg'">
+                                                 onerror="this.src='/user/img/default-product.jpg'">
                                             <button class="slider-nav slider-next" id="nextBtn">
                                                 <i class="fas fa-chevron-right"></i>
                                             </button>
@@ -1178,7 +1178,7 @@ class CategoryProductsManager {
             images = product.images.map(img => img.imageUrl || img);
         } else {
             // Fallback to main image repeated
-            const mainImage = product.mainImageUrl || '/uploads/products/default.jpg';
+            const mainImage = product.mainImageUrl || '/user/img/default-product.jpg';
             images = [mainImage];
         }
 
@@ -1188,7 +1188,7 @@ class CategoryProductsManager {
                 <img src="${image}" 
                      class="thumbnail-img" 
                      alt="Thumbnail ${index + 1}"
-                     onerror="this.src='/uploads/products/default.jpg'">
+                     onerror="this.src='/user/img/default-product.jpg'">
             </div>
         `).join('');
     }
@@ -1281,7 +1281,7 @@ class CategoryProductsManager {
             // Use first image as main image
             return product.images[0].imageUrl || product.images[0];
         }
-        return product.mainImageUrl || '/uploads/products/default.jpg';
+        return product.mainImageUrl || '/user/img/default-product.jpg';
     }
 }
 
