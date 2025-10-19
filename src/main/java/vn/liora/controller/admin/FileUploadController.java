@@ -2,6 +2,7 @@ package vn.liora.controller.admin;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -17,6 +18,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/admin/api/upload")
+@PreAuthorize("hasAuthority('banner.create')")
 public class FileUploadController {
 
     @Value("${app.upload.path:uploads}")
@@ -167,6 +169,7 @@ public class FileUploadController {
     }
 
     @DeleteMapping("/file")
+    @PreAuthorize("hasAuthority('banner.delete')")
     public ResponseEntity<Map<String, Object>> deleteFile(@RequestParam("url") String fileUrl) {
         Map<String, Object> response = new HashMap<>();
 

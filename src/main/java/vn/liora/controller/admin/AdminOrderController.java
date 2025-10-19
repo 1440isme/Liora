@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import vn.liora.dto.request.OrderUpdateRequest;
 import vn.liora.dto.response.OrderResponse;
@@ -20,16 +21,20 @@ import java.util.List;
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 @Slf4j
+@PreAuthorize("hasAuthority('order.view')")
 public class AdminOrderController {
     final IOrderService orderService;
     final UserRepository userRepository;
+
     @PutMapping("/{idOrder}")
+    @PreAuthorize("hasAuthority('order.update')")
     public ResponseEntity<OrderResponse> updateOrderStatus(
             @PathVariable Long idOrder,
             @RequestBody OrderUpdateRequest request) {
         OrderResponse response = orderService.updateOrderStatus(idOrder, request);
         return ResponseEntity.ok(response);
     }
+
     @GetMapping
     public ResponseEntity<List<OrderResponse>> getAllOrders() {
         List<OrderResponse> orders = orderService.getAllOrders();
@@ -50,7 +55,7 @@ public class AdminOrderController {
             @RequestParam String end) {
         LocalDateTime startDate = LocalDateTime.parse(start);
         LocalDateTime endDate = LocalDateTime.parse(end);
-        List<OrderResponse> orders = orderService.getOrdersByDateRange(startDate,endDate);
+        List<OrderResponse> orders = orderService.getOrdersByDateRange(startDate, endDate);
         return ResponseEntity.ok(orders);
     }
 

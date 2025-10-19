@@ -4,6 +4,7 @@ if (typeof AuthManager === 'undefined') {
         constructor() {
             this.currentUser = null;
             this.isSignUp = false;
+            this.isRefreshing = false; // Flag to prevent infinite loops
 
             this.init();
         }
@@ -28,7 +29,7 @@ if (typeof AuthManager === 'undefined') {
                 const payload = this.parseJwt(token);
                 const roles = this.extractRolesFromPayload(payload);
                 const displayName = payload?.name || payload?.fullName || 'User';
-                const isAdmin = roles.includes('ADMIN') || roles.includes('ROLE_ADMIN');
+                const isAdmin = roles.includes('ADMIN') || roles.includes('ROLE_ADMIN') || roles.includes('MANAGER') || roles.includes('ROLE_MANAGER');
 
                 let storedUser = {
                     username: payload?.sub,
@@ -40,7 +41,9 @@ if (typeof AuthManager === 'undefined') {
 
                 // Redirect về trang chính và xóa params
                 window.history.replaceState({}, document.title, window.location.pathname);
-                window.location.reload();
+
+                // Check auth state instead of reloading
+                this.checkAuthState();
             }
         }
 
@@ -221,7 +224,7 @@ if (typeof AuthManager === 'undefined') {
                 const payload = this.parseJwt(token);
                 const roles = this.extractRolesFromPayload(payload);
                 const displayName = payload?.name || payload?.fullName || username;
-                const isAdmin = roles.includes('ADMIN') || roles.includes('ROLE_ADMIN');
+                const isAdmin = roles.includes('ADMIN') || roles.includes('ROLE_ADMIN') || roles.includes('MANAGER') || roles.includes('ROLE_MANAGER');
                 // Persist minimal user profile immediately for UI
                 let storedUser = { username, name: displayName, roles, isAdmin };
                 localStorage.setItem('liora_user', JSON.stringify(storedUser));
@@ -314,12 +317,13 @@ if (typeof AuthManager === 'undefined') {
             }
 
             // Ensure redirect to /home from any route (e.g., /info)
-            try {
-                if (window && window.location && window.location.pathname !== '/home') {
-                    window.location.href = '/home';
-                    return;
-                }
-            } catch (_) { }
+            // Commented out to allow navigation to other pages
+            // try {
+            //     if (window && window.location && window.location.pathname !== '/home') {
+            //         window.location.href = '/home';
+            //         return;
+            //     }
+            // } catch (_) { }
         }
 
         toggleAuthMode(e) {
@@ -404,6 +408,120 @@ if (typeof AuthManager === 'undefined') {
             return emailRegex.test(email);
         }
 
+        async checkAndRefreshTokenIfNeeded() {
+            if (!this.currentUser || !this.currentUser.username || this.isRefreshing) return;
+
+            try {
+                // Get current user info from server to check roles
+                const response = await fetch('/users/myInfo', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const userInfo = await response.json();
+                    const serverRoles = userInfo.result?.roles || [];
+                    const currentRoles = this.currentUser.roles || [];
+
+                    // Check if roles have changed
+                    const rolesChanged = JSON.stringify(serverRoles.sort()) !== JSON.stringify(currentRoles.sort());
+
+                    if (rolesChanged) {
+                        console.log('User roles have changed, refreshing token...');
+                        await this.forceRefreshToken();
+                    }
+                }
+            } catch (error) {
+                console.warn('Failed to check user roles:', error);
+            }
+        }
+
+        async forceRefreshToken() {
+            if (!this.currentUser || !this.currentUser.username || this.isRefreshing) return;
+
+            this.isRefreshing = true;
+            console.log('Force refreshing token for user:', this.currentUser.username);
+
+            try {
+                const response = await fetch('/auth/force-refresh', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: this.currentUser.username
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const newToken = data.result?.token;
+
+                    if (newToken) {
+                        console.log('New token received:', newToken.substring(0, 50) + '...');
+
+                        // Update token
+                        localStorage.setItem('access_token', newToken);
+
+                        // Update user data with new roles
+                        const payload = this.parseJwt(newToken);
+                        const roles = this.extractRolesFromPayload(payload);
+                        const isAdmin = roles.includes('ADMIN') || roles.includes('ROLE_ADMIN') || roles.includes('MANAGER') || roles.includes('ROLE_MANAGER');
+
+                        console.log('New roles extracted:', roles);
+                        console.log('Is admin:', isAdmin);
+
+                        this.currentUser = {
+                            ...this.currentUser,
+                            roles,
+                            isAdmin
+                        };
+
+                        localStorage.setItem('liora_user', JSON.stringify(this.currentUser));
+
+                        console.log('Token refreshed successfully with new roles:', roles);
+
+                        // Small delay to ensure token is properly updated
+                        await new Promise(resolve => setTimeout(resolve, 100));
+
+                        // Update user display with new roles
+                        this.updateUserDisplay();
+
+                        // Show notification
+                        this.showNotification('Quyền của bạn đã được cập nhật thành công!', 'success');
+                    }
+                } else {
+                    console.error('Failed to refresh token:', response.status);
+                }
+            } catch (error) {
+                console.error('Error refreshing token:', error);
+            } finally {
+                this.isRefreshing = false;
+            }
+        }
+
+        showNotification(message, type = 'info') {
+            // Create a simple notification
+            const notification = document.createElement('div');
+            notification.className = `alert alert-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} alert-dismissible fade show`;
+            notification.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            notification.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+
+            document.body.appendChild(notification);
+
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 5000);
+        }
+
         async checkAuthState() {
             const token = localStorage.getItem('access_token');
             const userData = localStorage.getItem('liora_user');
@@ -437,10 +555,17 @@ if (typeof AuthManager === 'undefined') {
                 if (userData) {
                     try { this.currentUser = JSON.parse(userData); } catch { this.currentUser = null; }
                 }
+
+                // Check if user needs to refresh token due to role changes
+                await this.checkAndRefreshTokenIfNeeded();
+
+                // Get updated token after potential refresh
+                const updatedToken = localStorage.getItem('access_token');
+
                 try {
                     const meRes = await fetch('/users/myInfo', {
                         headers: {
-                            'Authorization': `Bearer ${token}`,
+                            'Authorization': `Bearer ${updatedToken}`,
                             'Content-Type': 'application/json'
                         }
                     });

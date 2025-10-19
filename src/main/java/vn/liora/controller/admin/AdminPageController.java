@@ -1,6 +1,7 @@
 package vn.liora.controller.admin;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
@@ -14,6 +15,7 @@ import vn.liora.service.ICategoryService;
 @Controller
 @RequestMapping("/admin")
 @RequiredArgsConstructor
+@PreAuthorize("hasAnyRole('ADMIN', 'MANAGER')")
 public class AdminPageController {
 
     private final ICategoryService categoryService;
@@ -110,18 +112,21 @@ public class AdminPageController {
 
     // Users
     @GetMapping("/users")
+    @PreAuthorize("hasAuthority('user.view')")
     public String usersList(Model model) {
         addCurrentUserToModel(model);
         return "admin/users/list";
     }
 
     @GetMapping("/users/add")
+    @PreAuthorize("hasAuthority('user.create')")
     public String usersAdd(Model model) {
         addCurrentUserToModel(model);
         return "admin/users/add";
     }
 
     @GetMapping("/users/{id}/edit")
+    @PreAuthorize("hasAuthority('user.update')")
     public String usersEdit(@PathVariable("id") Long id, Model model) {
         addCurrentUserToModel(model);
         model.addAttribute("userId", id);
@@ -130,12 +135,14 @@ public class AdminPageController {
 
     // Roles
     @GetMapping("/roles")
+    @PreAuthorize("hasAuthority('role.view')")
     public String rolesList(Model model) {
         addCurrentUserToModel(model);
         return "admin/roles/list";
     }
 
     @GetMapping("/roles/manage")
+    @PreAuthorize("hasAuthority('role.manage_permissions')")
     public String rolesManage(Model model) {
         addCurrentUserToModel(model);
         return "admin/roles/manage";
@@ -143,12 +150,14 @@ public class AdminPageController {
 
     // Permissions
     @GetMapping("/permissions")
+    @PreAuthorize("hasAuthority('permission.view')")
     public String permissionsList(Model model) {
         addCurrentUserToModel(model);
         return "admin/permissions/list";
     }
 
     @GetMapping("/permissions/manage")
+    @PreAuthorize("hasAuthority('permission.manage')")
     public String permissionsManage(Model model) {
         addCurrentUserToModel(model);
         return "admin/permissions/manage";

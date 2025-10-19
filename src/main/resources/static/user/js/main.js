@@ -1244,7 +1244,7 @@ class LioraApp {
                     if (token) {
                         const payload = this.parseJwt(token);
                         const roles = this.extractRolesFromPayload(payload);
-                        const isAdmin = roles.includes('ADMIN') || roles.includes('ROLE_ADMIN');
+                        const isAdmin = roles.includes('ADMIN') || roles.includes('ROLE_ADMIN') || roles.includes('MANAGER') || roles.includes('ROLE_MANAGER');
                         this.currentUser = { ...this.currentUser, roles, isAdmin };
                         localStorage.setItem('liora_user', JSON.stringify(this.currentUser));
                     }
@@ -1286,7 +1286,7 @@ class LioraApp {
         if (this.currentUser) {
             const displayName = this.currentUser.name || this.currentUser.username || 'User';
             const rolesArr = Array.isArray(this.currentUser.roles) ? this.currentUser.roles.map(r => String(r).toUpperCase()) : [];
-            const isAdmin = this.currentUser.isAdmin === true || rolesArr.includes('ADMIN') || rolesArr.includes('ROLE_ADMIN');
+            const isAdmin = this.currentUser.isAdmin === true || rolesArr.includes('ADMIN') || rolesArr.includes('ROLE_ADMIN') || rolesArr.includes('MANAGER') || rolesArr.includes('ROLE_MANAGER');
             const adminLink = isAdmin ? `<li><a class="dropdown-item" href="/admin" id="adminPanelLink"><i class="fas fa-tools me-2"></i>Trang quản trị</a></li>` : '';
 
             const userHTML = `
@@ -1347,12 +1347,13 @@ class LioraApp {
         document.dispatchEvent(new CustomEvent('user:logout'));
 
         // Always redirect to /home (works across pages like /info)
-        try {
-            if (window && window.location && window.location.pathname !== '/home') {
-                window.location.href = '/home';
-                return;
-            }
-        } catch (_) { }
+        // Commented out to allow navigation to other pages
+        // try {
+        //     if (window && window.location && window.location.pathname !== '/home') {
+        //         window.location.href = '/home';
+        //         return;
+        //     }
+        // } catch (_) { }
         // Fallback for SPA context
         this.showPage('home');
     }

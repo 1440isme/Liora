@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -31,6 +32,7 @@ import java.util.stream.Collectors;
 @RequestMapping("/admin/api/products")
 @CrossOrigin(origins = "*")
 @RequiredArgsConstructor // tự động tạo constructor cho các final fields
+@PreAuthorize("hasAuthority('product.view')")
 public class AdminProductController {
 
     private final IProductService productService;
@@ -39,17 +41,16 @@ public class AdminProductController {
 
     // ============== BASIC CRUD ==============
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAuthority('product.create')")
     public ResponseEntity<ApiResponse<ProductResponse>> createProductWithImages(
-        @RequestParam("name") String name,
-        @RequestParam("categoryId") Long categoryId,
-        @RequestParam("brandId") Long brandId,
-        @RequestParam("price") BigDecimal price,
-        @RequestParam("stock") Integer stock,
-        @RequestParam("description") String description,
-        @RequestParam(value = "isActive", defaultValue = "true") Boolean isActive,
-        @RequestParam(value = "productImages", required = true) MultipartFile[] productImages
-    )  
-    {
+            @RequestParam("name") String name,
+            @RequestParam("categoryId") Long categoryId,
+            @RequestParam("brandId") Long brandId,
+            @RequestParam("price") BigDecimal price,
+            @RequestParam("stock") Integer stock,
+            @RequestParam("description") String description,
+            @RequestParam(value = "isActive", defaultValue = "true") Boolean isActive,
+            @RequestParam(value = "productImages", required = true) MultipartFile[] productImages) {
         ApiResponse<ProductResponse> response = new ApiResponse<>();
         try {
             // Validation
@@ -74,22 +75,22 @@ public class AdminProductController {
 
             // Tự động set available dựa vào stock
             Boolean available = stock > 0;
-            
+
             // Tạo ProductCreationRequest từ form data
             ProductCreationRequest request = ProductCreationRequest.builder()
-                .name(name)
-                .categoryId(categoryId)
-                .brandId(brandId)
-                .price(price)
-                .stock(stock)
-                .description(description)
-                .available(available)
-                .isActive(isActive)
-                .build();
+                    .name(name)
+                    .categoryId(categoryId)
+                    .brandId(brandId)
+                    .price(price)
+                    .stock(stock)
+                    .description(description)
+                    .available(available)
+                    .isActive(isActive)
+                    .build();
 
             // Tạo sản phẩm
             Product product = productService.createProduct(request);
-            
+
             // Xử lý upload tất cả hình ảnh bằng IImageService
             if (productImages != null && productImages.length > 0) {
                 try {
@@ -105,7 +106,7 @@ public class AdminProductController {
             response.setResult(productResponse);
             response.setMessage("Tạo sản phẩm thành công");
             return ResponseEntity.ok(response);
-            
+
         } catch (AppException e) {
             response.setCode(e.getErrorCode().getCode());
             response.setMessage(e.getErrorCode().getMessage());
@@ -118,6 +119,7 @@ public class AdminProductController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAuthority('product.view')")
     public ResponseEntity<ApiResponse<Page<ProductResponse>>> getAllProducts(
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String status,
@@ -150,45 +152,48 @@ public class AdminProductController {
             if (status != null && !status.isEmpty()) {
                 List<Product> filteredProducts = products.getContent().stream()
                         .filter(product -> {
-                            if ("active".equals(status)) return product.getIsActive();
-                            if ("inactive".equals(status)) return !product.getIsActive();
+                            if ("active".equals(status))
+                                return product.getIsActive();
+                            if ("inactive".equals(status))
+                                return !product.getIsActive();
                             return true;
                         })
                         .toList();
 
                 products = new PageImpl<>(
-                        filteredProducts, pageable, filteredProducts.size()
-                );
+                        filteredProducts, pageable, filteredProducts.size());
             }
 
             // Lọc theo trạng thái tồn kho
             if (stockStatus != null && !stockStatus.isEmpty()) {
                 List<Product> filteredProducts = products.getContent().stream()
                         .filter(product -> {
-                            if ("IN_STOCK".equals(stockStatus)) return product.getStock() > 0;
-                            if ("OUT_OF_STOCK".equals(stockStatus)) return product.getStock() == 0 || product.getStock() == null;
+                            if ("IN_STOCK".equals(stockStatus))
+                                return product.getStock() > 0;
+                            if ("OUT_OF_STOCK".equals(stockStatus))
+                                return product.getStock() == 0 || product.getStock() == null;
                             return true;
                         })
                         .toList();
 
                 products = new PageImpl<>(
-                        filteredProducts, pageable, filteredProducts.size()
-                );
+                        filteredProducts, pageable, filteredProducts.size());
             }
 
             // Lọc theo available
             if (available != null && !available.isEmpty()) {
                 List<Product> filteredProducts = products.getContent().stream()
                         .filter(product -> {
-                            if ("true".equals(available)) return product.getAvailable();
-                            if ("false".equals(available)) return !product.getAvailable();
+                            if ("true".equals(available))
+                                return product.getAvailable();
+                            if ("false".equals(available))
+                                return !product.getAvailable();
                             return true;
                         })
                         .toList();
 
                 products = new PageImpl<>(
-                        filteredProducts, pageable, filteredProducts.size()
-                );
+                        filteredProducts, pageable, filteredProducts.size());
             }
 
             // lọc theo giá
@@ -196,15 +201,16 @@ public class AdminProductController {
                 List<Product> filteredProducts = products.getContent().stream()
                         .filter(product -> {
                             BigDecimal price = product.getPrice();
-                            if (minPrice != null && price.compareTo(minPrice) < 0) return false;
-                            if (maxPrice != null && price.compareTo(maxPrice) > 0) return false;
+                            if (minPrice != null && price.compareTo(minPrice) < 0)
+                                return false;
+                            if (maxPrice != null && price.compareTo(maxPrice) > 0)
+                                return false;
                             return true;
                         })
                         .toList();
 
                 products = new PageImpl<>(
-                        filteredProducts, pageable, filteredProducts.size()
-                );
+                        filteredProducts, pageable, filteredProducts.size());
             }
 
             // lọc theo stock
@@ -212,39 +218,38 @@ public class AdminProductController {
                 List<Product> filteredProducts = products.getContent().stream()
                         .filter(product -> {
                             Integer stock = product.getStock();
-                            if (minStock != null && stock < minStock) return false;
-                            if (maxStock != null && stock > maxStock) return false;
+                            if (minStock != null && stock < minStock)
+                                return false;
+                            if (maxStock != null && stock > maxStock)
+                                return false;
                             return true;
                         })
                         .toList();
                 products = new PageImpl<>(
-                        filteredProducts, pageable, filteredProducts.size()
-                );
+                        filteredProducts, pageable, filteredProducts.size());
             }
 
-            // lọc theo brand 
+            // lọc theo brand
             if (brandId != null) {
                 List<Product> filteredProducts = products.getContent().stream()
-                    .filter(product -> product.getBrand().getBrandId().equals(brandId))
-                    .toList();
+                        .filter(product -> product.getBrand().getBrandId().equals(brandId))
+                        .toList();
                 products = new PageImpl<>(
-                        filteredProducts, pageable, filteredProducts.size()
-                );
+                        filteredProducts, pageable, filteredProducts.size());
             }
 
             // lọc theo category
             if (categoryId != null) {
                 List<Product> filteredProducts = products.getContent().stream()
-                    .filter(product -> product.getCategory().getCategoryId().equals(categoryId))
-                    .toList();
+                        .filter(product -> product.getCategory().getCategoryId().equals(categoryId))
+                        .toList();
                 products = new PageImpl<>(
-                        filteredProducts, pageable, filteredProducts.size()
-                );
+                        filteredProducts, pageable, filteredProducts.size());
             }
 
             Page<ProductResponse> productResponses = products.map(product -> {
                 ProductResponse productResponse = productMapper.toProductResponse(product);
-                
+
                 // Load main image
                 try {
                     Optional<Image> mainImage = imageService.findMainImageByProductId(product.getProductId());
@@ -252,9 +257,10 @@ public class AdminProductController {
                         productResponse.setMainImageUrl(mainImage.get().getImageUrl());
                     }
                 } catch (Exception e) {
-                    System.err.println("Error loading image for product " + product.getProductId() + ": " + e.getMessage());
+                    System.err.println(
+                            "Error loading image for product " + product.getProductId() + ": " + e.getMessage());
                 }
-                
+
                 return productResponse;
             });
             response.setResult(productResponses);
@@ -271,7 +277,7 @@ public class AdminProductController {
     public ResponseEntity<ApiResponse<ProductResponse>> getProductById(@PathVariable Long id) {
         ApiResponse<ProductResponse> response = new ApiResponse<>();
         try {
-            if (id <= 0){
+            if (id <= 0) {
                 response.setCode(400);
                 response.setMessage("ID sản phẩm không hợp lệ");
                 return ResponseEntity.badRequest().body(response);
@@ -280,7 +286,7 @@ public class AdminProductController {
             response.setResult(productResponse);
             response.setMessage("Lấy thông tin sản phẩm thành công");
             return ResponseEntity.ok(response);
-        } catch(AppException e) {
+        } catch (AppException e) {
             response.setCode(e.getErrorCode().getCode());
             response.setMessage(e.getErrorCode().getMessage());
             return ResponseEntity.status(e.getErrorCode().getCode()).body(response);
@@ -292,6 +298,7 @@ public class AdminProductController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('product.update')")
     public ResponseEntity<ApiResponse<ProductResponse>> updateProduct(
             @PathVariable Long id,
             @Valid @RequestBody ProductUpdateRequest request) {
@@ -319,6 +326,7 @@ public class AdminProductController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('product.delete')")
     public ResponseEntity<ApiResponse<String>> deleteProduct(@PathVariable Long id) {
         ApiResponse<String> response = new ApiResponse<>();
         try {
@@ -327,11 +335,11 @@ public class AdminProductController {
                 response.setMessage("ID sản phẩm không hợp lệ");
                 return ResponseEntity.badRequest().body(response);
             }
-            
+
             // Lấy thông tin sản phẩm trước khi xóa để báo lỗi chi tiết
             Product product = productService.findByIdOptional(id).orElse(null);
             String productName = product != null ? product.getName() : "ID: " + id;
-            
+
             productService.deleteById(id);
             response.setMessage("Xóa sản phẩm '" + productName + "' thành công");
             return ResponseEntity.ok(response);
@@ -354,13 +362,14 @@ public class AdminProductController {
             return ResponseEntity.status(e.getErrorCode().getCode()).body(response);
         } catch (Exception e) {
             response.setCode(500);
-            response.setMessage("Lỗi khi xóa sản phẩm: "  + e.getMessage());
+            response.setMessage("Lỗi khi xóa sản phẩm: " + e.getMessage());
             return ResponseEntity.internalServerError().body(response);
         }
     }
 
     // ========== STATUS MANAGEMENT ==========
     @PutMapping("/{id}/activate")
+    @PreAuthorize("hasAuthority('product.update')")
     public ResponseEntity<ApiResponse<String>> activateProduct(@PathVariable Long id) {
         ApiResponse<String> response = new ApiResponse<>();
         try {
@@ -377,7 +386,7 @@ public class AdminProductController {
             response.setCode(e.getErrorCode().getCode());
             response.setMessage(e.getErrorCode().getMessage());
             return ResponseEntity.status(e.getErrorCode().getCode()).body(response);
-        }  catch (Exception e) {
+        } catch (Exception e) {
             response.setCode(500);
             response.setMessage("Lỗi khi kích hoạt sản phẩm: " + e.getMessage());
             return ResponseEntity.internalServerError().body(response);
@@ -385,6 +394,7 @@ public class AdminProductController {
     }
 
     @PutMapping("/{id}/deactivate")
+    @PreAuthorize("hasAuthority('product.update')")
     public ResponseEntity<ApiResponse<String>> deactivateProduct(@PathVariable Long id) {
         ApiResponse<String> response = new ApiResponse<>();
         try {
@@ -401,7 +411,7 @@ public class AdminProductController {
             response.setCode(e.getErrorCode().getCode());
             response.setMessage(e.getErrorCode().getMessage());
             return ResponseEntity.status(e.getErrorCode().getCode()).body(response);
-        }  catch (Exception e) {
+        } catch (Exception e) {
             response.setCode(500);
             response.setMessage("Lỗi khi ngừng hoạt động sản phẩm: " + e.getMessage());
             return ResponseEntity.internalServerError().body(response);
@@ -409,6 +419,7 @@ public class AdminProductController {
     }
 
     @PutMapping("/{id}/available")
+    @PreAuthorize("hasAuthority('product.update')")
     public ResponseEntity<ApiResponse<String>> availableProduct(
             @PathVariable Long id,
             @RequestParam Boolean available) {
@@ -428,7 +439,7 @@ public class AdminProductController {
             response.setCode(e.getErrorCode().getCode());
             response.setMessage(e.getErrorCode().getMessage());
             return ResponseEntity.status(e.getErrorCode().getCode()).body(response);
-        }  catch (Exception e) {
+        } catch (Exception e) {
             response.setCode(500);
             response.setMessage("Lỗi khi cập nhật trạng thái sản phẩm: " + e.getMessage());
             return ResponseEntity.internalServerError().body(response);
@@ -437,6 +448,7 @@ public class AdminProductController {
 
     // ========== STOCK MANAGEMENT ==========
     @PutMapping("/{id}/stock")
+    @PreAuthorize("hasAuthority('product.update')")
     public ResponseEntity<ApiResponse<String>> updateStock(
             @PathVariable Long id,
             @RequestParam Integer stock) {
@@ -462,6 +474,7 @@ public class AdminProductController {
     }
 
     @PutMapping("/{id}/sold-count")
+    @PreAuthorize("hasAuthority('product.update')")
     public ResponseEntity<ApiResponse<String>> updateSoldCount(
             @PathVariable Long id,
             @RequestParam Integer soldCount) {
@@ -485,8 +498,10 @@ public class AdminProductController {
             return ResponseEntity.internalServerError().body(response);
         }
     }
+
     // ========== BULK OPERATIONS ==========
     @PutMapping("/bulk/activate")
+    @PreAuthorize("hasAuthority('product.update')")
     public ResponseEntity<ApiResponse<String>> bulkActivateProducts(@RequestBody List<Long> productIds) {
         ApiResponse<String> response = new ApiResponse<>();
         try {
@@ -495,10 +510,11 @@ public class AdminProductController {
                 response.setMessage("Danh sách sản phẩm không được trống");
                 return ResponseEntity.badRequest().body(response);
             }
-            
+
             // Xử lý bulk
             for (Long id : productIds) {
-                if (id <= 0) continue; // Skip invalid IDs
+                if (id <= 0)
+                    continue; // Skip invalid IDs
                 productService.activateProduct(id);
             }
             response.setMessage("Kích hoạt hàng loạt sản phẩm thành công");
@@ -507,7 +523,7 @@ public class AdminProductController {
             response.setCode(e.getErrorCode().getCode());
             response.setMessage(e.getErrorCode().getMessage());
             return ResponseEntity.status(e.getErrorCode().getCode()).body(response);
-        }catch (Exception e) {
+        } catch (Exception e) {
             response.setCode(500);
             response.setMessage("Lỗi khi kích hoạt hàng loạt sản phẩm: " + e.getMessage());
             return ResponseEntity.internalServerError().body(response);
@@ -515,6 +531,7 @@ public class AdminProductController {
     }
 
     @PutMapping("/bulk/deactivate")
+    @PreAuthorize("hasAuthority('product.update')")
     public ResponseEntity<ApiResponse<String>> bulkDeactivateProducts(@RequestBody List<Long> productIds) {
         ApiResponse<String> response = new ApiResponse<>();
         try {
@@ -523,10 +540,11 @@ public class AdminProductController {
                 response.setMessage("Danh sách sản phẩm không được trống");
                 return ResponseEntity.badRequest().body(response);
             }
-            
+
             // Xử lý bulk
             for (Long id : productIds) {
-                if (id <= 0) continue; // Skip invalid IDs
+                if (id <= 0)
+                    continue; // Skip invalid IDs
                 productService.deactivateProduct(id);
             }
             response.setMessage("Ngừng hoạt động hàng loạt sản phẩm thành công");
@@ -543,6 +561,7 @@ public class AdminProductController {
     }
 
     @DeleteMapping("/bulk")
+    @PreAuthorize("hasAuthority('product.delete')")
     public ResponseEntity<ApiResponse<String>> bulkDeleteProducts(@RequestBody List<Long> productIds) {
         ApiResponse<String> response = new ApiResponse<>();
         try {
@@ -551,18 +570,18 @@ public class AdminProductController {
                 response.setMessage("Danh sách sản phẩm không được trống");
                 return ResponseEntity.badRequest().body(response);
             }
-            
+
             int successCount = 0;
             int failCount = 0;
             StringBuilder errorMessages = new StringBuilder();
-            
+
             // Xử lý bulk với kiểm tra từng sản phẩm
             for (Long id : productIds) {
                 if (id <= 0) {
                     failCount++;
                     continue; // Skip invalid IDs
                 }
-                
+
                 try {
                     productService.deleteById(id);
                     successCount++;
@@ -580,20 +599,21 @@ public class AdminProductController {
                     }
                 }
             }
-            
+
             if (failCount > 0) {
                 String errorMsg = errorMessages.toString();
                 if (errorMsg.endsWith(", ")) {
                     errorMsg = errorMsg.substring(0, errorMsg.length() - 2);
                 }
                 response.setCode(207); // Multi-Status
-                response.setMessage(String.format("Xóa thành công %d sản phẩm, thất bại %d sản phẩm. Sản phẩm không thể xóa: %s", 
-                    successCount, failCount, errorMsg));
+                response.setMessage(
+                        String.format("Xóa thành công %d sản phẩm, thất bại %d sản phẩm. Sản phẩm không thể xóa: %s",
+                                successCount, failCount, errorMsg));
             } else {
                 response.setCode(200);
                 response.setMessage(String.format("Xóa hàng loạt thành công %d sản phẩm", successCount));
             }
-            
+
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             response.setCode(500);
@@ -601,7 +621,7 @@ public class AdminProductController {
             return ResponseEntity.internalServerError().body(response);
         }
     }
-    
+
     // ========== STATISTICS ==========
     @GetMapping("/statistics")
     public ResponseEntity<ApiResponse<Object>> getProductStatistics() {
@@ -665,7 +685,7 @@ public class AdminProductController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             response.setCode(500);
-            response.setMessage("Lỗi khi lấy danh sách sản phẩm bán chạy: "  + e.getMessage());
+            response.setMessage("Lỗi khi lấy danh sách sản phẩm bán chạy: " + e.getMessage());
             return ResponseEntity.internalServerError().body(response);
         }
     }
@@ -683,7 +703,7 @@ public class AdminProductController {
             response.setResult(productResponses);
             response.setMessage("Lấy danh sách sản phẩm đánh giá cao thành công");
             return ResponseEntity.ok(response);
-        }  catch (Exception e) {
+        } catch (Exception e) {
             response.setCode(500);
             response.setMessage("Lỗi khi lấy danh sách sản phẩm đánh giá cao: " + e.getMessage());
             return ResponseEntity.internalServerError().body(response);
@@ -726,7 +746,6 @@ public class AdminProductController {
         }
     }
 
-
     // ========== HELPER METHODS ==========
     private Pageable createSortedPageable(Pageable pageable, String sortBy) {
         // Thêm validation nếu null thì trả về trang hiện tại
@@ -738,93 +757,78 @@ public class AdminProductController {
                 return PageRequest.of(
                         pageable.getPageNumber(),
                         pageable.getPageSize(),
-                        Sort.by("id").descending()
-                );
+                        Sort.by("id").descending());
             case "id":
                 return PageRequest.of(
                         pageable.getPageNumber(),
                         pageable.getPageSize(),
-                        Sort.by("id").ascending()
-                );
+                        Sort.by("id").ascending());
             case "name_desc":
                 return PageRequest.of(
                         pageable.getPageNumber(),
                         pageable.getPageSize(),
-                        Sort.by("name").descending()
-                );
+                        Sort.by("name").descending());
 
             case "name":
                 return PageRequest.of(
                         pageable.getPageNumber(),
                         pageable.getPageSize(),
-                        Sort.by("name").ascending()
-                );
+                        Sort.by("name").ascending());
             case "price_desc":
                 return PageRequest.of(
                         pageable.getPageNumber(),
                         pageable.getPageSize(),
-                        Sort.by("price").descending()
-                );
+                        Sort.by("price").descending());
             case "price":
                 return PageRequest.of(
                         pageable.getPageNumber(),
                         pageable.getPageSize(),
-                        Sort.by("price").ascending()
-                );
+                        Sort.by("price").ascending());
             case "created_desc":
                 return PageRequest.of(
                         pageable.getPageNumber(),
                         pageable.getPageSize(),
-                        Sort.by("createdDate").descending()
-                );
+                        Sort.by("createdDate").descending());
             case "created":
                 return PageRequest.of(
                         pageable.getPageNumber(),
                         pageable.getPageSize(),
-                        Sort.by("createdDate").ascending()
-                );
+                        Sort.by("createdDate").ascending());
             case "stock_desc":
                 return PageRequest.of(
                         pageable.getPageNumber(),
                         pageable.getPageSize(),
-                        Sort.by("stock").descending()
-                );
+                        Sort.by("stock").descending());
             case "stock":
                 return PageRequest.of(
                         pageable.getPageNumber(),
                         pageable.getPageSize(),
-                        Sort.by("stock").ascending()
-                );
+                        Sort.by("stock").ascending());
             case "sold_desc":
                 return PageRequest.of(
                         pageable.getPageNumber(),
                         pageable.getPageSize(),
-                        Sort.by("soldCount").descending()
-                );
+                        Sort.by("soldCount").descending());
             case "sold":
                 return PageRequest.of(
                         pageable.getPageNumber(),
                         pageable.getPageSize(),
-                        Sort.by("soldCount").ascending()
-                );
+                        Sort.by("soldCount").ascending());
             case "rating_desc":
-                return  PageRequest.of(
+                return PageRequest.of(
                         pageable.getPageNumber(),
                         pageable.getPageSize(),
-                        Sort.by("averageRating").descending()
-                );
+                        Sort.by("averageRating").descending());
             case "rating":
                 return PageRequest.of(
                         pageable.getPageNumber(),
                         pageable.getPageSize(),
-                        Sort.by("averageRating").ascending()
-                );
+                        Sort.by("averageRating").ascending());
             default:
                 return PageRequest.of(
                         pageable.getPageNumber(),
                         pageable.getPageSize(),
-                        Sort.by("createdDate").descending()
-                );
+                        Sort.by("createdDate").descending());
         }
     }
 
@@ -838,18 +842,18 @@ public class AdminProductController {
                 response.setMessage("ID sản phẩm không hợp lệ");
                 return ResponseEntity.badRequest().body(response);
             }
-            
+
             List<Image> images = imageService.findByProductIdOrderByDisplayOrder(id);
             // Convert to DTO
             List<ImageResponse> imageResponses = images.stream()
-                .map(image -> ImageResponse.builder()
-                    .imageId(image.getImageId())
-                    .imageUrl(image.getImageUrl())
-                    .isMain(image.getIsMain())
-                    .displayOrder(image.getDisplayOrder())
-                    .build())
-                .collect(Collectors.toList());
-                
+                    .map(image -> ImageResponse.builder()
+                            .imageId(image.getImageId())
+                            .imageUrl(image.getImageUrl())
+                            .isMain(image.getIsMain())
+                            .displayOrder(image.getDisplayOrder())
+                            .build())
+                    .collect(Collectors.toList());
+
             response.setResult(imageResponses);
             response.setMessage("Lấy danh sách hình ảnh thành công");
             return ResponseEntity.ok(response);
@@ -865,12 +869,12 @@ public class AdminProductController {
     }
 
     @PutMapping("/{productId}/images/{imageId}/set-main")
+    @PreAuthorize("hasAuthority('product.manage_images')")
     public ResponseEntity<ApiResponse<String>> setMainImage(
-        @PathVariable Long productId,
-        @PathVariable Long imageId
-    ) {
+            @PathVariable Long productId,
+            @PathVariable Long imageId) {
         ApiResponse<String> response = new ApiResponse<>();
-        
+
         try {
             // Kiểm tra product tồn tại
             Optional<Product> productOpt = productService.findByIdOptional(productId);
@@ -879,20 +883,20 @@ public class AdminProductController {
                 response.setMessage("Không tìm thấy sản phẩm");
                 return ResponseEntity.notFound().build();
             }
-            
+
             // Set image làm main
             imageService.setMainImage(productId, imageId);
-            
+
             // Update product timestamp
             Product product = productOpt.get();
             product.setUpdatedDate(LocalDateTime.now());
             productService.save(product);
-            
+
             response.setCode(200);
             response.setMessage("Đặt làm ảnh chính thành công");
             response.setResult("success");
             return ResponseEntity.ok(response);
-            
+
         } catch (Exception e) {
             response.setCode(500);
             response.setMessage("Lỗi khi đặt làm ảnh chính: " + e.getMessage());
@@ -901,11 +905,11 @@ public class AdminProductController {
     }
 
     @PutMapping("/{productId}/update-timestamp")
+    @PreAuthorize("hasAuthority('product.update')")
     public ResponseEntity<ApiResponse<String>> updateProductTimestamp(
-        @PathVariable Long productId
-    ) {
+            @PathVariable Long productId) {
         ApiResponse<String> response = new ApiResponse<>();
-        
+
         try {
             // Kiểm tra product tồn tại
             Optional<Product> productOpt = productService.findByIdOptional(productId);
@@ -914,17 +918,17 @@ public class AdminProductController {
                 response.setMessage("Không tìm thấy sản phẩm");
                 return ResponseEntity.notFound().build();
             }
-            
+
             // Update timestamp
             Product product = productOpt.get();
             product.setUpdatedDate(LocalDateTime.now());
             productService.save(product);
-            
+
             response.setCode(200);
             response.setMessage("Cập nhật thời gian thành công");
             response.setResult("success");
             return ResponseEntity.ok(response);
-            
+
         } catch (Exception e) {
             response.setCode(500);
             response.setMessage("Lỗi khi cập nhật thời gian: " + e.getMessage());
@@ -933,12 +937,12 @@ public class AdminProductController {
     }
 
     @DeleteMapping("/{productId}/images/{imageId}")
+    @PreAuthorize("hasAuthority('product.manage_images')")
     public ResponseEntity<ApiResponse<String>> deleteImage(
-        @PathVariable Long productId,
-        @PathVariable Long imageId
-    ) {
+            @PathVariable Long productId,
+            @PathVariable Long imageId) {
         ApiResponse<String> response = new ApiResponse<>();
-        
+
         try {
             // Kiểm tra product tồn tại
             Optional<Product> productOpt = productService.findByIdOptional(productId);
@@ -947,20 +951,20 @@ public class AdminProductController {
                 response.setMessage("Không tìm thấy sản phẩm");
                 return ResponseEntity.notFound().build();
             }
-            
+
             // Xóa ảnh
             imageService.deleteImage(imageId);
-            
+
             // Update product timestamp
             Product product = productOpt.get();
             product.setUpdatedDate(LocalDateTime.now());
             productService.save(product);
-            
+
             response.setCode(200);
             response.setMessage("Xóa hình ảnh thành công");
             response.setResult("success");
             return ResponseEntity.ok(response);
-            
+
         } catch (Exception e) {
             response.setCode(500);
             response.setMessage("Lỗi khi xóa hình ảnh: " + e.getMessage());
@@ -969,9 +973,10 @@ public class AdminProductController {
     }
 
     @PutMapping("/{id}/toggle-status")
+    @PreAuthorize("hasAuthority('product.update')")
     public ResponseEntity<ApiResponse<String>> toggleProductStatus(@PathVariable Long id) {
         ApiResponse<String> response = new ApiResponse<>();
-        
+
         try {
             // Lấy thông tin product hiện tại
             ProductResponse productResponse = productService.findById(id);
@@ -980,7 +985,7 @@ public class AdminProductController {
                 response.setMessage("Không tìm thấy sản phẩm");
                 return ResponseEntity.notFound().build();
             }
-            
+
             // Toggle status dựa trên trạng thái hiện tại
             if (productResponse.getIsActive()) {
                 // Nếu đang active → deactivate
@@ -991,11 +996,11 @@ public class AdminProductController {
                 productService.activateProduct(id);
                 response.setMessage("Kích hoạt sản phẩm thành công");
             }
-            
+
             response.setCode(200);
             response.setResult("success");
             return ResponseEntity.ok(response);
-            
+
         } catch (Exception e) {
             response.setCode(500);
             response.setMessage("Lỗi khi thay đổi trạng thái: " + e.getMessage());

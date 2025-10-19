@@ -1,11 +1,11 @@
 package vn.liora.controller.admin;
 
-
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.*;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import vn.liora.dto.request.ApiResponse;
 import vn.liora.dto.request.ApplyDiscountRequest;
@@ -28,6 +28,7 @@ import java.util.Map;
 @RequestMapping("/admin/api/discounts")
 @CrossOrigin(origins = "*")
 @RequiredArgsConstructor
+@PreAuthorize("hasAuthority('discount.view')")
 public class AdminDiscountController {
 
     private final IDiscountService discountService;
@@ -35,7 +36,9 @@ public class AdminDiscountController {
 
     // ========== BASIC CRUD ==========
     @PostMapping
-    public ResponseEntity<ApiResponse<DiscountResponse>> createDiscount(@Valid @RequestBody DiscountCreationRequest request) {
+    @PreAuthorize("hasAuthority('discount.create')")
+    public ResponseEntity<ApiResponse<DiscountResponse>> createDiscount(
+            @Valid @RequestBody DiscountCreationRequest request) {
         ApiResponse<DiscountResponse> response = new ApiResponse<>();
         try {
             Discount discount = discountService.createDiscount(request);
@@ -53,7 +56,6 @@ public class AdminDiscountController {
             return ResponseEntity.internalServerError().body(response);
         }
     }
-
 
     @GetMapping
     public ResponseEntity<ApiResponse<Page<DiscountResponse>>> getAllDiscounts(
@@ -82,10 +84,14 @@ public class AdminDiscountController {
             if (status != null && !status.isEmpty()) {
                 List<Discount> filteredDiscounts = discounts.getContent().stream()
                         .filter(discount -> {
-                            if ("active".equals(status)) return discount.getIsActive();
-                            if ("inactive".equals(status)) return !discount.getIsActive();
-                            if ("expired".equals(status)) return discountService.isDiscountExpired(discount.getDiscountId());
-                            if ("upcoming".equals(status)) return discount.getStartDate().isAfter(java.time.LocalDateTime.now());
+                            if ("active".equals(status))
+                                return discount.getIsActive();
+                            if ("inactive".equals(status))
+                                return !discount.getIsActive();
+                            if ("expired".equals(status))
+                                return discountService.isDiscountExpired(discount.getDiscountId());
+                            if ("upcoming".equals(status))
+                                return discount.getStartDate().isAfter(java.time.LocalDateTime.now());
                             return true;
                         })
                         .toList();
@@ -104,7 +110,6 @@ public class AdminDiscountController {
             return ResponseEntity.internalServerError().body(response);
         }
     }
-
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<DiscountResponse>> getDiscountById(@PathVariable Long id) {
@@ -126,6 +131,7 @@ public class AdminDiscountController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('discount.update')")
     public ResponseEntity<ApiResponse<DiscountResponse>> updateDiscount(
             @PathVariable Long id,
             @Valid @RequestBody DiscountUpdateRequest request) {
@@ -146,8 +152,8 @@ public class AdminDiscountController {
         }
     }
 
-
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('discount.delete')")
     public ResponseEntity<ApiResponse<String>> deleteDiscount(@PathVariable Long id) {
         ApiResponse<String> response = new ApiResponse<>();
         try {
@@ -195,10 +201,14 @@ public class AdminDiscountController {
             if (status != null && !status.isEmpty()) {
                 List<Discount> filteredDiscounts = discounts.getContent().stream()
                         .filter(discount -> {
-                            if ("active".equals(status)) return discount.getIsActive();
-                            if ("inactive".equals(status)) return !discount.getIsActive();
-                            if ("expired".equals(status)) return discountService.isDiscountExpired(discount.getDiscountId());
-                            if ("upcoming".equals(status)) return discount.getStartDate().isAfter(java.time.LocalDateTime.now());
+                            if ("active".equals(status))
+                                return discount.getIsActive();
+                            if ("inactive".equals(status))
+                                return !discount.getIsActive();
+                            if ("expired".equals(status))
+                                return discountService.isDiscountExpired(discount.getDiscountId());
+                            if ("upcoming".equals(status))
+                                return discount.getStartDate().isAfter(java.time.LocalDateTime.now());
                             return true;
                         })
                         .toList();
@@ -336,8 +346,10 @@ public class AdminDiscountController {
 
     @Autowired
     private IOrderService orderService;
+
     // ========== ORDER DISCOUNT MANAGEMENT ==========
     @PostMapping("/apply")
+    @PreAuthorize("hasAuthority('discount.apply')")
     public ResponseEntity<ApiResponse<String>> applyDiscountToOrder(@Valid @RequestBody ApplyDiscountRequest request) {
         ApiResponse<String> response = new ApiResponse<>();
         try {
@@ -357,6 +369,7 @@ public class AdminDiscountController {
     }
 
     @DeleteMapping("/remove/order/{orderId}/discount/{discountId}")
+    @PreAuthorize("hasAuthority('discount.remove')")
     public ResponseEntity<ApiResponse<String>> removeDiscountFromOrder(
             @PathVariable Long orderId,
             @PathVariable Long discountId) {

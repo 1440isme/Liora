@@ -75,7 +75,7 @@ class UserInfoManager {
                     username: this.currentUser.username,
                     name: `${this.currentUser.firstname || ''} ${this.currentUser.lastname || ''}`.trim(),
                     roles: existing.roles,
-                    isAdmin: existing.isAdmin === true || (Array.isArray(existing.roles) && existing.roles.includes('ADMIN'))
+                    isAdmin: existing.isAdmin === true || (Array.isArray(existing.roles) && (existing.roles.includes('ADMIN') || existing.roles.includes('MANAGER')))
                 };
                 localStorage.setItem('liora_user', JSON.stringify(liteUser));
                 if (window.app && typeof window.app.updateUserDisplay === 'function') {
@@ -367,7 +367,7 @@ class UserInfoManager {
                     username: this.currentUser.username,
                     name: `${this.currentUser.firstname || ''} ${this.currentUser.lastname || ''}`.trim(),
                     roles: existing.roles,
-                    isAdmin: existing.isAdmin === true || (Array.isArray(existing.roles) && existing.roles.includes('ADMIN'))
+                    isAdmin: existing.isAdmin === true || (Array.isArray(existing.roles) && (existing.roles.includes('ADMIN') || existing.roles.includes('MANAGER')))
                 };
                 localStorage.setItem('liora_user', JSON.stringify(liteUser));
                 if (window.app && typeof window.app.updateUserDisplay === 'function') {

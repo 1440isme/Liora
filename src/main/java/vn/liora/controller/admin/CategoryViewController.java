@@ -1,6 +1,7 @@
 package vn.liora.controller.admin;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
@@ -14,6 +15,7 @@ import vn.liora.service.ICategoryService;
 @Controller
 @RequestMapping("/admin/categories")
 @RequiredArgsConstructor
+@PreAuthorize("hasAuthority('category.view')")
 public class CategoryViewController {
 
     private final ICategoryService categoryService;

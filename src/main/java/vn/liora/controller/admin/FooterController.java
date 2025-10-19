@@ -1,6 +1,7 @@
 package vn.liora.controller.admin;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -15,6 +16,7 @@ import java.util.List;
 
 @Controller
 @RequestMapping("/admin/footer")
+@PreAuthorize("hasAuthority('footer.manage')")
 public class FooterController {
 
     @Autowired
@@ -41,6 +43,7 @@ public class FooterController {
     }
 
     @PostMapping("/save")
+    @PreAuthorize("hasAuthority('footer.manage')")
     public String saveFooter(@ModelAttribute FooterRequest footerRequest) {
         try {
             footerService.saveOrUpdateFooter(footerRequest);

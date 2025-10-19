@@ -20,7 +20,7 @@ import java.util.Map;
 @CrossOrigin(origins = "*")
 @RequiredArgsConstructor
 @Slf4j
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasAuthority('review.view')")
 public class AdminReviewController {
 
     private final IReviewService reviewService;
@@ -43,8 +43,7 @@ public class AdminReviewController {
 
         try {
             // Tạo Pageable
-            Sort sort = sortDir.equalsIgnoreCase("desc") ?
-                    Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+            Sort sort = sortDir.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
             Pageable pageable = PageRequest.of(page, size, sort);
 
             // Gọi service để lấy dữ liệu
@@ -106,6 +105,7 @@ public class AdminReviewController {
      * Cập nhật trạng thái hiển thị review
      */
     @PutMapping("/{id}/visibility")
+    @PreAuthorize("hasAuthority('review.update')")
     public ResponseEntity<Map<String, Object>> updateReviewVisibility(
             @PathVariable Long id,
             @RequestParam Boolean isVisible) {
