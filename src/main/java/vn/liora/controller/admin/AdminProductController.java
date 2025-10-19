@@ -16,6 +16,7 @@ import vn.liora.dto.response.ProductResponse;
 import vn.liora.entity.Image;
 import vn.liora.entity.Product;
 import vn.liora.exception.AppException;
+import vn.liora.exception.ErrorCode;
 import vn.liora.mapper.ProductMapper;
 import vn.liora.service.IImageService;
 import vn.liora.service.IProductService;
@@ -326,12 +327,30 @@ public class AdminProductController {
                 response.setMessage("ID sản phẩm không hợp lệ");
                 return ResponseEntity.badRequest().body(response);
             }
+            
+            // Lấy thông tin sản phẩm trước khi xóa để báo lỗi chi tiết
+            Product product = productService.findByIdOptional(id).orElse(null);
+            String productName = product != null ? product.getName() : "ID: " + id;
+            
             productService.deleteById(id);
-            response.setMessage("Xóa sản phẩm thành công");
+            response.setMessage("Xóa sản phẩm '" + productName + "' thành công");
             return ResponseEntity.ok(response);
         } catch (AppException e) {
-            response.setCode(e.getErrorCode().getCode());
-            response.setMessage(e.getErrorCode().getMessage());
+            if (e.getErrorCode() == ErrorCode.PRODUCT_HAS_ORDERS) {
+                // Lấy thông tin sản phẩm để báo lỗi chi tiết
+                try {
+                    Product product = productService.findByIdOptional(id).orElse(null);
+                    String productName = product != null ? product.getName() : "ID: " + id;
+                    response.setCode(e.getErrorCode().getCode());
+                    response.setMessage("Không thể xóa sản phẩm '" + productName + "' vì đã có lịch sử bán hàng");
+                } catch (Exception ex) {
+                    response.setCode(e.getErrorCode().getCode());
+                    response.setMessage("Không thể xóa sản phẩm vì đã có lịch sử bán hàng");
+                }
+            } else {
+                response.setCode(e.getErrorCode().getCode());
+                response.setMessage(e.getErrorCode().getMessage());
+            }
             return ResponseEntity.status(e.getErrorCode().getCode()).body(response);
         } catch (Exception e) {
             response.setCode(500);
@@ -533,17 +552,49 @@ public class AdminProductController {
                 return ResponseEntity.badRequest().body(response);
             }
             
-            // Xử lý bulk
+            int successCount = 0;
+            int failCount = 0;
+            StringBuilder errorMessages = new StringBuilder();
+            
+            // Xử lý bulk với kiểm tra từng sản phẩm
             for (Long id : productIds) {
-                if (id <= 0) continue; // Skip invalid IDs
-                productService.deleteById(id);
+                if (id <= 0) {
+                    failCount++;
+                    continue; // Skip invalid IDs
+                }
+                
+                try {
+                    productService.deleteById(id);
+                    successCount++;
+                } catch (AppException e) {
+                    failCount++;
+                    if (e.getErrorCode() == ErrorCode.PRODUCT_HAS_ORDERS) {
+                        // Lấy tên sản phẩm để báo lỗi chi tiết
+                        try {
+                            Product product = productService.findByIdOptional(id).orElse(null);
+                            String productName = product != null ? product.getName() : "ID: " + id;
+                            errorMessages.append(productName).append(" (đã được bán), ");
+                        } catch (Exception ex) {
+                            errorMessages.append("ID: ").append(id).append(" (đã được bán), ");
+                        }
+                    }
+                }
             }
-            response.setMessage("Xóa hàng loạt sản phẩm thành công");
+            
+            if (failCount > 0) {
+                String errorMsg = errorMessages.toString();
+                if (errorMsg.endsWith(", ")) {
+                    errorMsg = errorMsg.substring(0, errorMsg.length() - 2);
+                }
+                response.setCode(207); // Multi-Status
+                response.setMessage(String.format("Xóa thành công %d sản phẩm, thất bại %d sản phẩm. Sản phẩm không thể xóa: %s", 
+                    successCount, failCount, errorMsg));
+            } else {
+                response.setCode(200);
+                response.setMessage(String.format("Xóa hàng loạt thành công %d sản phẩm", successCount));
+            }
+            
             return ResponseEntity.ok(response);
-        } catch (AppException e) {
-            response.setCode(e.getErrorCode().getCode());
-            response.setMessage(e.getErrorCode().getMessage());
-            return ResponseEntity.status(e.getErrorCode().getCode()).body(response);
         } catch (Exception e) {
             response.setCode(500);
             response.setMessage("Lỗi khi xóa hàng loạt sản phẩm: " + e.getMessage());
@@ -832,6 +883,11 @@ public class AdminProductController {
             // Set image làm main
             imageService.setMainImage(productId, imageId);
             
+            // Update product timestamp
+            Product product = productOpt.get();
+            product.setUpdatedDate(LocalDateTime.now());
+            productService.save(product);
+            
             response.setCode(200);
             response.setMessage("Đặt làm ảnh chính thành công");
             response.setResult("success");
@@ -894,6 +950,11 @@ public class AdminProductController {
             
             // Xóa ảnh
             imageService.deleteImage(imageId);
+            
+            // Update product timestamp
+            Product product = productOpt.get();
+            product.setUpdatedDate(LocalDateTime.now());
+            productService.save(product);
             
             response.setCode(200);
             response.setMessage("Xóa hình ảnh thành công");

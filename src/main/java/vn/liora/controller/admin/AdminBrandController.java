@@ -13,6 +13,8 @@ import vn.liora.dto.request.BrandCreationRequest;
 import vn.liora.dto.request.BrandUpdateRequest;
 import vn.liora.dto.response.BrandResponse;
 import vn.liora.entity.Brand;
+import vn.liora.exception.AppException;
+import vn.liora.exception.ErrorCode;
 import vn.liora.mapper.BrandMapper;
 import vn.liora.service.IBrandService;
 
@@ -178,10 +180,31 @@ public class AdminBrandController {
     public ResponseEntity<ApiResponse<String>> deleteBrand(@PathVariable Long id) {
         ApiResponse<String> response = new ApiResponse<>();
         try {
+            // Lấy thông tin thương hiệu trước khi xóa để báo lỗi chi tiết
+            Brand brand = brandService.findByIdOptional(id).orElse(null);
+            String brandName = brand != null ? brand.getName() : "ID: " + id;
+            
             brandService.deleteById(id);
-            response.setResult("Xóa thương hiệu thành công");
-            response.setMessage("Xóa thương hiệu thành công");
+            response.setResult("Xóa thương hiệu '" + brandName + "' thành công");
+            response.setMessage("Xóa thương hiệu '" + brandName + "' thành công");
             return ResponseEntity.ok(response);
+        } catch (AppException e) {
+            if (e.getErrorCode() == ErrorCode.BRAND_HAS_PRODUCTS) {
+                // Lấy thông tin thương hiệu để báo lỗi chi tiết
+                try {
+                    Brand brand = brandService.findByIdOptional(id).orElse(null);
+                    String brandName = brand != null ? brand.getName() : "ID: " + id;
+                    response.setCode(e.getErrorCode().getCode());
+                    response.setMessage("Không thể xóa thương hiệu '" + brandName + "' vì đang có sản phẩm sử dụng. Vui lòng ngừng hoạt động thay vì xóa.");
+                } catch (Exception ex) {
+                    response.setCode(e.getErrorCode().getCode());
+                    response.setMessage("Không thể xóa thương hiệu vì đang có sản phẩm sử dụng. Vui lòng ngừng hoạt động thay vì xóa.");
+                }
+            } else {
+                response.setCode(e.getErrorCode().getCode());
+                response.setMessage(e.getErrorCode().getMessage());
+            }
+            return ResponseEntity.status(e.getErrorCode().getCode()).body(response);
         } catch (Exception e) {
             response.setCode(500);
             response.setMessage("Lỗi khi xóa thương hiệu: " + e.getMessage());

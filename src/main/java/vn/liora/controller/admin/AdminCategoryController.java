@@ -11,6 +11,8 @@ import vn.liora.dto.request.CategoryCreationRequest;
 import vn.liora.dto.request.CategoryUpdateRequest;
 import vn.liora.dto.response.CategoryResponse;
 import vn.liora.entity.Category;
+import vn.liora.exception.AppException;
+import vn.liora.exception.ErrorCode;
 import vn.liora.mapper.CategoryMapper;
 import vn.liora.service.ICategoryService;
 
@@ -153,10 +155,31 @@ public class AdminCategoryController {
     public ResponseEntity<ApiResponse<String>> deleteCategory(@PathVariable Long id) {
         ApiResponse<String> response = new ApiResponse<>();
         try {
+            // Lấy thông tin danh mục trước khi xóa để báo lỗi chi tiết
+            Category category = categoryService.findByIdOptional(id).orElse(null);
+            String categoryName = category != null ? category.getName() : "ID: " + id;
+            
             categoryService.deleteById(id);
-            response.setResult("Xóa danh mục thành công");
-            response.setMessage("Xóa danh mục thành công");
+            response.setResult("Xóa danh mục '" + categoryName + "' thành công");
+            response.setMessage("Xóa danh mục '" + categoryName + "' thành công");
             return ResponseEntity.ok(response);
+        } catch (AppException e) {
+            if (e.getErrorCode() == ErrorCode.CATEGORY_HAS_PRODUCTS) {
+                // Lấy thông tin danh mục để báo lỗi chi tiết
+                try {
+                    Category category = categoryService.findByIdOptional(id).orElse(null);
+                    String categoryName = category != null ? category.getName() : "ID: " + id;
+                    response.setCode(e.getErrorCode().getCode());
+                    response.setMessage("Không thể xóa danh mục '" + categoryName + "' vì đang có sản phẩm sử dụng. Vui lòng ngừng hoạt động thay vì xóa.");
+                } catch (Exception ex) {
+                    response.setCode(e.getErrorCode().getCode());
+                    response.setMessage("Không thể xóa danh mục vì đang có sản phẩm sử dụng. Vui lòng ngừng hoạt động thay vì xóa.");
+                }
+            } else {
+                response.setCode(e.getErrorCode().getCode());
+                response.setMessage(e.getErrorCode().getMessage());
+            }
+            return ResponseEntity.status(e.getErrorCode().getCode()).body(response);
         } catch (Exception e) {
             response.setCode(500);
             response.setMessage("Lỗi khi xóa danh mục: " + e.getMessage());
