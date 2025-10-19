@@ -181,12 +181,28 @@ class LioraApp {
         const searchInputs = document.querySelectorAll('.search-input');
         searchInputs.forEach(input => {
             let searchTimeout;
+            
+            // Input event with debounce
             input.addEventListener('input', (e) => {
                 clearTimeout(searchTimeout);
                 const query = e.target.value.trim();
                 searchTimeout = setTimeout(() => {
                     this.handleSearch(query);
                 }, 300); // Debounce search
+            });
+            
+            // Enter key event - immediate search
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    clearTimeout(searchTimeout);
+                    const query = e.target.value.trim();
+                    if (query.length >= 2) {
+                        this.handleSearch(query);
+                        // Redirect to search results page
+                        window.location.href = `/search-results?q=${encodeURIComponent(query)}`;
+                    }
+                }
             });
         });
 
@@ -944,8 +960,11 @@ class LioraApp {
         console.log('Level 2 categories:', allLevel2Categories);
         console.log('Level 3 categories:', allLevel3Categories);
 
+        // Sort categories alphabetically for better organization
+        const sortedCategories = categories.sort((a, b) => a.name.localeCompare(b.name, 'vi'));
+        
         // Render Level 1 categories in left column with hover functionality
-        categories.forEach(category => {
+        sortedCategories.forEach(category => {
             const categoryItem = document.createElement('div');
             categoryItem.className = 'category-item guardian-style';
             categoryItem.dataset.categoryId = category.categoryId;
@@ -1019,21 +1038,24 @@ class LioraApp {
 
     // Render Level 2 categories with their Level 3 children (4 categories per row)
     renderLevel2Categories(level2Categories, level3Categories, middleColumn, rightColumn) {
+        // Sort level 2 categories alphabetically
+        const sortedLevel2Categories = level2Categories.sort((a, b) => a.name.localeCompare(b.name, 'vi'));
+        
         // Create a single row with 4 level 2 categories
         const level2Row = document.createElement('div');
         level2Row.className = 'level2-row';
         level2Row.style.cssText = 'display: flex; gap: 20px; width: 100%; margin-bottom: 20px;';
 
         // Render first 4 level 2 categories in a single row
-        level2Categories.slice(0, 4).forEach(level2Category => {
+        sortedLevel2Categories.slice(0, 4).forEach(level2Category => {
             const level2Item = document.createElement('div');
             level2Item.className = 'level2-item';
             level2Item.style.cssText = 'flex: 1; min-width: 200px;';
 
-            // Get level 3 items for this category
+            // Get level 3 items for this category and sort them
             const level3Items = level3Categories.filter(level3 =>
                 level3.parentLevel2Id === level2Category.categoryId
-            );
+            ).sort((a, b) => a.name.localeCompare(b.name, 'vi'));
 
             this.renderCategoryGroup(level2Category, level3Items, level2Item);
             level2Row.appendChild(level2Item);
@@ -1043,11 +1065,11 @@ class LioraApp {
         middleColumn.appendChild(level2Row);
 
         // If there are more than 4 categories, render the rest in right column
-        if (level2Categories.length > 4) {
-            level2Categories.slice(4).forEach(level2Category => {
+        if (sortedLevel2Categories.length > 4) {
+            sortedLevel2Categories.slice(4).forEach(level2Category => {
                 const level3Items = level3Categories.filter(level3 =>
                     level3.parentLevel2Id === level2Category.categoryId
-                );
+                ).sort((a, b) => a.name.localeCompare(b.name, 'vi'));
                 this.renderCategoryGroup(level2Category, level3Items, rightColumn);
             });
         }

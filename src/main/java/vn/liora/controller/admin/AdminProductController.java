@@ -9,6 +9,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
+import java.util.Collections;
+
 import vn.liora.dto.request.ApiResponse;
 import vn.liora.dto.request.ProductCreationRequest;
 import vn.liora.dto.request.ProductUpdateRequest;
@@ -135,22 +138,21 @@ public class AdminProductController {
             Pageable pageable) {
         ApiResponse<Page<ProductResponse>> response = new ApiResponse<>();
         try {
-            Page<Product> products;
-            // Xử lý sort
-            if (sortBy != null && !sortBy.isEmpty()) {
-                pageable = this.createSortedPageable(pageable, sortBy);
+            // Xử lý sort - không cần tạo sortPageable vì đã áp dụng sorting sau khi lọc
+
+            // Tìm kiếm và lọc - lấy tất cả sản phẩm trước khi lọc
+            Page<Product> allProducts;
+            if (search != null && !search.trim().isEmpty()) {
+                allProducts = productService.findByNameContaining(search.trim(), Pageable.unpaged());
+            } else {
+                allProducts = productService.findAll(Pageable.unpaged());
             }
 
-            // Tìm kiếm và lọc
-            if (search != null && !search.trim().isEmpty()) {
-                products = productService.findByNameContaining(search.trim(), pageable);
-            } else {
-                products = productService.findAll(pageable);
-            }
+            List<Product> filteredProducts = new ArrayList<>(allProducts.getContent());
 
             // Lọc theo trạng thái (active/inactive)
             if (status != null && !status.isEmpty()) {
-                List<Product> filteredProducts = products.getContent().stream()
+                filteredProducts = filteredProducts.stream()
                         .filter(product -> {
                             if ("active".equals(status))
                                 return product.getIsActive();
@@ -159,14 +161,11 @@ public class AdminProductController {
                             return true;
                         })
                         .toList();
-
-                products = new PageImpl<>(
-                        filteredProducts, pageable, filteredProducts.size());
             }
 
             // Lọc theo trạng thái tồn kho
             if (stockStatus != null && !stockStatus.isEmpty()) {
-                List<Product> filteredProducts = products.getContent().stream()
+                filteredProducts = filteredProducts.stream()
                         .filter(product -> {
                             if ("IN_STOCK".equals(stockStatus))
                                 return product.getStock() > 0;
@@ -175,14 +174,11 @@ public class AdminProductController {
                             return true;
                         })
                         .toList();
-
-                products = new PageImpl<>(
-                        filteredProducts, pageable, filteredProducts.size());
             }
 
             // Lọc theo available
             if (available != null && !available.isEmpty()) {
-                List<Product> filteredProducts = products.getContent().stream()
+                filteredProducts = filteredProducts.stream()
                         .filter(product -> {
                             if ("true".equals(available))
                                 return product.getAvailable();
@@ -191,14 +187,11 @@ public class AdminProductController {
                             return true;
                         })
                         .toList();
-
-                products = new PageImpl<>(
-                        filteredProducts, pageable, filteredProducts.size());
             }
 
             // lọc theo giá
             if (minPrice != null || maxPrice != null) {
-                List<Product> filteredProducts = products.getContent().stream()
+                filteredProducts = filteredProducts.stream()
                         .filter(product -> {
                             BigDecimal price = product.getPrice();
                             if (minPrice != null && price.compareTo(minPrice) < 0)
@@ -208,14 +201,11 @@ public class AdminProductController {
                             return true;
                         })
                         .toList();
-
-                products = new PageImpl<>(
-                        filteredProducts, pageable, filteredProducts.size());
             }
 
             // lọc theo stock
             if (minStock != null || maxStock != null) {
-                List<Product> filteredProducts = products.getContent().stream()
+                filteredProducts = filteredProducts.stream()
                         .filter(product -> {
                             Integer stock = product.getStock();
                             if (minStock != null && stock < minStock)
@@ -225,27 +215,44 @@ public class AdminProductController {
                             return true;
                         })
                         .toList();
-                products = new PageImpl<>(
-                        filteredProducts, pageable, filteredProducts.size());
             }
 
             // lọc theo brand
             if (brandId != null) {
-                List<Product> filteredProducts = products.getContent().stream()
-                        .filter(product -> product.getBrand().getBrandId().equals(brandId))
-                        .toList();
-                products = new PageImpl<>(
-                        filteredProducts, pageable, filteredProducts.size());
+                filteredProducts = filteredProducts.stream()
+                    .filter(product -> product.getBrand().getBrandId().equals(brandId))
+                    .toList();
             }
 
             // lọc theo category
             if (categoryId != null) {
-                List<Product> filteredProducts = products.getContent().stream()
-                        .filter(product -> product.getCategory().getCategoryId().equals(categoryId))
-                        .toList();
-                products = new PageImpl<>(
-                        filteredProducts, pageable, filteredProducts.size());
+                filteredProducts = filteredProducts.stream()
+                    .filter(product -> product.getCategory().getCategoryId().equals(categoryId))
+                    .toList();
             }
+
+            // Áp dụng sorting sau khi lọc
+            if (sortBy != null && !sortBy.isEmpty()) {
+                filteredProducts = this.applySorting(filteredProducts, sortBy);
+            }
+
+            // Tạo PageImpl cuối cùng với pagination
+            int start = (int) pageable.getOffset();
+            int end = Math.min((start + pageable.getPageSize()), filteredProducts.size());
+            
+            // Kiểm tra start có hợp lệ không
+            List<Product> pageContent;
+            if (start >= filteredProducts.size() || start < 0) {
+                // Nếu start vượt quá size hoặc âm, trả về danh sách rỗng
+                pageContent = Collections.emptyList();
+            } else {
+                // Lấy sublist an toàn
+                pageContent = filteredProducts.subList(start, end);
+            }
+            
+            Page<Product> products = new PageImpl<>(
+                    pageContent, pageable, filteredProducts.size()
+            );
 
             Page<ProductResponse> productResponses = products.map(product -> {
                 ProductResponse productResponse = productMapper.toProductResponse(product);
@@ -747,6 +754,65 @@ public class AdminProductController {
     }
 
     // ========== HELPER METHODS ==========
+    private List<Product> applySorting(List<Product> products, String sortBy) {
+        if (sortBy == null || sortBy.trim().isEmpty()) {
+            return products;
+        }
+        
+        switch (sortBy) {
+            case "id_desc":
+                return products.stream()
+                        .sorted((p1, p2) -> Long.compare(p2.getProductId(), p1.getProductId()))
+                        .toList();
+            case "id":
+                return products.stream()
+                        .sorted((p1, p2) -> Long.compare(p1.getProductId(), p2.getProductId()))
+                        .toList();
+            case "name_desc":
+                return products.stream()
+                        .sorted((p1, p2) -> p2.getName().compareToIgnoreCase(p1.getName()))
+                        .toList();
+            case "name":
+                return products.stream()
+                        .sorted((p1, p2) -> p1.getName().compareToIgnoreCase(p2.getName()))
+                        .toList();
+            case "price_desc":
+                return products.stream()
+                        .sorted((p1, p2) -> p2.getPrice().compareTo(p1.getPrice()))
+                        .toList();
+            case "price":
+                return products.stream()
+                        .sorted((p1, p2) -> p1.getPrice().compareTo(p2.getPrice()))
+                        .toList();
+            case "stock_desc":
+                return products.stream()
+                        .sorted((p1, p2) -> Integer.compare(p2.getStock(), p1.getStock()))
+                        .toList();
+            case "stock":
+                return products.stream()
+                        .sorted((p1, p2) -> Integer.compare(p1.getStock(), p2.getStock()))
+                        .toList();
+            case "soldCount_desc":
+                return products.stream()
+                        .sorted((p1, p2) -> Integer.compare(p2.getSoldCount(), p1.getSoldCount()))
+                        .toList();
+            case "soldCount":
+                return products.stream()
+                        .sorted((p1, p2) -> Integer.compare(p1.getSoldCount(), p2.getSoldCount()))
+                        .toList();
+            case "createdDate_desc":
+                return products.stream()
+                        .sorted((p1, p2) -> p2.getCreatedDate().compareTo(p1.getCreatedDate()))
+                        .toList();
+            case "createdDate":
+                return products.stream()
+                        .sorted((p1, p2) -> p1.getCreatedDate().compareTo(p2.getCreatedDate()))
+                        .toList();
+            default:
+                return products;
+        }
+    }
+
     private Pageable createSortedPageable(Pageable pageable, String sortBy) {
         // Thêm validation nếu null thì trả về trang hiện tại
         if (sortBy == null || sortBy.trim().isEmpty()) {

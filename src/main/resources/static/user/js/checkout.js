@@ -1209,8 +1209,16 @@ class CheckoutPage {
     updateOrderSummary() {
         const subtotal = this.selectedItems.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0);
 
-        // ✅ SỬA: Xử lý discount đúng cách
-        const discountAmount = this.appliedDiscount ? this.appliedDiscount.discountAmount : 0;
+        // ✅ FIX: Tính lại discount amount nếu có discount được áp dụng
+        let discountAmount = 0;
+        if (this.appliedDiscount) {
+            // Sử dụng discount amount hiện tại, sẽ được cập nhật bởi recalculateDiscountAmount
+            discountAmount = this.appliedDiscount.discountAmount || 0;
+            
+            // Tính lại discount amount với subtotal mới (async)
+            this.recalculateDiscountAmount(subtotal);
+        }
+        
         const total = subtotal + this.shippingFee - discountAmount;
 
         $('#summary-subtotal').text(this.formatCurrency(subtotal));
@@ -1229,6 +1237,32 @@ class CheckoutPage {
         } else {
             // Cập nhật số tiền giảm giá
             $('#discount-row .fw-medium').text(`-${this.formatCurrency(discountAmount)}`);
+        }
+    }
+
+    // ✅ FIX: Method để tính lại discount amount khi subtotal thay đổi
+    async recalculateDiscountAmount(subtotal) {
+        if (!this.appliedDiscount) return;
+        
+        try {
+            const response = await this.apiCall('/discounts/apply', 'POST', {
+                discountCode: this.appliedDiscount.discountCode,
+                orderTotal: subtotal
+            });
+
+            if (response.result) {
+                // Cập nhật discount amount mới
+                this.appliedDiscount.discountAmount = response.result.discountAmount;
+                
+                // Cập nhật UI với discount amount mới
+                $('#discount-row .fw-medium').text(`-${this.formatCurrency(this.appliedDiscount.discountAmount)}`);
+                const total = subtotal + this.shippingFee - this.appliedDiscount.discountAmount;
+                $('#summary-total').text(this.formatCurrency(total));
+            }
+        } catch (error) {
+            console.warn('Không thể tính lại discount amount:', error);
+            // Nếu không tính được, có thể discount không còn hợp lệ
+            // Có thể hiển thị thông báo hoặc gỡ discount
         }
     }
 
@@ -1307,10 +1341,10 @@ class CheckoutPage {
 
             const response = await this.apiCall('/discounts/apply', 'POST', {
                 discountCode: promoCode,
-                orderTotal: this.calculateOrderTotal()
+                orderTotal: this.calculateSubtotalForDiscount()  // ✅ Chỉ gửi subtotal
             });
 
-            // ✅ SỬA: Xử lý response đúng cách
+            // Xử lý response đúng cách
             if (response.result) {
                 this.appliedDiscount = response.result;
                 this.updateOrderSummary();
@@ -1340,6 +1374,11 @@ class CheckoutPage {
         } finally {
             this.showLoading(false);
         }
+    }
+
+    // Tạo function riêng để tính subtotal cho API
+    calculateSubtotalForDiscount() {
+        return this.selectedItems.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0);
     }
 
     handleRemovePromo() {

@@ -4,7 +4,6 @@
  */
 class CategoryProductsManager {
     constructor() {
-        console.log('CategoryProductsManager constructor called');
         this.currentCategoryId = null;
         this.currentPage = 0;
         this.pageSize = 12;
@@ -22,15 +21,11 @@ class CategoryProductsManager {
     }
 
     init() {
-        console.log('CategoryProductsManager init() called');
         try {
             this.getCategoryIdFromUrl();
-            console.log('getCategoryIdFromUrl completed');
             this.bindEvents();
-            console.log('bindEvents completed');
             this.loadCategoryInfo();
             this.loadProducts();
-            console.log('loadProducts called');
         } catch (error) {
             console.error('Error in init():', error);
         }
@@ -40,13 +35,11 @@ class CategoryProductsManager {
         const path = window.location.pathname;
         const match = path.match(/\/product\/view\/category\/(\d+)/);
         this.currentCategoryId = match ? parseInt(match[1]) : null;
-        console.log('Category ID from URL:', this.currentCategoryId);
 
         // Also try to get from query params as fallback
         if (!this.currentCategoryId) {
             const urlParams = new URLSearchParams(window.location.search);
             this.currentCategoryId = urlParams.get('categoryId');
-            console.log('Category ID from query params:', this.currentCategoryId);
         }
 
         if (!this.currentCategoryId) {
@@ -56,7 +49,6 @@ class CategoryProductsManager {
             return;
         }
 
-        console.log('Category ID:', this.currentCategoryId);
     }
 
     async loadCategoryInfo() {
@@ -120,6 +112,7 @@ class CategoryProductsManager {
         this.loadBrands();
     }
 
+
     async loadProducts() {
         console.log('loadProducts called, categoryId:', this.currentCategoryId);
         if (!this.currentCategoryId) {
@@ -147,36 +140,26 @@ class CategoryProductsManager {
             }
             if (this.currentFilters.minPrice) {
                 params.append('minPrice', this.currentFilters.minPrice);
-                console.log('Added minPrice:', this.currentFilters.minPrice);
             }
             if (this.currentFilters.maxPrice) {
                 params.append('maxPrice', this.currentFilters.maxPrice);
-                console.log('Added maxPrice:', this.currentFilters.maxPrice);
             }
             if (this.currentFilters.brands && this.currentFilters.brands.length > 0) {
                 params.append('brands', this.currentFilters.brands.join(','));
-                console.log('Added brands:', this.currentFilters.brands.join(','));
             }
             if (this.currentFilters.ratings && this.currentFilters.ratings.length > 0) {
                 params.append('ratings', this.currentFilters.ratings.join(','));
-                console.log('Added ratings:', this.currentFilters.ratings.join(','));
             }
             if (this.currentFilters.sort) {
                 // Split the sort value (format: "name,asc" or "price,desc")
                 const [sortBy, sortDir] = this.currentFilters.sort.split(',');
-                console.log('Sort parameters:', { sortBy, sortDir });
                 if (sortBy && sortDir) {
                     params.append('sortBy', sortBy);
                     params.append('sortDir', sortDir);
                 }
             }
 
-            console.log('Loading products with params:', params.toString());
-            console.log('Full URL:', `/api/products/category/${this.currentCategoryId}?${params}`);
-            console.log('Current filters:', this.currentFilters);
-
             const fullUrl = `/api/products/category/${this.currentCategoryId}?${params}`;
-            console.log('Final URL:', fullUrl);
 
             const response = await fetch(fullUrl);
 
@@ -185,13 +168,11 @@ class CategoryProductsManager {
             }
 
             const data = await response.json();
-            console.log('API response:', data);
 
             if (data.code === 1000) {
                 this.products = data.result.content || [];
                 this.totalElements = data.result.totalElements || 0;
                 this.totalPages = data.result.totalPages || 0;
-                console.log('Products loaded:', this.products.length, 'Total:', this.totalElements);
 
                 // Hide loading spinner
                 this.showLoading(false);
@@ -211,7 +192,7 @@ class CategoryProductsManager {
             console.log('Finally block - rendering products:', this.products.length);
             this.renderProducts();
             this.updateResultsInfo();
-            this.renderPagination();
+            this.updatePagination();
         }
     }
 
@@ -983,9 +964,15 @@ class CategoryProductsManager {
         }
     }
 
-    renderPagination() {
+    updatePagination() {
         const pagination = document.getElementById('pagination');
-        if (!pagination || this.totalPages <= 1) {
+        
+        if (!pagination) {
+            console.log('Pagination element not found!');
+            return;
+        }
+        
+        if (this.totalPages <= 1) {
             pagination.style.display = 'none';
             return;
         }
@@ -995,9 +982,10 @@ class CategoryProductsManager {
         let html = '';
 
         // Previous button
+        const prevDisabled = this.currentPage === 0 ? 'disabled' : '';
         html += `
-            <li class="page-item ${this.currentPage === 0 ? 'disabled' : ''}">
-                <a class="page-link" href="#" data-page="${this.currentPage - 1}">
+            <li class="page-item ${prevDisabled}">
+                <a class="page-link" href="#" onclick="window.categoryProductsManager.goToPage(${this.currentPage - 1}); return false;">
                     <i class="fas fa-chevron-left"></i>
                 </a>
             </li>
@@ -1008,35 +996,36 @@ class CategoryProductsManager {
         const endPage = Math.min(this.totalPages - 1, this.currentPage + 2);
 
         for (let i = startPage; i <= endPage; i++) {
+            const activeClass = i === this.currentPage ? 'active' : '';
             html += `
-                <li class="page-item ${i === this.currentPage ? 'active' : ''}">
-                    <a class="page-link" href="#" data-page="${i}">${i + 1}</a>
+                <li class="page-item ${activeClass}">
+                    <a class="page-link" href="#" onclick="window.categoryProductsManager.goToPage(${i}); return false;">${i + 1}</a>
                 </li>
             `;
         }
 
         // Next button
+        const nextDisabled = this.currentPage >= this.totalPages - 1 ? 'disabled' : '';
         html += `
-            <li class="page-item ${this.currentPage === this.totalPages - 1 ? 'disabled' : ''}">
-                <a class="page-link" href="#" data-page="${this.currentPage + 1}">
+            <li class="page-item ${nextDisabled}">
+                <a class="page-link" href="#" onclick="window.categoryProductsManager.goToPage(${this.currentPage + 1}); return false;">
                     <i class="fas fa-chevron-right"></i>
                 </a>
             </li>
         `;
 
-        pagination.innerHTML = html;
+        const paginationList = pagination.querySelector('.pagination');
+        if (paginationList) {
+            paginationList.innerHTML = html;
+        } else {
+            pagination.innerHTML = `<ul class="pagination justify-content-center">${html}</ul>`;
+        }
+    }
 
-        // Bind pagination events
-        pagination.addEventListener('click', (e) => {
-            e.preventDefault();
-            if (e.target.matches('.page-link')) {
-                const page = parseInt(e.target.dataset.page);
-                if (page >= 0 && page < this.totalPages) {
-                    this.currentPage = page;
-                    this.loadProducts();
-                }
-            }
-        });
+    goToPage(page) {
+        if (page < 0 || page >= this.totalPages) return;
+        this.currentPage = page;
+        this.loadProducts();
     }
 
     showLoading(show) {

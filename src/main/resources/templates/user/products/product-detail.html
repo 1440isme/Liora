@@ -787,8 +787,117 @@
                             </div>
                         </div>
                         <div class="tab-pane fade" id="reviews" role="tabpanel" aria-labelledby="reviews-tab">
-                            <div class="text-center text-muted py-4">
-                                Tính năng đánh giá sản phẩm sẽ được phát triển sau.
+                            <!-- Reviews Section -->
+                            <div class="reviews-section">
+                                <!-- Overall Rating Summary -->
+                                <div class="reviews-summary mb-4">
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="rating-overview text-center">
+                                                <div class="overall-rating">
+                                                    <span class="rating-number" id="overallRating">0</span>
+                                                    <span class="rating-out-of">trên 5</span>
+                                                </div>
+                                                <div class="rating-stars" id="overallStars">
+                                                    <i class="fas fa-star"></i>
+                                                    <i class="fas fa-star"></i>
+                                                    <i class="fas fa-star"></i>
+                                                    <i class="fas fa-star"></i>
+                                                    <i class="fas fa-star"></i>
+                                                </div>
+                                                <div class="total-reviews" id="totalReviews">0 đánh giá</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-8">
+                                            <div class="rating-breakdown">
+                                                <div class="rating-bar" data-rating="5">
+                                                    <span class="rating-label">5 sao</span>
+                                                    <div class="progress">
+                                                        <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                                    </div>
+                                                    <span class="rating-count">0</span>
+                                                </div>
+                                                <div class="rating-bar" data-rating="4">
+                                                    <span class="rating-label">4 sao</span>
+                                                    <div class="progress">
+                                                        <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                                    </div>
+                                                    <span class="rating-count">0</span>
+                                                </div>
+                                                <div class="rating-bar" data-rating="3">
+                                                    <span class="rating-label">3 sao</span>
+                                                    <div class="progress">
+                                                        <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                                    </div>
+                                                    <span class="rating-count">0</span>
+                                                </div>
+                                                <div class="rating-bar" data-rating="2">
+                                                    <span class="rating-label">2 sao</span>
+                                                    <div class="progress">
+                                                        <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                                    </div>
+                                                    <span class="rating-count">0</span>
+                                                </div>
+                                                <div class="rating-bar" data-rating="1">
+                                                    <span class="rating-label">1 sao</span>
+                                                    <div class="progress">
+                                                        <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                                    </div>
+                                                    <span class="rating-count">0</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Rating Filters -->
+                                <div class="rating-filters mb-4">
+                                    <div class="filter-buttons">
+                                        <button class="filter-btn active" data-rating="all">
+                                            Tất Cả
+                                        </button>
+                                        <button class="filter-btn" data-rating="5">
+                                            5 Sao (<span class="count">0</span>)
+                                        </button>
+                                        <button class="filter-btn" data-rating="4">
+                                            4 Sao (<span class="count">0</span>)
+                                        </button>
+                                        <button class="filter-btn" data-rating="3">
+                                            3 Sao (<span class="count">0</span>)
+                                        </button>
+                                        <button class="filter-btn" data-rating="2">
+                                            2 Sao (<span class="count">0</span>)
+                                        </button>
+                                        <button class="filter-btn" data-rating="1">
+                                            1 Sao (<span class="count">0</span>)
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Reviews List -->
+                                <div class="reviews-list" id="reviewsList">
+                                    <!-- Reviews will be loaded here -->
+                                </div>
+
+                                <!-- Loading Spinner -->
+                                <div class="text-center py-4" id="reviewsLoading" style="display: none;">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Đang tải...</span>
+                                    </div>
+                                </div>
+
+                                <!-- No Reviews Message -->
+                                <div class="text-center py-4" id="noReviewsMessage" style="display: none;">
+                                    <i class="fas fa-comment-slash fa-3x text-muted mb-3"></i>
+                                    <p class="text-muted">Chưa có đánh giá nào cho sản phẩm này.</p>
+                                </div>
+
+                                <!-- Pagination -->
+                                <nav aria-label="Reviews pagination" id="reviewsPagination" style="display: none;">
+                                    <ul class="pagination justify-content-center">
+                                        <!-- Pagination will be generated here -->
+                                    </ul>
+                                </nav>
                             </div>
                         </div>
                     </div>
