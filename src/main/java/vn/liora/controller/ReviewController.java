@@ -20,8 +20,12 @@ import vn.liora.exception.ErrorCode;
 import vn.liora.repository.UserRepository;
 import vn.liora.service.IReviewService;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/reviews")
 @CrossOrigin(origins = "*")
@@ -107,6 +111,36 @@ public class ReviewController {
         return ResponseEntity.ok(reviews.getContent());
     }
 
+        /**
+         * Kiểm tra xem orderProduct đã có review chưa
+         */
+        @GetMapping("/check/{orderProductId}")
+        @PreAuthorize("hasRole('USER')")
+        public ResponseEntity<Map<String, Object>> checkReviewExists(
+                @PathVariable Long orderProductId,
+                Authentication authentication) {
+            
+            Long userId = getUserIdFromAuthentication(authentication);
+            
+            try {
+                boolean exists = reviewService.existsByOrderProductIdAndUserId(orderProductId, userId);
+                Map<String, Object> response = new HashMap<>();
+                response.put("exists", exists);
+                
+                if (exists) {
+                    ReviewResponse review = reviewService.findByOrderProductIdAndUserId(orderProductId, userId);
+                    response.put("review", review);
+                }
+                
+                return ResponseEntity.ok(response);
+            } catch (Exception e) {
+                log.error("Error checking review existence: {}", e.getMessage());
+                Map<String, Object> response = new HashMap<>();
+                response.put("exists", false);
+                return ResponseEntity.ok(response);
+            }
+        }
+    
     // ========== HELPER METHODS ==========
 
     private Long getUserIdFromAuthentication(Authentication authentication) {

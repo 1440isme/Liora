@@ -263,7 +263,9 @@ class BrandProductsManager {
                         <img src="${product.mainImageUrl || '/uploads/products/default.jpg'}" 
                              class="card-img-top" 
                              alt="${product.name}"
-                             onerror="this.src='/uploads/products/default.jpg'">
+                             onerror="this.src='/uploads/products/default.jpg'"
+                             onclick="window.location.href='${productUrl}'"
+                             style="cursor: pointer;">
                         
                     <!-- Product Status Badge - Removed to avoid overlapping with image -->
                         

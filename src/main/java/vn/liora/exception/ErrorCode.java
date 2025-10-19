@@ -29,7 +29,8 @@ public enum ErrorCode {
     // Dai: 2000 - 2999
     BRAND_EXISTED(400, "Brand existed", HttpStatus.BAD_REQUEST),
     BRAND_NOT_FOUND(404, "Brand not found", HttpStatus.NOT_FOUND),
-
+    BRAND_HAS_PRODUCTS(400, "Cannot delete brand that has products", HttpStatus.BAD_REQUEST),
+    
     // Category errors
     CATEGORY_NOT_FOUND(404, "Category not found", HttpStatus.NOT_FOUND),
     CATEGORY_EXISTED(400, "Category existed", HttpStatus.BAD_REQUEST),
@@ -37,7 +38,8 @@ public enum ErrorCode {
             HttpStatus.BAD_REQUEST),
     CATEGORY_CIRCULAR_REFERENCE(400, "Category cannot be parent of itself", HttpStatus.BAD_REQUEST),
     CATEGORY_INVALID_PARENT_LOGIC(400, "Category with parent cannot be parent category", HttpStatus.BAD_REQUEST),
-
+    CATEGORY_HAS_PRODUCTS(400, "Cannot delete category that has products", HttpStatus.BAD_REQUEST),
+    
     // Product errors
     PRODUCT_EXISTED(400, "Product existed", HttpStatus.BAD_REQUEST),
     PRODUCT_NOT_FOUND(404, "Product not found", HttpStatus.NOT_FOUND),
@@ -105,6 +107,13 @@ public enum ErrorCode {
     DISCOUNT_NOT_APPLIED_TO_ORDER(411, "Discount is not applied to this order", HttpStatus.BAD_REQUEST),
     INTERNAL_SERVER_ERROR(412, "Internal server error", HttpStatus.INTERNAL_SERVER_ERROR),
     ORDER_NOT_DELIVERED(413, "Order has not been delivered yet", HttpStatus.BAD_REQUEST),
+    VALIDATION_DESCRIPTION_TOO_LONG(400, "Description must not exceed 500 characters", HttpStatus.BAD_REQUEST),
+    VALIDATION_DISCOUNT_VALUE_POSITIVE(400, "Discount value must be positive", HttpStatus.BAD_REQUEST),
+    VALIDATION_MIN_ORDER_VALUE_POSITIVE(400, "Minimum order value must be positive", HttpStatus.BAD_REQUEST),
+    VALIDATION_MAX_DISCOUNT_AMOUNT_POSITIVE(400, "Maximum discount amount must be positive", HttpStatus.BAD_REQUEST),
+    VALIDATION_USAGE_LIMIT_NON_NEGATIVE(400, "Usage limit must be non-negative", HttpStatus.BAD_REQUEST),
+    VALIDATION_USER_USAGE_LIMIT_NON_NEGATIVE(400, "User usage limit must be non-negative", HttpStatus.BAD_REQUEST),
+
     ;
 
     private int code;

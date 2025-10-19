@@ -30,6 +30,6 @@ public class Image {
 
     // Thêm field thứ tự hiển thị
     @Column(name = "DisplayOrder")
-    private Integer displayOrder = 0;
+    private Integer displayOrder;
 
 }

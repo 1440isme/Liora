@@ -22,4 +22,5 @@ public class OrderProductResponse {
     String mainImageUrl;
     String categoryName;
     String brandName;
+    Long brandId;
 }

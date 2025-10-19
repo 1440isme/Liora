@@ -34,6 +34,9 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     // User visibility filters
     List<Review> findByUserIdAndIsVisibleTrue(Long userId);
     Page<Review> findByUserIdAndIsVisibleTrue(Long userId, Pageable pageable);
+
+    boolean existsByOrderProductIdOrderProductAndUserId(Long orderProductId, Long userId);
+    Optional<Review> findByOrderProductIdOrderProductAndUserId(Long orderProductId, Long userId);
     
     // ====== CUSTOM QUERIES ======
     @Query("SELECT AVG(r.rating) FROM Review r WHERE r.productId = :productId AND r.isVisible = true")

@@ -97,34 +97,44 @@ public class OrderServiceImpl implements IOrderService {
             BigDecimal totalDiscount = BigDecimal.ZERO;
             BigDecimal total = subtotal;
 
-            if (request.getDiscountId() != null && user != null) {
+            if ((request.getDiscountId() != null || request.getDiscountCode() != null) && user != null) {
                 try {
-                    // Kiểm tra discount có tồn tại không
-                    Discount discount = discountRepository.findById(request.getDiscountId())
-                            .orElseThrow(() -> new AppException(ErrorCode.DISCOUNT_NOT_FOUND));
+                    Discount discount = null;
 
-                    // Kiểm tra có thể áp dụng discount không (chỉ cho user đã đăng nhập)
-                    if (user != null
-                            && discountService.canApplyDiscount(request.getDiscountId(), user.getUserId(), subtotal)) {
+                    // ✅ Xử lý discount theo discountCode (ưu tiên)
+                    if (request.getDiscountCode() != null && !request.getDiscountCode().trim().isEmpty()) {
+                        discount = discountService.findAvailableDiscountByCode(request.getDiscountCode());
+                        if (discount == null) {
+                            log.warn("Discount code {} not found or not available", request.getDiscountCode());
+                        }
+                    }
+                    // ✅ Fallback: xử lý theo discountId
+                    else if (request.getDiscountId() != null) {
+                        discount = discountRepository.findById(request.getDiscountId())
+                                .orElseThrow(() -> new AppException(ErrorCode.DISCOUNT_NOT_FOUND));
+                    }
+
+                    // ✅ Áp dụng discount nếu tìm thấy
+                    if (discount != null && discountService.canApplyDiscount(discount.getDiscountId(), user.getUserId(), subtotal)) {
                         // Tính discount amount
-                        totalDiscount = discountService.calculateDiscountAmount(request.getDiscountId(), subtotal);
+                        totalDiscount = discountService.calculateDiscountAmount(discount.getDiscountId(), subtotal);
                         total = subtotal.subtract(totalDiscount);
 
                         // Set discount cho order
                         order.setDiscount(discount);
 
                         // Tăng usage count
-                        discountService.incrementUsageCount(request.getDiscountId());
+                        discountService.incrementUsageCount(discount.getDiscountId());
 
-                        log.info("Applied discount {} to order. Discount amount: {}",
-                                request.getDiscountId(), totalDiscount);
+                        log.info("Applied discount {} (code: {}) to order. Discount amount: {}",
+                                discount.getDiscountId(), discount.getName(), totalDiscount);
                     } else {
-                        log.warn("Cannot apply discount {} to order. User: {}, Subtotal: {}",
-                                request.getDiscountId(), user != null ? user.getUserId() : "Guest", subtotal);
+                        log.warn("Cannot apply discount to order. User: {}, Subtotal: {}, Discount: {}",
+                                user != null ? user.getUserId() : "Guest", subtotal,
+                                discount != null ? discount.getDiscountId() : "null");
                     }
                 } catch (Exception e) {
-                    log.warn("Error applying discount {}: {}. Order will be created without discount.",
-                            request.getDiscountId(), e.getMessage());
+                    log.warn("Error applying discount: {}. Order will be created without discount.", e.getMessage());
                     // Nếu không áp dụng được discount, vẫn tạo đơn hàng bình thường
                 }
             }

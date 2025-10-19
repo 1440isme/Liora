@@ -2,6 +2,7 @@ class CheckoutPage {
     constructor() {
         this.cartId = null;
         this.selectedItems = [];
+        this.appliedDiscount =  null;
         this.shippingFee = 0;
         this.discount = 0;
         this.currentUser = null;
@@ -34,6 +35,14 @@ class CheckoutPage {
             this.handleApplyPromo();
         });
 
+        // Apply/Remove promo code
+        $('#applyPromoBtn').on('click', () => {
+            if (this.appliedDiscount) {
+                this.handleRemovePromo();
+            } else {
+                this.handleApplyPromo();
+            }
+        });
 
         // Province change -> load districts for add/edit address
         $(document).on('change', '#addrProvince', (e) => {
@@ -1199,17 +1208,27 @@ class CheckoutPage {
 
     updateOrderSummary() {
         const subtotal = this.selectedItems.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0);
-        const total = subtotal + this.shippingFee - this.discount;
+
+        // ✅ SỬA: Xử lý discount đúng cách
+        const discountAmount = this.appliedDiscount ? this.appliedDiscount.discountAmount : 0;
+        const total = subtotal + this.shippingFee - discountAmount;
 
         $('#summary-subtotal').text(this.formatCurrency(subtotal));
         $('#summary-shipping').text(this.shippingFee === 0 ? 'Miễn phí' : this.formatCurrency(this.shippingFee));
         $('#summary-total').text(this.formatCurrency(total));
 
-        // Disable/enable checkout button based on selected items
-        if (this.selectedItems.length === 0) {
-            this.disableCheckoutButton();
+        // Luôn hiển thị dòng giảm giá
+        if (!$('#discount-row').length) {
+                    // Thêm dòng giảm giá vào summary (luôn hiển thị)
+                    $('#summary-shipping').parent().after(`
+                <div class="summary-row" id="discount-row">
+                    <span>Giảm giá:</span>
+                    <span class="fw-medium text-success">-${this.formatCurrency(discountAmount)}</span>
+                </div>
+            `);
         } else {
-            this.enableCheckoutButton();
+            // Cập nhật số tiền giảm giá
+            $('#discount-row .fw-medium').text(`-${this.formatCurrency(discountAmount)}`);
         }
     }
 
@@ -1286,25 +1305,51 @@ class CheckoutPage {
         try {
             this.showLoading(true);
 
-            // Gọi API để kiểm tra và áp dụng mã giảm giá
             const response = await this.apiCall('/discounts/apply', 'POST', {
                 discountCode: promoCode,
                 orderTotal: this.calculateOrderTotal()
             });
 
-            this.discount = response.discountAmount || 0;
-            this.updateOrderSummary();
+            // ✅ SỬA: Xử lý response đúng cách
+            if (response.result) {
+                this.appliedDiscount = response.result;
+                this.updateOrderSummary();
 
-            this.showToast('Áp dụng mã giảm giá thành công!', 'success');
-            $('#promoCode').val('').attr('placeholder', `Đã áp dụng: ${promoCode}`);
-            $('#applyPromoBtn').text('Đã áp dụng').prop('disabled', true);
+                this.showToast('Áp dụng mã giảm giá thành công!', 'success');
+                $('#promoCode').val('').attr('placeholder', `${promoCode}`).prop('disabled', true);
+                $('#applyPromoBtn').text('Gỡ mã').removeClass('btn-primary').addClass('btn-outline-danger');
+            }
 
         } catch (error) {
-            console.error('Error applying promo code:', error);
-            this.showToast('Mã giảm giá không hợp lệ hoặc đã hết hạn', 'error');
+            // Hiển thị thông báo lỗi chi tiết
+            let errorMessage = 'Mã giảm giá không hợp lệ';
+
+            try {
+                const errorData = JSON.parse(error.message);
+                if (errorData.message) {
+                    errorMessage = errorData.message;
+                }
+            } catch (e) {
+                // Nếu không parse được JSON, dùng message gốc
+                if (error.message) {
+                    errorMessage = error.message;
+                }
+            }
+
+            this.showToast(errorMessage, 'error');
         } finally {
             this.showLoading(false);
         }
+    }
+
+    handleRemovePromo() {
+        this.appliedDiscount = null;
+        this.updateOrderSummary();
+        this.showToast('Đã gỡ mã giảm giá', 'info');
+
+        // ✅ SỬA: Reset UI về trạng thái ban đầu
+        $('#promoCode').val('').attr('placeholder', 'Nhập mã giảm giá').prop('disabled', false);
+        $('#applyPromoBtn').text('Áp dụng').removeClass('btn-outline-danger').addClass('btn-primary');
     }
 
     async handlePlaceOrder() {
@@ -1326,6 +1371,7 @@ class CheckoutPage {
         try {
             this.showLoading(true);
 
+            // lấy đầy đủ thông tin
             const orderData = this.collectOrderData();
 
             // Kiểm tra nếu orderData null (validation failed)
@@ -1334,7 +1380,8 @@ class CheckoutPage {
                 return;
             }
 
-            // Gọi API để tạo đơn hàng
+            console.log('Order data with discount:', orderData);
+
             const response = await this.apiCall(`/order/${this.cartId}`, 'POST', orderData);
 
             // Nếu phương thức là VNPAY thì gọi tạo URL thanh toán và redirect
@@ -1351,11 +1398,11 @@ class CheckoutPage {
                 }
             }
 
-            // Nếu không phải VNPAY (ví dụ COD) giữ flow cũ
+            // Nếu không phải VNPAY hoặc VNPAY thất bại, chuyển đến trang thành công
             this.showToast('Đặt hàng thành công!', 'success');
             setTimeout(() => {
-                window.location.href = '/';
-            }, 2000);
+                window.location.href = `/order/${response.idOrder}`;
+            }, 1500);
 
         } catch (error) {
             console.error('Error placing order:', error);
@@ -1490,6 +1537,8 @@ class CheckoutPage {
             paymentMethod: paymentMethod,
             note: notes,
             discountId: null, // Field này có thể null
+            //  Mã giảm giá
+            discountCode: this.appliedDiscount ? this.appliedDiscount.discountCode : null,
 
             // Thông tin GHN để BE tính phí và lưu vào order.shippingFee
             districtId: Number.isFinite(districtId) ? districtId : null,
@@ -1497,8 +1546,9 @@ class CheckoutPage {
             provinceId: Number.isFinite(provinceId) ? provinceId : null
         };
 
-        // Debug: Log final order data
-        console.log('Final Order Data:', orderData);
+            // Thông tin giỏ hàng
+            cartId: this.cartId
+        };
 
         return orderData;
     }
