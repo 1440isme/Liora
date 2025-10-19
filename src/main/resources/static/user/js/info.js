@@ -425,7 +425,7 @@ class UserInfoManager {
 
         const statusClass = this.getOrderStatusClass(order.orderStatus);
         const statusText = this.getOrderStatusText(order.orderStatus);
-        const hasReview = await this.checkOrderReviewStatus(order.idOrder);
+        const reviewStatus = await this.checkOrderReviewStatus(order.idOrder);
 
         return `
             <div class="compact-order-card clickable-order" data-order-id="${order.idOrder}" onclick="userInfoManager.viewOrderDetail(${order.idOrder})">
@@ -476,9 +476,13 @@ class UserInfoManager {
                         <span>Xem chi tiết</span>
                     </div>
                     ${order.orderStatus === 'COMPLETED' ? `
-                        ${hasReview ? `
+                        ${reviewStatus.allReviewed ? `
                         <button class="btn btn-success btn-sm" disabled>
                             <i class="fas fa-check"></i> Đã đánh giá
+                        </button>
+                        ` : reviewStatus.hasAnyReview ? `
+                        <button class="btn btn-warning btn-sm text-white" onclick="event.stopPropagation(); userInfoManager.openReviewModal(${order.idOrder})">
+                            <i class="fas fa-star"></i> Xem đánh giá
                         </button>
                         ` : `
                         <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); userInfoManager.openReviewModal(${order.idOrder})">
@@ -1612,7 +1616,7 @@ class UserInfoManager {
     async checkOrderReviewStatus(orderId) {
         try {
             const token = localStorage.getItem('access_token');
-            if (!token) return false;
+            if (!token) return { allReviewed: false, hasAnyReview: false };
 
             const response = await fetch(`/api/orders/${orderId}/items`, {
                 headers: { 'Authorization': `Bearer ${token}` }
@@ -1621,29 +1625,30 @@ class UserInfoManager {
             if (response.ok) {
                 const products = await response.json();
                 let allReviewed = true;
+                let hasAnyReview = false;
 
-                // Kiểm tra TẤT CẢ sản phẩm đã được review chưa
+                // Kiểm tra trạng thái review của tất cả sản phẩm
                 for (let product of products) {
                     const reviewCheckResponse = await fetch(`/api/reviews/check/${product.idOrderProduct}`, {
                         headers: { 'Authorization': `Bearer ${token}` }
                     });
                     if (reviewCheckResponse.ok) {
                         const reviewData = await reviewCheckResponse.json();
-                        if (!reviewData.exists) {
+                        if (reviewData.exists) {
+                            hasAnyReview = true;
+                        } else {
                             allReviewed = false;
-                            break; // Chỉ cần 1 sản phẩm chưa review là đủ
                         }
                     } else {
                         allReviewed = false;
-                        break;
                     }
                 }
-                return allReviewed;
+                return { allReviewed, hasAnyReview };
             }
-            return false;
+            return { allReviewed: false, hasAnyReview: false };
         } catch (error) {
             console.error('Error checking review status:', error);
-            return false;
+            return { allReviewed: false, hasAnyReview: false };
         }
     }
 }

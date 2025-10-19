@@ -48,6 +48,65 @@ public class ReviewController {
         return ResponseEntity.ok(response);
     }
 
+    /**
+     * Lấy đánh giá của sản phẩm với phân trang và lọc theo sao
+     */
+    @GetMapping("/product/{productId}")
+    public ResponseEntity<Map<String, Object>> getProductReviews(
+            @PathVariable Long productId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) Integer rating) {
+        
+        try {
+            Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+            
+            // Lấy đánh giá
+            Page<ReviewResponse> reviews;
+            if (rating != null && rating >= 1 && rating <= 5) {
+                // Lọc theo rating cụ thể
+                reviews = reviewService.findVisibleReviewsByProductIdWithRating(productId, rating, pageable);
+            } else {
+                // Lấy tất cả đánh giá
+                reviews = reviewService.findVisibleReviewsByProductId(productId, pageable);
+            }
+            
+            // Lấy thống kê
+            Map<String, Object> statistics = reviewService.getProductReviewStatistics(productId);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("reviews", reviews.getContent());
+            response.put("totalElements", reviews.getTotalElements());
+            response.put("totalPages", reviews.getTotalPages());
+            response.put("currentPage", reviews.getNumber());
+            response.put("size", reviews.getSize());
+            response.put("statistics", statistics);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Error getting product reviews: {}", e.getMessage());
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Không thể lấy đánh giá sản phẩm");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+
+    /**
+     * Lấy thống kê đánh giá sản phẩm
+     */
+    @GetMapping("/product/{productId}/statistics")
+    public ResponseEntity<Map<String, Object>> getProductReviewStatistics(@PathVariable Long productId) {
+        try {
+            Map<String, Object> statistics = reviewService.getProductReviewStatistics(productId);
+            return ResponseEntity.ok(statistics);
+        } catch (Exception e) {
+            log.error("Error getting product review statistics: {}", e.getMessage());
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Không thể lấy thống kê đánh giá");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+
     // ========== USER ENDPOINTS ==========
 
     /**

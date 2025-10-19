@@ -31,6 +31,11 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     Page<Review> findByProductIdAndIsVisibleTrue(Long productId, Pageable pageable);
     long countByProductIdAndIsVisibleTrue(Long productId);
     
+    // Lọc theo rating
+    List<Review> findByProductIdAndRatingAndIsVisibleTrue(Long productId, Integer rating);
+    Page<Review> findByProductIdAndRatingAndIsVisibleTrue(Long productId, Integer rating, Pageable pageable);
+    long countByProductIdAndRatingAndIsVisibleTrue(Long productId, Integer rating);
+    
     // User visibility filters
     List<Review> findByUserIdAndIsVisibleTrue(Long userId);
     Page<Review> findByUserIdAndIsVisibleTrue(Long userId, Pageable pageable);
@@ -44,6 +49,10 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     
     @Query("SELECT COUNT(r) FROM Review r WHERE r.productId = :productId AND r.isVisible = true")
     Long getReviewCountByProductId(@Param("productId") Long productId);
+    
+    // Thống kê theo rating cho sản phẩm
+    @Query("SELECT COUNT(r) FROM Review r WHERE r.productId = :productId AND r.rating = :rating AND r.isVisible = true")
+    Long getReviewCountByProductIdAndRating(@Param("productId") Long productId, @Param("rating") Integer rating);
     
     // ====== ADMIN QUERIES ======
     // Tìm tất cả review (bao gồm cả ẩn) - không có ORDER BY để tránh conflict

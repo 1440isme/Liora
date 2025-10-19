@@ -227,11 +227,14 @@ $(document).ready(function() {
 });
 
 function openReviewModal(orderId) {
+    console.log('openReviewModal called with orderId:', orderId);
     currentOrderId = orderId;
     loadOrderProductsForReview(orderId);
 }
 
 async function loadOrderProductsForReview(orderId) {
+    console.log('loadOrderProductsForReview called with orderId:', orderId);
+    
     const token = localStorage.getItem('access_token');
     if (!token) {
         alert('Vui lòng đăng nhập để đánh giá');
@@ -249,6 +252,7 @@ async function loadOrderProductsForReview(orderId) {
 
         if (response.ok) {
             const products = await response.json();
+            console.log('Loaded products:', products);
 
             // Kiểm tra review đã tồn tại cho từng sản phẩm
             for (let product of products) {
@@ -270,9 +274,19 @@ async function loadOrderProductsForReview(orderId) {
             }
 
             orderProducts = products;
+            console.log('Rendering review products:', products);
             renderReviewProducts(products);
-            $('#reviewModal').modal('show');
+            console.log('Showing modal');
+            
+            // Đảm bảo modal được khởi tạo trước khi show
+            if (ensureModalInitialized()) {
+                $('#reviewModal').modal('show');
+            } else {
+                console.error('Cannot show modal - not properly initialized');
+                alert('Không thể mở modal đánh giá. Vui lòng tải lại trang.');
+            }
         } else {
+            console.error('Failed to fetch order items');
             alert('Không thể tải danh sách sản phẩm');
         }
     } catch (error) {
@@ -424,12 +438,17 @@ function renderReviewProducts(products) {
 
 // Thêm function kiểm tra review status
 async function checkReviewStatusAndOpen(orderId) {
+    console.log('checkReviewStatusAndOpen called with orderId:', orderId);
+    
     try {
         const token = localStorage.getItem('access_token');
         if (!token) {
             alert('Vui lòng đăng nhập');
             return;
         }
+        
+        // Đảm bảo currentOrderId được set
+        currentOrderId = orderId;
         
         // Lấy danh sách sản phẩm
         const response = await fetch(`/api/orders/${orderId}/items`, {
@@ -454,13 +473,20 @@ async function checkReviewStatusAndOpen(orderId) {
                 }
             }
             
+            console.log('Has any review:', hasAnyReview);
+            
             if (hasAnyReview) {
                 // Có review -> mở modal xem đánh giá (có thể xem và sửa)
+                console.log('Opening view review modal');
                 openViewReviewModal(orderId);
             } else {
                 // Chưa có review -> mở modal đánh giá mới
+                console.log('Opening new review modal');
                 openReviewModal(orderId);
             }
+        } else {
+            console.error('Failed to fetch order items');
+            alert('Không thể tải thông tin đơn hàng');
         }
     } catch (error) {
         console.error('Error checking review status:', error);
@@ -470,6 +496,7 @@ async function checkReviewStatusAndOpen(orderId) {
 
 // Thêm function xem review
 async function openViewReviewModal(orderId) {
+    console.log('openViewReviewModal called with orderId:', orderId);
     currentOrderId = orderId;
     
     try {
@@ -493,9 +520,21 @@ async function openViewReviewModal(orderId) {
                 }
             }
             
+            console.log('Rendering view review products:', products);
             // Sử dụng function renderViewReviewProducts đã có (dòng 505-654)
             renderViewReviewProducts(products);
-            $('#reviewModal').modal('show');
+            console.log('Showing modal');
+            
+            // Đảm bảo modal được khởi tạo trước khi show
+            if (ensureModalInitialized()) {
+                $('#reviewModal').modal('show');
+            } else {
+                console.error('Cannot show modal - not properly initialized');
+                alert('Không thể mở modal đánh giá. Vui lòng tải lại trang.');
+            }
+        } else {
+            console.error('Failed to fetch order items for view modal');
+            alert('Không thể tải thông tin đơn hàng');
         }
     } catch (error) {
         console.error('Error loading reviews:', error);
@@ -821,8 +860,9 @@ async function updateReviewButtonStatus(orderId) {
         if (response.ok) {
             const products = await response.json();
             let hasAnyReview = false;
+            let allReviewed = true;
             
-            // Kiểm tra xem có sản phẩm nào đã được đánh giá chưa
+            // Kiểm tra trạng thái review của tất cả sản phẩm
             for (let product of products) {
                 const reviewCheckResponse = await fetch(`/api/reviews/check/${product.idOrderProduct}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
@@ -831,8 +871,11 @@ async function updateReviewButtonStatus(orderId) {
                     const reviewData = await reviewCheckResponse.json();
                     if (reviewData.exists) {
                         hasAnyReview = true;
-                        break;
+                    } else {
+                        allReviewed = false;
                     }
+                } else {
+                    allReviewed = false;
                 }
             }
             
@@ -841,15 +884,9 @@ async function updateReviewButtonStatus(orderId) {
             const reviewButtonText = document.getElementById('reviewButtonText');
             
             if (reviewButton && reviewButtonText) {
-                if (hasAnyReview) {
-                    // Có review -> "Xem đánh giá" (màu vàng warning) với text và icon màu trắng
-                    reviewButtonText.textContent = 'Xem đánh giá';
-                    reviewButton.className = 'btn btn-warning me-2 text-white';
-                } else {
-                    // Chưa có review -> "Đánh giá" (màu xanh primary) với màu mặc định
-                    reviewButtonText.textContent = 'Đánh giá';
-                    reviewButton.className = 'btn btn-primary me-2';
-                }
+                // Trang order-detail: luôn hiển thị "Đánh giá" (đơn giản)
+                reviewButtonText.textContent = 'Đánh giá';
+                reviewButton.className = 'btn btn-primary me-2';
             }
         }
     } catch (error) {
@@ -857,19 +894,46 @@ async function updateReviewButtonStatus(orderId) {
     }
 }
 
+// Function để đảm bảo modal được khởi tạo
+function ensureModalInitialized() {
+    const modal = document.getElementById('reviewModal');
+    if (!modal) {
+        console.error('Review modal not found in DOM');
+        return false;
+    }
+    
+    // Kiểm tra xem modal có được khởi tạo với Bootstrap không
+    if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+        // Modal đã được khởi tạo với Bootstrap
+        return true;
+    } else {
+        console.error('Bootstrap not available or modal not initialized');
+        return false;
+    }
+}
+
 // Gọi function này khi trang load
 $(document).ready(function() {
+    console.log('Document ready - initializing order detail page');
+    
     // Lấy order ID từ URL
     const pathParts = window.location.pathname.split('/');
     const orderId = pathParts[pathParts.length - 1];
     
     if (orderId && !isNaN(orderId)) {
+        console.log('Order ID found:', orderId);
         // Cập nhật trạng thái nút đánh giá
         updateReviewButtonStatus(parseInt(orderId));
     }
     
+    // Đảm bảo modal được khởi tạo
+    setTimeout(() => {
+        ensureModalInitialized();
+    }, 100);
+    
     // Check if URL has #review hash
     if (window.location.hash === '#review') {
+        console.log('Review hash found, opening modal');
         // Small delay to ensure page is fully loaded
         setTimeout(() => {
             openReviewModal(parseInt(orderId));
@@ -891,14 +955,21 @@ async function submitAllReviews() {
     $('.card[data-order-product-id]').each(function() {
         const orderProductId = $(this).data('order-product-id');
         const rating = $(this).data('rating');
-        const content = $(this).find('textarea').val().trim();
-        const anonymous = $(this).find('input[type="checkbox"]').is(':checked');
         
         // Chỉ xét điều kiện với sản phẩm chưa đánh giá (không có class border-success)
         const isAlreadyReviewed = $(this).hasClass('border-success');
         if (isAlreadyReviewed) {
             return; // Bỏ qua sản phẩm đã đánh giá
         }
+
+        // Chỉ xử lý sản phẩm có form đánh giá (có textarea)
+        const textarea = $(this).find('textarea');
+        if (textarea.length === 0) {
+            return; // Bỏ qua sản phẩm không có form đánh giá
+        }
+
+        const content = textarea.val() ? textarea.val().trim() : '';
+        const anonymous = $(this).find('input[type="checkbox"]').is(':checked');
 
         // Kiểm tra nếu có nội dung mà không có rating
         if (content && (!rating || rating < 1 || rating > 5)) {
