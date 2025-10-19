@@ -63,6 +63,22 @@ public class ProductViewController {
         }
     }
 
+    @GetMapping("/featured-category/{categoryId}")
+    public String getFeaturedCategoryProducts(@PathVariable Long categoryId, Model model) {
+        try {
+            // Get category info for display
+            var category = categoryService.findById(categoryId);
+            model.addAttribute("categoryId", categoryId);
+            model.addAttribute("categoryName", category.getName());
+            model.addAttribute("categoryDescription", "Tất cả sản phẩm trong danh mục " + category.getName());
+            
+            return "user/categories/featured-category-products";
+        } catch (Exception e) {
+            // If category not found, redirect to home
+            return "redirect:/";
+        }
+    }
+
     @GetMapping("/{id}")
     public String productDetail(@PathVariable Long id, 
                                @RequestParam(required = false) String from,

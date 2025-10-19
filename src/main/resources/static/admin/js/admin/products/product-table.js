@@ -199,9 +199,11 @@ class ProductTableManager {
     renderProduct(product, index) {
         // Lấy mô tả rút gọn dạng text (loại bỏ HTML) để không làm vỡ bảng
         const shortDescription = this.truncateText(this.stripHtml(product.description || ''), 80);
+        // Tính STT dựa trên trang hiện tại và vị trí trong trang
+        const stt = this.currentPage * this.pageSize + index + 1;
         return `
             <tr>
-                <td class="text-center">${index + 1}</td>
+                <td class="text-center">${stt}</td>
                 <td>
                     <div class="d-flex align-items-center justify-content-center">
                         <img src="${product.mainImageUrl || '/admin/images/placeholder.jpg'}" 

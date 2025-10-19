@@ -329,7 +329,7 @@ class BestsellerProductsPageManager {
                 } else {
                     this.renderProducts();
                     this.updateResultsCount();
-                    this.renderPagination();
+                    this.updatePagination();
                 }
             } else {
                 console.log('API error:', data.message);
@@ -557,7 +557,7 @@ class BestsellerProductsPageManager {
         }
     }
 
-    renderPagination() {
+    updatePagination() {
         const pagination = document.getElementById('pagination');
         if (!pagination) return;
 
@@ -567,13 +567,18 @@ class BestsellerProductsPageManager {
         }
 
         pagination.style.display = 'block';
+        const paginationList = pagination.querySelector('.pagination');
+        if (!paginationList) return;
 
         let paginationHTML = '';
 
         // Previous button
+        const prevDisabled = this.currentPage === 0 ? 'disabled' : '';
         paginationHTML += `
-            <li class="page-item ${this.currentPage === 0 ? 'disabled' : ''}">
-                <a class="page-link" href="#" onclick="window.bestsellerProductsPageManager.goToPage(${this.currentPage - 1}); return false;">Trước</a>
+            <li class="page-item ${prevDisabled}">
+                <a class="page-link" href="#" onclick="window.bestsellerProductsPageManager.goToPage(${this.currentPage - 1}); return false;">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
             </li>
         `;
 
@@ -582,21 +587,25 @@ class BestsellerProductsPageManager {
         const endPage = Math.min(this.totalPages - 1, this.currentPage + 2);
 
         for (let i = startPage; i <= endPage; i++) {
+            const activeClass = i === this.currentPage ? 'active' : '';
             paginationHTML += `
-                <li class="page-item ${i === this.currentPage ? 'active' : ''}">
+                <li class="page-item ${activeClass}">
                     <a class="page-link" href="#" onclick="window.bestsellerProductsPageManager.goToPage(${i}); return false;">${i + 1}</a>
                 </li>
             `;
         }
 
         // Next button
+        const nextDisabled = this.currentPage >= this.totalPages - 1 ? 'disabled' : '';
         paginationHTML += `
-            <li class="page-item ${this.currentPage >= this.totalPages - 1 ? 'disabled' : ''}">
-                <a class="page-link" href="#" onclick="window.bestsellerProductsPageManager.goToPage(${this.currentPage + 1}); return false;">Sau</a>
+            <li class="page-item ${nextDisabled}">
+                <a class="page-link" href="#" onclick="window.bestsellerProductsPageManager.goToPage(${this.currentPage + 1}); return false;">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
             </li>
         `;
 
-        pagination.querySelector('ul').innerHTML = paginationHTML;
+        paginationList.innerHTML = paginationHTML;
     }
 
     goToPage(page) {
