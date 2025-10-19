@@ -56,7 +56,7 @@ public class ReviewServiceImpl implements IReviewService {
 
         // THÊM: Kiểm tra đơn hàng đã được giao chưa
         String orderStatus = orderProduct.getOrder().getOrderStatus();
-        if (!"DELIVERED".equals(orderStatus)) {
+        if (!"DELIVERED".equals(orderStatus) && !"COMPLETED".equals(orderStatus)) {
             throw new AppException(ErrorCode.ORDER_NOT_DELIVERED);
         }
 
@@ -399,5 +399,17 @@ public class ReviewServiceImpl implements IReviewService {
         review.setLastUpdate(LocalDateTime.now());
 
         reviewRepository.save(review);
+    }
+
+    @Override
+    public boolean existsByOrderProductIdAndUserId(Long orderProductId, Long userId) {
+        return reviewRepository.existsByOrderProductIdOrderProductAndUserId(orderProductId, userId);
+    }
+
+    @Override
+    public ReviewResponse findByOrderProductIdAndUserId(Long orderProductId, Long userId) {
+        Review review = reviewRepository.findByOrderProductIdOrderProductAndUserId(orderProductId, userId)
+                .orElseThrow(() -> new AppException(ErrorCode.REVIEW_NOT_FOUND));
+        return reviewMapper.toReviewResponse(review);
     }
 }

@@ -20,7 +20,9 @@ import vn.liora.service.impl.DiscountServiceImpl;
 import vn.liora.service.impl.OrderServiceImpl;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/discounts")
@@ -179,13 +181,40 @@ public class UserDiscountController {
     IOrderService orderService;
     // ========== ORDER DISCOUNT MANAGEMENT ==========
     @PostMapping("/apply")
-    public ResponseEntity<ApiResponse<String>> applyDiscountToOrder(@RequestBody ApplyDiscountRequest request) {
-        ApiResponse<String> response = new ApiResponse<>();
+    public ResponseEntity<ApiResponse<Map<String, Object>>> applyDiscountByCode(@RequestBody ApplyDiscountRequest request) {
+        ApiResponse<Map<String, Object>> response = new ApiResponse<>();
         try {
-            orderService.applyDiscountToOrder(request.getOrderId(), request.getDiscountId());
-            response.setResult("Áp dụng mã giảm giá thành công");
-            response.setMessage("Mã giảm giá đã được áp dụng vào đơn hàng");
+            // Tìm discount theo code (name)
+            Discount discount = discountService.findAvailableDiscountByCode(request.getDiscountCode());
+
+            if (discount == null) {
+                response.setCode(400);
+                response.setMessage("Mã giảm giá không hợp lệ hoặc đã hết hạn");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // ✅ THÊM: Kiểm tra điều kiện áp dụng
+            if (request.getOrderTotal() == null || request.getOrderTotal().compareTo(discount.getMinOrderValue()) < 0) {
+                response.setCode(400);
+                response.setMessage(String.format("Đơn hàng phải có giá trị tối thiểu %s để áp dụng mã này",
+                        discount.getMinOrderValue()));
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // Tính số tiền giảm giá
+            BigDecimal discountAmount = discountService.calculateDiscountAmount(discount.getDiscountId(), request.getOrderTotal());
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("discountId", discount.getDiscountId());
+            result.put("discountCode", discount.getName());
+            result.put("discountAmount", discountAmount);
+            result.put("discountValue", discount.getDiscountValue());
+            result.put("message", "Áp dụng mã giảm giá thành công");
+
+            response.setResult(result);
+            response.setMessage("Áp dụng mã giảm giá thành công");
             return ResponseEntity.ok(response);
+
         } catch (AppException e) {
             response.setCode(e.getErrorCode().getCode());
             response.setMessage(e.getErrorCode().getMessage());

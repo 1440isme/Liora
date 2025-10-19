@@ -44,7 +44,7 @@ public class DiscountServiceImpl implements IDiscountService {
             if (existsByName(request.getName())) {
                 throw new AppException(ErrorCode.DISCOUNT_NAME_ALREADY_EXISTS);
             }
-            
+
             // Validate dates
             if (request.getStartDate().isAfter(request.getEndDate())) {
                 throw new AppException(ErrorCode.INVALID_DATE_RANGE);
@@ -344,7 +344,14 @@ public class DiscountServiceImpl implements IDiscountService {
         
         return discount.getUsedCount().longValue();
     }
-    
+
+    @Override
+    public Discount findAvailableDiscountByCode(String discountCode) {
+        LocalDateTime now = LocalDateTime.now();
+        return discountRepository.findAvailableDiscountByName(discountCode, now)
+                .orElse(null);
+    }
+
     @Override
     public Long getUsageCountByUser(Long discountId, Long userId) {
         // This would need to be implemented based on your usage tracking logic

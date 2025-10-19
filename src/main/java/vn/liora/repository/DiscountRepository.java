@@ -53,4 +53,9 @@ public interface DiscountRepository extends JpaRepository<Discount, Long> {
     
     @Query("SELECT d FROM Discount d WHERE d.name LIKE %:keyword% OR d.description LIKE %:keyword%")
     Page<Discount> searchDiscounts(@Param("keyword") String keyword, Pageable pageable);
+
+    @Query("SELECT d FROM Discount d WHERE d.name = :name AND d.isActive = true " +
+       "AND d.startDate <= :now AND d.endDate >= :now " +
+       "AND (d.usageLimit IS NULL OR d.usedCount < d.usageLimit)")
+    Optional<Discount> findAvailableDiscountByName(@Param("name") String name, @Param("now") LocalDateTime now);
 }

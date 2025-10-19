@@ -593,6 +593,129 @@
     color: white !important;
 }
 
+.modal-xl {
+    max-width: 900px;
+}
+
+.star-rating {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.star {
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 4px;
+    border-radius: 4px;
+}
+
+.star:hover {
+    transform: scale(1.1);
+    background-color: rgba(255, 193, 7, 0.1);
+}
+
+.star svg {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Sao rỗng (mặc định) */
+.star svg {
+    fill: none;
+    stroke: #ffc107;
+    stroke-width: 2;
+}
+
+/* Sao đầy (khi được chọn) */
+.star.filled svg {
+    fill: #ffc107;
+    stroke: #ffc107;
+    stroke-width: 2;
+}
+
+/* Hover effect */
+.star:hover svg {
+    fill: rgba(255, 193, 7, 0.3);
+    stroke: #ffc107;
+}
+
+.star.filled:hover svg {
+    fill: #ffc107;
+    stroke: #ffc107;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .star-rating {
+        gap: 4px;
+    }
+    
+    .star svg {
+        width: 20px;
+        height: 20px;
+    }
+}
+
+@media (max-width: 576px) {
+    .star svg {
+        width: 18px;
+        height: 18px;
+    }
+}
+
+/* Pulse effect khi click */
+.star:active {
+    transform: scale(0.95);
+}
+
+.star:active svg {
+    filter: drop-shadow(0 0 8px rgba(255, 193, 7, 0.6));
+}
+
+.review-product-card {
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    transition: box-shadow 0.2s ease;
+}
+
+.review-product-card:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.form-check-input:checked {
+    background-color: #e8a2b0;
+    border-color: #e8a2b0;
+}
+
+/* Thêm vào order-detail.css */
+.star-rating-display {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.star-display {
+    opacity: 0.3;
+}
+
+.star-display.filled {
+    opacity: 1;
+}
+
+.star-display svg {
+    fill: none;
+    stroke: #ffc107;
+    stroke-width: 2;
+}
+
+.star-display.filled svg {
+    fill: #ffc107;
+    stroke: #ffc107;
+}
+
+.review-content {
+    min-height: 60px;
+    border: 1px solid #e9ecef;
 /* Hover effects for product links */
 .table a {
     transition: color 0.3s ease;

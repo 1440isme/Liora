@@ -373,9 +373,13 @@ class UserInfoManager {
                     </div>
                 `;
             } else {
-                const ordersHTML = ordersWithProducts.map(orderWithProduct => this.createCompactOrderCard(orderWithProduct)).join('');
+                const ordersHTML = await Promise.all(
+                    ordersWithProducts.map(async orderWithProduct => 
+                        await this.createCompactOrderCard(orderWithProduct)
+                    )
+                );
                 const paginationHTML = this.createPaginationHTML(paginatedData);
-                ordersContainer.innerHTML = ordersHTML + paginationHTML;
+                ordersContainer.innerHTML = ordersHTML.join('') + paginationHTML;
             }
 
         } catch (error) {
@@ -391,7 +395,7 @@ class UserInfoManager {
         }
     }
 
-    createCompactOrderCard(orderWithProduct) {
+    async createCompactOrderCard(orderWithProduct) {
         const order = orderWithProduct.order;
         const firstProduct = orderWithProduct.firstProduct;
         const totalProducts = orderWithProduct.totalProducts;
@@ -404,6 +408,7 @@ class UserInfoManager {
 
         const statusClass = this.getOrderStatusClass(order.orderStatus);
         const statusText = this.getOrderStatusText(order.orderStatus);
+        const hasReview = await this.checkOrderReviewStatus(order.idOrder);
 
         return `
             <div class="compact-order-card clickable-order" data-order-id="${order.idOrder}" onclick="userInfoManager.viewOrderDetail(${order.idOrder})">
@@ -451,13 +456,19 @@ class UserInfoManager {
                 <div class="compact-order-actions">
                     <div class="click-hint">
                         <i class="fas fa-mouse-pointer"></i>
-                        <span>Click để xem chi tiết</span>
+                        <span>Xem chi tiết</span>
                     </div>
                     ${order.orderStatus === 'COMPLETED' ? `
-                    <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); userInfoManager.openReviewModal(${order.idOrder})">
-                        <i class="fas fa-star"></i> Đánh giá
-                    </button>
-                    ` : ''}
+                        ${hasReview ? `
+                        <button class="btn btn-success btn-sm" disabled>
+                            <i class="fas fa-check"></i> Đã đánh giá
+                        </button>
+                        ` : `
+                        <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); userInfoManager.openReviewModal(${order.idOrder})">
+                            <i class="fas fa-star"></i> Đánh giá
+                        </button>
+                        `}
+                        ` : ''}
                     ${order.orderStatus === 'COMPLETED' || order.orderStatus === 'CANCELLED' ? `
                     <button class="btn btn-outline-success btn-sm" onclick="event.stopPropagation(); userInfoManager.reorder(${order.idOrder})">
                         <i class="fas fa-redo"></i> Mua lại
@@ -1513,6 +1524,44 @@ class UserInfoManager {
         container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
         document.body.appendChild(container);
         return container;
+    }
+
+    async checkOrderReviewStatus(orderId) {
+        try {
+            const token = localStorage.getItem('access_token');
+            if (!token) return false;
+
+            const response = await fetch(`/api/orders/${orderId}/items`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (response.ok) {
+                const products = await response.json();
+                let allReviewed = true;
+
+                // Kiểm tra TẤT CẢ sản phẩm đã được review chưa
+                for (let product of products) {
+                    const reviewCheckResponse = await fetch(`/api/reviews/check/${product.idOrderProduct}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (reviewCheckResponse.ok) {
+                        const reviewData = await reviewCheckResponse.json();
+                        if (!reviewData.exists) {
+                            allReviewed = false;
+                            break; // Chỉ cần 1 sản phẩm chưa review là đủ
+                        }
+                    } else {
+                        allReviewed = false;
+                        break;
+                    }
+                }
+                return allReviewed;
+            }
+            return false;
+        } catch (error) {
+            console.error('Error checking review status:', error);
+            return false;
+        }
     }
 }
 

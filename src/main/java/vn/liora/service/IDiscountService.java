@@ -57,6 +57,7 @@ public interface IDiscountService {
     List<Discount> findAvailableDiscountsForOrder(BigDecimal orderTotal);
     BigDecimal calculateDiscountAmount(Long discountId, BigDecimal orderTotal);
     boolean canApplyDiscount(Long discountId, Long userId, BigDecimal orderTotal);
+    Discount findAvailableDiscountByCode(String discountCode);
     
     // ========== ORDER DISCOUNT MANAGEMENT ==========
     List<Discount> getDiscountsByOrder(Long orderId);

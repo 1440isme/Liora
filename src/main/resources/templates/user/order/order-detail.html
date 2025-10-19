@@ -54,10 +54,11 @@
                      </button>
                      
                      <button class="btn btn-primary me-2" 
-                             th:if="${order.orderStatus == 'COMPLETED'}"
-                             th:onclick="'openReviewModal(' + ${order.idOrder} + ')'">
-                         <i class="fas fa-star me-1"></i> Đánh giá
-                     </button>
+                            th:if="${order.orderStatus == 'COMPLETED'}"
+                            th:id="'reviewButton_' + ${order.idOrder}"
+                            th:onclick="'checkReviewStatusAndOpen(' + ${order.idOrder} + ')'">
+                        <i class="fas fa-star me-1"></i> <span id="reviewButtonText">Đánh giá</span>
+                    </button>
                      
                      <button class="btn btn-success" 
                              th:if="${order.orderStatus == 'COMPLETED' or order.orderStatus == 'CANCELLED'}"
@@ -335,7 +336,7 @@
 
 <!-- Review Modal -->
 <div class="modal fade" id="reviewModal" tabindex="-1" aria-labelledby="reviewModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="reviewModalLabel">
@@ -343,7 +344,7 @@
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
                 <div id="reviewProductsList">
                     <!-- Danh sách sản phẩm sẽ được load bằng JavaScript -->
                 </div>
