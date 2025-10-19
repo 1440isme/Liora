@@ -63,6 +63,21 @@ public class ProductViewController {
         }
     }
 
+    @GetMapping("/similar-products/{productId}")
+    public String getSimilarProducts(@PathVariable Long productId, Model model) {
+        try {
+            // Get original product info
+            ProductResponse originalProduct = productService.findById(productId);
+            if (originalProduct == null) {
+                return "redirect:/";
+            }
+            
+            model.addAttribute("originalProduct", originalProduct);
+            model.addAttribute("productId", productId);
+            
+            return "user/products/similar-products";
+        } catch (Exception e) {
+            // If error, redirect to home
     @GetMapping("/featured-category/{categoryId}")
     public String getFeaturedCategoryProducts(@PathVariable Long categoryId, Model model) {
         try {

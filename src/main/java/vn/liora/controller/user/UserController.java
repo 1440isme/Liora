@@ -195,7 +195,7 @@ public class UserController {
             }
 
             Long totalOrders = orderService.countByUser(user);
-            BigDecimal totalSpent = orderService.getTotalRevenueByUser(user);
+            BigDecimal totalSpent = orderService.getTotalRevenueByUserCompleted(user);
 
             // Create stats object
             class OrderStats {

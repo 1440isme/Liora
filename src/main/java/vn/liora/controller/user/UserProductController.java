@@ -706,6 +706,7 @@ public class UserProductController {
                 })
                 .toList();
 
+            response.setCode(1000);
             response.setResult(productResponses);
             response.setMessage("Lấy sản phẩm bán chạy thành công");
             return ResponseEntity.ok(response);
