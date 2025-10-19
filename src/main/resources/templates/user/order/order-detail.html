@@ -62,8 +62,9 @@
                         </button>
 
                         <button class="btn btn-primary me-2" th:if="${order.orderStatus == 'COMPLETED'}"
-                            th:onclick="'openReviewModal(' + ${order.idOrder} + ')'">
-                            <i class="fas fa-star me-1"></i> Đánh giá
+                            th:onclick="'checkReviewStatusAndOpen(' + ${order.idOrder} + ')'"
+                            id="reviewButton">
+                            <i class="fas fa-star me-1"></i> <span id="reviewButtonText">Đánh giá</span>
                         </button>
 
                         <button class="btn btn-success"
@@ -264,9 +265,8 @@
 
 
     <!-- Toast Container -->
-    <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastContainer">
-        <!-- Toasts will be added here dynamically -->
-    </div>
+    <div class="toast-container position-fixed top-0 end-0 p-3" id="toastContainer" style="z-index: 9999;"></div>
+
 
     <!-- Loading Overlay -->
     <div id="loading-overlay" class="loading-overlay" style="display: none;">
@@ -330,6 +330,13 @@
             color: white !important;
         }
 
+        .btn-warning.text-white {
+            color: white !important;
+        }
+        
+        .btn-warning.text-white i {
+            color: white !important;
+        }
 
         /* Force Status Badge Colors */
         .status-completed {
@@ -368,6 +375,8 @@
         </div>
     </div>
 
+    <!-- Toast Notification Container -->
+    <div class="toast-container" id="toastContainer"></div>
 </body>
 
 </html>

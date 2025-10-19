@@ -477,7 +477,354 @@ function toggleWishlist() {
     }
 }
 
+// Reviews Manager
+class ReviewsManager {
+    constructor(productId) {
+        this.productId = productId;
+        this.currentPage = 0;
+        this.currentRating = null;
+        this.pageSize = 10;
+        this.totalPages = 0;
+        this.totalElements = 0;
+        
+        this.init();
+    }
+
+    init() {
+        this.bindEvents();
+        this.loadReviews();
+    }
+
+    bindEvents() {
+        // Filter button events
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const rating = e.currentTarget.dataset.rating;
+                this.filterByRating(rating);
+            });
+        });
+
+        // Tab change event
+        const reviewsTab = document.getElementById('reviews-tab');
+        if (reviewsTab) {
+            reviewsTab.addEventListener('shown.bs.tab', () => {
+                this.loadReviews();
+            });
+        }
+    }
+
+    async loadReviews(page = 0, rating = null) {
+        try {
+            this.showLoading(true);
+            
+            const params = new URLSearchParams({
+                page: page,
+                size: this.pageSize
+            });
+            
+            if (rating && rating !== 'all') {
+                params.append('rating', rating);
+            }
+
+            const response = await fetch(`/api/reviews/product/${this.productId}?${params}`);
+            const data = await response.json();
+
+            if (response.ok) {
+                this.currentPage = page;
+                this.currentRating = rating;
+                this.totalPages = data.totalPages;
+                this.totalElements = data.totalElements;
+                
+                this.updateStatistics(data.statistics);
+                this.renderReviews(data.reviews);
+                this.updatePagination();
+                this.updateFilterCounts(data.statistics.ratingCounts);
+                
+                this.showNoReviews(data.reviews.length === 0);
+            } else {
+                console.error('Error loading reviews:', data.error);
+                this.showError('Không thể tải đánh giá sản phẩm');
+            }
+        } catch (error) {
+            console.error('Error loading reviews:', error);
+            this.showError('Có lỗi xảy ra khi tải đánh giá');
+        } finally {
+            this.showLoading(false);
+        }
+    }
+
+    updateStatistics(statistics) {
+        // Update overall rating
+        const overallRating = document.getElementById('overallRating');
+        const overallStars = document.getElementById('overallStars');
+        const totalReviews = document.getElementById('totalReviews');
+        
+        if (overallRating) {
+            overallRating.textContent = statistics.averageRating.toFixed(1);
+        }
+        
+        if (overallStars) {
+            this.updateStars(overallStars, statistics.averageRating);
+        }
+        
+        if (totalReviews) {
+            totalReviews.textContent = `${statistics.totalReviews} đánh giá`;
+        }
+
+        // Update rating breakdown
+        this.updateRatingBreakdown(statistics.ratingCounts, statistics.ratingPercentages);
+    }
+
+    updateStars(container, rating) {
+        const stars = container.querySelectorAll('i');
+        const fullStars = Math.floor(rating);
+        const hasHalfStar = rating % 1 >= 0.5;
+
+        stars.forEach((star, index) => {
+            star.className = 'fas fa-star';
+            if (index < fullStars) {
+                star.style.color = '#ff6b9d';
+            } else if (index === fullStars && hasHalfStar) {
+                star.className = 'fas fa-star-half-alt';
+                star.style.color = '#ff6b9d';
+            } else {
+                star.style.color = '#ddd';
+            }
+        });
+    }
+
+    updateRatingBreakdown(ratingCounts, ratingPercentages) {
+        for (let rating = 5; rating >= 1; rating--) {
+            const ratingBar = document.querySelector(`[data-rating="${rating}"]`);
+            if (ratingBar) {
+                const progressBar = ratingBar.querySelector('.progress-bar');
+                const countSpan = ratingBar.querySelector('.rating-count');
+                
+                if (progressBar) {
+                    progressBar.style.width = `${ratingPercentages[rating]}%`;
+                }
+                
+                if (countSpan) {
+                    countSpan.textContent = ratingCounts[rating];
+                }
+            }
+        }
+    }
+
+    updateFilterCounts(ratingCounts) {
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            const rating = btn.dataset.rating;
+            const countSpan = btn.querySelector('.count');
+            
+            if (countSpan && rating !== 'all') {
+                countSpan.textContent = ratingCounts[rating] || 0;
+            }
+        });
+    }
+
+    renderReviews(reviews) {
+        const reviewsList = document.getElementById('reviewsList');
+        if (!reviewsList) return;
+
+        if (reviews.length === 0) {
+            reviewsList.innerHTML = '';
+            return;
+        }
+
+        const reviewsHTML = reviews.map(review => this.createReviewHTML(review)).join('');
+        reviewsList.innerHTML = reviewsHTML;
+    }
+
+    createReviewHTML(review) {
+        const reviewDate = new Date(review.createdAt).toLocaleDateString('vi-VN');
+        
+        // Debug: Log review data để kiểm tra (có thể xóa sau khi fix xong)
+        console.log('Review data:', review);
+        
+        // Sử dụng userDisplayName từ backend (đã xử lý logic ẩn danh)
+        const displayName = review.userDisplayName || 'Người dùng';
+        const userInitial = displayName.charAt(0).toUpperCase();
+        
+        // Tạo avatar từ userAvatar hoặc fallback
+        let avatarHTML = '';
+        const hasValidAvatar = review.userAvatar && 
+                              review.userAvatar.trim() !== '' && 
+                              review.userAvatar !== 'null' && 
+                              review.userAvatar !== 'undefined';
+        
+        if (hasValidAvatar) {
+            avatarHTML = `<img src="${review.userAvatar}" alt="${displayName}" class="review-avatar-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">`;
+        }
+        
+        // Fallback avatar với chữ cái đầu
+        avatarHTML += `<div class="review-avatar-text" style="${hasValidAvatar ? 'display: none;' : ''}">${userInitial}</div>`;
+        
+        return `
+            <div class="review-item">
+                <div class="review-header">
+                    <div class="review-avatar">
+                        ${avatarHTML}
+                    </div>
+                    <div class="review-user-info">
+                        <div class="review-username">${displayName}</div>
+                        <div class="review-rating">
+                            <div class="review-stars">
+                                ${this.createStarsHTML(review.rating)}
+                            </div>
+                            <div class="review-date">${reviewDate}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="review-content">
+                    ${review.content || 'Không có nội dung đánh giá.'}
+                </div>
+            </div>
+        `;
+    }
+
+    createStarsHTML(rating) {
+        let starsHTML = '';
+        for (let i = 1; i <= 5; i++) {
+            if (i <= rating) {
+                starsHTML += '<i class="fas fa-star"></i>';
+            } else {
+                starsHTML += '<i class="far fa-star"></i>';
+            }
+        }
+        return starsHTML;
+    }
+
+    maskUsername(username) {
+        if (!username || username.length <= 2) {
+            return username;
+        }
+        
+        if (username.length === 3) {
+            return username.charAt(0) + "*" + username.charAt(2);
+        }
+        
+        // Tạo chuỗi với chữ đầu, các dấu *, và chữ cuối
+        let masked = username.charAt(0);
+        for (let i = 1; i < username.length - 1; i++) {
+            masked += "*";
+        }
+        masked += username.charAt(username.length - 1);
+        
+        return masked;
+    }
+
+    updatePagination() {
+        const pagination = document.getElementById('reviewsPagination');
+        if (!pagination) return;
+
+        if (this.totalPages <= 1) {
+            pagination.style.display = 'none';
+            return;
+        }
+
+        pagination.style.display = 'block';
+        
+        let paginationHTML = '';
+        
+        // Previous button
+        if (this.currentPage > 0) {
+            paginationHTML += `
+                <li class="page-item">
+                    <a class="page-link" href="#" data-page="${this.currentPage - 1}">‹</a>
+                </li>
+            `;
+        }
+
+        // Page numbers
+        const startPage = Math.max(0, this.currentPage - 2);
+        const endPage = Math.min(this.totalPages - 1, this.currentPage + 2);
+
+        for (let i = startPage; i <= endPage; i++) {
+            const isActive = i === this.currentPage ? 'active' : '';
+            paginationHTML += `
+                <li class="page-item ${isActive}">
+                    <a class="page-link" href="#" data-page="${i}">${i + 1}</a>
+                </li>
+            `;
+        }
+
+        // Next button
+        if (this.currentPage < this.totalPages - 1) {
+            paginationHTML += `
+                <li class="page-item">
+                    <a class="page-link" href="#" data-page="${this.currentPage + 1}">›</a>
+                </li>
+            `;
+        }
+
+        pagination.querySelector('.pagination').innerHTML = paginationHTML;
+
+        // Bind pagination events
+        pagination.querySelectorAll('.page-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const page = parseInt(e.currentTarget.dataset.page);
+                this.loadReviews(page, this.currentRating);
+            });
+        });
+    }
+
+    filterByRating(rating) {
+        // Update active filter button
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        
+        const activeBtn = document.querySelector(`[data-rating="${rating}"]`);
+        if (activeBtn) {
+            activeBtn.classList.add('active');
+        }
+
+        // Load reviews with new filter
+        this.loadReviews(0, rating);
+    }
+
+    showLoading(show) {
+        const loading = document.getElementById('reviewsLoading');
+        if (loading) {
+            loading.style.display = show ? 'block' : 'none';
+        }
+    }
+
+    showNoReviews(show) {
+        const noReviews = document.getElementById('noReviewsMessage');
+        if (noReviews) {
+            noReviews.style.display = show ? 'block' : 'none';
+        }
+    }
+
+    showError(message) {
+        const reviewsList = document.getElementById('reviewsList');
+        if (reviewsList) {
+            reviewsList.innerHTML = `
+                <div class="text-center py-4">
+                    <i class="fas fa-exclamation-triangle fa-2x text-warning mb-3"></i>
+                    <p class="text-muted">${message}</p>
+                </div>
+            `;
+        }
+    }
+}
+
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     window.productDetailManager = new ProductDetailManager();
+    
+    // Initialize reviews manager when reviews tab is shown
+    const reviewsTab = document.getElementById('reviews-tab');
+    if (reviewsTab) {
+        reviewsTab.addEventListener('shown.bs.tab', () => {
+            if (!window.reviewsManager) {
+                const productId = document.getElementById('productId')?.value;
+                if (productId) {
+                    window.reviewsManager = new ReviewsManager(productId);
+                }
+            }
+        });
+    }
 });

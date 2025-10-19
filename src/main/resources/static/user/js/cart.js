@@ -749,7 +749,16 @@ class CartPage {
             }
         });
 
-        const discountAmount = this.appliedDiscount ? this.appliedDiscount.discountAmount : 0;
+        // ✅ FIX: Tính lại discount amount nếu có discount được áp dụng
+        let discountAmount = 0;
+        if (this.appliedDiscount) {
+            // Sử dụng discount amount hiện tại, sẽ được cập nhật bởi recalculateDiscountAmount
+            discountAmount = this.appliedDiscount.discountAmount || 0;
+            
+            // Tính lại discount amount với subtotal mới (async)
+            this.recalculateDiscountAmount(subtotal);
+        }
+        
         const total = subtotal - discountAmount;
     
         $('#selected-count').text(selectedCount);
@@ -773,6 +782,31 @@ class CartPage {
         // $('#discount').parent().hide();
     }
 
+    // ✅ FIX: Method để tính lại discount amount khi subtotal thay đổi
+    async recalculateDiscountAmount(subtotal) {
+        if (!this.appliedDiscount) return;
+        
+        try {
+            const response = await this.apiCall('/discounts/apply', 'POST', {
+                discountCode: this.appliedDiscount.discountCode,
+                orderTotal: subtotal
+            });
+
+            if (response.result) {
+                // Cập nhật discount amount mới
+                this.appliedDiscount.discountAmount = response.result.discountAmount;
+                
+                // Cập nhật UI với discount amount mới
+                $('#discount').text(`-${this.formatCurrency(this.appliedDiscount.discountAmount)}`);
+                const total = subtotal - this.appliedDiscount.discountAmount;
+                $('#total').text(this.formatCurrency(total));
+            }
+        } catch (error) {
+            console.warn('Không thể tính lại discount amount:', error);
+            // Nếu không tính được, có thể discount không còn hợp lệ
+            // Có thể hiển thị thông báo hoặc gỡ discount
+        }
+    }
 
     handleCheckout() {
         const selectedCount = $('.cart-item-checkbox:checked').length;
@@ -1046,8 +1080,20 @@ class CartPage {
     }
 
     calculateCartTotal() {
-        const subtotalText = $('#subtotal').text().replace(/[^\d]/g, '');
-        return parseFloat(subtotalText) || 0;
+        let subtotal = 0;
+        
+        $('.cart-item').each((index, element) => {
+            const $item = $(element);
+            const checkbox = $item.find('.cart-item-checkbox');
+            if (!checkbox.is(':checked')) return;
+
+            const quantity = parseInt($item.find('.quantity-input').val(), 10) || 1;
+            const unitPrice = parseFloat($item.data('unit-price')) || 0;
+            
+            subtotal += unitPrice * quantity;
+        });
+        
+        return subtotal;
     }
 
     navigateToCheckout() {

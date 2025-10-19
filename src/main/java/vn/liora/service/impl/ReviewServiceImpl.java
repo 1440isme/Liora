@@ -149,6 +149,12 @@ public class ReviewServiceImpl implements IReviewService {
         return reviews.map(reviewMapper::toReviewResponse);
     }
 
+    @Override
+    public Page<ReviewResponse> findVisibleReviewsByProductIdWithRating(Long productId, Integer rating, Pageable pageable) {
+        Page<Review> reviews = reviewRepository.findByProductIdAndRatingAndIsVisibleTrue(productId, rating, pageable);
+        return reviews.map(reviewMapper::toReviewResponse);
+    }
+
     // ========== BY USER ==========
     
     @Override
@@ -197,6 +203,44 @@ public class ReviewServiceImpl implements IReviewService {
     @Override
     public Long getReviewCountByProductId(Long productId) {
         return reviewRepository.getReviewCountByProductId(productId);
+    }
+
+    @Override
+    public Map<String, Object> getProductReviewStatistics(Long productId) {
+        Map<String, Object> statistics = new HashMap<>();
+        
+        // Lấy điểm trung bình
+        Double averageRating = reviewRepository.getAverageRatingByProductId(productId);
+        statistics.put("averageRating", averageRating != null ? averageRating : 0.0);
+        
+        // Lấy tổng số review
+        Long totalReviews = reviewRepository.getReviewCountByProductId(productId);
+        statistics.put("totalReviews", totalReviews != null ? totalReviews : 0L);
+        
+        // Lấy số review theo từng rating (1-5 sao)
+        Map<Integer, Long> ratingCounts = new HashMap<>();
+        for (int rating = 1; rating <= 5; rating++) {
+            Long count = reviewRepository.getReviewCountByProductIdAndRating(productId, rating);
+            ratingCounts.put(rating, count != null ? count : 0L);
+        }
+        statistics.put("ratingCounts", ratingCounts);
+        
+        // Tính phần trăm cho mỗi rating
+        Map<Integer, Double> ratingPercentages = new HashMap<>();
+        if (totalReviews != null && totalReviews > 0) {
+            for (int rating = 1; rating <= 5; rating++) {
+                Long count = ratingCounts.get(rating);
+                double percentage = (double) count / totalReviews * 100;
+                ratingPercentages.put(rating, percentage);
+            }
+        } else {
+            for (int rating = 1; rating <= 5; rating++) {
+                ratingPercentages.put(rating, 0.0);
+            }
+        }
+        statistics.put("ratingPercentages", ratingPercentages);
+        
+        return statistics;
     }
     
     // ========== ADMIN FUNCTIONS ==========
