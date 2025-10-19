@@ -301,10 +301,10 @@ class CartPage {
                         </div>
                     </div>
                     <div class="col-auto">
-                        <button class="btn btn-outline-primary btn-sm btn-find-similar" data-product-id="${item.idProduct}">
+                        <a href="/similar-products?q=${encodeURIComponent(item.productName || '')}&similar=true" class="btn btn-outline-primary btn-sm btn-find-similar" data-product-id="${item.idProduct}">
                             <i class="fas fa-search"></i>
                             <span class="btn-text">Tìm sản phẩm tương tự</span>
-                        </button>
+                        </a>
                     </div>
                 </div>
             </div>
@@ -658,16 +658,13 @@ class CartPage {
             return;
         }
 
-        // Tìm sản phẩm trong cartItems để lấy thông tin
-        const product = this.cartItems.find(item => item.idProduct === productId);
-        if (!product) {
-            this.showToast('Không tìm thấy thông tin sản phẩm', 'error');
-            return;
-        }
-
-        // Chuyển đến trang tìm kiếm với từ khóa là tên sản phẩm
-        const searchQuery = encodeURIComponent(product.productName || '');
-        window.location.href = `/search?q=${searchQuery}`;
+        // Hiển thị loading và chuyển đến trang sản phẩm tương tự
+        this.showLoading(true);
+        
+        // Thêm delay nhỏ để user thấy loading
+        setTimeout(() => {
+            window.location.href = `/product/similar-products/${productId}`;
+        }, 500);
     }
 
     removeItemWithAnimation(cartItem) {
