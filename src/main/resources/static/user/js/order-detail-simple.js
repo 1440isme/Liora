@@ -663,6 +663,12 @@ function renderViewReviewProducts(products) {
             </div>
         `;
         container.append(productHtml);
+        
+        // ✅ FIX: Lưu existing review data vào data attribute của card
+        if (hasReview && existingReview) {
+            const card = $(`.card[data-order-product-id="${product.idOrderProduct}"]`);
+            card.data('existing-review', existingReview);
+        }
     });
     
     // Add star rating functionality for new reviews
@@ -709,7 +715,26 @@ function editReview(orderProductId) {
                             <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
                         </svg>
                     </div>
-                    <!-- ... 4 stars khác ... -->
+                    <div class="star" data-rating="2">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffc107" stroke-width="2">
+                            <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                        </svg>
+                    </div>
+                    <div class="star" data-rating="3">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffc107" stroke-width="2">
+                            <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                        </svg>
+                    </div>
+                    <div class="star" data-rating="4">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffc107" stroke-width="2">
+                            <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                        </svg>
+                    </div>
+                    <div class="star" data-rating="5">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffc107" stroke-width="2">
+                            <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                        </svg>
+                    </div>
                 </div>
             </div>
             
@@ -767,6 +792,7 @@ function editReview(orderProductId) {
 // Thêm function save review
 async function saveReview(orderProductId) {
     const card = $(`.card[data-order-product-id="${orderProductId}"]`);
+    const existingReview = card.data('existing-review');
     const rating = card.data('rating');
     const content = card.find('textarea').val().trim();
     const anonymous = card.find('input[type="checkbox"]').is(':checked');
@@ -776,16 +802,20 @@ async function saveReview(orderProductId) {
         return;
     }
     
+    if (!existingReview || !existingReview.reviewId) {
+        alert('Không tìm thấy thông tin đánh giá để cập nhật');
+        return;
+    }
+    
     try {
         const token = localStorage.getItem('access_token');
-        const response = await fetch('/api/reviews', {
-            method: 'POST',
+        const response = await fetch(`/api/reviews/${existingReview.reviewId}`, {
+            method: 'PUT',
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                orderProductId: orderProductId,
                 rating: rating,
                 content: content,
                 anonymous: anonymous
@@ -797,12 +827,19 @@ async function saveReview(orderProductId) {
             // Reload view
             openViewReviewModal(currentOrderId);
         } else {
-            alert('Lỗi khi cập nhật đánh giá');
+            const errorData = await response.json();
+            alert(`Lỗi khi cập nhật đánh giá: ${errorData.message || 'Có lỗi xảy ra'}`);
         }
     } catch (error) {
         console.error('Error saving review:', error);
         alert('Lỗi khi cập nhật đánh giá');
     }
+}
+
+// Thêm function cancel edit review
+function cancelEdit(orderProductId) {
+    // Reload view để quay về trạng thái ban đầu
+    openViewReviewModal(currentOrderId);
 }
 
 function showToast(message, type = 'info') {
