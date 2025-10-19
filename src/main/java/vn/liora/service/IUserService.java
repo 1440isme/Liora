@@ -29,4 +29,7 @@ public interface IUserService {
     List<User> findByUsernameContaining(String username);
     Page<User> findByUsernameContaining(String username, Pageable pageable);
     Optional<User> findByUsername(String username);
+
+    long countNewCustomersThisMonth();
+
 }

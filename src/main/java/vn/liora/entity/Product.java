@@ -72,7 +72,7 @@ public class Product {
     @Column(name = "AverageRating", precision = 2, scale = 1)
     @DecimalMin(value = "0.0", message = "PRODUCT_RATING_INVALID")
     @DecimalMax(value = "5.0", message = "PRODUCT_RATING_INVALID")
-    private BigDecimal averageRating =  BigDecimal.ZERO;
+    private BigDecimal averageRating = BigDecimal.ZERO;
 
     @Transient
     private Integer ratingCount;

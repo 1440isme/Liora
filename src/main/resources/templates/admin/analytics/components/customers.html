@@ -1,0 +1,78 @@
+<!-- admin/analytics/components/customers.html -->
+<div th:fragment="customers-statistics">
+    <!-- Tiêu đề -->
+    <div class="d-sm-flex align-items-center justify-content-between border-bottom mb-3">
+        <h4 class="fw-bold text-dark mb-0">📊 Thống kê khách hàng</h4>
+    </div>
+
+    <!-- 3 Thẻ tổng quan -->
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card border-start border-4 border-primary shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-muted mb-1">Khách hàng mới trong tháng</h6>
+                    <h3 class="text-primary fw-bold" th:text="${newCustomersThisMonth}">0</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-4">
+            <div class="card border-start border-4 border-success shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-muted mb-1">Khách hàng quay lại</h6>
+                    <h3 class="text-success fw-bold">
+                        <span th:text="${#numbers.formatDecimal(returningCustomersRate ?: 0, 1, 'COMMA', 1, 'POINT')}">0</span>%
+                    </h3>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="col-md-4 mb-4">
+            <div class="card border-start border-4 border-warning shadow-sm">
+                <div class="card-body">
+                    <h6 class="text-muted mb-1">Tổng số khách hàng</h6>
+                    <h3 class="text-warning fw-bold" th:text="${totalCustomers}">0</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bảng Top khách hàng chi tiêu cao nhất -->
+    <div class="card shadow mb-4">
+        <div class="card-header bg-white border-start border-4 border-warning d-flex justify-content-between">
+            <h6 class="m-0 fw-bold text-warning">💎 Top khách hàng chi tiêu nhiều nhất</h6>
+            <a href="/admin/users" class="btn btn-sm btn-warning text-white">Xem tất cả</a>
+        </div>
+
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered align-middle">
+                    <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Tên khách hàng</th>
+                        <th>Email</th>
+                        <th>Số đơn hàng</th>
+                        <th>Tổng chi tiêu (₫)</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="c : ${topCustomers}">
+                        <td th:text="${c.userId}">1</td>
+                        <td th:text="${c.fullName}">Nguyễn Văn A</td>
+                        <td th:text="${c.email}">a@gmail.com</td>
+                        <td th:text="${c.ordersCount}">3</td>
+                        <td th:text="${#numbers.formatDecimal(c.totalSpent, 0, 'COMMA', 0, 'POINT')} + ' ₫'">
+                            1,200,000 ₫
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(topCustomers)}">
+                        <td colspan="5" class="text-center text-muted">Không có dữ liệu khách hàng</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

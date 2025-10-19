@@ -9,6 +9,7 @@ import vn.liora.dto.request.ProductCreationRequest;
 import vn.liora.dto.request.ProductUpdateRequest;
 import vn.liora.dto.response.ProductResponse;
 import vn.liora.dto.response.BrandResponse;
+import vn.liora.dto.response.TopProductResponse;
 import vn.liora.entity.Brand;
 import vn.liora.entity.Category;
 import vn.liora.entity.Product;
@@ -325,6 +326,42 @@ public class ProductServiceImpl implements IProductService {
     public List<Product> findHighRatedProductsWithPagination(BigDecimal minRating, Pageable pageable) {
         return productRepository.findHighRatedProducts(minRating, pageable);
     }
+
+    @Override
+    public List<TopProductResponse> getTopSellingProducts(int limit) {
+        Pageable pageable = PageRequest.of(0, limit);
+        List<Product> topProducts = productRepository.findTopSellingInStockProducts(pageable);
+
+        return topProducts.stream()
+                .map(p -> TopProductResponse.builder()
+                        .id(p.getProductId())
+                        .name(p.getName())
+                        .categoryName(
+                                p.getCategory() != null
+                                        ? p.getCategory().getName()
+                                        : "Không xác định"
+                        )
+                        .soldQuantity(
+                                p.getSoldCount() != null
+                                        ? p.getSoldCount()
+                                        : 0L
+                        )
+                        .revenue(
+                                p.getPrice() != null && p.getSoldCount() != null
+                                        ? p.getPrice().multiply(BigDecimal.valueOf(p.getSoldCount()))
+                                        : BigDecimal.ZERO
+                        )
+                        .rating(
+                                p.getAverageRating() != null
+                                        ? p.getAverageRating()
+                                        : BigDecimal.ZERO
+                        )
+                        .build())
+                .toList();
+    }
+
+
+
     // ========== ADMIN QUERIES ==========
     @Override
     public Page<Product> findActiveProductsWithPagination(Pageable pageable) {

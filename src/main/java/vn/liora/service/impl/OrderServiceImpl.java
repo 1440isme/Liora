@@ -7,13 +7,23 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 // removed unused imports
 
+
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.temporal.IsoFields;
 import java.util.ArrayList;
+
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.liora.dto.request.OrderCreationRequest;
 import vn.liora.dto.request.OrderUpdateRequest;
 import vn.liora.dto.response.OrderProductResponse;
 import vn.liora.dto.response.OrderResponse;
+import vn.liora.dto.response.TopCustomerResponse;
 import vn.liora.entity.*;
 import vn.liora.exception.AppException;
 import vn.liora.exception.ErrorCode;
@@ -30,6 +40,7 @@ import vn.liora.repository.DiscountRepository;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -430,4 +441,55 @@ public class OrderServiceImpl implements IOrderService {
         log.info("Order {} cancelled by user {}", orderId, userId);
     }
 
+    @Override
+    public BigDecimal getRevenueByDate(LocalDate date) {
+        // Tính tổng doanh thu trong ngày
+        LocalDateTime startOfDay = date.atStartOfDay();
+        BigDecimal total = orderRepository.getRevenueByDate(startOfDay);
+        return total != null ? total : BigDecimal.ZERO;
+    }
+
+    // tổng doanh thu của đơn hàng đã hoàn thành
+    @Override
+    public BigDecimal getTotalRevenueCompleted() {
+        BigDecimal total = orderRepository.getTotalRevenueCompleted();
+        return total != null ? total : BigDecimal.ZERO;
+    }
+
+    @Override
+    public List<Order> getRecentOrders(int limit) {
+        Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "orderDate"));
+        return orderRepository.findAll(pageable).getContent();
+    }
+
+    // ======================== DOANH THU THEO SẢN PHẨM ========================
+    @Override
+    public BigDecimal getRevenueByProductId(Long productId) {
+        return orderRepository.getRevenueByProductId(productId);
+    }
+
+    @Override
+    public List<Object[]> getRevenueByDay(LocalDateTime startDate, LocalDateTime endDate) {
+        return orderRepository.getRevenueByDay(startDate, endDate);
+    }
+
+    @Override
+    public List<Object[]> getRevenueByMonth(LocalDateTime startDate, LocalDateTime endDate) {
+        return orderRepository.getRevenueByMonth(startDate, endDate);
+    }
+
+    @Override
+    public List<Object[]> getRevenueByYear(LocalDateTime startDate, LocalDateTime endDate) {
+        return orderRepository.getRevenueByYear(startDate, endDate);
+    }
+
+    @Override
+    public long countReturningCustomers() {
+        return orderRepository.countReturningCustomers();
+    }
+
+    @Override
+    public List<TopCustomerResponse> getTopSpenders(int limit) {
+        return orderRepository.findTopSpenders(PageRequest.of(0, limit));
+    }
 }

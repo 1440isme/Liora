@@ -1,15 +1,18 @@
 package vn.liora.controller.admin;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 import vn.liora.service.IBrandService;
 import vn.liora.service.ICategoryService;
+import vn.liora.service.IDashboardService;
+
+import java.time.LocalDateTime;
+import java.util.Map;
 
 @Controller
 @RequestMapping("/admin")
@@ -18,6 +21,7 @@ public class AdminPageController {
 
     private final ICategoryService categoryService;
     private final IBrandService brandService;
+    private final IDashboardService dashboardService;
 
     private void addCurrentUserToModel(Model model) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -26,10 +30,37 @@ public class AdminPageController {
         }
     }
 
+    @GetMapping("/revenue")
+    @ResponseBody
+    public Map<String, Double> getRevenueData(
+            @RequestParam String type, // time/category/brand
+            @RequestParam(required = false, defaultValue = "day") String groupType, // chỉ dùng cho "time"
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
+
+        return switch (type.toLowerCase()) {
+            case "category" -> dashboardService.getRevenueByCategory(startDate, endDate);
+            case "brand" -> dashboardService.getRevenueByBrand(startDate, endDate);
+            default -> dashboardService.getRevenueByTime(groupType, startDate, endDate);
+        };
+    }
+
     // Dashboard
     @GetMapping({ "", "/", "/dashboard" })
     public String dashboard(Model model) {
         addCurrentUserToModel(model);
+        model.addAttribute("totalRevenue", dashboardService.getTotalRevenue());
+        model.addAttribute("totalOrders", dashboardService.getTotalOrders());
+        model.addAttribute("totalProducts", dashboardService.getTotalProducts());
+        model.addAttribute("totalCustomers", dashboardService.getTotalCustomers());
+        model.addAttribute("pendingOrders", dashboardService.getPendingOrders());
+        model.addAttribute("lowStockProducts", dashboardService.getLowStockProducts());
+        model.addAttribute("todayRevenue", dashboardService.getTodayRevenue());
+        model.addAttribute("conversionRate", dashboardService.getConversionRate());
+
+        model.addAttribute("recentOrders", dashboardService.getRecentOrders(5));
+        model.addAttribute("topProducts", dashboardService.getTopProducts(5));
+
         return "admin/dashboard/index";
     }
 
@@ -152,5 +183,23 @@ public class AdminPageController {
     public String permissionsManage(Model model) {
         addCurrentUserToModel(model);
         return "admin/permissions/manage";
+    }
+
+    //Analytics
+    @GetMapping("/analytics")
+    public String analytics(Model model) {
+        addCurrentUserToModel(model);
+        model.addAttribute("totalRevenue", dashboardService.getTotalRevenue());
+        model.addAttribute("totalOrders", dashboardService.getTotalOrders());
+        model.addAttribute("totalProducts", dashboardService.getTotalProducts());
+        model.addAttribute("totalCustomers", dashboardService.getTotalCustomers());
+        model.addAttribute("returningCustomers", dashboardService.getReturningCustomers());
+        model.addAttribute("newCustomersThisMonth", dashboardService.getNewCustomersThisMonth());
+
+        model.addAttribute("recentOrders", dashboardService.getRecentOrders(10));
+        model.addAttribute("topProducts", dashboardService.getTopProducts(10));
+        model.addAttribute("lowStockProducts", dashboardService.getLowStockProductsList(10));
+        model.addAttribute("topCustomers", dashboardService.getTopCustomers(10));
+        return "admin/analytics/index";
     }
 }
