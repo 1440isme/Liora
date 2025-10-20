@@ -356,7 +356,7 @@ class BrandProductsManager {
                                         ${productStatus !== 'available' ? 'disabled' : ''}
                                         title="${productStatus === 'out_of_stock' ? 'Hết hàng' :
                 productStatus === 'deactivated' ? 'Ngừng kinh doanh' : 'Thêm vào giỏ'}"
-                                        onclick="if(window.app) window.app.addToCart(${product.productId}, '${product.name}', ${product.price}); else alert('Chức năng đang được tải...');">
+                                        onclick="if(window.app) window.app.addToCart(${product.productId}, 1, true); else alert('Chức năng đang được tải...');">
                                     <i class="fas fa-shopping-cart"></i>
                             </button>
                         </div>
