@@ -365,9 +365,23 @@ class BestsellerProductsManager {
                                         <span class="review-count ms-2">(${product.ratingCount || 0} đánh giá)</span>
                                     </div>
                                     
+                                    <!-- Sales Progress -->
+                                    <div class="sales-progress mb-3">
+                                        <div class="sales-info d-flex justify-content-between align-items-center mb-1">
+                                            <span class="sales-label">Đã bán</span>
+                                            <span class="sales-count">${this.formatNumber(product.soldCount || 0)}</span>
+                                        </div>
+                                        <div class="progress">
+                                            <div class="progress-bar" 
+                                                 style="width: ${this.calculateSalesProgress(product.soldCount || 0)}%"
+                                                 role="progressbar">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
                                     <div class="price-section mb-4">
                                         <span class="current-price h4 text-primary">
-                                            ${this.formatPrice(product.price)}
+                                            ${this.formatCurrency(product.price)}
                                         </span>
                                     </div>
                                     
@@ -821,6 +835,22 @@ class BestsellerProductsManager {
             style: 'currency',
             currency: 'VND'
         }).format(price);
+    }
+
+    formatCurrency(price) {
+        if (!price || price === null || price === undefined) {
+            return '0 ₫';
+        }
+
+        const numPrice = parseFloat(price);
+        if (isNaN(numPrice)) {
+            return '0 ₫';
+        }
+
+        return new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND'
+        }).format(numPrice);
     }
 
     showLoading() {

@@ -186,17 +186,26 @@ class SimilarProductsManager {
     }
 
     getProductStatus(product) {
-        if (!product.available) return 'out-of-stock';
-        if (product.stock <= 0) return 'out-of-stock';
-        if (product.stock <= 5) return 'low-stock';
+        // 1. Kiểm tra ngừng kinh doanh (ưu tiên cao nhất)
+        if (!product.isActive) {
+            return 'deactivated';
+        }
+
+        // 2. Kiểm tra hết hàng (chỉ khi sản phẩm còn active)
+        if (product.stock <= 0) {
+            return 'out_of_stock';
+        }
+
+        // 3. Sản phẩm có sẵn
         return 'available';
     }
 
     getProductStatusClass(status) {
         switch (status) {
-            case 'out-of-stock': return 'out-of-stock';
-            case 'low-stock': return 'low-stock';
-            default: return 'available';
+            case 'deactivated': return 'product-deactivated';
+            case 'out_of_stock': return 'product-out-of-stock';
+            case 'available':
+            default: return 'product-available';
         }
     }
 

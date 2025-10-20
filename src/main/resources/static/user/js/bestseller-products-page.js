@@ -464,7 +464,7 @@ class BestsellerProductsPageManager {
                             
                             <div class="price-section d-flex justify-content-between align-items-center">
                                 <span class="current-price">
-                                    ${this.formatPrice(currentPrice)}
+                                    ${this.formatCurrency(currentPrice)}
                                 </span>
                                 <button class="add-to-cart-icon bestseller-page-cart-btn" 
                                         data-product-id="${productId}"
@@ -497,17 +497,26 @@ class BestsellerProductsPageManager {
     }
 
     getProductStatus(product) {
-        if (!product.available) return 'out-of-stock';
-        if (product.stock <= 0) return 'out-of-stock';
-        if (product.stock <= 5) return 'low-stock';
+        // 1. Kiểm tra ngừng kinh doanh (ưu tiên cao nhất)
+        if (!product.isActive) {
+            return 'deactivated';
+        }
+
+        // 2. Kiểm tra hết hàng (chỉ khi sản phẩm còn active)
+        if (product.stock <= 0) {
+            return 'out_of_stock';
+        }
+
+        // 3. Sản phẩm có sẵn
         return 'available';
     }
 
     getProductStatusClass(status) {
         switch (status) {
-            case 'out-of-stock': return 'out-of-stock';
-            case 'low-stock': return 'low-stock';
-            default: return 'available';
+            case 'deactivated': return 'product-deactivated';
+            case 'out_of_stock': return 'product-out-of-stock';
+            case 'available':
+            default: return 'product-available';
         }
     }
 
@@ -718,9 +727,7 @@ class BestsellerProductsPageManager {
                                     
                                     <!-- Product Status -->
                                     <div class="product-status mb-3">
-                                        <span class="badge ${product.stock > 0 ? 'bg-success' : 'bg-danger'}">
-                                            ${product.stock > 0 ? 'Còn hàng' : 'Hết hàng'}
-                                        </span>
+                                        ${this.getProductStatusBadge(product)}
                                         <span class="ms-2 text-muted">Mã sản phẩm: ${product.productId || 'N/A'}</span>
                                     </div>
                                     
@@ -773,25 +780,7 @@ class BestsellerProductsPageManager {
                                     
                                     <!-- Actions -->
                                     <div class="d-grid gap-2">
-                                        <!-- Buy Now & Add to Cart Buttons (Same Row) -->
-                                        <div class="row g-2">
-                                            <div class="col-6">
-                                                <button class="btn btn-danger btn-lg w-100" 
-                                                        onclick="window.bestsellerProductsPageManager.buyNow(${product.productId})"
-                                                        ${product.stock <= 0 ? 'disabled' : ''}>
-                                                    <i class="mdi mdi-lightning-bolt me-1"></i>
-                                                    ${product.stock > 0 ? 'Mua ngay' : 'Hết hàng'}
-                                                </button>
-                                            </div>
-                                            <div class="col-6">
-                                                <button class="btn btn-primary btn-lg w-100" 
-                                                        onclick="window.bestsellerProductsPageManager.addToCartWithQuantity(${product.productId})"
-                                                        ${product.stock <= 0 ? 'disabled' : ''}>
-                                                    <i class="mdi mdi-cart-plus me-1"></i>
-                                                    ${product.stock > 0 ? 'Thêm vào giỏ' : 'Hết hàng'}
-                                                </button>
-                                            </div>
-                                        </div>
+                                        ${this.getQuickViewActions(product)}
                                         
                                         <!-- View Details Button -->
                                         <a href="/product/${product.productId}" 
@@ -850,10 +839,11 @@ class BestsellerProductsPageManager {
         const status = this.getProductStatus(product);
 
         switch (status) {
-            case 'out-of-stock':
+            case 'deactivated':
+                return '<span class="badge bg-warning text-dark">Ngừng kinh doanh</span>';
+            case 'out_of_stock':
                 return '<span class="badge bg-danger">Hết hàng</span>';
-            case 'low-stock':
-                return '<span class="badge bg-warning text-dark">Sắp hết hàng</span>';
+            case 'available':
             default:
                 return '<span class="badge bg-success">Còn hàng</span>';
         }
@@ -863,7 +853,16 @@ class BestsellerProductsPageManager {
         const status = this.getProductStatus(product);
         const isDisabled = status !== 'available';
 
-        if (status === 'out-of-stock') {
+        if (status === 'deactivated') {
+            return `
+                <div class="alert alert-warning text-center">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Sản phẩm đã ngừng kinh doanh! Chúng tôi xin lỗi vì sự bất tiện này. Vui lòng tham khảo các sản phẩm khác.
+                </div>
+            `;
+        }
+
+        if (status === 'out_of_stock') {
             return `
                 <div class="alert alert-danger text-center">
                     <i class="fas fa-times-circle me-2"></i>

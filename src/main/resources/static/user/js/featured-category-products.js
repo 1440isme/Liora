@@ -786,9 +786,7 @@ class FeaturedCategoryProductsManager {
                                     
                                     <!-- Product Status -->
                                     <div class="product-status mb-3">
-                                        <span class="badge ${product.stock > 0 ? 'bg-success' : 'bg-danger'}">
-                                            ${product.stock > 0 ? 'Còn hàng' : 'Hết hàng'}
-                                        </span>
+                                        ${this.getProductStatusBadge(product)}
                                         <span class="ms-2 text-muted">Mã sản phẩm: ${product.productId || 'N/A'}</span>
                                     </div>
                                     
@@ -841,25 +839,7 @@ class FeaturedCategoryProductsManager {
                                     
                                     <!-- Actions -->
                                     <div class="d-grid gap-2">
-                                        <!-- Buy Now & Add to Cart Buttons (Same Row) -->
-                                        <div class="row g-2">
-                                            <div class="col-6">
-                                                <button class="btn btn-danger btn-lg w-100" 
-                                                        onclick="window.featuredCategoryProductsManager.buyNow(${product.productId})"
-                                                        ${product.stock <= 0 ? 'disabled' : ''}>
-                                                    <i class="mdi mdi-lightning-bolt me-1"></i>
-                                                    ${product.stock > 0 ? 'Mua ngay' : 'Hết hàng'}
-                                                </button>
-                                            </div>
-                                            <div class="col-6">
-                                                <button class="btn btn-primary btn-lg w-100" 
-                                                        onclick="window.featuredCategoryProductsManager.addToCartWithQuantity(${product.productId})"
-                                                        ${product.stock <= 0 ? 'disabled' : ''}>
-                                                    <i class="mdi mdi-cart-plus me-1"></i>
-                                                    ${product.stock > 0 ? 'Thêm vào giỏ' : 'Hết hàng'}
-                                                </button>
-                                            </div>
-                                        </div>
+                                        ${this.getQuickViewActions(product)}
                                         
                                         <!-- View Details Button -->
                                         <a href="/product/${product.productId}" 
