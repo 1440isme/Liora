@@ -261,6 +261,9 @@
         <!-- Toasts will be added here dynamically -->
     </div>
 
+    <!-- Popup Portal -->
+    <div id="popup-portal"></div>
+
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
@@ -277,6 +280,7 @@
         .discount-slider-container {
             position: relative;
             padding: 0 50px;
+            overflow: hidden;
         }
 
         .slider-btn {
@@ -333,6 +337,7 @@
             width: 320px;
             overflow: hidden;
             flex-shrink: 0;
+            position: relative;
         }
 
         .discount-card-left {
@@ -387,6 +392,7 @@
             cursor: pointer;
             position: relative;
             transition: all 0.3s ease;
+            z-index: 10;
         }
 
         .discount-info-icon:hover {
@@ -398,14 +404,14 @@
         .discount-popup {
             position: absolute;
             top: -10px;
-            right: 30px;
+            left: 30px;
             background: white;
             border-radius: 8px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
             padding: 16px;
-            min-width: 280px;
-            max-width: 320px;
-            z-index: 1000;
+            min-width: 250px;
+            max-width: 280px;
+            z-index: 9999;
             opacity: 0;
             visibility: hidden;
             transform: translateY(-10px);
@@ -419,29 +425,6 @@
             transform: translateY(0);
         }
 
-        .discount-popup::before {
-            content: '';
-            position: absolute;
-            top: 20px;
-            right: -8px;
-            width: 0;
-            height: 0;
-            border-left: 8px solid white;
-            border-top: 8px solid transparent;
-            border-bottom: 8px solid transparent;
-        }
-
-        .discount-popup::after {
-            content: '';
-            position: absolute;
-            top: 19px;
-            right: -9px;
-            width: 0;
-            height: 0;
-            border-left: 9px solid #e0e0e0;
-            border-top: 9px solid transparent;
-            border-bottom: 9px solid transparent;
-        }
 
         .popup-header {
             display: flex;
@@ -492,27 +475,26 @@
             font-weight: 500;
         }
 
-        .popup-conditions {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .popup-conditions li {
-            position: relative;
-            padding-left: 16px;
-            margin-bottom: 6px;
+        .popup-description {
             font-size: 13px;
             color: #666;
+            margin-bottom: 12px;
             line-height: 1.4;
         }
 
-        .popup-conditions li::before {
-            content: '•';
-            position: absolute;
-            left: 0;
-            color: #ff6b9d;
-            font-weight: bold;
+        .popup-usage {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+        }
+
+        .popup-usage-label {
+            color: #666;
+        }
+
+        .popup-usage-count {
+            color: #333;
+            font-weight: 500;
         }
 
         .discount-description {
@@ -583,6 +565,12 @@
                 max-width: 150px;
                 font-size: 15px;
             }
+
+            .discount-popup {
+                min-width: 220px;
+                max-width: 250px;
+                left: 20px;
+            }
         }
 
         @media (max-width: 480px) {
@@ -650,6 +638,9 @@
 
             // Update cards per view based on screen size
             updateCardsPerView();
+            
+            // Debug log
+            console.log(`Rendering ${totalCards} discount cards, cardsPerView: ${cardsPerView}`);
 
             const html = discounts.map(discount => `
                 <div class="discount-card">
@@ -662,10 +653,7 @@
                     <div class="discount-card-right">
                         <div class="discount-header">
                             <div class="discount-title">${discount.name}</div>
-                            <div class="discount-info-icon" title="Thông tin chi tiết" 
-                                 data-discount-code="${discount.name}"
-                                 data-discount-expiry="${formatDate(discount.endDate)}"
-                                 data-discount-conditions="${getDiscountConditions(discount)}">
+                            <div class="discount-info-icon">
                                 i
                                 <div class="discount-popup">
                                     <div class="popup-header">
@@ -674,13 +662,17 @@
                                             <i class="fas fa-copy"></i>
                                         </div>
                                     </div>
+                                    <div class="popup-description">
+                                        ${discount.description && discount.description.trim() !== '' ? discount.description : 'Áp dụng cho đơn hàng'}
+                                    </div>
                                     <div class="popup-expiry">
                                         <span class="popup-expiry-label">Hạn sử dụng</span>
                                         <span class="popup-expiry-date">${formatDate(discount.endDate)}</span>
                                     </div>
-                                    <ul class="popup-conditions">
-                                        ${getDiscountConditionsHTML(discount)}
-                                    </ul>
+                                    <div class="popup-usage">
+                                        <span class="popup-usage-label">Lượt dùng/user</span>
+                                        <span class="popup-usage-count">${discount.usageLimitPerUser || 'Không giới hạn'}</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -712,38 +704,6 @@
             return '<i class="mdi mdi-ticket-percent-outline"></i>';
         }
 
-        function getDiscountConditions(discount) {
-            // Generate conditions based on discount type and properties
-            const conditions = [];
-            
-            // Basic conditions that apply to most discounts
-            conditions.push("Không áp dụng đồng thời mã giảm giá khác");
-            
-            // Add specific conditions based on discount properties
-            if (discount.minimumOrderAmount && discount.minimumOrderAmount > 0) {
-                conditions.push(`Áp dụng cho đơn hàng từ ${formatCurrency(discount.minimumOrderAmount)}`);
-            }
-            
-            if (discount.maximumDiscountAmount && discount.maximumDiscountAmount > 0) {
-                conditions.push(`Giảm tối đa ${formatCurrency(discount.maximumDiscountAmount)}`);
-            }
-            
-            if (discount.isForNewCustomers) {
-                conditions.push("Chỉ áp dụng cho khách hàng mới");
-            }
-            
-            // Default condition if no specific conditions
-            if (conditions.length === 1) {
-                conditions.push("Sao chép mã và nhập mã khuyến mãi ở trang thanh toán");
-            }
-            
-            return conditions.join('|');
-        }
-
-        function getDiscountConditionsHTML(discount) {
-            const conditions = getDiscountConditions(discount).split('|');
-            return conditions.map(condition => `<li>${condition}</li>`).join('');
-        }
 
         function formatCurrency(amount) {
             return new Intl.NumberFormat('vi-VN', {
@@ -754,6 +714,7 @@
 
         function initializeDiscountPopups() {
             const infoIcons = document.querySelectorAll('.discount-info-icon');
+            const portal = document.getElementById('popup-portal');
             
             infoIcons.forEach(icon => {
                 const popup = icon.querySelector('.discount-popup');
@@ -763,28 +724,36 @@
                 icon.addEventListener('mouseenter', () => {
                     clearTimeout(hoverTimeout);
                     // Hide all other popups first
-                    document.querySelectorAll('.discount-popup').forEach(p => {
-                        p.classList.remove('show');
+                    portal.innerHTML = '';
+                    
+                    // Get icon position
+                    const rect = icon.getBoundingClientRect();
+                    const popupClone = popup.cloneNode(true);
+                    popupClone.style.position = 'fixed';
+                    popupClone.style.top = (rect.top - 10) + 'px';
+                    popupClone.style.left = (rect.left + 30) + 'px';
+                    popupClone.style.zIndex = '9999';
+                    popupClone.classList.add('show');
+                    
+                    // Add to portal
+                    portal.appendChild(popupClone);
+                    
+                    // Add event listeners to popup clone
+                    popupClone.addEventListener('mouseenter', () => {
+                        clearTimeout(hoverTimeout);
                     });
-                    // Show current popup
-                    popup.classList.add('show');
+                    
+                    popupClone.addEventListener('mouseleave', () => {
+                        hoverTimeout = setTimeout(() => {
+                            portal.innerHTML = '';
+                        }, 100);
+                    });
                 });
                 
                 // Hide popup on mouse leave
                 icon.addEventListener('mouseleave', () => {
                     hoverTimeout = setTimeout(() => {
-                        popup.classList.remove('show');
-                    }, 100);
-                });
-                
-                // Keep popup visible when hovering over it
-                popup.addEventListener('mouseenter', () => {
-                    clearTimeout(hoverTimeout);
-                });
-                
-                popup.addEventListener('mouseleave', () => {
-                    hoverTimeout = setTimeout(() => {
-                        popup.classList.remove('show');
+                        portal.innerHTML = '';
                     }, 100);
                 });
             });
@@ -802,7 +771,7 @@
             } else if (screenWidth < 992) {
                 cardsPerView = 2;
             } else {
-                cardsPerView = 3; // Always show max 3 cards to prevent cutoff
+                cardsPerView = 3; // Always show 3 cards on desktop
             }
         }
 
@@ -822,6 +791,9 @@
 
             updateSliderPosition();
             updateSliderButtons();
+            
+            // Debug log
+            console.log(`Sliding ${direction}: currentSlide=${currentSlide}, maxSlide=${maxSlide}, totalCards=${totalCards}, cardsPerView=${cardsPerView}`);
         }
 
         function updateSliderPosition() {
@@ -837,6 +809,9 @@
             
             const translateX = -(currentSlide * cardWidth);
             slider.style.transform = `translateX(${translateX}px)`;
+            
+            // Debug log
+            console.log(`Slider position: translateX=${translateX}px, currentSlide=${currentSlide}, cardWidth=${cardWidth}`);
         }
 
         function updateSliderButtons() {
@@ -855,6 +830,9 @@
             currentSlide = Math.min(currentSlide, maxSlide);
             updateSliderPosition();
             updateSliderButtons();
+            
+            // Debug log
+            console.log(`Window resized: totalCards=${totalCards}, cardsPerView=${cardsPerView}, maxSlide=${maxSlide}, currentSlide=${currentSlide}`);
         });
 
         // Copy discount code function - copied from product detail page
