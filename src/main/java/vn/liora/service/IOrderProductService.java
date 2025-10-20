@@ -1,6 +1,10 @@
 package vn.liora.service;
 
-public interface IOrderProductService {
+import java.time.LocalDateTime;
+import java.util.List;
 
+public interface IOrderProductService {
+    List<Object[]> getRevenueByCategory(LocalDateTime startDate, LocalDateTime endDate);
+    List<Object[]> getRevenueByBrand(LocalDateTime startDate, LocalDateTime endDate);
 
 }

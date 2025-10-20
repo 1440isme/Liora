@@ -47,6 +47,8 @@ public interface IUserService {
 
     Optional<User> findByUsername(String username);
 
+    long countNewCustomersThisMonth();
+
     // Change password
     void changePassword(Long userId, ChangePasswordRequest request);
 

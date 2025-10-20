@@ -204,6 +204,10 @@ public class UserServiceImpl implements IUserService {
     }
 
     @Override
+    public long countNewCustomersThisMonth() {
+        return userRepository.countNewCustomersThisMonth();
+    }
+
     @Transactional
     public void changePassword(Long userId, ChangePasswordRequest request) {
         User user = userRepository.findById(userId)
