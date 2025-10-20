@@ -47,14 +47,14 @@ public class Order {
     @Column(name = "AddressDetail", nullable = false, columnDefinition = "NVARCHAR(255)")
     String addressDetail;
 
-    @Column(name = "Ward", nullable = false, columnDefinition = "NVARCHAR(100)")
-    String ward;
+    @Column(name = "WardCode", nullable = false, columnDefinition = "NVARCHAR(100)")
+    String wardCode;
 
-    @Column(name = "District", nullable = false, columnDefinition = "NVARCHAR(100)")
-    String district;
+    @Column(name = "DistrictId", nullable = false)
+    Integer districtId;
 
-    @Column(name = "Province", nullable = false, columnDefinition = "NVARCHAR(100)")
-    String province;
+    @Column(name = "ProvinceId", nullable = false)
+    Integer provinceId;
 
     @Column(name = "Email")
     String email;

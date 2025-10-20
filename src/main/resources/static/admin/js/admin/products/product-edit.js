@@ -231,7 +231,7 @@ class ProductEditManager {
                             '<span class="badge bg-primary">Chính</span>' :
                             '<button class="btn btn-sm btn-outline-primary" onclick="window.productEditManager.setAsMain(' + image.imageId + ')">Đặt làm chính</button>'
                         }
-                                    '<button class="btn btn-sm btn-outline-danger ms-1" onclick="window.productEditManager.deleteImage(${image.imageId})">'
+                                    <button class="btn btn-sm btn-outline-danger ms-1" onclick="window.productEditManager.deleteImage(${image.imageId})">
                                         <i class="mdi mdi-delete"></i>
                                     </button>
                                 </div>
@@ -260,7 +260,6 @@ class ProductEditManager {
             if (response.ok) {
                 this.showNotification('Đặt làm ảnh chính thành công', 'success');
                 this.loadCurrentImages(); // Reload images
-                this.updateProductTimestamp(); // Thêm dòng này
             } else {
                 this.showNotification('Có lỗi xảy ra', 'error');
             }
@@ -298,7 +297,6 @@ class ProductEditManager {
             if (response.ok) {
                 this.showNotification('Xóa hình ảnh thành công', 'success');
                 this.loadCurrentImages(); // Reload images
-                this.updateProductTimestamp(); // Thêm dòng này
             } else {
                 this.showNotification('Có lỗi xảy ra', 'error');
             }
@@ -337,7 +335,6 @@ class ProductEditManager {
                 this.loadCurrentImages(); // Reload current images
                 fileInput.value = ''; // Clear file input
                 this.clearImagePreview(); // Clear preview
-                this.updateProductTimestamp(); // Thêm dòng này
             } else {
                 this.showNotification('Có lỗi xảy ra khi upload', 'error');
             }

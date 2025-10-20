@@ -7,6 +7,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -27,6 +28,7 @@ import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/admin/banners")
+@PreAuthorize("hasAuthority('banner.view')")
 public class BannerManagementController {
 
     @Autowired
@@ -80,6 +82,7 @@ public class BannerManagementController {
 
     // Xử lý thêm banner
     @PostMapping("/add")
+    @PreAuthorize("hasAuthority('banner.create')")
     public String addBanner(@Valid @ModelAttribute BannerRequest bannerRequest,
             BindingResult result,
             @RequestParam("image") MultipartFile image,
@@ -132,6 +135,7 @@ public class BannerManagementController {
 
     // Xử lý cập nhật banner
     @PostMapping("/edit/{id}")
+    @PreAuthorize("hasAuthority('banner.update')")
     public String updateBanner(@PathVariable Long id,
             @Valid @ModelAttribute BannerRequest bannerRequest,
             BindingResult result,
@@ -176,6 +180,7 @@ public class BannerManagementController {
     // Xóa banner
     @PostMapping("/delete/{id}")
     @ResponseBody
+    @PreAuthorize("hasAuthority('banner.delete')")
     public ResponseEntity<Map<String, Object>> deleteBanner(@PathVariable Long id) {
         Map<String, Object> response = new HashMap<>();
 
@@ -194,6 +199,7 @@ public class BannerManagementController {
     // Chuyển đổi trạng thái active
     @PostMapping("/toggle-active/{id}")
     @ResponseBody
+    @PreAuthorize("hasAuthority('banner.update')")
     public ResponseEntity<Map<String, Object>> toggleActiveStatus(@PathVariable Long id) {
         Map<String, Object> response = new HashMap<>();
 
@@ -213,6 +219,7 @@ public class BannerManagementController {
     // Sắp xếp lại thứ tự banner
     @PostMapping("/reorder")
     @ResponseBody
+    @PreAuthorize("hasAuthority('banner.update')")
     public ResponseEntity<Map<String, Object>> reorderBanners(@RequestBody BannerSortRequest request) {
         Map<String, Object> response = new HashMap<>();
 

@@ -6,6 +6,8 @@ import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import lombok.AccessLevel;
 import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Value;
+import lombok.experimental.NonFinal;
 import org.springframework.web.bind.annotation.*;
 import vn.liora.entity.Order;
 import vn.liora.exception.AppException;
@@ -13,6 +15,7 @@ import vn.liora.exception.ErrorCode;
 import vn.liora.repository.OrderRepository;
 import vn.liora.repository.VnpayPaymentRepository;
 import vn.liora.service.PaymentService;
+import vn.liora.service.IGhnShippingService;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -27,6 +30,11 @@ public class PaymentController {
     PaymentService paymentService;
     OrderRepository orderRepository;
     VnpayPaymentRepository vnpayPaymentRepository;
+    IGhnShippingService ghnShippingService;
+
+    @NonFinal
+    @Value("${vnpay.trustReturnWhenIpnMissing:false}")
+    Boolean trustReturnWhenIpnMissing;
 
     @PostMapping("/create/{orderId}")
     public ResponseEntity<Map<String, String>> createPayment(@PathVariable Long orderId,
@@ -41,19 +49,48 @@ public class PaymentController {
 
     @GetMapping("/return")
     public org.springframework.web.servlet.view.RedirectView returnPage(@RequestParam Map<String, String> params) {
-        try {
-            // Best-effort: xử lý IPN ngay khi user được redirect về (trong môi trường
-            // dev/local
-            // VNPAY có thể không gọi IPN server-to-server). Service đã tự verify chữ ký.
-            paymentService.handleVnpayIpn(params);
-        } catch (Exception e) {
-            // Không chặn luồng hiển thị kết quả cho user
-            log.warn("Return handler could not process IPN inline: {}", e.getMessage());
-        }
         String code = params.getOrDefault("vnp_ResponseCode", "");
         String orderRef = params.getOrDefault("vnp_TxnRef", "");
         String bankCode = params.getOrDefault("vnp_BankCode", "");
         String amount = params.getOrDefault("vnp_Amount", "");
+
+        boolean processed = false;
+        try {
+            // Best-effort: xử lý IPN ngay khi user được redirect về (dev/local có thể không
+            // có IPN)
+            paymentService.handleVnpayIpn(params);
+            processed = true;
+        } catch (Exception e) {
+            // Không chặn luồng hiển thị kết quả cho user
+            log.warn("Return handler could not process IPN inline: {}", e.getMessage());
+        }
+
+        // Fallback DEV ONLY (cấu hình): nếu chưa xử lý được nhưng thấy code=00, cập
+        // nhật trạng thái để không kẹt UI
+        if (!processed && Boolean.TRUE.equals(trustReturnWhenIpnMissing) && "00".equals(code)) {
+            try {
+                vnpayPaymentRepository.findByVnpTxnRef(orderRef).ifPresent(vnp -> {
+                    var orderOpt = orderRepository.findById(vnp.getIdOrder());
+                    if (orderOpt.isPresent()) {
+                        var order = orderOpt.get();
+                        if (!"PAID".equalsIgnoreCase(order.getPaymentStatus())) {
+                            order.setPaymentStatus("PAID");
+                            order.setOrderStatus("PAID");
+                            // Tạo GHN ngay trong fallback dev nếu đủ thông tin địa chỉ
+                            try {
+                                if (order.getDistrictId() != null && order.getWardCode() != null) {
+                                    ghnShippingService.createShippingOrder(order);
+                                }
+                            } catch (Exception ignore) {
+                            }
+                            orderRepository.save(order);
+                        }
+                    }
+                });
+            } catch (Exception ex) {
+                log.warn("DEV fallback failed: {}", ex.getMessage());
+            }
+        }
         // Map orderRef (vnp_TxnRef) -> orderId để view có thể điều hướng đúng
         Long orderId = vnpayPaymentRepository.findByVnpTxnRef(orderRef)
                 .map(vnpayPayment -> vnpayPayment.getIdOrder())

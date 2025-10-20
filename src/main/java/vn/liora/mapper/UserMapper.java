@@ -27,6 +27,7 @@ public interface UserMapper {
     @Mapping(target = "dateOfBirth", source = "dob")
     @Mapping(target = "createdAt", source = "createdDate")
     @Mapping(target = "updatedAt", source = "createdDate")
+    @Mapping(target = "gender", source = "gender")
     UserResponse toUserResponse(User user);
 
     @Mapping(target = "roles", ignore = true)

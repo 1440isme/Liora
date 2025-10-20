@@ -11,7 +11,7 @@ class BestsellerProductsManager {
         this.nextBtn = document.getElementById('bestsellerNextBtn');
         this.allProducts = [];
         this.isAddingToCart = false;
-        
+
         this.init();
     }
 
@@ -33,36 +33,36 @@ class BestsellerProductsManager {
         const cardWidth = 280 + 24; // Width of one card (280px) + gap (1.5rem = 24px)
         const currentScroll = this.gridEl.scrollLeft;
         const newScroll = currentScroll + (direction * cardWidth);
-        
+
         this.gridEl.scrollTo({
             left: newScroll,
             behavior: 'smooth'
         });
-        
+
         setTimeout(() => this.updateNavigationButtons(), 300);
     }
 
     updateNavigationButtons() {
         const navigationContainer = document.querySelector('.bestseller-products-section .navigation-buttons');
-        
+
         console.log('Updating navigation buttons:', {
             productsCount: this.allProducts ? this.allProducts.length : 0,
             navigationContainer: !!navigationContainer,
             prevBtn: !!this.prevBtn,
             nextBtn: !!this.nextBtn
         });
-        
+
         if (this.allProducts && this.allProducts.length > 4) {
             console.log('Showing navigation buttons - more than 4 products');
             if (navigationContainer) {
                 navigationContainer.classList.remove('hidden');
             }
-            
+
             const isAtStart = this.gridEl.scrollLeft <= 0;
             const isAtEnd = this.gridEl.scrollLeft >= (this.gridEl.scrollWidth - this.gridEl.clientWidth - 1);
-            
+
             console.log('Navigation state:', { isAtStart, isAtEnd, scrollLeft: this.gridEl.scrollLeft, scrollWidth: this.gridEl.scrollWidth, clientWidth: this.gridEl.clientWidth });
-            
+
             if (this.prevBtn) {
                 this.prevBtn.disabled = isAtStart;
             }
@@ -86,18 +86,18 @@ class BestsellerProductsManager {
 
     async loadBestsellerProducts() {
         this.showLoading();
-        
+
         try {
             const url = `/api/products/best-selling?limit=8`;
             const response = await fetch(url);
             const data = await response.json();
-            
+
             if (data.code === 1000 && data.result && data.result.length > 0) {
                 this.allProducts = data.result;
                 this.renderBestsellerProducts(this.allProducts);
-                
+
                 this.gridEl.addEventListener('scroll', () => this.updateNavigationButtons());
-                
+
                 // Update navigation buttons immediately after rendering
                 this.updateNavigationButtons();
             } else {
@@ -111,7 +111,7 @@ class BestsellerProductsManager {
     renderBestsellerProducts(products) {
         this.hideLoading();
         this.hideEmpty();
-        
+
         const productsHTML = products.map(product => this.createProductCard(product)).join('');
         this.gridEl.innerHTML = productsHTML;
     }
@@ -119,14 +119,16 @@ class BestsellerProductsManager {
     createProductCard(product) {
         const productStatus = this.getProductStatus(product);
         const statusClass = this.getProductStatusClass(productStatus);
-        
+
         return `
             <div class="product-card ${statusClass}">
                 <div class="position-relative">
-                    <img src="${product.mainImageUrl || '/uploads/products/default.jpg'}" 
+                    <img src="${product.mainImageUrl || '/user/img/default-product.jpg'}" 
                          class="card-img-top" 
                          alt="${product.name}"
-                         onerror="this.src='/uploads/products/default.jpg'">
+                         onerror="this.src='/user/img/default-product.jpg'"
+                         onclick="window.location.href='/product/${product.productId}'"
+                         style="cursor: pointer;">
                     
                     <div class="product-actions">
                         <button class="quick-view-btn" 
@@ -158,6 +160,20 @@ class BestsellerProductsManager {
                     </div>
                     
                     <div class="mt-auto">
+                        <!-- Sales Progress Bar -->
+                        <div class="sales-progress mb-3">
+                            <div class="sales-info d-flex justify-content-between align-items-center mb-1">
+                                <span class="sales-label">Đã bán</span>
+                                <span class="sales-count">${this.formatNumber(product.soldCount || 0)}</span>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar" 
+                                     style="width: ${this.calculateSalesProgress(product.soldCount || 0)}%"
+                                     role="progressbar">
+                                </div>
+                            </div>
+                        </div>
+                        
                         <div class="price-section d-flex justify-content-between align-items-center">
                             <span class="current-price">
                                 ${this.formatPrice(product.price)}
@@ -215,7 +231,7 @@ class BestsellerProductsManager {
         for (let i = 0; i < emptyStars; i++) {
             stars += '<i class="far fa-star" style="color: #ccc !important; font-weight: 400 !important;"></i>';
         }
-        
+
         return stars;
     }
 
@@ -225,14 +241,14 @@ class BestsellerProductsManager {
             this.showNotification('Không tìm thấy sản phẩm', 'error');
             return;
         }
-        
+
         console.log('Bestseller Quick View - Product found:', {
             productId: product.productId,
             name: product.name,
             hasImages: !!product.images,
             imagesCount: product.images ? product.images.length : 0
         });
-        
+
         if (!product.images) {
             try {
                 console.log('Loading images for product:', productId);
@@ -250,7 +266,7 @@ class BestsellerProductsManager {
                 product.images = [];
             }
         }
-        
+
         console.log('Final product images:', product.images);
         this.createQuickViewModal(product);
     }
@@ -282,7 +298,7 @@ class BestsellerProductsManager {
                                                  src="${this.getMainImageUrl(product)}" 
                                                  class="img-fluid rounded" 
                                                  alt="${product.name}"
-                                                 onerror="this.src='/uploads/products/default.jpg'">
+                                                 onerror="this.src='/user/img/default-product.jpg'">
                                             <button class="slider-nav slider-next" id="bestsellerModalNextBtn">
                                                 <i class="fas fa-chevron-right"></i>
                                             </button>
@@ -356,14 +372,14 @@ class BestsellerProductsManager {
         `;
 
         document.body.insertAdjacentHTML('beforeend', modalHTML);
-        
+
         const modal = new bootstrap.Modal(document.getElementById('bestsellerQuickViewModal'));
         modal.show();
-        
+
         // Add slider navigation event listeners
         this.setupSliderNavigation(product);
-        
-        document.getElementById('bestsellerQuickViewModal').addEventListener('hidden.bs.modal', function() {
+
+        document.getElementById('bestsellerQuickViewModal').addEventListener('hidden.bs.modal', function () {
             this.remove();
         });
     }
@@ -372,13 +388,13 @@ class BestsellerProductsManager {
         if (product.images && product.images.length > 0) {
             return product.images[0].imageUrl;
         }
-        return product.mainImageUrl || '/uploads/products/default.jpg';
+        return product.mainImageUrl || '/user/img/default-product.jpg';
     }
 
     // Generate image thumbnails for modal
     generateImageThumbnails(product) {
         console.log('Generating thumbnails for product:', product.name, 'Images:', product.images);
-        
+
         if (!product.images || product.images.length === 0) {
             console.log('No images found, using main image as thumbnail');
             return `
@@ -386,7 +402,7 @@ class BestsellerProductsManager {
                     <img src="${this.getMainImageUrl(product)}" 
                          class="thumbnail-img" 
                          alt="${product.name}"
-                         onerror="this.src='/uploads/products/default.jpg'">
+                         onerror="this.src='/user/img/default-product.jpg'">
                 </div>
             `;
         }
@@ -397,7 +413,7 @@ class BestsellerProductsManager {
                 <img src="${image.imageUrl}" 
                      class="thumbnail-img" 
                      alt="${product.name}"
-                     onerror="this.src='/uploads/products/default.jpg'">
+                     onerror="this.src='/user/img/default-product.jpg'">
             </div>
         `).join('');
     }
@@ -410,7 +426,7 @@ class BestsellerProductsManager {
             const nextBtn = document.getElementById('bestsellerModalNextBtn');
             const mainImage = document.getElementById('bestsellerModalMainProductImage');
             const thumbnails = document.querySelectorAll('.thumbnail-item');
-            
+
             console.log('Setting up bestseller slider navigation:', {
                 prevBtn: !!prevBtn,
                 nextBtn: !!nextBtn,
@@ -418,7 +434,7 @@ class BestsellerProductsManager {
                 thumbnails: thumbnails.length,
                 productImages: product.images ? product.images.length : 0
             });
-            
+
             if (!product.images || product.images.length <= 1) {
                 // Hide navigation buttons if only one image
                 console.log('Only one image, hiding navigation buttons');
@@ -432,24 +448,24 @@ class BestsellerProductsManager {
                 }
                 return;
             }
-            
+
             console.log('Multiple images found, showing navigation buttons');
-            
+
             let currentImageIndex = 0;
-            
+
             // Update main image
             const updateMainImage = (index) => {
                 if (product.images && product.images[index] && mainImage) {
                     mainImage.src = product.images[index].imageUrl;
                     mainImage.alt = product.name;
-                    
+
                     // Update thumbnail selection
                     thumbnails.forEach((thumb, i) => {
                         thumb.classList.toggle('active', i === index);
                     });
                 }
             };
-            
+
             // Previous button
             if (prevBtn) {
                 prevBtn.addEventListener('click', (e) => {
@@ -459,7 +475,7 @@ class BestsellerProductsManager {
                     updateMainImage(currentImageIndex);
                 });
             }
-            
+
             // Next button
             if (nextBtn) {
                 nextBtn.addEventListener('click', (e) => {
@@ -469,7 +485,7 @@ class BestsellerProductsManager {
                     updateMainImage(currentImageIndex);
                 });
             }
-            
+
             // Thumbnail click handlers
             thumbnails.forEach((thumb, index) => {
                 thumb.addEventListener('click', (e) => {
@@ -494,7 +510,7 @@ class BestsellerProductsManager {
 
     getProductStatusBadge(product) {
         const status = this.getProductStatus(product);
-        
+
         switch (status) {
             case 'deactivated':
                 return '<span class="badge bg-warning text-dark">Ngừng kinh doanh</span>';
@@ -507,7 +523,7 @@ class BestsellerProductsManager {
 
     getQuickViewActions(product) {
         const status = this.getProductStatus(product);
-        
+
         if (status === 'deactivated') {
             return `
                 <div class="alert alert-warning text-center">
@@ -525,7 +541,7 @@ class BestsellerProductsManager {
                 </div>
             `;
         }
-        
+
         return `
             <div class="row g-2">
                 <div class="col-6">
@@ -560,19 +576,19 @@ class BestsellerProductsManager {
         const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
 
         let stars = '';
-        
+
         for (let i = 0; i < fullStars; i++) {
             stars += '<i class="fas fa-star" style="color: #ffc107 !important;"></i>';
         }
-        
+
         if (hasHalfStar) {
             stars += '<i class="fas fa-star-half-alt" style="color: #ffc107 !important;"></i>';
         }
-        
+
         for (let i = 0; i < emptyStars; i++) {
             stars += '<i class="far fa-star" style="color: #ccc !important; font-weight: 400 !important;"></i>';
         }
-        
+
         return stars;
     }
 
@@ -657,42 +673,18 @@ class BestsellerProductsManager {
             return;
         }
         this.isAddingToCart = true;
-        
+
         try {
-            let success = false;
-            
-            if (window.cartManager) {
-                await window.cartManager.addItem(productId, 1);
-                success = true;
-            }
-            else if (window.app && window.app.cartItems) {
-                const product = this.allProducts.find(p => p.productId === productId);
-                if (product) {
-                    const existingItem = window.app.cartItems.find(item => item.id === productId);
-                    
-                    if (existingItem) {
-                        existingItem.quantity += 1;
-                    } else {
-                        window.app.cartItems.push({
-                            ...product,
-                            quantity: 1
-                        });
-                    }
-                    
-                    if (window.app.updateCartDisplay) {
-                        window.app.updateCartDisplay();
-                    }
-                    success = true;
-                }
-            }
-            
-            if (success) {
-                this.showNotification(`${productName} đã được thêm vào giỏ hàng thành công!`, 'success');
+            // Sử dụng addProductToCartBackend để gọi API backend
+            if (window.app && window.app.addProductToCartBackend) {
+                await window.app.addProductToCartBackend(productId, 1, true);
+                await window.app.refreshCartBadge?.();
             } else {
-                this.showNotification('Không tìm thấy thông tin sản phẩm!', 'error');
+                this.showNotification('Chức năng đang được tải...', 'error');
             }
         } catch (error) {
-            this.showNotification('Có lỗi xảy ra khi thêm vào giỏ hàng', 'error');
+            console.error('Add to cart error:', error);
+            this.showNotification('Không thể thêm vào giỏ hàng. Vui lòng thử lại.', 'error');
         } finally {
             setTimeout(() => {
                 this.isAddingToCart = false;
@@ -705,7 +697,7 @@ class BestsellerProductsManager {
             return;
         }
         this.isAddingToCart = true;
-        
+
         const product = this.allProducts.find(p => p.productId === productId);
         if (!product) {
             this.showNotification('Không tìm thấy sản phẩm', 'error');
@@ -717,12 +709,12 @@ class BestsellerProductsManager {
         const quantity = quantityInput ? parseInt(quantityInput.value) || 1 : 1;
 
         this.addToCartWithQuantityValue(productId, product.name, product.price, quantity);
-        
+
         const modal = bootstrap.Modal.getInstance(document.getElementById('bestsellerQuickViewModal'));
         if (modal) {
             modal.hide();
         }
-        
+
         setTimeout(() => {
             this.isAddingToCart = false;
         }, 1000);
@@ -730,45 +722,16 @@ class BestsellerProductsManager {
 
     async addToCartWithQuantityValue(productId, productName, price, quantity) {
         try {
-            let success = false;
-            
-            if (window.cartManager && typeof window.cartManager.addItem === 'function') {
-                await window.cartManager.addItem(productId, quantity);
-                success = true;
-            }
-            else if (window.app && window.app.cartItems) {
-                if (productId && productName && price && !isNaN(price)) {
-                    const product = this.allProducts.find(p => p.productId === productId);
-                    if (product) {
-                        const existingItem = window.app.cartItems.find(item => item.id === productId);
-                        
-                        if (existingItem) {
-                            existingItem.quantity += quantity;
-                        } else {
-                            window.app.cartItems.push({
-                                id: productId,
-                                name: productName,
-                                price: price,
-                                quantity: quantity,
-                                image: product.images && product.images.length > 0 ? product.images[0].imageUrl : '/static/user/images/no-image.png'
-                            });
-                        }
-                        
-                        if (window.app.updateCartDisplay) {
-                            window.app.updateCartDisplay();
-                        }
-                        success = true;
-                    }
-                }
-            }
-            
-            if (success) {
-                this.showNotification(`${quantity} x ${productName} đã được thêm vào giỏ hàng thành công!`, 'success');
+            // Sử dụng addProductToCartBackend để gọi API backend
+            if (window.app && window.app.addProductToCartBackend) {
+                await window.app.addProductToCartBackend(productId, quantity, true);
+                await window.app.refreshCartBadge?.();
             } else {
-                this.showNotification('Không tìm thấy thông tin sản phẩm!', 'error');
+                this.showNotification('Chức năng đang được tải...', 'error');
             }
         } catch (error) {
-            this.showNotification('Có lỗi xảy ra khi thêm vào giỏ hàng', 'error');
+            console.error('Add to cart error:', error);
+            this.showNotification('Không thể thêm vào giỏ hàng. Vui lòng thử lại.', 'error');
         }
     }
 
@@ -827,6 +790,40 @@ class BestsellerProductsManager {
 
     hideEmpty() {
         this.emptyEl.classList.add('d-none');
+    }
+
+    calculateSalesProgress(soldCount) {
+        // Define different thresholds for progress calculation - optimized for better visual appeal
+        const thresholds = [
+            { max: 50, percentage: 30 },     // 0-50: 0-30% (tăng từ 20%)
+            { max: 100, percentage: 40 },    // 50-100: 30-40%
+            { max: 500, percentage: 55 },   // 100-500: 40-55%
+            { max: 1000, percentage: 70 },   // 500-1000: 55-70%
+            { max: 5000, percentage: 85 },   // 1000-5000: 70-85%
+            { max: 10000, percentage: 95 },  // 5000-10000: 85-95%
+            { max: Infinity, percentage: 100 } // >10000: 95-100%
+        ];
+
+        for (const threshold of thresholds) {
+            if (soldCount <= threshold.max) {
+                // Get previous threshold percentage
+                const prevThreshold = thresholds[thresholds.indexOf(threshold) - 1];
+                const basePercentage = prevThreshold ? prevThreshold.percentage : 0;
+
+                // Calculate progress within this threshold
+                const prevMax = prevThreshold ? prevThreshold.max : 0;
+                const range = threshold.max - prevMax;
+                const progress = ((soldCount - prevMax) / range) * (threshold.percentage - basePercentage);
+
+                return Math.min(100, basePercentage + progress);
+            }
+        }
+
+        return 100; // For very high sales
+    }
+
+    formatNumber(number) {
+        return new Intl.NumberFormat('vi-VN').format(number);
     }
 }
 

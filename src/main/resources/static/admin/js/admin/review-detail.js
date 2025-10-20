@@ -112,10 +112,19 @@ class ReviewDetailManager {
         $('#reviewAnonymous').html(`<span class="${this.getAnonymousClass(review.anonymous)}">${this.getAnonymousText(review.anonymous)}</span>`);
         
         // User information - Hiển thị email và số điện thoại
-        $('#userName').text(review.userDisplayName || 'Không xác định');
+        // User information - Lấy từ đơn hàng thay vì từ user
+        $('#orderCustomerName').text(review.orderCustomerName || 'Không xác định');
         $('#userId').text(review.userId || 'N/A');
-        $('#userEmail').text(review.userEmail || 'N/A');
-        $('#userPhone').text(review.userPhone || 'N/A');
+        $('#orderCustomerEmail').text(review.orderCustomerEmail || 'N/A');
+        $('#orderCustomerPhone').text(review.orderCustomerPhone || 'N/A');
+        $('#orderCustomerAddress').text(review.orderCustomerAddress || 'N/A');
+
+        // Set user avatar if available (vẫn giữ avatar từ user)
+        if (review.userAvatar) {
+            $('#userAvatar').attr('src', review.userAvatar).show();
+        } else {
+            $('#userAvatar').hide();
+        }
         
         // Set user avatar if available
         if (review.userAvatar) {
@@ -268,8 +277,11 @@ class ReviewDetailManager {
                 
                 <div class="info-section">
                     <div class="info-title">Thông tin người đánh giá:</div>
-                    <p><strong>Tên:</strong> ${review.userDisplayName || 'Không xác định'}</p>
+                    <p><strong>Tên:</strong> ${review.orderCustomerName || 'Không xác định'}</p>
                     <p><strong>Mã người dùng:</strong> ${review.userId || 'N/A'}</p>
+                    <p><strong>Email:</strong> ${review.orderCustomerEmail || 'N/A'}</p>
+                    <p><strong>Số điện thoại:</strong> ${review.orderCustomerPhone || 'N/A'}</p>
+                    <p><strong>Địa chỉ:</strong> ${review.orderCustomerAddress || 'N/A'}</p>
                     <p><strong>Ẩn danh:</strong> ${review.anonymous ? 'Có' : 'Không'}</p>
                 </div>
                 

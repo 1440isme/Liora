@@ -25,6 +25,7 @@ public interface IOrderService {
     List<OrderResponse> getOrdersByDateRange(LocalDateTime start, LocalDateTime end);
     List<OrderProductResponse> getProductsByOrderId(Long idOrder);
     Long countByUser(User user);
+    Long count();
     BigDecimal getTotalRevenue();
     BigDecimal getTotalRevenueByUser(User user);
     BigDecimal getTotalRevenueByUserCompleted(User user);

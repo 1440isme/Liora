@@ -122,6 +122,24 @@ class AdminAjax {
     async handleResponse(response) {
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
+
+            // Handle specific error types
+            if (response.status === 403) {
+                this.showPermissionError(errorData.message || 'Bạn không có quyền thực hiện thao tác này');
+                throw new AdminAjaxError(
+                    'Không có quyền thực hiện thao tác này',
+                    response.status,
+                    errorData
+                );
+            } else if (response.status === 401) {
+                this.showAuthError('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+                throw new AdminAjaxError(
+                    'Phiên đăng nhập đã hết hạn',
+                    response.status,
+                    errorData
+                );
+            }
+
             throw new AdminAjaxError(
                 errorData.message || 'Request failed',
                 response.status,
@@ -143,6 +161,24 @@ class AdminAjax {
     handleError(error) {
         console.error('AJAX Error:', error);
         this.showNotification('Có lỗi xảy ra khi thực hiện yêu cầu', 'error');
+    }
+
+    /**
+     * Show permission error with special styling
+     */
+    showPermissionError(message) {
+        this.showNotification(message, 'permission-error');
+    }
+
+    /**
+     * Show authentication error with redirect
+     */
+    showAuthError(message) {
+        this.showNotification(message, 'auth-error');
+        // Redirect to login after 3 seconds
+        setTimeout(() => {
+            window.location.href = '/admin/login';
+        }, 3000);
     }
 
     /**
@@ -186,7 +222,9 @@ class AdminAjax {
             success: 'check-circle',
             error: 'exclamation-circle',
             warning: 'exclamation-triangle',
-            info: 'info-circle'
+            info: 'info-circle',
+            'permission-error': 'ban',
+            'auth-error': 'sign-out-alt'
         };
         return icons[type] || 'info-circle';
     }
@@ -329,7 +367,7 @@ class AdminAjax {
     }
 
     async bulkDeleteProducts(ids) {
-        return await this.post('/products/bulk-delete', { ids });
+        return await this.delete('/products/bulk', ids);
     }
 
     async bulkUpdateOrders(ids, data) {

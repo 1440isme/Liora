@@ -2,7 +2,6 @@
 class UserInfoManager {
     constructor() {
         this.currentUser = null;
-        this.waveBearBase = '/api/location';
         this.addAddressModalInstance = null;
         // Cache system cho tối ưu hiệu năng
         this.provincesCache = null;
@@ -76,7 +75,7 @@ class UserInfoManager {
                     username: this.currentUser.username,
                     name: `${this.currentUser.firstname || ''} ${this.currentUser.lastname || ''}`.trim(),
                     roles: existing.roles,
-                    isAdmin: existing.isAdmin === true || (Array.isArray(existing.roles) && existing.roles.includes('ADMIN'))
+                    isAdmin: existing.isAdmin === true || (Array.isArray(existing.roles) && (existing.roles.includes('ADMIN') || existing.roles.includes('MANAGER')))
                 };
                 localStorage.setItem('liora_user', JSON.stringify(liteUser));
                 if (window.app && typeof window.app.updateUserDisplay === 'function') {
@@ -99,6 +98,7 @@ class UserInfoManager {
     populateUserData() {
         if (!this.currentUser) return;
 
+
         // Update profile header
         this.updateElement('profileName', this.getFullName());
         this.updateElement('profileEmail', this.currentUser.email || 'Chưa cập nhật');
@@ -114,14 +114,14 @@ class UserInfoManager {
         // Update profile stats (mock data for now)
         this.updateElement('totalOrders', '0');
         this.updateElement('totalSpent', '0');
-        this.updateElement('memberSince', this.formatDate(this.currentUser.createdDate));
-        this.updateElement('memberSinceText', this.formatDate(this.currentUser.createdDate));
+        this.updateElement('memberSince', this.formatDate(this.currentUser.createdAt || this.currentUser.createdDate));
+        this.updateElement('memberSinceText', this.formatDate(this.currentUser.createdAt || this.currentUser.createdDate));
 
         // Update personal information
         this.updateElement('displayName', this.getFullName());
         this.updateElement('displayEmail', this.currentUser.email || 'Chưa cập nhật');
         this.updateElement('displayPhone', this.currentUser.phone || 'Chưa cập nhật');
-        this.updateElement('displayDob', this.formatDate(this.currentUser.dob) || 'Chưa cập nhật');
+        this.updateElement('displayDob', this.formatDate(this.currentUser.dateOfBirth || this.currentUser.dob));
         this.updateElement('displayGender', this.getGenderText());
     }
 
@@ -135,7 +135,17 @@ class UserInfoManager {
         if (this.currentUser.gender === null || this.currentUser.gender === undefined) {
             return 'Chưa cập nhật';
         }
-        return this.currentUser.gender ? 'Nam' : 'Nữ';
+        if (this.currentUser.gender === true) {
+            return 'Nam';
+        } else if (this.currentUser.gender === false) {
+            return 'Nữ';
+        } else if (this.currentUser.gender === 'Nam') {
+            return 'Nam';
+        } else if (this.currentUser.gender === 'Nữ') {
+            return 'Nữ';
+        } else {
+            return 'Chưa cập nhật';
+        }
     }
 
     formatDate(date) {
@@ -190,21 +200,39 @@ class UserInfoManager {
             });
         }
 
-        // Province change -> load wards
+        // Province change -> load districts then wards
         const provinceSelect = document.getElementById('addrProvince');
         if (provinceSelect) {
             provinceSelect.addEventListener('change', (e) => {
-                const provinceCode = e.target.value;
-                this.loadWards(provinceCode);
+                const provinceId = parseInt(e.target.value, 10);
+                this.loadDistricts(provinceId);
+                const wardSelect = document.getElementById('addrWard');
+                if (wardSelect) {
+                    wardSelect.innerHTML = '<option value="">Chọn Quận/Huyện trước</option>';
+                    wardSelect.disabled = true;
+                }
             });
         }
 
-        // Edit Province change -> load wards
+        // Edit Province change -> load districts (then wards when district changes)
         const editProvinceSelect = document.getElementById('editAddrProvince');
         if (editProvinceSelect) {
             editProvinceSelect.addEventListener('change', (e) => {
-                const provinceCode = e.target.value;
-                this.loadEditWards(provinceCode);
+                const provinceId = parseInt(e.target.value, 10);
+                this.loadEditDistricts(provinceId);
+                const editWardSelect = document.getElementById('editAddrWard');
+                if (editWardSelect) {
+                    editWardSelect.innerHTML = '<option value="">Chọn Quận/Huyện trước</option>';
+                    editWardSelect.disabled = true;
+                }
+            });
+        }
+        // Edit District change -> load wards
+        const editDistrictSelect = document.getElementById('editAddrDistrict');
+        if (editDistrictSelect) {
+            editDistrictSelect.addEventListener('change', (e) => {
+                const districtId = parseInt(e.target.value, 10);
+                this.loadEditWards(districtId);
             });
         }
 
@@ -219,6 +247,51 @@ class UserInfoManager {
         if (submitEditBtn) {
             submitEditBtn.addEventListener('click', () => this.submitEditAddress());
         }
+
+        // Submit change password
+        const submitChangePasswordBtn = document.getElementById('btnSubmitChangePassword');
+        if (submitChangePasswordBtn) {
+            submitChangePasswordBtn.addEventListener('click', () => this.submitChangePassword());
+        }
+
+        // Submit delete account
+        const submitDeleteAccountBtn = document.getElementById('btnConfirmDeleteAccount');
+        if (submitDeleteAccountBtn) {
+            submitDeleteAccountBtn.addEventListener('click', () => this.submitDeleteAccount());
+        }
+
+        // Enable/disable delete account button based on checkbox
+        const confirmDeleteCheckbox = document.getElementById('confirmDeleteAccount');
+        if (confirmDeleteCheckbox) {
+            confirmDeleteCheckbox.addEventListener('change', (e) => {
+                const submitBtn = document.getElementById('btnConfirmDeleteAccount');
+                if (submitBtn) {
+                    submitBtn.disabled = !e.target.checked;
+                }
+            });
+        }
+
+        // Change Password modal events
+        const changePasswordModalEl = document.getElementById('changePasswordModal');
+        if (changePasswordModalEl) {
+            // Click outside để đóng modal
+            changePasswordModalEl.addEventListener('click', (e) => {
+                if (e.target === changePasswordModalEl) {
+                    this.closeChangePasswordModal();
+                }
+            });
+        }
+
+        // Delete Account modal events
+        const deleteAccountModalEl = document.getElementById('deleteAccountModal');
+        if (deleteAccountModalEl) {
+            // Click outside để đóng modal
+            deleteAccountModalEl.addEventListener('click', (e) => {
+                if (e.target === deleteAccountModalEl) {
+                    this.closeDeleteAccountModal();
+                }
+            });
+        }
     }
 
     handleEditSubmit(e) {
@@ -229,13 +302,60 @@ class UserInfoManager {
             return;
         }
 
+        // Validation
+        const name = document.getElementById('editName').value.trim();
+        const email = document.getElementById('editEmail').value.trim();
+        const phone = document.getElementById('editPhone').value.trim();
+        const dob = document.getElementById('editDob').value;
+        const gender = document.getElementById('editGender').value;
+
+        // Validate required fields
+        if (!name) {
+            this.showError('Vui lòng nhập họ và tên');
+            document.getElementById('editName').focus();
+            return;
+        }
+
+        if (!email) {
+            this.showError('Vui lòng nhập email');
+            document.getElementById('editEmail').focus();
+            return;
+        }
+
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            this.showError('Email không hợp lệ');
+            document.getElementById('editEmail').focus();
+            return;
+        }
+
+        // Validate phone format (Vietnamese phone number)
+        if (phone && !/^(\+84|84|0)[1-9][0-9]{8,9}$/.test(phone.replace(/\s/g, ''))) {
+            this.showError('Số điện thoại không hợp lệ');
+            document.getElementById('editPhone').focus();
+            return;
+        }
+
+        // Validate date of birth
+        if (dob) {
+            const dobDate = new Date(dob);
+            const today = new Date();
+            const age = today.getFullYear() - dobDate.getFullYear();
+            if (age < 6 || age > 120) {
+                this.showError('Tuổi phải từ 6 đến 120');
+                document.getElementById('editDob').focus();
+                return;
+            }
+        }
+
         const formData = {
-            firstname: document.getElementById('editName').value.split(' ')[0] || '',
-            lastname: document.getElementById('editName').value.split(' ').slice(1).join(' ') || '',
-            email: document.getElementById('editEmail').value,
-            phone: document.getElementById('editPhone').value,
-            dob: document.getElementById('editDob').value ? new Date(document.getElementById('editDob').value).toISOString().split('T')[0] : null,
-            gender: document.getElementById('editGender').value === 'Nam' ? true : document.getElementById('editGender').value === 'Nữ' ? false : null
+            firstname: name.split(' ')[0] || '',
+            lastname: name.split(' ').slice(1).join(' ') || '',
+            email: email,
+            phone: phone || null,
+            dob: dob ? new Date(dob).toISOString().split('T')[0] : null,
+            gender: gender === 'Nam' ? true : gender === 'Nữ' ? false : null
         };
 
         this.updateUserInfo(formData);
@@ -249,7 +369,14 @@ class UserInfoManager {
                 return;
             }
 
-            const response = await fetch(`/users/${this.currentUser.userId}`, {
+            // Show loading state
+            const submitBtn = document.querySelector('#profileEditForm button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang cập nhật...';
+            }
+
+            const response = await fetch('/users/myInfo', {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -259,11 +386,25 @@ class UserInfoManager {
             });
 
             if (!response.ok) {
-                throw new Error('Failed to update user info');
+                const errorData = await response.json().catch(() => ({}));
+                const errorMessage = errorData.message || 'Không thể cập nhật thông tin';
+
+                if (response.status === 400) {
+                    this.showError(errorMessage);
+                } else if (response.status === 401 || response.status === 403) {
+                    this.showError('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+                    setTimeout(() => {
+                        window.location.href = '/home';
+                    }, 2000);
+                } else {
+                    this.showError(errorMessage);
+                }
+                return;
             }
 
             const data = await response.json();
             this.currentUser = data.result;
+
             // Re-sync header display after update
             try {
                 const existing = (() => { try { return JSON.parse(localStorage.getItem('liora_user')) || {}; } catch (_) { return {}; } })();
@@ -271,7 +412,7 @@ class UserInfoManager {
                     username: this.currentUser.username,
                     name: `${this.currentUser.firstname || ''} ${this.currentUser.lastname || ''}`.trim(),
                     roles: existing.roles,
-                    isAdmin: existing.isAdmin === true || (Array.isArray(existing.roles) && existing.roles.includes('ADMIN'))
+                    isAdmin: existing.isAdmin === true || (Array.isArray(existing.roles) && (existing.roles.includes('ADMIN') || existing.roles.includes('MANAGER')))
                 };
                 localStorage.setItem('liora_user', JSON.stringify(liteUser));
                 if (window.app && typeof window.app.updateUserDisplay === 'function') {
@@ -286,7 +427,14 @@ class UserInfoManager {
             this.showToast('Thông tin đã được cập nhật thành công!', 'success');
         } catch (error) {
             console.error('Error updating user info:', error);
-            this.showError('Không thể cập nhật thông tin');
+            this.showError('Không thể cập nhật thông tin. Vui lòng thử lại sau.');
+        } finally {
+            // Re-enable submit button
+            const submitBtn = document.querySelector('#profileEditForm button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-save"></i> Lưu thay đổi';
+            }
         }
     }
 
@@ -332,7 +480,7 @@ class UserInfoManager {
             // Show loading state
             ordersContainer.innerHTML = `
                 <div class="empty-state">
-                    <i class="fas fa-spinner fa-spin"></i>
+                    <i class="mdi mdi-loading mdi-spin"></i>
                     <h5>Đang tải đơn hàng...</h5>
                     <p>Vui lòng chờ trong giây lát</p>
                 </div>
@@ -366,23 +514,27 @@ class UserInfoManager {
             if (ordersWithProducts.length === 0 && page === 0) {
                 ordersContainer.innerHTML = `
                     <div class="empty-state">
-                        <i class="fas fa-shopping-bag"></i>
+                        <i class="mdi mdi-shopping"></i>
                         <h5>Chưa có đơn hàng nào</h5>
                         <p>Hãy mua sắm để xem lịch sử đơn hàng của bạn</p>
                         <a href="/products" class="btn btn-primary">Mua sắm ngay</a>
                     </div>
                 `;
             } else {
-                const ordersHTML = ordersWithProducts.map(orderWithProduct => this.createCompactOrderCard(orderWithProduct)).join('');
+                const ordersHTML = await Promise.all(
+                    ordersWithProducts.map(async orderWithProduct =>
+                        await this.createCompactOrderCard(orderWithProduct)
+                    )
+                );
                 const paginationHTML = this.createPaginationHTML(paginatedData);
-                ordersContainer.innerHTML = ordersHTML + paginationHTML;
+                ordersContainer.innerHTML = ordersHTML.join('') + paginationHTML;
             }
 
         } catch (error) {
             this.showToast('Không thể tải lịch sử đơn hàng', 'error');
             ordersContainer.innerHTML = `
                 <div class="empty-state">
-                    <i class="fas fa-exclamation-triangle"></i>
+                    <i class="mdi mdi-alert"></i>
                     <h5>Lỗi tải đơn hàng</h5>
                     <p>Vui lòng thử lại sau</p>
                     <button class="btn btn-primary" onclick="userInfoManager.loadOrders()">Thử lại</button>
@@ -391,11 +543,11 @@ class UserInfoManager {
         }
     }
 
-    createCompactOrderCard(orderWithProduct) {
+    async createCompactOrderCard(orderWithProduct) {
         const order = orderWithProduct.order;
         const firstProduct = orderWithProduct.firstProduct;
         const totalProducts = orderWithProduct.totalProducts;
-        
+
         const orderDate = new Date(order.orderDate).toLocaleDateString('vi-VN');
         const totalAmount = new Intl.NumberFormat('vi-VN', {
             style: 'currency',
@@ -404,6 +556,7 @@ class UserInfoManager {
 
         const statusClass = this.getOrderStatusClass(order.orderStatus);
         const statusText = this.getOrderStatusText(order.orderStatus);
+        const reviewStatus = await this.checkOrderReviewStatus(order.idOrder);
 
         return `
             <div class="compact-order-card clickable-order" data-order-id="${order.idOrder}" onclick="userInfoManager.viewOrderDetail(${order.idOrder})">
@@ -411,7 +564,7 @@ class UserInfoManager {
                     <div class="order-basic-info">
                         <h5 class="order-id">Đơn hàng #${order.idOrder}</h5>
                         <p class="order-date">
-                            <i class="fas fa-calendar"></i>
+                            <i class="mdi mdi-calendar"></i>
                             ${orderDate}
                         </p>
                     </div>
@@ -434,7 +587,7 @@ class UserInfoManager {
                         </div>
                         ` : `
                         <div class="no-product">
-                            <i class="fas fa-box-open"></i>
+                            <i class="mdi mdi-package-variant"></i>
                             <span>Không có sản phẩm</span>
                         </div>
                         `}
@@ -450,17 +603,27 @@ class UserInfoManager {
                 
                 <div class="compact-order-actions">
                     <div class="click-hint">
-                        <i class="fas fa-mouse-pointer"></i>
-                        <span>Click để xem chi tiết</span>
+                        <i class="mdi mdi-cursor-pointer"></i>
+                        <span>Xem chi tiết</span>
                     </div>
                     ${order.orderStatus === 'COMPLETED' ? `
-                    <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); userInfoManager.openReviewModal(${order.idOrder})">
-                        <i class="fas fa-star"></i> Đánh giá
-                    </button>
-                    ` : ''}
+                        ${reviewStatus.allReviewed ? `
+                        <button class="btn btn-success btn-sm" disabled>
+                            <i class="mdi mdi-check"></i> Đã đánh giá
+                        </button>
+                        ` : reviewStatus.hasAnyReview ? `
+                        <button class="btn btn-warning btn-sm text-white" onclick="event.stopPropagation(); userInfoManager.openReviewModal(${order.idOrder})">
+                            <i class="mdi mdi-star"></i> Xem đánh giá
+                        </button>
+                        ` : `
+                        <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); userInfoManager.openReviewModal(${order.idOrder})">
+                            <i class="mdi mdi-star"></i> Đánh giá
+                        </button>
+                        `}
+                        ` : ''}
                     ${order.orderStatus === 'COMPLETED' || order.orderStatus === 'CANCELLED' ? `
                     <button class="btn btn-outline-success btn-sm" onclick="event.stopPropagation(); userInfoManager.reorder(${order.idOrder})">
-                        <i class="fas fa-redo"></i> Mua lại
+                        <i class="mdi mdi-redo"></i> Mua lại
                     </button>
                     ` : ''}
                 </div>
@@ -489,7 +652,7 @@ class UserInfoManager {
             paginationHTML += `
                 <li class="page-item">
                     <button class="page-link" onclick="userInfoManager.loadOrders(${currentPage - 1})">
-                        <i class="fas fa-chevron-left"></i> Trước
+                        <i class="mdi mdi-chevron-left"></i> Trước
                     </button>
                 </li>
             `;
@@ -497,7 +660,7 @@ class UserInfoManager {
             paginationHTML += `
                 <li class="page-item disabled">
                     <span class="page-link">
-                        <i class="fas fa-chevron-left"></i> Trước
+                        <i class="mdi mdi-chevron-left"></i> Trước
                     </span>
                 </li>
             `;
@@ -528,7 +691,7 @@ class UserInfoManager {
             paginationHTML += `
                 <li class="page-item">
                     <button class="page-link" onclick="userInfoManager.loadOrders(${currentPage + 1})">
-                        Sau <i class="fas fa-chevron-right"></i>
+                        Sau <i class="mdi mdi-chevron-right"></i>
                     </button>
                 </li>
             `;
@@ -536,7 +699,7 @@ class UserInfoManager {
             paginationHTML += `
                 <li class="page-item disabled">
                     <span class="page-link">
-                        Sau <i class="fas fa-chevron-right"></i>
+                        Sau <i class="mdi mdi-chevron-right"></i>
                     </span>
                 </li>
             `;
@@ -573,7 +736,7 @@ class UserInfoManager {
                     <div class="order-info">
                         <h5 class="order-id">Đơn hàng #${order.idOrder}</h5>
                         <p class="order-date">
-                            <i class="fas fa-calendar"></i>
+                            <i class="mdi mdi-calendar"></i>
                             ${orderDate}
                         </p>
                     </div>
@@ -608,11 +771,11 @@ class UserInfoManager {
                 
                 <div class="order-actions">
                     <button class="btn btn-outline-primary btn-sm" onclick="userInfoManager.viewOrderDetail(${order.idOrder})">
-                        <i class="fas fa-eye"></i> Xem chi tiết
+                        <i class="mdi mdi-eye"></i> Xem chi tiết
                     </button>
                     ${order.orderStatus === 'COMPLETED' || order.orderStatus === 'CANCELLED' ? `
                     <button class="btn btn-outline-success btn-sm" onclick="userInfoManager.reorder(${order.idOrder})">
-                        <i class="fas fa-redo"></i> Mua lại
+                        <i class="mdi mdi-redo"></i> Mua lại
                     </button>
                     ` : ''}
                 </div>
@@ -639,8 +802,28 @@ class UserInfoManager {
     }
 
     async viewOrderDetail(orderId) {
-        // Chuyển đến trang chi tiết đơn hàng
-        window.location.href = `/user/order-detail/${orderId}`;
+        // Chỉ user đã đăng nhập mới có thể xem chi tiết đơn hàng
+        const token = localStorage.getItem('access_token');
+        if (token) {
+            // User đã đăng nhập - lưu orderId và token vào session và redirect trực tiếp
+            fetch('/user/order-detail/set-session', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ orderId: orderId, token: token })
+            }).then(() => {
+                // Redirect trực tiếp đến URL mới
+                window.location.href = `/user/order-detail-view?orderId=${orderId}`;
+            }).catch(error => {
+                console.error('Error setting session:', error);
+                // Fallback: gửi token qua URL parameter
+                window.location.href = `/user/order-detail/${orderId}?token=${encodeURIComponent(token)}`;
+            });
+        } else {
+            // Guest không thể xem chi tiết đơn hàng
+            this.showToast('Vui lòng đăng nhập để xem chi tiết đơn hàng', 'warning');
+        }
     }
 
     async reorder(orderId) {
@@ -712,7 +895,7 @@ class UserInfoManager {
         // Loading placeholder
         addressContainer.innerHTML = `
 			<div class="empty-state">
-				<i class="fas fa-spinner fa-spin"></i>
+				<i class="mdi mdi-loading mdi-spin"></i>
 				<h5>Đang tải địa chỉ...</h5>
 				<p>Vui lòng chờ trong giây lát</p>
 			</div>
@@ -723,7 +906,7 @@ class UserInfoManager {
             if (!token || !this.currentUser?.userId) {
                 addressContainer.innerHTML = `
 					<div class="empty-state">
-						<i class="fas fa-map-marker-alt"></i>
+						<i class="mdi mdi-map-marker"></i>
 						<h5>Chưa đăng nhập</h5>
 						<p>Vui lòng đăng nhập để quản lý địa chỉ</p>
 					</div>
@@ -744,7 +927,7 @@ class UserInfoManager {
             if (!Array.isArray(addresses) || addresses.length === 0) {
                 addressContainer.innerHTML = `
 					<div class="empty-state">
-						<i class="fas fa-map-marker-alt"></i>
+						<i class="mdi mdi-map-marker"></i>
 						<h5>Chưa có địa chỉ nào</h5>
 						<p>Hãy thêm địa chỉ giao hàng để mua sắm dễ dàng hơn</p>
 					</div>
@@ -752,12 +935,19 @@ class UserInfoManager {
                 return;
             }
 
-            addressContainer.innerHTML = addresses.map(addr => this.renderAddressCard(addr)).join('');
+            // Resolve admin names for display
+            const cards = await Promise.all(addresses.map(async (addr) => {
+                const provinceName = await this.getProvinceName(addr?.provinceId);
+                const districtName = await this.getDistrictName(addr?.provinceId, addr?.districtId);
+                const wardName = await this.getWardName(addr?.districtId, addr?.wardCode);
+                return this.renderAddressCard(addr, { provinceName, districtName, wardName });
+            }));
+            addressContainer.innerHTML = cards.join('');
         } catch (e) {
             console.error(e);
             addressContainer.innerHTML = `
 				<div class="empty-state">
-					<i class="fas fa-exclamation-triangle"></i>
+					<i class="mdi mdi-alert"></i>
 					<h5>Lỗi khi tải địa chỉ</h5>
 					<p>Vui lòng thử lại sau</p>
 				</div>
@@ -765,20 +955,25 @@ class UserInfoManager {
         }
     }
 
-    renderAddressCard(addr) {
+    renderAddressCard(addr, names = {}) {
         const isDefault = addr?.isDefault ? '<span class="badge bg-success ms-2">Mặc định</span>' : '';
-        const fullAddress = [addr?.addressDetail, addr?.ward, addr?.province].filter(Boolean).join(', ');
+        const fullAddress = [
+            addr?.addressDetail,
+            names?.wardName,
+            names?.districtName,
+            names?.provinceName
+        ].filter(Boolean).join(', ');
         return `
 			<div class="card mb-3">
 				<div class="card-body d-flex justify-content-between align-items-start flex-wrap">
 					<div class="me-3">
 						<h6 class="mb-1">${this.escapeHtml(addr?.name || '')} ${isDefault}</h6>
-						<div class="text-muted small mb-1"><i class="fas fa-phone me-1"></i>${this.escapeHtml(addr?.phone || '')}</div>
-						<div><i class="fas fa-location-dot me-1"></i>${this.escapeHtml(fullAddress)}</div>
+						<div class="text-muted small mb-1"><i class="mdi mdi-phone me-1"></i>${this.escapeHtml(addr?.phone || '')}</div>
+						<div><i class="mdi mdi-map-marker me-1"></i>${this.escapeHtml(fullAddress)}</div>
 					</div>
 					<div class="d-flex gap-2 mt-2 mt-md-0">
-						<button class="btn btn-sm btn-outline-primary" onclick="editAddress(${addr?.idAddress})"><i class="fas fa-edit"></i></button>
-						<button class="btn btn-sm btn-outline-danger" onclick="deleteAddress(${addr?.idAddress})"><i class="fas fa-trash"></i></button>
+						<button class="btn btn-sm btn-outline-primary" onclick="editAddress(${addr?.idAddress})"><i class="mdi mdi-pencil"></i></button>
+						<button class="btn btn-sm btn-outline-danger" onclick="deleteAddress(${addr?.idAddress})"><i class="mdi mdi-delete"></i></button>
 					</div>
 				</div>
 			</div>
@@ -836,6 +1031,7 @@ class UserInfoManager {
 
         // Hiển thị modal ngay lập tức (zero flicker)
         el.classList.add('show');
+        try { document.body.style.overflow = 'hidden'; } catch (_) { }
 
         // Tải dữ liệu tỉnh/thành từ cache hoặc API
         await this.loadProvinces();
@@ -855,7 +1051,7 @@ class UserInfoManager {
         if (this.isCacheValid('provinces') && this.provincesCache) {
             this.populateSelect(
                 provinceSelect,
-                this.provincesCache.map(p => ({ value: p.code, label: p.name })),
+                this.provincesCache.map(p => ({ value: (p.ProvinceID || p.provinceId || p.code), label: (p.ProvinceName || p.name) })),
                 'Chọn Tỉnh/Thành phố'
             );
             return;
@@ -864,7 +1060,7 @@ class UserInfoManager {
         provinceSelect.innerHTML = '<option value="">Đang tải tỉnh/thành...</option>';
 
         try {
-            const res = await fetch(`${this.waveBearBase}/provider`);
+            const res = await fetch(`/api/ghn/provinces`);
             if (!res.ok) throw new Error('Không thể tải tỉnh/thành');
             const provinces = await res.json();
 
@@ -875,7 +1071,7 @@ class UserInfoManager {
 
                 this.populateSelect(
                     provinceSelect,
-                    provinces.map(p => ({ value: p.code, label: p.name })),
+                    provinces.map(p => ({ value: (p.ProvinceID || p.provinceId || p.code), label: (p.ProvinceName || p.name) })),
                     'Chọn Tỉnh/Thành phố'
                 );
             } else {
@@ -885,6 +1081,57 @@ class UserInfoManager {
             console.error('Lỗi tải tỉnh/thành:', e);
             provinceSelect.innerHTML = '<option value="">Không có dữ liệu tỉnh/thành</option>';
         }
+    }
+
+    // Helpers to resolve names from ids using GHN endpoints (with simple in-memory caches)
+    async getProvinceName(provinceId) {
+        try {
+            if (!provinceId) return '';
+            if (this.provincesCache && Array.isArray(this.provincesCache)) {
+                const found = this.provincesCache.find(p => (p.ProvinceID || p.provinceId || p.code) == provinceId);
+                if (found) return (found.ProvinceName || found.name) || '';
+            }
+            const res = await fetch('/api/ghn/provinces');
+            if (!res.ok) return '';
+            const provinces = await res.json();
+            this.provincesCache = provinces;
+            const found = provinces.find(p => (p.ProvinceID || p.provinceId || p.code) == provinceId);
+            return found ? ((found.ProvinceName || found.name) || '') : '';
+        } catch (_) { return ''; }
+    }
+
+    async getDistrictName(provinceId, districtId) {
+        try {
+            if (!provinceId || !districtId) return '';
+            this._districtCache = this._districtCache || new Map();
+            const key = String(provinceId);
+            let list = this._districtCache.get(key);
+            if (!list) {
+                const res = await fetch(`/api/ghn/districts/${provinceId}`);
+                if (!res.ok) return '';
+                list = await res.json();
+                this._districtCache.set(key, list);
+            }
+            const found = (list || []).find(d => (d.DistrictID || d.districtId) == districtId);
+            return found ? ((found.DistrictName || found.name) || '') : '';
+        } catch (_) { return ''; }
+    }
+
+    async getWardName(districtId, wardCode) {
+        try {
+            if (!districtId || !wardCode) return '';
+            this._wardCache = this._wardCache || new Map();
+            const key = String(districtId);
+            let list = this._wardCache.get(key);
+            if (!list) {
+                const res = await fetch(`/api/ghn/wards/${districtId}`);
+                if (!res.ok) return '';
+                list = await res.json();
+                this._wardCache.set(key, list);
+            }
+            const found = (list || []).find(w => (w.WardCode || w.wardCode) == wardCode);
+            return found ? ((found.WardName || found.name) || '') : '';
+        } catch (_) { return ''; }
     }
 
     async editAddress(id) {
@@ -975,6 +1222,7 @@ class UserInfoManager {
         const el = document.getElementById('addAddressModal');
         if (!el) return;
         el.classList.remove('show');
+        try { document.body.style.overflow = ''; } catch (_) { }
     }
 
     populateEditForm(address) {
@@ -983,29 +1231,33 @@ class UserInfoManager {
         document.getElementById('editAddrDetail').value = address?.addressDetail || '';
         document.getElementById('editAddrDefault').checked = address?.isDefault || false;
 
-        // Load provinces first, then find matching province code and load wards
-        this.loadEditProvincesWithMapping(address?.province, address?.ward);
+        // Load provinces then set provinceId -> load districts and wards
+        this.loadEditProvinces(address?.provinceId, address?.districtId, address?.wardCode);
     }
 
-    async loadEditProvincesWithMapping(provinceName = null, wardName = null) {
+    // removed legacy mapping by names
+
+    async loadEditProvinces(selectedProvinceId = null, selectedDistrictId = null, selectedWardCode = null) {
         const provinceSelect = document.getElementById('editAddrProvince');
         if (!provinceSelect) return;
-
 
         // Kiểm tra cache trước
         if (this.isCacheValid('provinces') && this.provincesCache) {
             this.populateSelect(
                 provinceSelect,
-                this.provincesCache.map(p => ({ value: p.code, label: p.name })),
+                this.provincesCache.map(p => ({ value: (p.ProvinceID || p.provinceId || p.code), label: (p.ProvinceName || p.name) })),
                 'Chọn Tỉnh/Thành phố'
             );
 
-            if (provinceName) {
-                // Tìm province code từ province name
-                const matchingProvince = this.provincesCache.find(p => p.name === provinceName);
-                if (matchingProvince) {
-                    provinceSelect.value = matchingProvince.code;
-                    this.loadEditWards(matchingProvince.code, wardName);
+            if (selectedProvinceId) {
+                provinceSelect.value = selectedProvinceId;
+                if (selectedDistrictId) {
+                    await this.loadEditDistricts(selectedProvinceId, selectedDistrictId, selectedWardCode);
+                } else {
+                    const dSel = document.getElementById('editAddrDistrict');
+                    const wSel = document.getElementById('editAddrWard');
+                    if (dSel) { dSel.innerHTML = '<option value="">Chọn Quận/Huyện</option>'; dSel.disabled = false; }
+                    if (wSel) { wSel.innerHTML = '<option value="">Chọn Quận/Huyện trước</option>'; wSel.disabled = true; }
                 }
             }
             return;
@@ -1014,7 +1266,7 @@ class UserInfoManager {
         provinceSelect.innerHTML = '<option value="">Đang tải tỉnh/thành...</option>';
 
         try {
-            const res = await fetch(`${this.waveBearBase}/provider`);
+            const res = await fetch(`/api/ghn/provinces`);
             if (!res.ok) throw new Error('Không thể tải tỉnh/thành');
             const provinces = await res.json();
 
@@ -1024,16 +1276,19 @@ class UserInfoManager {
 
                 this.populateSelect(
                     provinceSelect,
-                    provinces.map(p => ({ value: p.code, label: p.name })),
+                    provinces.map(p => ({ value: (p.ProvinceID || p.provinceId || p.code), label: (p.ProvinceName || p.name) })),
                     'Chọn Tỉnh/Thành phố'
                 );
 
-                if (provinceName) {
-                    // Tìm province code từ province name
-                    const matchingProvince = provinces.find(p => p.name === provinceName);
-                    if (matchingProvince) {
-                        provinceSelect.value = matchingProvince.code;
-                        this.loadEditWards(matchingProvince.code, wardName);
+                if (selectedProvinceId) {
+                    provinceSelect.value = selectedProvinceId;
+                    if (selectedDistrictId) {
+                        await this.loadEditDistricts(selectedProvinceId, selectedDistrictId, selectedWardCode);
+                    } else {
+                        const dSel = document.getElementById('editAddrDistrict');
+                        const wSel = document.getElementById('editAddrWard');
+                        if (dSel) { dSel.innerHTML = '<option value="">Chọn Quận/Huyện</option>'; dSel.disabled = false; }
+                        if (wSel) { wSel.innerHTML = '<option value="">Chọn Quận/Huyện trước</option>'; wSel.disabled = true; }
                     }
                 }
             } else {
@@ -1045,68 +1300,12 @@ class UserInfoManager {
         }
     }
 
-    async loadEditProvinces(selectedProvince = null, selectedWard = null) {
-        const provinceSelect = document.getElementById('editAddrProvince');
-        if (!provinceSelect) return;
-
-        // Kiểm tra cache trước
-        if (this.isCacheValid('provinces') && this.provincesCache) {
-            this.populateSelect(
-                provinceSelect,
-                this.provincesCache.map(p => ({ value: p.code, label: p.name })),
-                'Chọn Tỉnh/Thành phố'
-            );
-
-            if (selectedProvince) {
-                provinceSelect.value = selectedProvince;
-                this.loadEditWards(selectedProvince, selectedWard);
-            }
-            return;
-        }
-
-        provinceSelect.innerHTML = '<option value="">Đang tải tỉnh/thành...</option>';
-
-        try {
-            const res = await fetch(`${this.waveBearBase}/provider`);
-            if (!res.ok) throw new Error('Không thể tải tỉnh/thành');
-            const provinces = await res.json();
-
-            if (Array.isArray(provinces) && provinces.length > 0) {
-                this.provincesCache = provinces;
-                this.cacheTimestamp.set('provinces', Date.now());
-
-                this.populateSelect(
-                    provinceSelect,
-                    provinces.map(p => ({ value: p.code, label: p.name })),
-                    'Chọn Tỉnh/Thành phố'
-                );
-
-                if (selectedProvince) {
-                    provinceSelect.value = selectedProvince;
-                    this.loadEditWards(selectedProvince, selectedWard);
-                }
-            } else {
-                throw new Error('Dữ liệu tỉnh/thành không hợp lệ');
-            }
-        } catch (e) {
-            console.error('Lỗi tải tỉnh/thành:', e);
-            provinceSelect.innerHTML = '<option value="">Không có dữ liệu tỉnh/thành</option>';
-        }
-    }
-
-    async loadEditWards(provinceCode, selectedWard = null) {
+    async loadEditWards(districtId, selectedWardCode = null) {
         const wardSelect = document.getElementById('editAddrWard');
-        if (!provinceCode || !wardSelect) return;
-
-        // Kiểm tra cache trước
-        if (this.isCacheValid(`wards_${provinceCode}`) && this.wardsCacheByProvince.has(provinceCode)) {
-            const cachedWards = this.wardsCacheByProvince.get(provinceCode);
-            this.populateSelect(wardSelect, cachedWards.map(w => ({ value: w.name, label: w.name })), 'Chọn Phường/Xã');
-
-            if (selectedWard) {
-                wardSelect.value = selectedWard;
-            }
-            wardSelect.disabled = false;
+        if (!wardSelect) return;
+        if (!districtId) {
+            wardSelect.innerHTML = '<option value="">Chọn Quận/Huyện trước</option>';
+            wardSelect.disabled = true;
             return;
         }
 
@@ -1114,18 +1313,14 @@ class UserInfoManager {
         wardSelect.innerHTML = '<option value="">Đang tải Phường/Xã...</option>';
 
         try {
-            const res = await fetch(`${this.waveBearBase}/ward/${encodeURIComponent(provinceCode)}`);
+            const res = await fetch(`/api/ghn/wards/${encodeURIComponent(districtId)}`);
             if (!res.ok) throw new Error('Không thể tải phường/xã');
             const wards = await res.json();
 
             if (Array.isArray(wards) && wards.length > 0) {
-                this.wardsCacheByProvince.set(provinceCode, wards);
-                this.cacheTimestamp.set(`wards_${provinceCode}`, Date.now());
-
-                this.populateSelect(wardSelect, wards.map(w => ({ value: w.name, label: w.name })), 'Chọn Phường/Xã');
-
-                if (selectedWard) {
-                    wardSelect.value = selectedWard;
+                this.populateSelect(wardSelect, wards.map(w => ({ value: (w.WardCode || w.wardCode), label: (w.WardName || w.name) })), 'Chọn Phường/Xã');
+                if (selectedWardCode) {
+                    wardSelect.value = selectedWardCode;
                 }
             } else {
                 throw new Error('Dữ liệu phường/xã không hợp lệ');
@@ -1134,6 +1329,35 @@ class UserInfoManager {
         } catch (e) {
             console.error('Lỗi tải phường/xã:', e);
             wardSelect.innerHTML = '<option value="">Không có dữ liệu phường/xã</option>';
+        }
+    }
+
+    async loadEditDistricts(provinceId, selectedDistrictId = null, selectedWardCode = null) {
+        const districtSelect = document.getElementById('editAddrDistrict');
+        if (!districtSelect) return;
+        if (!provinceId) {
+            districtSelect.innerHTML = '<option value="">Chọn Tỉnh/Thành phố</option>';
+            districtSelect.disabled = true;
+            return;
+        }
+
+        districtSelect.disabled = true;
+        districtSelect.innerHTML = '<option value="">Đang tải Quận/Huyện...</option>';
+
+        try {
+            const res = await fetch(`/api/ghn/districts/${encodeURIComponent(provinceId)}`);
+            if (!res.ok) throw new Error('Không thể tải quận/huyện');
+            const districts = await res.json();
+            this.populateSelect(districtSelect, districts.map(d => ({ value: (d.DistrictID || d.districtId), label: (d.DistrictName || d.name) })), 'Chọn Quận/Huyện');
+            districtSelect.disabled = false;
+
+            if (selectedDistrictId) {
+                districtSelect.value = selectedDistrictId;
+                await this.loadEditWards(selectedDistrictId, selectedWardCode);
+            }
+        } catch (e) {
+            console.error('Lỗi tải quận/huyện:', e);
+            districtSelect.innerHTML = '<option value="">Không có dữ liệu quận/huyện</option>';
         }
     }
 
@@ -1185,30 +1409,16 @@ class UserInfoManager {
             const form = document.getElementById('editAddressForm');
             if (!form) return;
 
-            const provinceCode = document.getElementById('editAddrProvince').value.trim();
-            const wardName = document.getElementById('editAddrWard').value.trim();
+            const provinceId = parseInt(document.getElementById('editAddrProvince').value, 10);
+            const districtId = parseInt(document.getElementById('editAddrDistrict').value, 10);
+            const wardCode = document.getElementById('editAddrWard').value.trim();
 
-            // Validation
+            // Validation theo id/mã GHN
             if (!document.getElementById('editAddrName').value.trim() ||
                 !document.getElementById('editAddrPhone').value.trim() ||
                 !document.getElementById('editAddrDetail').value.trim() ||
-                !wardName || !provinceCode) {
+                !provinceId || !districtId || !wardCode) {
                 this.showError('Vui lòng điền đầy đủ thông tin');
-                return;
-            }
-
-            // Map province code back to province name
-            let provinceName = '';
-            if (this.provincesCache) {
-                const matchingProvince = this.provincesCache.find(p => p.code === provinceCode);
-                if (matchingProvince) {
-                    provinceName = matchingProvince.name;
-                } else {
-                    this.showError('Không tìm thấy tên tỉnh/thành phố');
-                    return;
-                }
-            } else {
-                this.showError('Dữ liệu tỉnh/thành không khả dụng');
                 return;
             }
 
@@ -1216,8 +1426,9 @@ class UserInfoManager {
                 name: document.getElementById('editAddrName').value.trim(),
                 phone: document.getElementById('editAddrPhone').value.trim(),
                 addressDetail: document.getElementById('editAddrDetail').value.trim(),
-                ward: wardName,
-                province: provinceName, // Lưu province name thay vì code
+                provinceId,
+                districtId,
+                wardCode,
                 isDefault: document.getElementById('editAddrDefault').checked
             };
 
@@ -1259,7 +1470,7 @@ class UserInfoManager {
         try {
             // Disable submit button to prevent double submission
             submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang lưu...';
+            submitBtn.innerHTML = '<i class="mdi mdi-loading mdi-spin"></i> Đang lưu...';
 
             const token = localStorage.getItem('access_token');
             if (!token || !this.currentUser?.userId) {
@@ -1269,24 +1480,24 @@ class UserInfoManager {
             const name = document.getElementById('addrName')?.value?.trim();
             const phone = document.getElementById('addrPhone')?.value?.trim();
             const addressDetail = document.getElementById('addrDetail')?.value?.trim();
-            const provinceCode = document.getElementById('addrProvince')?.value;
-            const wardName = document.getElementById('addrWard')?.value;
+            const provinceId = parseInt(document.getElementById('addrProvince')?.value, 10);
+            const districtId = parseInt(document.getElementById('addrDistrict')?.value, 10);
+            const wardCode = document.getElementById('addrWard')?.value;
             const isDefault = document.getElementById('addrDefault')?.checked || false;
 
-            if (!name || !phone || !addressDetail || !provinceCode || !wardName) {
+            if (!name || !phone || !addressDetail || !provinceId || !districtId || !wardCode) {
                 this.showError('Vui lòng điền đầy đủ thông tin địa chỉ');
                 return;
             }
 
             // Province text for storage
-            const provinceText = document.querySelector('#addrProvince option:checked')?.textContent?.trim() || '';
-
             const payload = {
                 name,
                 phone,
                 addressDetail,
-                ward: wardName,
-                province: provinceText,
+                provinceId,
+                districtId,
+                wardCode,
                 isDefault
             };
 
@@ -1320,7 +1531,7 @@ class UserInfoManager {
         } finally {
             // Re-enable submit button
             submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="fas fa-save"></i> Lưu địa chỉ';
+            submitBtn.innerHTML = '<i class="mdi mdi-content-save"></i> Lưu địa chỉ';
         }
     }
 
@@ -1348,20 +1559,12 @@ class UserInfoManager {
         }
     }
 
-    async loadWards(provinceCode) {
+    async loadWards(districtId) {
         const wardSelect = document.getElementById('addrWard');
         if (!wardSelect) return;
-        if (!provinceCode) {
-            wardSelect.innerHTML = '<option value="">Chọn Tỉnh/Thành phố trước</option>';
+        if (!districtId) {
+            wardSelect.innerHTML = '<option value="">Chọn Quận/Huyện trước</option>';
             wardSelect.disabled = true;
-            return;
-        }
-
-        // Kiểm tra cache trước
-        if (this.isCacheValid(`wards_${provinceCode}`) && this.wardsCacheByProvince.has(provinceCode)) {
-            const cachedWards = this.wardsCacheByProvince.get(provinceCode);
-            this.populateSelect(wardSelect, cachedWards.map(w => ({ value: w.name, label: w.name })), 'Chọn Phường/Xã');
-            wardSelect.disabled = false;
             return;
         }
 
@@ -1369,16 +1572,12 @@ class UserInfoManager {
             wardSelect.disabled = true;
             wardSelect.innerHTML = '<option value="">Đang tải Phường/Xã...</option>';
 
-            const res = await fetch(`${this.waveBearBase}/ward/${encodeURIComponent(provinceCode)}`);
+            const res = await fetch(`/api/ghn/wards/${encodeURIComponent(districtId)}`);
             if (!res.ok) throw new Error('Không thể tải phường/xã');
             const wards = await res.json();
 
             if (Array.isArray(wards) && wards.length > 0) {
-                // Lưu vào cache
-                this.wardsCacheByProvince.set(provinceCode, wards);
-                this.cacheTimestamp.set(`wards_${provinceCode}`, Date.now());
-
-                this.populateSelect(wardSelect, wards.map(w => ({ value: w.name, label: w.name })), 'Chọn Phường/Xã');
+                this.populateSelect(wardSelect, wards.map(w => ({ value: (w.WardCode || w.wardCode), label: (w.WardName || w.name) })), 'Chọn Phường/Xã');
             } else {
                 throw new Error('Dữ liệu phường/xã không hợp lệ');
             }
@@ -1390,6 +1589,36 @@ class UserInfoManager {
         }
     }
 
+    async loadDistricts(provinceId) {
+        const districtSelect = document.getElementById('addrDistrict');
+        if (!districtSelect) return;
+        if (!provinceId) {
+            districtSelect.innerHTML = '<option value="">Chọn Tỉnh/Thành phố</option>';
+            districtSelect.disabled = true;
+            return;
+        }
+
+        try {
+            districtSelect.disabled = true;
+            districtSelect.innerHTML = '<option value="">Đang tải Quận/Huyện...</option>';
+
+            const res = await fetch(`/api/ghn/districts/${encodeURIComponent(provinceId)}`);
+            if (!res.ok) throw new Error('Không thể tải quận/huyện');
+            const districts = await res.json();
+            this.populateSelect(districtSelect, districts.map(d => ({ value: (d.DistrictID || d.districtId), label: (d.DistrictName || d.name) })), 'Chọn Quận/Huyện');
+            districtSelect.disabled = false;
+
+            districtSelect.onchange = (e) => {
+                const districtId = parseInt(e.target.value, 10);
+                this.loadWards(districtId);
+            };
+        } catch (e) {
+            console.error('Lỗi tải quận/huyện:', e);
+            districtSelect.innerHTML = '<option value="">Không có dữ liệu quận/huyện</option>';
+            districtSelect.disabled = true;
+        }
+    }
+
     populateSelect(selectEl, options, placeholder) {
         const opts = [`<option value="">${this.escapeHtml(placeholder || 'Chọn')}</option>`]
             .concat(options.map(o => `<option value="${this.escapeHtml(o.value)}">${this.escapeHtml(o.label)}</option>`));
@@ -1397,30 +1626,294 @@ class UserInfoManager {
     }
 
     changePassword() {
-        this.showToast('Chức năng đổi mật khẩu sẽ được triển khai', 'info');
+        this.showChangePasswordModal();
     }
 
-    enable2FA() {
-        this.showToast('Chức năng xác thực 2FA sẽ được triển khai', 'info');
+    showChangePasswordModal() {
+        const modal = document.getElementById('changePasswordModal');
+        if (modal) {
+            modal.classList.add('show');
+            document.body.style.overflow = 'hidden';
+
+            // Reset form
+            this.resetChangePasswordForm();
+
+            // Focus vào input đầu tiên
+            setTimeout(() => {
+                const firstInput = modal.querySelector('input');
+                if (firstInput) firstInput.focus();
+            }, 100);
+        }
     }
 
-    toggleNotifications() {
-        this.showToast('Chức năng cài đặt thông báo sẽ được triển khai', 'info');
+    closeChangePasswordModal() {
+        const modal = document.getElementById('changePasswordModal');
+        if (modal) {
+            modal.classList.remove('show');
+            document.body.style.overflow = '';
+            this.resetChangePasswordForm();
+        }
     }
+
+    resetChangePasswordForm() {
+        const form = document.getElementById('changePasswordForm');
+        if (form) {
+            form.reset();
+            // Remove validation classes
+            const inputs = form.querySelectorAll('.form-control');
+            inputs.forEach(input => {
+                input.classList.remove('is-valid', 'is-invalid');
+            });
+        }
+    }
+
+    async submitChangePassword() {
+        try {
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                this.showError('Vui lòng đăng nhập');
+                return;
+            }
+
+            const form = document.getElementById('changePasswordForm');
+            if (!form) return;
+
+            const currentPassword = document.getElementById('currentPassword').value.trim();
+            const newPassword = document.getElementById('newPassword').value.trim();
+            const confirmPassword = document.getElementById('confirmPassword').value.trim();
+
+            // Validation
+            if (!currentPassword) {
+                this.showError('Vui lòng nhập mật khẩu hiện tại');
+                document.getElementById('currentPassword').focus();
+                return;
+            }
+
+            if (!newPassword) {
+                this.showError('Vui lòng nhập mật khẩu mới');
+                document.getElementById('newPassword').focus();
+                return;
+            }
+
+            if (newPassword.length < 8 || newPassword.length > 20) {
+                this.showError('Mật khẩu mới phải có từ 8 đến 20 ký tự');
+                document.getElementById('newPassword').focus();
+                return;
+            }
+
+            if (!confirmPassword) {
+                this.showError('Vui lòng xác nhận mật khẩu mới');
+                document.getElementById('confirmPassword').focus();
+                return;
+            }
+
+            if (newPassword !== confirmPassword) {
+                this.showError('Mật khẩu xác nhận không khớp');
+                document.getElementById('confirmPassword').focus();
+                return;
+            }
+
+            if (currentPassword === newPassword) {
+                this.showError('Mật khẩu mới phải khác mật khẩu hiện tại');
+                document.getElementById('newPassword').focus();
+                return;
+            }
+
+            // Disable submit button
+            const submitBtn = document.getElementById('btnSubmitChangePassword');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="mdi mdi-loading mdi-spin"></i> Đang xử lý...';
+            }
+
+            const requestData = {
+                currentPassword: currentPassword,
+                newPassword: newPassword,
+                confirmPassword: confirmPassword
+            };
+
+            const response = await fetch('/users/changePassword', {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestData)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                const errorMessage = errorData.message || 'Không thể đổi mật khẩu';
+
+                if (response.status === 400) {
+                    this.showError(errorMessage);
+                } else if (response.status === 401 || response.status === 403) {
+                    this.showError('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+                    setTimeout(() => {
+                        window.location.href = '/home';
+                    }, 2000);
+                } else {
+                    this.showError(errorMessage);
+                }
+                return;
+            }
+
+            const data = await response.json();
+            this.showToast('Đổi mật khẩu thành công!', 'success');
+            this.closeChangePasswordModal();
+
+        } catch (error) {
+            console.error('Error changing password:', error);
+            this.showError('Không thể đổi mật khẩu. Vui lòng thử lại sau.');
+        } finally {
+            // Re-enable submit button
+            const submitBtn = document.getElementById('btnSubmitChangePassword');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="mdi mdi-content-save"></i> Đổi mật khẩu';
+            }
+        }
+    }
+
+
 
     deleteAccount() {
-        if (confirm('Bạn có chắc chắn muốn xóa tài khoản? Hành động này không thể hoàn tác!')) {
-            this.showToast('Chức năng xóa tài khoản sẽ được triển khai', 'info');
+        this.showDeleteAccountModal();
+    }
+
+    showDeleteAccountModal() {
+        const modal = document.getElementById('deleteAccountModal');
+        if (modal) {
+            modal.classList.add('show');
+            document.body.style.overflow = 'hidden';
+
+            // Reset form
+            this.resetDeleteAccountForm();
+
+            // Focus vào checkbox
+            setTimeout(() => {
+                const checkbox = modal.querySelector('#confirmDeleteAccount');
+                if (checkbox) checkbox.focus();
+            }, 100);
+        }
+    }
+
+    closeDeleteAccountModal() {
+        const modal = document.getElementById('deleteAccountModal');
+        if (modal) {
+            modal.classList.remove('show');
+            document.body.style.overflow = '';
+            this.resetDeleteAccountForm();
+        }
+    }
+
+    resetDeleteAccountForm() {
+        const checkbox = document.getElementById('confirmDeleteAccount');
+        const submitBtn = document.getElementById('btnConfirmDeleteAccount');
+
+        if (checkbox) {
+            checkbox.checked = false;
+        }
+        if (submitBtn) {
+            submitBtn.disabled = true;
+        }
+    }
+
+    async submitDeleteAccount() {
+        try {
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                this.showError('Vui lòng đăng nhập');
+                return;
+            }
+
+            const confirmCheckbox = document.getElementById('confirmDeleteAccount');
+            if (!confirmCheckbox || !confirmCheckbox.checked) {
+                this.showError('Vui lòng xác nhận rằng bạn hiểu hậu quả của việc xóa tài khoản');
+                return;
+            }
+
+            // Disable submit button
+            const submitBtn = document.getElementById('btnConfirmDeleteAccount');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="mdi mdi-loading mdi-spin"></i> Đang xử lý...';
+            }
+
+            const response = await fetch('/users/deactivateAccount', {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                const errorMessage = errorData.message || 'Không thể xóa tài khoản';
+
+                if (response.status === 400) {
+                    this.showError(errorMessage);
+                } else if (response.status === 401 || response.status === 403) {
+                    this.showError('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+                    setTimeout(() => {
+                        window.location.href = '/home';
+                    }, 2000);
+                } else {
+                    this.showError(errorMessage);
+                }
+                return;
+            }
+
+            const data = await response.json();
+            this.showToast('Tài khoản đã được vô hiệu hóa thành công!', 'success');
+
+            // Clear local storage and redirect to home
+            setTimeout(() => {
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('liora_user');
+                window.location.href = '/home';
+            }, 2000);
+
+        } catch (error) {
+            console.error('Error deleting account:', error);
+            this.showError('Không thể xóa tài khoản. Vui lòng thử lại sau.');
+        } finally {
+            // Re-enable submit button
+            const submitBtn = document.getElementById('btnConfirmDeleteAccount');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="mdi mdi-delete"></i> Xóa tài khoản';
+            }
         }
     }
 
     async uploadAvatarFile(file) {
         try {
             if (!file) return;
+
+            // Validate file type
+            if (!file.type.startsWith('image/')) {
+                this.showError('Vui lòng chọn file ảnh hợp lệ');
+                return;
+            }
+
+            // Validate file size (max 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                this.showError('Kích thước file không được vượt quá 5MB');
+                return;
+            }
+
             const token = localStorage.getItem('access_token');
             if (!token) {
                 this.showError('Vui lòng đăng nhập để cập nhật avatar');
                 return;
+            }
+
+            // Show loading state
+            const avatarImg = document.getElementById('profileAvatar');
+            if (avatarImg) {
+                avatarImg.style.opacity = '0.5';
             }
 
             const formData = new FormData();
@@ -1432,23 +1925,42 @@ class UserInfoManager {
                 body: formData
             });
 
-            if (!response.ok) throw new Error('Upload avatar thất bại');
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || 'Upload avatar thất bại');
+            }
 
             const data = await response.json();
             const avatarUrl = data?.result?.avatarUrl || data?.data?.result?.avatarUrl;
             if (!avatarUrl) throw new Error('Không nhận được URL avatar');
 
             // Update UI immediately
-            const img = document.getElementById('profileAvatar');
-            if (img) img.src = avatarUrl;
+            if (avatarImg) {
+                avatarImg.src = avatarUrl;
+                avatarImg.style.opacity = '1';
+            }
 
             // Persist to profile
-            await this.updateUserInfo({ avatar: avatarUrl, firstname: this.currentUser.firstname || '', lastname: this.currentUser.lastname || '' });
+            await this.updateUserInfo({
+                avatar: avatarUrl,
+                firstname: this.currentUser.firstname || '',
+                lastname: this.currentUser.lastname || '',
+                email: this.currentUser.email || '',
+                phone: this.currentUser.phone || null,
+                dob: this.currentUser.dob || null,
+                gender: this.currentUser.gender
+            });
 
             this.showToast('Cập nhật avatar thành công!', 'success');
         } catch (e) {
             console.error(e);
-            this.showError('Không thể cập nhật avatar');
+            this.showError(e.message || 'Không thể cập nhật avatar');
+
+            // Restore avatar opacity
+            const avatarImg = document.getElementById('profileAvatar');
+            if (avatarImg) {
+                avatarImg.style.opacity = '1';
+            }
         }
     }
 
@@ -1461,8 +1973,8 @@ class UserInfoManager {
         loadingElement.style.zIndex = '9999';
         loadingElement.innerHTML = `
             <div class="text-center">
-                <div class="loading-spinner mb-3"></div>
-                <p>Đang tải thông tin...</p>
+                <i class="mdi mdi-loading mdi-spin" style="font-size: 2rem;"></i>
+                <p class="mt-3">Đang tải thông tin...</p>
             </div>
         `;
         document.body.appendChild(loadingElement);
@@ -1487,7 +1999,7 @@ class UserInfoManager {
         toast.setAttribute('role', 'alert');
         toast.innerHTML = `
             <div class="toast-header">
-                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'} text-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} me-2"></i>
+                <i class="mdi mdi-${type === 'success' ? 'check-circle' : type === 'error' ? 'alert-circle' : 'information'} text-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} me-2"></i>
                 <strong class="me-auto">Thông báo</strong>
                 <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
             </div>
@@ -1513,6 +2025,45 @@ class UserInfoManager {
         container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
         document.body.appendChild(container);
         return container;
+    }
+
+    async checkOrderReviewStatus(orderId) {
+        try {
+            const token = localStorage.getItem('access_token');
+            if (!token) return { allReviewed: false, hasAnyReview: false };
+
+            const response = await fetch(`/api/orders/${orderId}/items`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (response.ok) {
+                const products = await response.json();
+                let allReviewed = true;
+                let hasAnyReview = false;
+
+                // Kiểm tra trạng thái review của tất cả sản phẩm
+                for (let product of products) {
+                    const reviewCheckResponse = await fetch(`/api/reviews/check/${product.idOrderProduct}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (reviewCheckResponse.ok) {
+                        const reviewData = await reviewCheckResponse.json();
+                        if (reviewData.exists) {
+                            hasAnyReview = true;
+                        } else {
+                            allReviewed = false;
+                        }
+                    } else {
+                        allReviewed = false;
+                    }
+                }
+                return { allReviewed, hasAnyReview };
+            }
+            return { allReviewed: false, hasAnyReview: false };
+        } catch (error) {
+            console.error('Error checking review status:', error);
+            return { allReviewed: false, hasAnyReview: false };
+        }
     }
 }
 
@@ -1574,6 +2125,18 @@ function toggleNotifications() {
 function deleteAccount() {
     if (window.userInfoManager) {
         window.userInfoManager.deleteAccount();
+    }
+}
+
+function closeChangePasswordModal() {
+    if (window.userInfoManager) {
+        window.userInfoManager.closeChangePasswordModal();
+    }
+}
+
+function closeDeleteAccountModal() {
+    if (window.userInfoManager) {
+        window.userInfoManager.closeDeleteAccountModal();
     }
 }
 

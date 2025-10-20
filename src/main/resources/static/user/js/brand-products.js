@@ -241,7 +241,7 @@ class BrandProductsManager {
         container.style.maxWidth = '2500px';
         container.style.margin = '0 auto';
         container.style.justifyContent = 'stretch';
-        
+
         const html = products.map(product => this.createProductCard(product)).join('');
         container.innerHTML = html;
 
@@ -260,16 +260,18 @@ class BrandProductsManager {
         return `
             <div class="product-card ${statusClass}">
                     <div class="position-relative">
-                        <img src="${product.mainImageUrl || '/uploads/products/default.jpg'}" 
+                        <img src="${product.mainImageUrl || '/user/img/default-product.jpg'}" 
                              class="card-img-top" 
                              alt="${product.name}"
-                             onerror="this.src='/uploads/products/default.jpg'">
+                             onerror="this.src='/user/img/default-product.jpg'"
+                             onclick="window.location.href='${productUrl}'"
+                             style="cursor: pointer;">
                         
                     <!-- Product Status Badge - Removed to avoid overlapping with image -->
                         
                         <div class="product-actions">
                         <button class="quick-view-btn" 
-                                onclick="window.brandProductsManager.showQuickView(${product.productId})"
+                                onclick="if(window.app) window.app.showQuickView(${product.productId}); else alert('Chức năng đang được tải...');"
                                 title="Xem nhanh">
                             <i class="fas fa-eye"></i>
                             </button>
@@ -322,7 +324,7 @@ class BrandProductsManager {
                                         ${productStatus !== 'available' ? 'disabled' : ''}
                                         title="${productStatus === 'out_of_stock' ? 'Hết hàng' :
                 productStatus === 'deactivated' ? 'Ngừng kinh doanh' : 'Thêm vào giỏ'}"
-                                        onclick="console.log('Button clicked for product:', ${product.productId}); window.brandProductsManager.addToCart(${product.productId})">
+                                        onclick="if(window.app) window.app.addToCart(${product.productId}, '${product.name}', ${product.price}); else alert('Chức năng đang được tải...');">
                                     <i class="fas fa-shopping-cart"></i>
                             </button>
                         </div>
@@ -333,29 +335,19 @@ class BrandProductsManager {
     }
 
     getProductStatus(product) {
-        // Debug: Log giá trị để kiểm tra
-        console.log('Product status debug:', {
-            productId: product.productId,
-            name: product.name,
-            isActive: product.isActive,
-            available: product.available,
-            stock: product.stock
-        });
+        // Product status validation
 
         // 1. Kiểm tra ngừng kinh doanh (ưu tiên cao nhất)
         if (!product.isActive) {
-            console.log('Product is deactivated:', product.name);
             return 'deactivated';
         }
 
         // 2. Kiểm tra hết hàng (chỉ khi sản phẩm còn active)
         if (product.stock <= 0) {
-            console.log('Product is out of stock:', product.name);
             return 'out_of_stock';
         }
 
         // 3. Sản phẩm có sẵn
-        console.log('Product is available:', product.name);
         return 'available';
     }
 
@@ -397,21 +389,17 @@ class BrandProductsManager {
     }
 
     generateStars(rating, reviewCount = 0) {
-        console.log('generateStars called with rating:', rating, 'reviewCount:', reviewCount, 'type:', typeof rating);
 
         // Logic đúng cho product card - giống generateStarsForModal trong category-products
         // Chỉ hiển thị sao rỗng khi rating = 0 hoặc không có rating
         if (!rating || rating === 0 || rating === '0' || rating === null || rating === undefined) {
-            console.log('Rating is 0 or no rating, showing empty stars');
             let stars = '';
             for (let i = 0; i < 5; i++) {
                 stars += '<i class="far fa-star" style="color: #ccc !important; font-weight: 400 !important;"></i>';
             }
-            console.log('Generated empty stars HTML:', stars);
             return stars;
         }
 
-        console.log('Rating is not 0, showing stars based on rating:', rating);
         const fullStars = Math.floor(rating);
         const hasHalfStar = rating % 1 >= 0.5;
         const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
@@ -450,20 +438,27 @@ class BrandProductsManager {
     updatePagination(pageInfo) {
         this.totalPages = pageInfo.totalPages;
 
-        const paginationContainer = document.getElementById('pagination');
-        if (!paginationContainer) return;
+        const pagination = document.getElementById('pagination');
+        if (!pagination) return;
 
         if (this.totalPages <= 1) {
-            paginationContainer.style.display = 'none';
+            pagination.style.display = 'none';
             return;
         }
 
-        let paginationHtml = '';
+        pagination.style.display = 'block';
+        const paginationList = pagination.querySelector('.pagination');
+        if (!paginationList) return;
+
+        let paginationHTML = '';
 
         // Previous button
-        paginationHtml += `
-            <li class="page-item ${this.currentPage === 0 ? 'disabled' : ''}">
-                <a class="page-link" href="#" data-page="${this.currentPage - 1}">Trước</a>
+        const prevDisabled = this.currentPage === 0 ? 'disabled' : '';
+        paginationHTML += `
+            <li class="page-item ${prevDisabled}">
+                <a class="page-link" href="#" onclick="window.brandProductsManager.goToPage(${this.currentPage - 1}); return false;">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
             </li>
         `;
 
@@ -472,22 +467,31 @@ class BrandProductsManager {
         const endPage = Math.min(this.totalPages - 1, this.currentPage + 2);
 
         for (let i = startPage; i <= endPage; i++) {
-            paginationHtml += `
-                <li class="page-item ${i === this.currentPage ? 'active' : ''}">
-                    <a class="page-link" href="#" data-page="${i}">${i + 1}</a>
+            const activeClass = i === this.currentPage ? 'active' : '';
+            paginationHTML += `
+                <li class="page-item ${activeClass}">
+                    <a class="page-link" href="#" onclick="window.brandProductsManager.goToPage(${i}); return false;">${i + 1}</a>
                 </li>
             `;
         }
 
         // Next button
-        paginationHtml += `
-            <li class="page-item ${this.currentPage === this.totalPages - 1 ? 'disabled' : ''}">
-                <a class="page-link" href="#" data-page="${this.currentPage + 1}">Sau</a>
+        const nextDisabled = this.currentPage >= this.totalPages - 1 ? 'disabled' : '';
+        paginationHTML += `
+            <li class="page-item ${nextDisabled}">
+                <a class="page-link" href="#" onclick="window.brandProductsManager.goToPage(${this.currentPage + 1}); return false;">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
             </li>
         `;
 
-        paginationContainer.innerHTML = paginationHtml;
-        paginationContainer.style.display = 'block';
+        paginationList.innerHTML = paginationHTML;
+    }
+
+    goToPage(page) {
+        if (page < 0 || page >= this.totalPages) return;
+        this.currentPage = page;
+        this.loadProducts();
     }
 
     updateProductCount(total) {
@@ -856,7 +860,7 @@ class BrandProductsManager {
                                                  src="${this.getMainImageUrl(product)}" 
                                                  class="img-fluid rounded" 
                                                  alt="${product.name}"
-                                                 onerror="this.src='/uploads/products/default.jpg'">
+                                                 onerror="this.src='/user/img/default-product.jpg'">
                                             <button class="slider-nav slider-next" id="nextBtn">
                                                 <i class="fas fa-chevron-right"></i>
                                             </button>
@@ -982,7 +986,7 @@ class BrandProductsManager {
             // Use first image as main image
             return product.images[0].imageUrl || product.images[0];
         }
-        return product.mainImageUrl || '/uploads/products/default.jpg';
+        return product.mainImageUrl || '/user/img/default-product.jpg';
     }
 
     generateImageThumbnails(product) {
@@ -998,7 +1002,7 @@ class BrandProductsManager {
         }
 
         if (images.length === 0) {
-            return '<div class="thumbnail-item active"><img src="/uploads/products/default.jpg" class="img-thumbnail" alt="Default"></div>';
+            return '<div class="thumbnail-item active"><img src="/user/img/default-product.jpg" class="img-thumbnail" alt="Default"></div>';
         }
 
         return images.map((image, index) => `
@@ -1006,7 +1010,7 @@ class BrandProductsManager {
                 <img src="${image.imageUrl || image}" 
                      class="img-thumbnail" 
                      alt="Thumbnail ${index + 1}"
-                     onerror="this.src='/uploads/products/default.jpg'">
+                     onerror="this.src='/user/img/default-product.jpg'">
             </div>
         `).join('');
     }
@@ -1100,20 +1104,16 @@ class BrandProductsManager {
     }
 
     generateStarsForModal(rating, reviewCount = 0) {
-        console.log('generateStarsForModal called with rating:', rating, 'reviewCount:', reviewCount);
 
         // Logic đúng cho Quick View modal
         if (!rating || rating === 0 || rating === '0' || rating === null || rating === undefined) {
-            console.log('Modal: Rating is 0 or no reviews, showing empty stars');
             let stars = '';
             for (let i = 0; i < 5; i++) {
                 stars += '<i class="far fa-star" style="color: #ccc !important; font-weight: 400 !important;"></i>';
             }
-            console.log('Modal: Generated empty stars HTML:', stars);
             return stars;
         }
 
-        console.log('Modal: Rating is not 0, showing stars based on rating:', rating);
         const fullStars = Math.floor(rating);
         const hasHalfStar = rating % 1 >= 0.5;
         const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
@@ -1147,14 +1147,29 @@ class BrandProductsManager {
     }
 
     // Add to cart with quantity
-    async addToCartWithQuantity(productId) {
+    async     async addToCartWithQuantity(productId) {
         const quantityInput = document.getElementById('quantityInput');
-        const quantity = quantityInput ? parseInt(quantityInput.value) : 1;
+        const quantity = quantityInput ? parseInt(quantityInput.value) || 1 : 1;
 
-        let product = null;
-        if (this.products && this.products.length > 0) {
-            product = this.products.find(p => p.productId === productId);
+        try {
+            // Sử dụng addProductToCartBackend để gọi API backend
+            if (window.app && window.app.addProductToCartBackend) {
+                await window.app.addProductToCartBackend(productId, quantity, true);
+                await window.app.refreshCartBadge?.();
+            } else {
+                this.showNotification('Chức năng đang được tải...', 'error');
+            }
+        } catch (error) {
+            console.error('Add to cart error:', error);
+            this.showNotification('Không thể thêm vào giỏ hàng. Vui lòng thử lại.', 'error');
         }
+
+        // Close modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('quickViewModal'));
+        if (modal) {
+            modal.hide();
+        }
+    }
 
         // If not found, fetch from API
         if (!product) {
@@ -1252,16 +1267,16 @@ class BrandProductsManager {
         } catch (_) {
             this.showNotification('Không thể thực hiện Mua ngay. Vui lòng thử lại.', 'error');
         }
-        
+
         // Show success message
         this.showNotification(`${quantity} x ${product.name} đã được thêm vào giỏ hàng! Đang chuyển đến trang thanh toán...`, 'success');
-        
+
         // Close modal
         const modal = bootstrap.Modal.getInstance(document.getElementById('quickViewModal'));
         if (modal) {
             modal.hide();
         }
-        
+
         // Redirect to checkout after a short delay
         setTimeout(() => {
             window.location.href = '/checkout';

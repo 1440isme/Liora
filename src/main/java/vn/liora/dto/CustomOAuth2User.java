@@ -30,7 +30,8 @@ public class CustomOAuth2User implements OAuth2User {
 
     @Override
     public String getName() {
-        return user.getUsername();
+        // Trả về Google User ID để authentication.getName() hoạt động đúng
+        return oauth2User.getName();
     }
 
     public User getUser() {

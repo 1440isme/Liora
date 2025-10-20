@@ -7,6 +7,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -22,6 +23,7 @@ import java.text.Normalizer;
 
 @Controller
 @RequestMapping("/admin/static-pages")
+@PreAuthorize("hasAuthority('static_page.view')")
 public class StaticPageManagementController {
 
     @Autowired
@@ -67,6 +69,7 @@ public class StaticPageManagementController {
 
     // Xử lý thêm static page
     @PostMapping("/add")
+    @PreAuthorize("hasAuthority('static_page.create')")
     public String addStaticPage(@Valid @ModelAttribute StaticPageRequest staticPageRequest,
             BindingResult result, Model model) {
         if (result.hasErrors()) {
@@ -132,6 +135,7 @@ public class StaticPageManagementController {
 
     // Xử lý cập nhật static page
     @PostMapping("/edit/{id}")
+    @PreAuthorize("hasAuthority('static_page.update')")
     public String updateStaticPage(@PathVariable Long id,
             @Valid @ModelAttribute StaticPageRequest staticPageRequest,
             BindingResult result, Model model) {
@@ -160,6 +164,7 @@ public class StaticPageManagementController {
     // Xóa static page
     @PostMapping("/delete/{id}")
     @ResponseBody
+    @PreAuthorize("hasAuthority('static_page.delete')")
     public ResponseEntity<Map<String, Object>> deleteStaticPage(@PathVariable Long id) {
         Map<String, Object> response = new HashMap<>();
 
@@ -178,6 +183,7 @@ public class StaticPageManagementController {
     // Chuyển đổi trạng thái active
     @PostMapping("/toggle-active/{id}")
     @ResponseBody
+    @PreAuthorize("hasAuthority('static_page.update')")
     public ResponseEntity<Map<String, Object>> toggleActiveStatus(@PathVariable Long id) {
         Map<String, Object> response = new HashMap<>();
 
@@ -197,6 +203,7 @@ public class StaticPageManagementController {
     // Chuyển đổi trạng thái published
     @PostMapping("/toggle-published/{id}")
     @ResponseBody
+    @PreAuthorize("hasAuthority('static_page.update')")
     public ResponseEntity<Map<String, Object>> togglePublishedStatus(@PathVariable Long id) {
         Map<String, Object> response = new HashMap<>();
 

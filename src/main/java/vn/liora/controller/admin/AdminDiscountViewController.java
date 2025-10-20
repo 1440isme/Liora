@@ -1,6 +1,7 @@
 package vn.liora.controller.admin;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
@@ -15,6 +16,7 @@ import vn.liora.service.IDiscountService;
 @Controller
 @RequestMapping("/admin/discounts")
 @RequiredArgsConstructor
+@PreAuthorize("hasAuthority('discount.view')")
 public class AdminDiscountViewController {
 
     private final IDiscountService discountService;
@@ -48,7 +50,7 @@ public class AdminDiscountViewController {
         model.addAttribute("pageSize", size);
 
         // Add status options for filter dropdown
-        model.addAttribute("statusOptions", new String[]{"active", "inactive", "expired", "upcoming"});
+        model.addAttribute("statusOptions", new String[] { "active", "inactive", "expired", "upcoming" });
 
         return "admin/discounts/list";
     }

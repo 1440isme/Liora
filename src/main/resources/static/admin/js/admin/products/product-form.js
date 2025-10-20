@@ -145,7 +145,7 @@ class ProductFormManager {
     }
 
     validateForm() {
-        const requiredFields = ['name', 'description', 'price', 'brandId', 'categoryId', 'stock'];
+        const requiredFields = ['name', 'price', 'brandId', 'categoryId', 'stock'];
         let isValid = true;
 
         requiredFields.forEach(fieldId => {
@@ -159,6 +159,23 @@ class ProductFormManager {
                 field.classList.remove('is-invalid');
             }
         });
+
+        // Special validation for description (CKEditor)
+        const descriptionEl = document.getElementById('description');
+        const description = (window.productDescriptionEditor && typeof window.productDescriptionEditor.getData === 'function')
+            ? window.productDescriptionEditor.getData()
+            : (descriptionEl ? descriptionEl.value : '');
+        
+        if (!description || description.trim() === '' || description === '<p></p>') {
+            if (descriptionEl) {
+                descriptionEl.classList.add('is-invalid');
+            }
+            isValid = false;
+        } else {
+            if (descriptionEl) {
+                descriptionEl.classList.remove('is-invalid');
+            }
+        }
 
         return isValid;
     }
@@ -195,6 +212,24 @@ class ProductFormManager {
 
     resetForm() {
         this.form.reset();
+        
+        // Reset CKEditor (mô tả chi tiết)
+        if (window.productDescriptionEditor && typeof window.productDescriptionEditor.setData === 'function') {
+            try {
+                window.productDescriptionEditor.setData('');
+                console.log('CKEditor reset successfully');
+            } catch (e) {
+                console.error('Error resetting CKEditor:', e);
+                // Fallback: reset textarea directly
+                const descEl = document.getElementById('description');
+                if (descEl) descEl.value = '';
+            }
+        } else {
+            // Fallback: reset textarea directly if CKEditor not available
+            const descEl = document.getElementById('description');
+            if (descEl) descEl.value = '';
+        }
+        
         document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
         document.querySelectorAll('.invalid-feedback').forEach(el => el.textContent = '');
         this.isEditMode = false;

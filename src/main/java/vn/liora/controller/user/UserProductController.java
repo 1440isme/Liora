@@ -10,6 +10,7 @@ import vn.liora.dto.response.BrandResponse;
 import vn.liora.dto.response.CategoryResponse;
 import vn.liora.entity.Image;
 import vn.liora.entity.Product;
+import vn.liora.entity.Category;
 import vn.liora.exception.AppException;
 import vn.liora.mapper.ProductMapper;
 import vn.liora.repository.ImageRepository;
@@ -49,71 +50,95 @@ public class UserProductController {
             @RequestParam(required = false) String q, // search query
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) Long brandId,
+            @RequestParam(required = false) List<Long> brands, // multiple brands
             @RequestParam(required = false) BigDecimal minPrice,
             @RequestParam(required = false) BigDecimal maxPrice,
             @RequestParam(required = false) BigDecimal minRating,
+            @RequestParam(required = false) List<BigDecimal> ratings, // multiple ratings
             @RequestParam(required = false) String sortBy,
             @RequestParam(required = false) String sortDir, // sort direction
             Pageable pageable) {
         ApiResponse<Page<ProductResponse>> response = new ApiResponse<>();
         try {
-            Page<Product> products;
-
-            // xử lý sort
-            if (sortBy != null && !sortBy.isEmpty()) {
-                pageable = this.createSortedPageable(pageable, sortBy, sortDir);
-            }
-
-            // tìm kiếm theo tên
+            // Tìm tất cả sản phẩm phù hợp trước (không phân trang)
+            List<Product> allProducts;
+            
             if (q != null && !q.trim().isEmpty()) {
-                products = productService.findByNameContaining(q.trim(), pageable);
+                allProducts = productService.findByNameContaining(q.trim());
+                System.out.println("Search query: " + q.trim());
+                System.out.println("Found products: " + allProducts.size());
             } else {
-                products = productService.findAll(pageable);
+                allProducts = productService.findAll();
+                System.out.println("No search query, getting all products: " + allProducts.size());
             }
 
-            // lọc sản phẩm - không filter theo isActive/available để hiển thị tất cả trạng thái
-            List<Product> filteredProducts = products.getContent();
+            // Lọc sản phẩm theo các điều kiện
+            List<Product> filteredProducts = allProducts.stream()
+                    .filter(product -> {
+                        // Lọc theo category
+                        if (categoryId != null && !product.getCategory().getCategoryId().equals(categoryId)) {
+                            return false;
+                        }
+                        
+                        // Lọc theo brand (hỗ trợ cả single và multiple brands)
+                        if (brandId != null && !product.getBrand().getBrandId().equals(brandId)) {
+                            return false;
+                        }
+                        if (brands != null && !brands.isEmpty() && !brands.contains(product.getBrand().getBrandId())) {
+                            return false;
+                        }
+                        
+                        // Lọc theo giá
+                        if (minPrice != null && product.getPrice().compareTo(minPrice) < 0) {
+                            return false;
+                        }
+                        if (maxPrice != null && product.getPrice().compareTo(maxPrice) > 0) {
+                            return false;
+                        }
+                        
+                        // Lọc theo rating (hỗ trợ cả single và multiple ratings)
+                        if (minRating != null && (product.getAverageRating() == null || 
+                                product.getAverageRating().compareTo(minRating) < 0)) {
+                            return false;
+                        }
+                        if (ratings != null && !ratings.isEmpty()) {
+                            BigDecimal productRating = product.getAverageRating();
+                            if (productRating == null) {
+                                return false;
+                            }
+                            boolean matchesRating = ratings.stream().anyMatch(rating -> 
+                                productRating.compareTo(rating) >= 0);
+                            if (!matchesRating) {
+                                return false;
+                            }
+                        }
+                        
+                        return true;
+                    })
+                    .collect(Collectors.toList());
 
-            // lọc theo category
-            if (categoryId != null) {
-                filteredProducts = filteredProducts.stream()
-                        .filter(product -> product.getCategory().getCategoryId().equals(categoryId))
-                        .toList();
+            // Áp dụng sorting sau khi đã lọc
+            if (sortBy != null && !sortBy.isEmpty()) {
+                filteredProducts = this.applySorting(filteredProducts, sortBy, sortDir);
             }
 
-            // lọc theo brand
-            if (brandId != null) {
-                filteredProducts = filteredProducts.stream()
-                        .filter(product -> product.getBrand().getBrandId().equals(brandId))
-                        .toList();
-            }
+            // Áp dụng pagination sau khi đã lọc và sắp xếp
+            int totalElements = filteredProducts.size();
+            int pageSize = pageable.getPageSize();
+            int currentPage = pageable.getPageNumber();
+            int startIndex = currentPage * pageSize;
+            int endIndex = Math.min(startIndex + pageSize, totalElements);
+            
+            List<Product> pageContent = startIndex < totalElements ? 
+                    filteredProducts.subList(startIndex, endIndex) : new ArrayList<>();
 
-            // lọc theo giá
-            if (minPrice != null || maxPrice != null) {
-                filteredProducts = filteredProducts.stream()
-                        .filter(product -> {
-                            BigDecimal price = product.getPrice();
-                            if (minPrice != null && price.compareTo(minPrice) < 0) return false;
-                            if (maxPrice != null && price.compareTo(maxPrice) > 0) return false;
-                            return true;
-                        })
-                        .toList();
-            }
-
-            // lọc theo rating
-            if (minRating != null) {
-                filteredProducts = filteredProducts.stream()
-                        .filter(product -> product.getAverageRating() != null &&
-                                product.getAverageRating().compareTo(minRating) >= 0)
-                        .toList();
-            }
-
-            // tạo page từ filtered
+            // Tạo page từ filtered và sorted
             Page<Product> filteredPage = new PageImpl<>(
-                    filteredProducts, pageable, filteredProducts.size()
+                    pageContent, pageable, totalElements
             );
 
             Page<ProductResponse> productResponses = filteredPage.map(productMapper::toProductResponse);
+            response.setCode(1000);
             response.setResult(productResponses);
             response.setMessage("Tìm kiếm sản phẩm thành công");
             return ResponseEntity.ok(response);
@@ -133,7 +158,9 @@ public class UserProductController {
             @RequestParam(required = false) BigDecimal minPrice,
             @RequestParam(required = false) BigDecimal maxPrice,
             @RequestParam(required = false) String brands,
+            @RequestParam(required = false) String categories,
             @RequestParam(required = false) String ratings,
+            @RequestParam(required = false, defaultValue = "false") Boolean includeChildren,
             Pageable pageable) {
 
         ApiResponse<Page<ProductResponse>> response = new ApiResponse<>();
@@ -153,10 +180,26 @@ public class UserProductController {
             // Lấy tất cả sản phẩm (không pagination)
             List<Product> allProducts = productService.findAll();
             
-            // Filter tất cả sản phẩm - chỉ filter theo category, không filter theo isActive/available
-            List<Product> filteredProducts = allProducts.stream()
-                    .filter(product -> product.getCategory().getCategoryId().equals(categoryId))
-                    .toList();
+            // Filter tất cả sản phẩm theo category
+            List<Product> filteredProducts;
+            if (includeChildren != null && includeChildren) {
+                // Lấy tất cả category IDs (bao gồm children và grandchildren)
+                List<Long> categoryIds = getAllChildCategoryIds(categoryId);
+                categoryIds.add(categoryId); // Thêm chính category hiện tại
+                
+                System.out.println("Include children mode - Category IDs: " + categoryIds);
+                
+                filteredProducts = allProducts.stream()
+                        .filter(product -> categoryIds.contains(product.getCategory().getCategoryId()))
+                        .toList();
+            } else {
+                // Chỉ lấy sản phẩm thuộc category hiện tại
+                filteredProducts = allProducts.stream()
+                        .filter(product -> product.getCategory().getCategoryId().equals(categoryId))
+                        .toList();
+            }
+            
+            System.out.println("Found " + filteredProducts.size() + " products for category " + categoryId);
 
             // Apply price filter
             if (minPrice != null || maxPrice != null) {
@@ -182,6 +225,18 @@ public class UserProductController {
                 System.out.println("After brand filter: " + filteredProducts.size() + " products");
             }
 
+            // Apply category filter (level 3 categories)
+            if (categories != null && !categories.trim().isEmpty()) {
+                System.out.println("Applying category filter: " + categories);
+                List<Long> categoryList = List.of(categories.split(",")).stream()
+                        .map(Long::parseLong)
+                        .toList();
+                filteredProducts = filteredProducts.stream()
+                        .filter(product -> categoryList.contains(product.getCategory().getCategoryId()))
+                        .toList();
+                System.out.println("After category filter: " + filteredProducts.size() + " products");
+            }
+
             // Apply rating filter
             if (ratings != null && !ratings.trim().isEmpty()) {
                 System.out.println("Applying rating filter: " + ratings);
@@ -202,16 +257,26 @@ public class UserProductController {
             // Apply sorting to filtered products
             if (sortBy != null && !sortBy.isEmpty()) {
                 System.out.println("Sorting products by: " + sortBy + " " + sortDir);
-                filteredProducts = this.sortProducts(filteredProducts, sortBy, sortDir);
+                filteredProducts = this.applySorting(filteredProducts, sortBy, sortDir);
                 System.out.println("Sorted products count: " + filteredProducts.size());
             } else {
                 // Default sorting: by createdDate DESC (newest first)
                 System.out.println("Applying default sorting: createdDate DESC");
-                filteredProducts = this.sortProducts(filteredProducts, "created", "desc");
+                filteredProducts = this.applySorting(filteredProducts, "created", "desc");
             }
 
+            // Tạo pagination cho filtered products
+            int totalElements = filteredProducts.size();
+            int pageSize = pageable.getPageSize();
+            int currentPage = pageable.getPageNumber();
+            int startIndex = currentPage * pageSize;
+            int endIndex = Math.min(startIndex + pageSize, totalElements);
+            
+            List<Product> pageContent = startIndex < totalElements ? 
+                    filteredProducts.subList(startIndex, endIndex) : new ArrayList<>();
+
             Page<Product> filteredPage = new PageImpl<>(
-                    filteredProducts, pageable, filteredProducts.size()
+                    pageContent, pageable, totalElements
             );
 
             Page<ProductResponse> productResponses = filteredPage.map(product -> {
@@ -238,6 +303,8 @@ public class UserProductController {
             return ResponseEntity.internalServerError().body(response);
         }
     }
+
+
     // ========== PRODUCT LISTING BY BRAND ==========
     @GetMapping("/brand/{brandId}")
     public ResponseEntity<ApiResponse<Page<ProductResponse>>> getProductsByBrand(
@@ -313,12 +380,12 @@ public class UserProductController {
             // Apply sorting to filtered products
             if (sortBy != null && !sortBy.isEmpty()) {
                 System.out.println("Sorting products by: " + sortBy + " " + sortDir);
-                filteredProducts = this.sortProducts(filteredProducts, sortBy, sortDir);
+                filteredProducts = this.applySorting(filteredProducts, sortBy, sortDir);
                 System.out.println("Sorted products count: " + filteredProducts.size());
             } else {
                 // Default sorting: by createdDate DESC (newest first)
                 System.out.println("Applying default sorting: createdDate DESC");
-                filteredProducts = this.sortProducts(filteredProducts, "created", "desc");
+                filteredProducts = this.applySorting(filteredProducts, "created", "desc");
             }
 
             Page<Product> filteredPage = new PageImpl<>(
@@ -553,12 +620,12 @@ public class UserProductController {
             // Apply sorting to filtered products
             if (sortBy != null && !sortBy.isEmpty()) {
                 System.out.println("Newest Advanced - Sorting products by: " + sortBy + " " + sortDir);
-                filteredProducts = this.sortProducts(filteredProducts, sortBy, sortDir);
+                filteredProducts = this.applySorting(filteredProducts, sortBy, sortDir);
                 System.out.println("Newest Advanced - Sorted products count: " + filteredProducts.size());
             } else {
                 // Default sorting: by createdDate DESC (newest first)
                 System.out.println("Newest Advanced - Applying default sorting: created DESC");
-                filteredProducts = this.sortProducts(filteredProducts, "created", "desc");
+                filteredProducts = this.applySorting(filteredProducts, "created", "desc");
             }
 
             // Apply pagination
@@ -639,6 +706,7 @@ public class UserProductController {
                 })
                 .toList();
 
+            response.setCode(1000);
             response.setResult(productResponses);
             response.setMessage("Lấy sản phẩm bán chạy thành công");
             return ResponseEntity.ok(response);
@@ -789,12 +857,12 @@ public class UserProductController {
             // Apply sorting to filtered products
             if (sortBy != null && !sortBy.isEmpty()) {
                 System.out.println("Bestseller Advanced - Sorting products by: " + sortBy + " " + sortDir);
-                filteredProducts = this.sortProducts(filteredProducts, sortBy, sortDir);
+                filteredProducts = this.applySorting(filteredProducts, sortBy, sortDir);
                 System.out.println("Bestseller Advanced - Sorted products count: " + filteredProducts.size());
             } else {
                 // Default sorting: by createdDate DESC (newest first)
                 System.out.println("Bestseller Advanced - Applying default sorting: created DESC");
-                filteredProducts = this.sortProducts(filteredProducts, "created", "desc");
+                filteredProducts = this.applySorting(filteredProducts, "created", "desc");
             }
 
             // Apply pagination
@@ -1029,6 +1097,150 @@ public class UserProductController {
 
 
 
+    // ========== HELPER METHODS ==========
+    
+    /**
+     * Lấy tất cả category IDs của children và grandchildren (recursive)
+     */
+    private List<Long> getAllChildCategoryIds(Long categoryId) {
+        List<Long> allChildIds = new ArrayList<>();
+        
+        try {
+            // Lấy direct children
+            List<Category> directChildren = categoryService.findChildCategories(categoryId);
+            System.out.println("Direct children for category " + categoryId + ": " + directChildren.size());
+            
+            for (Category child : directChildren) {
+                allChildIds.add(child.getCategoryId());
+                System.out.println("Added child category: " + child.getCategoryId() + " - " + child.getName());
+                
+                // Lấy grandchildren (recursive)
+                List<Long> grandChildren = getAllChildCategoryIds(child.getCategoryId());
+                allChildIds.addAll(grandChildren);
+            }
+            
+            System.out.println("All child category IDs for " + categoryId + ": " + allChildIds);
+        } catch (Exception e) {
+            System.err.println("Error getting child categories for " + categoryId + ": " + e.getMessage());
+        }
+        
+        return allChildIds;
+    }
+    
+    private List<Product> applySorting(List<Product> products, String sortBy, String sortDir) {
+        if (products == null || products.isEmpty()) {
+            return products;
+        }
+        
+        boolean ascending = sortDir == null || !sortDir.equalsIgnoreCase("desc");
+        
+        switch (sortBy.toLowerCase()) {
+            case "name":
+                return products.stream()
+                        .sorted((p1, p2) -> {
+                            int result = p1.getName().compareToIgnoreCase(p2.getName());
+                            return ascending ? result : -result;
+                        })
+                        .collect(Collectors.toList());
+                        
+            case "price":
+                return products.stream()
+                        .sorted((p1, p2) -> {
+                            int result = p1.getPrice().compareTo(p2.getPrice());
+                            return ascending ? result : -result;
+                        })
+                        .collect(Collectors.toList());
+                        
+            case "rating":
+                return products.stream()
+                        .sorted((p1, p2) -> {
+                            BigDecimal rating1 = p1.getAverageRating() != null ? p1.getAverageRating() : BigDecimal.ZERO;
+                            BigDecimal rating2 = p2.getAverageRating() != null ? p2.getAverageRating() : BigDecimal.ZERO;
+                            int result = rating1.compareTo(rating2);
+                            return ascending ? result : -result;
+                        })
+                        .collect(Collectors.toList());
+                        
+            case "soldcount":
+            case "sold_count":
+                return products.stream()
+                        .sorted((p1, p2) -> {
+                            Integer sold1 = p1.getSoldCount() != null ? p1.getSoldCount() : 0;
+                            Integer sold2 = p2.getSoldCount() != null ? p2.getSoldCount() : 0;
+                            int result = sold1.compareTo(sold2);
+                            return ascending ? result : -result;
+                        })
+                        .collect(Collectors.toList());
+                        
+            case "created":
+            case "createddate":
+            case "created_date":
+                return products.stream()
+                        .sorted((p1, p2) -> {
+                            if (p1.getCreatedDate() == null && p2.getCreatedDate() == null) return 0;
+                            if (p1.getCreatedDate() == null) return ascending ? 1 : -1;
+                            if (p2.getCreatedDate() == null) return ascending ? -1 : 1;
+                            int result = p1.getCreatedDate().compareTo(p2.getCreatedDate());
+                            return ascending ? result : -result;
+                        })
+                        .collect(Collectors.toList());
+                        
+            default:
+                // Mặc định sắp xếp theo tên
+                return products.stream()
+                        .sorted((p1, p2) -> {
+                            int result = p1.getName().compareToIgnoreCase(p2.getName());
+                            return ascending ? result : -result;
+                        })
+                        .collect(Collectors.toList());
+        }
+    }
+
+    // ========== SEARCH BRANDS ==========
+    @GetMapping("/search-brands")
+    public ResponseEntity<ApiResponse<List<BrandResponse>>> getSearchBrands(@RequestParam(required = false) String q) {
+        ApiResponse<List<BrandResponse>> response = new ApiResponse<>();
+        try {
+            List<Product> allProducts = productService.findAll();
+            System.out.println("Total products for brands: " + allProducts.size());
+            
+            // Filter products by search query if provided
+            List<Product> filteredProducts = allProducts;
+            if (q != null && !q.trim().isEmpty()) {
+                String searchQuery = q.toLowerCase().trim();
+                filteredProducts = allProducts.stream()
+                        .filter(product -> 
+                            product.getName().toLowerCase().contains(searchQuery) ||
+                            product.getDescription().toLowerCase().contains(searchQuery) ||
+                            product.getCategory().getName().toLowerCase().contains(searchQuery)
+                        )
+                        .toList();
+                System.out.println("Filtered products for query '" + q + "': " + filteredProducts.size());
+            }
+            
+            List<BrandResponse> brands = filteredProducts.stream()
+                    .map(Product::getBrand)
+                    .distinct()
+                    .map(brand -> BrandResponse.builder()
+                            .brandId(brand.getBrandId())
+                            .name(brand.getName())
+                            .logoUrl(brand.getLogoUrl())
+                            .isActive(brand.getIsActive())
+                            .build())
+                    .sorted((b1, b2) -> b1.getName().compareTo(b2.getName()))
+                    .toList();
+
+            response.setCode(1000);
+            response.setMessage("Lấy danh sách thương hiệu thành công");
+            response.setResult(brands);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.setCode(500);
+            response.setMessage("Lỗi khi lấy danh sách thương hiệu: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(response);
+        }
+    }
+
     // ========== BRAND FILTERS ==========
     @GetMapping("/categories/{categoryId}/brands")
     public ResponseEntity<ApiResponse<List<String>>> getBrandsByCategory(@PathVariable Long categoryId) {
@@ -1059,6 +1271,7 @@ public class UserProductController {
         }
     }
 
+    // ========== LEVEL 3 CATEGORIES FOR FEATURED CATEGORY ==========
     @GetMapping("/categories/{categoryId}/brands-with-count")
     public ResponseEntity<ApiResponse<Map<String, Long>>> getBrandsWithCount(@PathVariable Long categoryId) {
         ApiResponse<Map<String, Long>> response = new ApiResponse<>();
@@ -1069,23 +1282,83 @@ public class UserProductController {
                 return ResponseEntity.badRequest().body(response);
             }
 
+            // Lấy tất cả category IDs (bao gồm children và grandchildren)
+            List<Long> categoryIds = getAllChildCategoryIds(categoryId);
+            categoryIds.add(categoryId); // Thêm chính category hiện tại
+            
+            // Lấy tất cả sản phẩm thuộc các category này
             List<Product> allProducts = productService.findAll();
             List<Product> categoryProducts = allProducts.stream()
-                    .filter(product -> product.getCategory().getCategoryId().equals(categoryId))
+                    .filter(product -> categoryIds.contains(product.getCategory().getCategoryId()))
                     .toList();
             
-            Map<String, Long> brandCounts = categoryProducts.stream()
-                    .collect(Collectors.groupingBy(
-                        product -> product.getBrand().getName(),
-                        Collectors.counting()
-                    ));
+            // Đếm sản phẩm theo thương hiệu
+            Map<String, Long> brandCounts = new HashMap<>();
+            for (Product product : categoryProducts) {
+                String brandName = product.getBrand().getName();
+                brandCounts.put(brandName, brandCounts.getOrDefault(brandName, 0L) + 1);
+            }
 
             response.setResult(brandCounts);
-            response.setMessage("Lấy danh sách thương hiệu với số sản phẩm thành công");
+            response.setMessage("Lấy danh sách thương hiệu với số lượng thành công");
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             response.setCode(500);
             response.setMessage("Lỗi khi lấy danh sách thương hiệu: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(response);
+        }
+    }
+
+    @GetMapping("/categories/{categoryId}/level3-categories")
+    public ResponseEntity<ApiResponse<List<Map<String, Object>>>> getLevel3Categories(@PathVariable Long categoryId) {
+        ApiResponse<List<Map<String, Object>>> response = new ApiResponse<>();
+        try {
+            if (categoryId <= 0) {
+                response.setCode(400);
+                response.setMessage("ID danh mục không hợp lệ");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // Lấy tất cả category IDs (bao gồm children và grandchildren)
+            List<Long> categoryIds = getAllChildCategoryIds(categoryId);
+            categoryIds.add(categoryId); // Thêm chính category hiện tại
+            
+            // Lấy tất cả sản phẩm thuộc các category này
+            List<Product> allProducts = productService.findAll();
+            List<Product> categoryProducts = allProducts.stream()
+                    .filter(product -> categoryIds.contains(product.getCategory().getCategoryId()))
+                    .toList();
+            
+            // Lấy danh mục cấp 3 (grandchildren) - không đếm sản phẩm
+            Map<String, Map<String, Object>> level3Categories = new HashMap<>();
+            
+            for (Product product : categoryProducts) {
+                Category category = product.getCategory();
+                // Kiểm tra xem có phải danh mục cấp 3 không (có parent và parent có parent)
+                if (category.getParentCategory() != null && 
+                    category.getParentCategory().getParentCategory() != null) {
+                    
+                    String categoryName = category.getName();
+                    if (!level3Categories.containsKey(categoryName)) {
+                        Map<String, Object> categoryInfo = new HashMap<>();
+                        categoryInfo.put("categoryId", category.getCategoryId());
+                        categoryInfo.put("categoryName", categoryName);
+                        level3Categories.put(categoryName, categoryInfo);
+                    }
+                }
+            }
+            
+            // Chuyển đổi thành list và sắp xếp theo tên
+            List<Map<String, Object>> result = level3Categories.values().stream()
+                    .sorted((c1, c2) -> c1.get("categoryName").toString().compareTo(c2.get("categoryName").toString()))
+                    .toList();
+
+            response.setResult(result);
+            response.setMessage("Lấy danh sách danh mục cấp 3 thành công");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.setCode(500);
+            response.setMessage("Lỗi khi lấy danh sách danh mục cấp 3: " + e.getMessage());
             return ResponseEntity.internalServerError().body(response);
         }
     }

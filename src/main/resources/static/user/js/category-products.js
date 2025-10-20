@@ -4,7 +4,6 @@
  */
 class CategoryProductsManager {
     constructor() {
-        console.log('CategoryProductsManager constructor called');
         this.currentCategoryId = null;
         this.currentPage = 0;
         this.pageSize = 12;
@@ -22,15 +21,11 @@ class CategoryProductsManager {
     }
 
     init() {
-        console.log('CategoryProductsManager init() called');
         try {
             this.getCategoryIdFromUrl();
-            console.log('getCategoryIdFromUrl completed');
             this.bindEvents();
-            console.log('bindEvents completed');
             this.loadCategoryInfo();
             this.loadProducts();
-            console.log('loadProducts called');
         } catch (error) {
             console.error('Error in init():', error);
         }
@@ -40,13 +35,11 @@ class CategoryProductsManager {
         const path = window.location.pathname;
         const match = path.match(/\/product\/view\/category\/(\d+)/);
         this.currentCategoryId = match ? parseInt(match[1]) : null;
-        console.log('Category ID from URL:', this.currentCategoryId);
 
         // Also try to get from query params as fallback
         if (!this.currentCategoryId) {
             const urlParams = new URLSearchParams(window.location.search);
             this.currentCategoryId = urlParams.get('categoryId');
-            console.log('Category ID from query params:', this.currentCategoryId);
         }
 
         if (!this.currentCategoryId) {
@@ -56,7 +49,6 @@ class CategoryProductsManager {
             return;
         }
 
-        console.log('Category ID:', this.currentCategoryId);
     }
 
     async loadCategoryInfo() {
@@ -73,6 +65,12 @@ class CategoryProductsManager {
             console.log('Category info response:', data);
 
             if (data.code === 1000 && data.result) {
+                // Check if category is active
+                if (data.result.isActive === false || data.result.isActive === null) {
+                    this.showCategoryUnavailable(data.result.name);
+                    return;
+                }
+                
                 this.displayCategoryTitle(data.result.name);
             }
         } catch (error) {
@@ -120,6 +118,7 @@ class CategoryProductsManager {
         this.loadBrands();
     }
 
+
     async loadProducts() {
         console.log('loadProducts called, categoryId:', this.currentCategoryId);
         if (!this.currentCategoryId) {
@@ -147,36 +146,26 @@ class CategoryProductsManager {
             }
             if (this.currentFilters.minPrice) {
                 params.append('minPrice', this.currentFilters.minPrice);
-                console.log('Added minPrice:', this.currentFilters.minPrice);
             }
             if (this.currentFilters.maxPrice) {
                 params.append('maxPrice', this.currentFilters.maxPrice);
-                console.log('Added maxPrice:', this.currentFilters.maxPrice);
             }
             if (this.currentFilters.brands && this.currentFilters.brands.length > 0) {
                 params.append('brands', this.currentFilters.brands.join(','));
-                console.log('Added brands:', this.currentFilters.brands.join(','));
             }
             if (this.currentFilters.ratings && this.currentFilters.ratings.length > 0) {
                 params.append('ratings', this.currentFilters.ratings.join(','));
-                console.log('Added ratings:', this.currentFilters.ratings.join(','));
             }
             if (this.currentFilters.sort) {
                 // Split the sort value (format: "name,asc" or "price,desc")
                 const [sortBy, sortDir] = this.currentFilters.sort.split(',');
-                console.log('Sort parameters:', { sortBy, sortDir });
                 if (sortBy && sortDir) {
                     params.append('sortBy', sortBy);
                     params.append('sortDir', sortDir);
                 }
             }
 
-            console.log('Loading products with params:', params.toString());
-            console.log('Full URL:', `/api/products/category/${this.currentCategoryId}?${params}`);
-            console.log('Current filters:', this.currentFilters);
-
             const fullUrl = `/api/products/category/${this.currentCategoryId}?${params}`;
-            console.log('Final URL:', fullUrl);
 
             const response = await fetch(fullUrl);
 
@@ -185,13 +174,11 @@ class CategoryProductsManager {
             }
 
             const data = await response.json();
-            console.log('API response:', data);
 
             if (data.code === 1000) {
                 this.products = data.result.content || [];
                 this.totalElements = data.result.totalElements || 0;
                 this.totalPages = data.result.totalPages || 0;
-                console.log('Products loaded:', this.products.length, 'Total:', this.totalElements);
 
                 // Hide loading spinner
                 this.showLoading(false);
@@ -211,7 +198,7 @@ class CategoryProductsManager {
             console.log('Finally block - rendering products:', this.products.length);
             this.renderProducts();
             this.updateResultsInfo();
-            this.renderPagination();
+            this.updatePagination();
         }
     }
 
@@ -290,16 +277,18 @@ class CategoryProductsManager {
         return `
             <div class="product-card ${statusClass}">
                     <div class="position-relative">
-                        <img src="${product.mainImageUrl || '/uploads/products/default.jpg'}" 
+                        <img src="${product.mainImageUrl || '/user/img/default-product.jpg'}" 
                              class="card-img-top" 
                              alt="${product.name}"
-                             onerror="this.src='/uploads/products/default.jpg'">
+                             onerror="this.src='/user/img/default-product.jpg'"
+                             onclick="window.location.href='/product/${product.productId}?from=category&categoryId=${this.currentCategoryId}'"
+                             style="cursor: pointer;">
                         
                     <!-- Product Status Badge - Removed to avoid overlapping with image -->
                         
                         <div class="product-actions">
                         <button class="quick-view-btn" 
-                                onclick="window.categoryProductsManager.showQuickView(${product.productId})"
+                                onclick="if(window.app) window.app.showQuickView(${product.productId}); else alert('Chức năng đang được tải...');"
                                 title="Xem nhanh">
                             <i class="fas fa-eye"></i>
                             </button>
@@ -352,7 +341,7 @@ class CategoryProductsManager {
                                         ${productStatus !== 'available' ? 'disabled' : ''}
                                         title="${productStatus === 'out_of_stock' ? 'Hết hàng' :
                 productStatus === 'deactivated' ? 'Ngừng kinh doanh' : 'Thêm vào giỏ'}"
-                                        onclick="window.categoryProductsManager.addToCart(${product.productId}, '${product.name}', ${product.price})">
+                                        onclick="if(window.app) window.app.addToCart(${product.productId}); else alert('Chức năng đang được tải...');">
                                     <i class="fas fa-shopping-cart"></i>
                             </button>
                         </div>
@@ -363,29 +352,19 @@ class CategoryProductsManager {
     }
 
     getProductStatus(product) {
-        // Debug: Log giá trị để kiểm tra
-        console.log('Product status debug:', {
-            productId: product.productId,
-            name: product.name,
-            isActive: product.isActive,
-            available: product.available,
-            stock: product.stock
-        });
+        // Product status validation
 
         // 1. Kiểm tra ngừng kinh doanh (ưu tiên cao nhất)
         if (!product.isActive) {
-            console.log('Product is deactivated:', product.name);
             return 'deactivated';
         }
 
         // 2. Kiểm tra hết hàng (chỉ khi sản phẩm còn active)
         if (product.stock <= 0) {
-            console.log('Product is out of stock:', product.name);
             return 'out_of_stock';
         }
 
         // 3. Còn hàng (isActive = true và stock > 0)
-        console.log('Product is available:', product.name);
         return 'available';
     }
 
@@ -468,21 +447,17 @@ class CategoryProductsManager {
     }
 
     generateStars(rating, reviewCount = 0) {
-        console.log('generateStars called with rating:', rating, 'reviewCount:', reviewCount, 'type:', typeof rating);
 
         // Logic đúng cho product card - giống generateStarsForModal
         // Chỉ hiển thị sao rỗng khi rating = 0 hoặc không có rating
         if (!rating || rating === 0 || rating === '0' || rating === null || rating === undefined) {
-            console.log('Rating is 0 or no rating, showing empty stars');
             let stars = '';
             for (let i = 0; i < 5; i++) {
                 stars += '<i class="far fa-star" style="color: #ccc !important; font-weight: 400 !important;"></i>';
             }
-            console.log('Generated empty stars HTML:', stars);
             return stars;
         }
 
-        console.log('Rating is not 0, showing stars based on rating:', rating);
         const fullStars = Math.floor(rating);
         const hasHalfStar = rating % 1 >= 0.5;
         const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
@@ -503,11 +478,9 @@ class CategoryProductsManager {
 
     // Method riêng cho Quick View modal
     generateStarsForModal(rating, reviewCount = 0) {
-        console.log('generateStarsForModal called with rating:', rating, 'reviewCount:', reviewCount);
 
         // Logic đúng cho Quick View modal
         if (!rating || rating === 0 || rating === '0' || rating === null || rating === undefined) {
-            console.log('Modal: Rating is 0 or no reviews, showing empty stars');
             let stars = '';
             for (let i = 0; i < 5; i++) {
                 stars += '<i class="far fa-star" style="color: #ccc !important; font-weight: 400 !important;"></i>';
@@ -634,7 +607,7 @@ class CategoryProductsManager {
                                                  src="${this.getMainImageUrl(product)}" 
                                                  class="img-fluid rounded" 
                                                  alt="${product.name}"
-                                                 onerror="this.src='/uploads/products/default.jpg'">
+                                                 onerror="this.src='/user/img/default-product.jpg'">
                                             <button class="slider-nav slider-next" id="nextBtn">
                                                 <i class="fas fa-chevron-right"></i>
                                             </button>
@@ -997,9 +970,15 @@ class CategoryProductsManager {
         }
     }
 
-    renderPagination() {
+    updatePagination() {
         const pagination = document.getElementById('pagination');
-        if (!pagination || this.totalPages <= 1) {
+        
+        if (!pagination) {
+            console.log('Pagination element not found!');
+            return;
+        }
+        
+        if (this.totalPages <= 1) {
             pagination.style.display = 'none';
             return;
         }
@@ -1009,9 +988,10 @@ class CategoryProductsManager {
         let html = '';
 
         // Previous button
+        const prevDisabled = this.currentPage === 0 ? 'disabled' : '';
         html += `
-            <li class="page-item ${this.currentPage === 0 ? 'disabled' : ''}">
-                <a class="page-link" href="#" data-page="${this.currentPage - 1}">
+            <li class="page-item ${prevDisabled}">
+                <a class="page-link" href="#" onclick="window.categoryProductsManager.goToPage(${this.currentPage - 1}); return false;">
                     <i class="fas fa-chevron-left"></i>
                 </a>
             </li>
@@ -1022,35 +1002,36 @@ class CategoryProductsManager {
         const endPage = Math.min(this.totalPages - 1, this.currentPage + 2);
 
         for (let i = startPage; i <= endPage; i++) {
+            const activeClass = i === this.currentPage ? 'active' : '';
             html += `
-                <li class="page-item ${i === this.currentPage ? 'active' : ''}">
-                    <a class="page-link" href="#" data-page="${i}">${i + 1}</a>
+                <li class="page-item ${activeClass}">
+                    <a class="page-link" href="#" onclick="window.categoryProductsManager.goToPage(${i}); return false;">${i + 1}</a>
                 </li>
             `;
         }
 
         // Next button
+        const nextDisabled = this.currentPage >= this.totalPages - 1 ? 'disabled' : '';
         html += `
-            <li class="page-item ${this.currentPage === this.totalPages - 1 ? 'disabled' : ''}">
-                <a class="page-link" href="#" data-page="${this.currentPage + 1}">
+            <li class="page-item ${nextDisabled}">
+                <a class="page-link" href="#" onclick="window.categoryProductsManager.goToPage(${this.currentPage + 1}); return false;">
                     <i class="fas fa-chevron-right"></i>
                 </a>
             </li>
         `;
 
-        pagination.innerHTML = html;
+        const paginationList = pagination.querySelector('.pagination');
+        if (paginationList) {
+            paginationList.innerHTML = html;
+        } else {
+            pagination.innerHTML = `<ul class="pagination justify-content-center">${html}</ul>`;
+        }
+    }
 
-        // Bind pagination events
-        pagination.addEventListener('click', (e) => {
-            e.preventDefault();
-            if (e.target.matches('.page-link')) {
-                const page = parseInt(e.target.dataset.page);
-                if (page >= 0 && page < this.totalPages) {
-                    this.currentPage = page;
-                    this.loadProducts();
-                }
-            }
-        });
+    goToPage(page) {
+        if (page < 0 || page >= this.totalPages) return;
+        this.currentPage = page;
+        this.loadProducts();
     }
 
     showLoading(show) {
@@ -1099,6 +1080,36 @@ class CategoryProductsManager {
                 <p class="text-muted">${message}</p>
             `;
         }
+    }
+
+    // Show category unavailable message
+    showCategoryUnavailable(categoryName) {
+        const container = document.querySelector('.container-fluid .row');
+        if (!container) return;
+
+        container.innerHTML = `
+            <div class="col-12">
+                <div class="text-center py-5">
+                    <div class="error-icon mb-4">
+                        <i class="fas fa-exclamation-triangle fa-4x text-warning"></i>
+                    </div>
+                    <h2 class="text-danger mb-3">Danh mục tạm ngưng hoạt động</h2>
+                    <p class="text-muted mb-4">
+                        Danh mục "${categoryName}" hiện đang tạm ngưng hoạt động. Vui lòng quay lại sau.
+                    </p>
+                    <div class="d-flex justify-content-center gap-3">
+                        <a href="/" class="btn btn-primary btn-lg">
+                            <i class="fas fa-home me-2"></i>
+                            Về trang chủ
+                        </a>
+                        <a href="javascript:history.back()" class="btn btn-outline-secondary btn-lg">
+                            <i class="fas fa-arrow-left me-2"></i>
+                            Quay lại
+                        </a>
+                    </div>
+                </div>
+            </div>
+        `;
     }
 
     showNotification(message, type = 'info') {
@@ -1192,7 +1203,7 @@ class CategoryProductsManager {
             images = product.images.map(img => img.imageUrl || img);
         } else {
             // Fallback to main image repeated
-            const mainImage = product.mainImageUrl || '/uploads/products/default.jpg';
+            const mainImage = product.mainImageUrl || '/user/img/default-product.jpg';
             images = [mainImage];
         }
 
@@ -1202,7 +1213,7 @@ class CategoryProductsManager {
                 <img src="${image}" 
                      class="thumbnail-img" 
                      alt="Thumbnail ${index + 1}"
-                     onerror="this.src='/uploads/products/default.jpg'">
+                     onerror="this.src='/user/img/default-product.jpg'">
             </div>
         `).join('');
     }
@@ -1273,16 +1284,16 @@ class CategoryProductsManager {
         } catch (_) {
             this.showNotification('Không thể thực hiện Mua ngay. Vui lòng thử lại.', 'error');
         }
-        
+
         // Show success message
         this.showNotification(`${quantity} x ${product.name} đã được thêm vào giỏ hàng! Đang chuyển đến trang thanh toán...`, 'success');
-        
+
         // Close modal
         const modal = bootstrap.Modal.getInstance(document.getElementById('quickViewModal'));
         if (modal) {
             modal.hide();
         }
-        
+
         // Redirect to checkout after a short delay
         setTimeout(() => {
             window.location.href = '/checkout';
@@ -1295,7 +1306,7 @@ class CategoryProductsManager {
             // Use first image as main image
             return product.images[0].imageUrl || product.images[0];
         }
-        return product.mainImageUrl || '/uploads/products/default.jpg';
+        return product.mainImageUrl || '/user/img/default-product.jpg';
     }
 }
 

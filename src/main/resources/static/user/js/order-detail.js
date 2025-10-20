@@ -63,7 +63,7 @@ class OrderDetailManager {
                 console.log('Cancelling order:', orderId);
                 console.log('Token:', token ? 'Present' : 'Missing');
 
-                const response = await fetch(`/api/user/orders/${orderId}/cancel`, {
+                const response = await fetch(`/order/${orderId}/cancel`, {
                     method: 'PUT',
                     headers: {
                         'Authorization': `Bearer ${token}`,

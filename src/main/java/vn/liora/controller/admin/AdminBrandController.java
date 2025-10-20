@@ -4,6 +4,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
@@ -13,6 +14,8 @@ import vn.liora.dto.request.BrandCreationRequest;
 import vn.liora.dto.request.BrandUpdateRequest;
 import vn.liora.dto.response.BrandResponse;
 import vn.liora.entity.Brand;
+import vn.liora.exception.AppException;
+import vn.liora.exception.ErrorCode;
 import vn.liora.mapper.BrandMapper;
 import vn.liora.service.IBrandService;
 
@@ -23,12 +26,14 @@ import java.util.List;
 @RequestMapping("/admin/api/brands")
 @CrossOrigin(origins = "*")
 @RequiredArgsConstructor
+@PreAuthorize("hasAuthority('brand.view')")
 public class AdminBrandController {
 
     private final IBrandService brandService;
     private final BrandMapper brandMapper;
 
     @PostMapping
+    @PreAuthorize("hasAuthority('brand.create')")
     public ResponseEntity<ApiResponse<BrandResponse>> addBrand(@Valid @RequestBody BrandCreationRequest request) {
         ApiResponse<BrandResponse> response = new ApiResponse<>();
         try {
@@ -46,64 +51,62 @@ public class AdminBrandController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<Page<BrandResponse>>> getAllBrands(
-        @RequestParam(required = false) String search,
-        @RequestParam(required = false) String status,
-        @RequestParam(required = false) String sortBy,
-        Pageable pageable) {
-    ApiResponse<Page<BrandResponse>> response = new ApiResponse<>();
-    try {
-        Page<Brand> brands;
-        
-        // Xử lý sort
-        if (sortBy != null && !sortBy.isEmpty()) {
-            pageable = this.createSortedPageable(pageable, sortBy);
-        }
-        
-        // Nếu có search, dùng search method
-        if (search != null && !search.trim().isEmpty()) {
-            brands = brandService.findByNameContaining(search.trim(), pageable);
-        }
-        // Nếu có filter status
-        else if (status != null && !status.isEmpty()) {
-            if ("ACTIVE".equals(status)) {
-                brands = brandService.findActiveBrands(pageable);
-            } else if ("INACTIVE".equals(status)) {
-                brands = brandService.findInactiveBrands(pageable);
-            } else {
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String sortBy,
+            Pageable pageable) {
+        ApiResponse<Page<BrandResponse>> response = new ApiResponse<>();
+        try {
+            Page<Brand> brands;
+
+            // Xử lý sort
+            if (sortBy != null && !sortBy.isEmpty()) {
+                pageable = this.createSortedPageable(pageable, sortBy);
+            }
+
+            // Nếu có search, dùng search method
+            if (search != null && !search.trim().isEmpty()) {
+                brands = brandService.findByNameContaining(search.trim(), pageable);
+            }
+            // Nếu có filter status
+            else if (status != null && !status.isEmpty()) {
+                if ("ACTIVE".equals(status)) {
+                    brands = brandService.findActiveBrands(pageable);
+                } else if ("INACTIVE".equals(status)) {
+                    brands = brandService.findInactiveBrands(pageable);
+                } else {
+                    brands = brandService.findAll(pageable);
+                }
+            }
+            // Mặc định
+            else {
                 brands = brandService.findAll(pageable);
             }
+
+            // Convert to BrandResponse
+            Page<BrandResponse> brandResponses = brands.map(brandMapper::toBrandResponse);
+            response.setResult(brandResponses);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.setCode(500);
+            response.setMessage("Lỗi khi lấy danh sách thương hiệu: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(response);
         }
-        // Mặc định
-        else {
-            brands = brandService.findAll(pageable);
-        }
-        
-        // Convert to BrandResponse
-        Page<BrandResponse> brandResponses = brands.map(brandMapper::toBrandResponse);
-        response.setResult(brandResponses);
-        return ResponseEntity.ok(response);
-    } catch (Exception e) {
-        response.setCode(500);
-        response.setMessage("Lỗi khi lấy danh sách thương hiệu: " + e.getMessage());
-        return ResponseEntity.internalServerError().body(response);
     }
-}
-    
+
     private Pageable createSortedPageable(Pageable pageable, String sortBy) {
         switch (sortBy) {
             case "name_desc":
                 return org.springframework.data.domain.PageRequest.of(
-                    pageable.getPageNumber(), 
-                    pageable.getPageSize(), 
-                    org.springframework.data.domain.Sort.by("name").descending()
-                );
+                        pageable.getPageNumber(),
+                        pageable.getPageSize(),
+                        org.springframework.data.domain.Sort.by("name").descending());
             case "name":
             default:
                 return org.springframework.data.domain.PageRequest.of(
-                    pageable.getPageNumber(), 
-                    pageable.getPageSize(), 
-                    org.springframework.data.domain.Sort.by("name").ascending()
-                );
+                        pageable.getPageNumber(),
+                        pageable.getPageSize(),
+                        org.springframework.data.domain.Sort.by("name").ascending());
         }
     }
 
@@ -112,10 +115,10 @@ public class AdminBrandController {
         ApiResponse<List<BrandResponse>> response = new ApiResponse<>();
         try {
             List<Brand> brands = brandService.findActiveBrands();
-            
+
             // Sort brands alphabetically by name
             brands.sort(Comparator.comparing(Brand::getName));
-            
+
             List<BrandResponse> brandResponses = brands.stream()
                     .map(brandMapper::toBrandResponse)
                     .toList();
@@ -158,8 +161,9 @@ public class AdminBrandController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('brand.update')")
     public ResponseEntity<ApiResponse<BrandResponse>> updateBrand(
-            @PathVariable Long id, 
+            @PathVariable Long id,
             @Valid @RequestBody BrandUpdateRequest request) {
         ApiResponse<BrandResponse> response = new ApiResponse<>();
         try {
@@ -175,13 +179,37 @@ public class AdminBrandController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('brand.delete')")
     public ResponseEntity<ApiResponse<String>> deleteBrand(@PathVariable Long id) {
         ApiResponse<String> response = new ApiResponse<>();
         try {
+            // Lấy thông tin thương hiệu trước khi xóa để báo lỗi chi tiết
+            Brand brand = brandService.findByIdOptional(id).orElse(null);
+            String brandName = brand != null ? brand.getName() : "ID: " + id;
+
             brandService.deleteById(id);
-            response.setResult("Xóa thương hiệu thành công");
-            response.setMessage("Xóa thương hiệu thành công");
+            response.setResult("Xóa thương hiệu '" + brandName + "' thành công");
+            response.setMessage("Xóa thương hiệu '" + brandName + "' thành công");
             return ResponseEntity.ok(response);
+        } catch (AppException e) {
+            if (e.getErrorCode() == ErrorCode.BRAND_HAS_PRODUCTS) {
+                // Lấy thông tin thương hiệu để báo lỗi chi tiết
+                try {
+                    Brand brand = brandService.findByIdOptional(id).orElse(null);
+                    String brandName = brand != null ? brand.getName() : "ID: " + id;
+                    response.setCode(e.getErrorCode().getCode());
+                    response.setMessage("Không thể xóa thương hiệu '" + brandName
+                            + "' vì đang có sản phẩm sử dụng. Vui lòng ngừng hoạt động thay vì xóa.");
+                } catch (Exception ex) {
+                    response.setCode(e.getErrorCode().getCode());
+                    response.setMessage(
+                            "Không thể xóa thương hiệu vì đang có sản phẩm sử dụng. Vui lòng ngừng hoạt động thay vì xóa.");
+                }
+            } else {
+                response.setCode(e.getErrorCode().getCode());
+                response.setMessage(e.getErrorCode().getMessage());
+            }
+            return ResponseEntity.status(e.getErrorCode().getCode()).body(response);
         } catch (Exception e) {
             response.setCode(500);
             response.setMessage("Lỗi khi xóa thương hiệu: " + e.getMessage());
@@ -190,6 +218,7 @@ public class AdminBrandController {
     }
 
     @PutMapping("/{id}/activate")
+    @PreAuthorize("hasAuthority('brand.update')")
     public ResponseEntity<ApiResponse<String>> activateBrand(@PathVariable Long id) {
         ApiResponse<String> response = new ApiResponse<>();
         try {
@@ -205,6 +234,7 @@ public class AdminBrandController {
     }
 
     @PutMapping("/{id}/deactivate")
+    @PreAuthorize("hasAuthority('brand.update')")
     public ResponseEntity<ApiResponse<String>> deactivateBrand(@PathVariable Long id) {
         ApiResponse<String> response = new ApiResponse<>();
         try {
@@ -222,23 +252,23 @@ public class AdminBrandController {
     // Thêm endpoints cho user (read-only)
     @GetMapping("/public/active")
     public ResponseEntity<ApiResponse<List<BrandResponse>>> getActiveBrandsForUser() {
-    ApiResponse<List<BrandResponse>> response = new ApiResponse<>();
-    try {
-        // Tạo Pageable để lấy tất cả brands
-        Pageable pageable = PageRequest.of(0, Integer.MAX_VALUE);
-        Page<Brand> brandPage = brandService.findActiveBrands(pageable);
-        List<Brand> brands = brandPage.getContent();
-        
-        List<BrandResponse> brandResponses = brands.stream()
-                .map(brandMapper::toBrandResponse)
-                .toList();
-        response.setResult(brandResponses);
-        return ResponseEntity.ok(response);
-    } catch (Exception e) {
-        response.setCode(500);
-        response.setMessage("Lỗi khi lấy danh sách thương hiệu: " + e.getMessage());
-        return ResponseEntity.internalServerError().body(response);
+        ApiResponse<List<BrandResponse>> response = new ApiResponse<>();
+        try {
+            // Tạo Pageable để lấy tất cả brands
+            Pageable pageable = PageRequest.of(0, Integer.MAX_VALUE);
+            Page<Brand> brandPage = brandService.findActiveBrands(pageable);
+            List<Brand> brands = brandPage.getContent();
+
+            List<BrandResponse> brandResponses = brands.stream()
+                    .map(brandMapper::toBrandResponse)
+                    .toList();
+            response.setResult(brandResponses);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.setCode(500);
+            response.setMessage("Lỗi khi lấy danh sách thương hiệu: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(response);
+        }
     }
-}
 
 }

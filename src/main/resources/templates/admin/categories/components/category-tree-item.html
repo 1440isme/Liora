@@ -24,7 +24,7 @@
 
             <!-- Category Image -->
             <div class="me-3">
-                <img th:src="${category.imageUrl != null ? category.imageUrl : '/admin/images/categories/placeholder.jpg'}"
+                <img th:src="${category.imageUrl != null ? category.imageUrl : 'https://placehold.co/300x300'}"
                     th:alt="${category.name}" class="img-thumbnail" width="40" height="40" style="object-fit: cover;">
             </div>
 

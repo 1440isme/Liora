@@ -234,13 +234,17 @@ public class ContentController {
         Map<String, Object> headerContent = new HashMap<>();
 
         try {
+            System.out.println("=== DEBUG: getHeaderNavigationContent called ===");
             List<HeaderNavigationItem> navigationItems = headerNavigationService.getAllActiveItems();
+            System.out.println("Found " + navigationItems.size() + " navigation items");
             headerContent.put("navigationItems", navigationItems);
             return ResponseEntity.ok(headerContent);
         } catch (Exception e) {
             System.err.println("Error loading header navigation content: " + e.getMessage());
             e.printStackTrace();
-            return ResponseEntity.ok(headerContent);
+            // Return error response instead of empty content
+            headerContent.put("error", e.getMessage());
+            return ResponseEntity.status(500).body(headerContent);
         }
     }
 

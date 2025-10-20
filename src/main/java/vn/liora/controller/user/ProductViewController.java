@@ -1,19 +1,15 @@
 package vn.liora.controller.user;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import vn.liora.entity.Product;
 import vn.liora.dto.response.ProductResponse;
 import vn.liora.service.ICategoryService;
 import vn.liora.service.IProductService;
-
-import java.util.List;
 
 @Controller
 @RequestMapping("/product")
@@ -28,6 +24,15 @@ public class ProductViewController {
         try {
             // Get category info for display
             var category = categoryService.findById(categoryId);
+            
+            // Check if category is active
+            if (category.getIsActive() == null || !category.getIsActive()) {
+                model.addAttribute("errorMessage", "Danh mục không khả dụng");
+                model.addAttribute("errorTitle", "Danh mục tạm ngưng hoạt động");
+                model.addAttribute("errorDescription", "Danh mục \"" + category.getName() + "\" hiện đang tạm ngưng hoạt động. Vui lòng quay lại sau.");
+                return "error/category-unavailable";
+            }
+            
             model.addAttribute("categoryId", categoryId);
             model.addAttribute("categoryName", category.getName());
             model.addAttribute("categoryDescription", "Sản phẩm trong danh mục " + category.getName());
@@ -59,6 +64,49 @@ public class ProductViewController {
             return "user/products/newest-products";
         } catch (Exception e) {
             // If error, redirect to home
+            return "redirect:/";
+        }
+    }
+
+    @GetMapping("/similar-products/{productId}")
+    public String getSimilarProducts(@PathVariable Long productId, Model model) {
+        try {
+            // Get original product info
+            ProductResponse originalProduct = productService.findById(productId);
+            if (originalProduct == null) {
+                return "redirect:/";
+            }
+            
+            model.addAttribute("originalProduct", originalProduct);
+            model.addAttribute("productId", productId);
+            
+            return "user/products/similar-products";
+        } catch (Exception e) {
+            // If error, redirect to home
+            return "redirect:/";
+        }
+    }
+    @GetMapping("/featured-category/{categoryId}")
+    public String getFeaturedCategoryProducts(@PathVariable Long categoryId, Model model) {
+        try {
+            // Get category info for display
+            var category = categoryService.findById(categoryId);
+            
+            // Check if category is active
+            if (category.getIsActive() == null || !category.getIsActive()) {
+                model.addAttribute("errorMessage", "Danh mục không khả dụng");
+                model.addAttribute("errorTitle", "Danh mục tạm ngưng hoạt động");
+                model.addAttribute("errorDescription", "Danh mục \"" + category.getName() + "\" hiện đang tạm ngưng hoạt động. Vui lòng quay lại sau.");
+                return "error/category-unavailable";
+            }
+            
+            model.addAttribute("categoryId", categoryId);
+            model.addAttribute("categoryName", category.getName());
+            model.addAttribute("categoryDescription", "Tất cả sản phẩm trong danh mục " + category.getName());
+            
+            return "user/categories/featured-category-products";
+        } catch (Exception e) {
+            // If category not found, redirect to home
             return "redirect:/";
         }
     }

@@ -14,7 +14,7 @@ class SimilarProductsManager {
         this.productsPerPage = 4;
         this.allProducts = [];
         this.isAddingToCart = false;
-        
+
         this.init();
     }
 
@@ -22,7 +22,7 @@ class SimilarProductsManager {
         if (!this.productId) {
             return;
         }
-        
+
         this.bindNavigationEvents();
         await this.loadSimilarProducts();
     }
@@ -40,32 +40,32 @@ class SimilarProductsManager {
         const cardWidth = 280 + 24; // Width of one card (280px) + gap (1.5rem = 24px)
         const currentScroll = this.gridEl.scrollLeft;
         const newScroll = currentScroll + (direction * cardWidth);
-        
-        
+
+
         this.gridEl.scrollTo({
             left: newScroll,
             behavior: 'smooth'
         });
-        
+
         // Update button states after scroll
         setTimeout(() => this.updateNavigationButtons(), 300);
     }
 
     updateNavigationButtons() {
         const navigationContainer = document.querySelector('.navigation-buttons');
-        
-        
+
+
         // Show navigation buttons only when there are more than 4 products
         if (this.allProducts && this.allProducts.length > 4) {
             if (navigationContainer) {
                 navigationContainer.classList.remove('hidden');
             }
-            
+
             // Check scroll position for button states
             const isAtStart = this.gridEl.scrollLeft <= 0;
             const isAtEnd = this.gridEl.scrollLeft >= (this.gridEl.scrollWidth - this.gridEl.clientWidth - 1);
-            
-            
+
+
             if (this.prevBtn) {
                 this.prevBtn.disabled = isAtStart;
             }
@@ -87,19 +87,19 @@ class SimilarProductsManager {
 
     async loadSimilarProducts() {
         this.showLoading();
-        
+
         try {
             const url = `/api/products/${this.productId}/similar?size=8`;
             const response = await fetch(url);
             const data = await response.json();
-            
+
             if (data.code === 1000 && data.result && data.result.content.length > 0) {
                 this.allProducts = data.result.content;
                 this.renderSimilarProducts(this.allProducts);
-                
+
                 // Setup scroll listener and update navigation
                 this.gridEl.addEventListener('scroll', () => this.updateNavigationButtons());
-                
+
                 // Force show navigation buttons initially
                 setTimeout(() => {
                     const navigationContainer = document.querySelector('.navigation-buttons');
@@ -119,7 +119,7 @@ class SimilarProductsManager {
     renderSimilarProducts(products) {
         this.hideLoading();
         this.hideEmpty();
-        
+
         const productsHTML = products.map(product => this.createProductCard(product)).join('');
         this.gridEl.innerHTML = productsHTML;
     }
@@ -127,14 +127,14 @@ class SimilarProductsManager {
     createProductCard(product) {
         const productStatus = this.getProductStatus(product);
         const statusClass = this.getProductStatusClass(productStatus);
-        
+
         return `
             <div class="product-card ${statusClass}">
                 <div class="position-relative">
-                    <img src="${product.mainImageUrl || '/uploads/products/default.jpg'}" 
+                    <img src="${product.mainImageUrl || '/user/img/default-product.jpg'}" 
                          class="card-img-top" 
                          alt="${product.name}"
-                         onerror="this.src='/uploads/products/default.jpg'">
+                         onerror="this.src='/user/img/default-product.jpg'">
                     
                     <div class="product-actions">
                         <button class="quick-view-btn" 
@@ -201,7 +201,7 @@ class SimilarProductsManager {
     }
 
     renderStars(rating, reviewCount = 0) {
-        
+
         // Logic đúng cho product card - giống generateStarsForModal
         // Chỉ hiển thị sao rỗng khi rating = 0 hoặc không có rating
         if (!rating || rating === 0 || rating === '0' || rating === null || rating === undefined) {
@@ -226,7 +226,7 @@ class SimilarProductsManager {
         for (let i = 0; i < emptyStars; i++) {
             stars += '<i class="far fa-star" style="color: #ccc !important; font-weight: 400 !important;"></i>';
         }
-        
+
         return stars;
     }
 
@@ -236,7 +236,7 @@ class SimilarProductsManager {
             this.showNotification('Không tìm thấy sản phẩm', 'error');
             return;
         }
-        
+
         // Load product images if not already loaded
         if (!product.images) {
             try {
@@ -249,7 +249,7 @@ class SimilarProductsManager {
                 product.images = [];
             }
         }
-        
+
         this.createQuickViewModal(product);
     }
 
@@ -283,7 +283,7 @@ class SimilarProductsManager {
                                                  src="${this.getMainImageUrl(product)}" 
                                                  class="img-fluid rounded" 
                                                  alt="${product.name}"
-                                                 onerror="this.src='/uploads/products/default.jpg'">
+                                                 onerror="this.src='/user/img/default-product.jpg'">
                                             <button class="slider-nav slider-next" id="modalNextBtn">
                                                 <i class="fas fa-chevron-right"></i>
                                             </button>
@@ -380,16 +380,16 @@ class SimilarProductsManager {
 
         // Add modal to body
         document.body.insertAdjacentHTML('beforeend', modalHTML);
-        
+
         // Show modal
         const modal = new bootstrap.Modal(document.getElementById('quickViewModal'));
         modal.show();
-        
+
         // Add slider navigation event listeners
         this.setupSliderNavigation(product);
-        
+
         // Remove modal from DOM when hidden
-        document.getElementById('quickViewModal').addEventListener('hidden.bs.modal', function() {
+        document.getElementById('quickViewModal').addEventListener('hidden.bs.modal', function () {
             this.remove();
         });
     }
@@ -399,7 +399,7 @@ class SimilarProductsManager {
         if (product.images && product.images.length > 0) {
             return product.images[0].imageUrl;
         }
-        return product.mainImageUrl || '/uploads/products/default.jpg';
+        return product.mainImageUrl || '/user/img/default-product.jpg';
     }
 
     // Generate image thumbnails for modal
@@ -428,8 +428,8 @@ class SimilarProductsManager {
         if (!product.images || product.images.length === 0) {
             return `
                 <div class="col-3">
-                    <div class="thumbnail-item active" data-image="${product.mainImageUrl || '/uploads/products/default.jpg'}">
-                        <img src="${product.mainImageUrl || '/uploads/products/default.jpg'}" 
+                    <div class="thumbnail-item active" data-image="${product.mainImageUrl || '/user/img/default-product.jpg'}">
+                        <img src="${product.mainImageUrl || '/user/img/default-product.jpg'}" 
                              class="img-fluid rounded thumbnail-img" 
                              alt="${product.name}">
                     </div>
@@ -462,7 +462,7 @@ class SimilarProductsManager {
     // Get product status badge
     getProductStatusBadge(product) {
         const status = this.getProductStatus(product);
-        
+
         switch (status) {
             case 'deactivated':
                 return '<span class="badge bg-warning text-dark">Ngừng kinh doanh</span>';
@@ -477,7 +477,7 @@ class SimilarProductsManager {
     getQuickViewActions(product) {
         const status = this.getProductStatus(product);
         const isDisabled = status !== 'available';
-        
+
         if (status === 'deactivated') {
             return `
                 <div class="alert alert-warning text-center">
@@ -495,7 +495,7 @@ class SimilarProductsManager {
                 </div>
             `;
         }
-        
+
         return `
             <!-- Buy Now & Add to Cart Buttons (Same Row) -->
             <div class="row g-2">
@@ -532,22 +532,22 @@ class SimilarProductsManager {
         const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
 
         let stars = '';
-        
+
         // Full stars
         for (let i = 0; i < fullStars; i++) {
             stars += '<i class="fas fa-star" style="color: #ffc107 !important;"></i>';
         }
-        
+
         // Half star
         if (hasHalfStar) {
             stars += '<i class="fas fa-star-half-alt" style="color: #ffc107 !important;"></i>';
         }
-        
+
         // Empty stars
         for (let i = 0; i < emptyStars; i++) {
             stars += '<i class="far fa-star" style="color: #ccc !important; font-weight: 400 !important;"></i>';
         }
-        
+
         return stars;
     }
 
@@ -574,7 +574,7 @@ class SimilarProductsManager {
             const nextBtn = document.getElementById('modalNextBtn');
             const mainImage = document.getElementById('modalMainProductImage');
             const thumbnails = document.querySelectorAll('.thumbnail-item');
-            
+
             console.log('Setting up slider navigation:', {
                 prevBtn: !!prevBtn,
                 nextBtn: !!nextBtn,
@@ -582,29 +582,29 @@ class SimilarProductsManager {
                 thumbnails: thumbnails.length,
                 productImages: product.images ? product.images.length : 0
             });
-            
+
             if (!product.images || product.images.length <= 1) {
                 // Hide navigation buttons if only one image
                 if (prevBtn) prevBtn.style.display = 'none';
                 if (nextBtn) nextBtn.style.display = 'none';
                 return;
             }
-            
+
             let currentImageIndex = 0;
-            
+
             // Update main image
             const updateMainImage = (index) => {
                 if (product.images && product.images[index] && mainImage) {
                     mainImage.src = product.images[index].imageUrl;
                     mainImage.alt = product.name;
-                    
+
                     // Update thumbnail selection
                     thumbnails.forEach((thumb, i) => {
                         thumb.classList.toggle('active', i === index);
                     });
                 }
             };
-            
+
             // Previous button
             if (prevBtn) {
                 prevBtn.addEventListener('click', (e) => {
@@ -614,7 +614,7 @@ class SimilarProductsManager {
                     updateMainImage(currentImageIndex);
                 });
             }
-            
+
             // Next button
             if (nextBtn) {
                 nextBtn.addEventListener('click', (e) => {
@@ -624,7 +624,7 @@ class SimilarProductsManager {
                     updateMainImage(currentImageIndex);
                 });
             }
-            
+
             // Thumbnail click handlers
             thumbnails.forEach((thumb, index) => {
                 thumb.addEventListener('click', (e) => {
@@ -647,7 +647,7 @@ class SimilarProductsManager {
 
         // Add to cart first
         await this.addToCart(productId, product.name, product.price);
-        
+
         // Redirect to checkout
         window.location.href = '/checkout';
     }
@@ -726,45 +726,18 @@ class SimilarProductsManager {
             return;
         }
         this.isAddingToCart = true;
-        
+
         try {
-            let success = false;
-            
-            // Check if cart functionality exists
-            if (window.cartManager) {
-                await window.cartManager.addItem(productId, 1);
-                success = true;
-            }
-            // Fallback: Try to use global cart if available
-            else if (window.app && window.app.cartItems) {
-                const product = this.allProducts.find(p => p.productId === productId);
-                if (product) {
-                    const existingItem = window.app.cartItems.find(item => item.id === productId);
-                    
-                    if (existingItem) {
-                        existingItem.quantity += 1;
-                    } else {
-                        window.app.cartItems.push({
-                            ...product,
-                            quantity: 1
-                        });
-                    }
-                    
-                    if (window.app.updateCartDisplay) {
-                        window.app.updateCartDisplay();
-                    }
-                    success = true;
-                }
-            }
-            
-            // Show single notification based on success
-            if (success) {
-                this.showNotification(`${productName} đã được thêm vào giỏ hàng thành công!`, 'success');
+            // Sử dụng addProductToCartBackend để gọi API backend
+            if (window.app && window.app.addProductToCartBackend) {
+                await window.app.addProductToCartBackend(productId, 1, true);
+                await window.app.refreshCartBadge?.();
             } else {
-                this.showNotification('Không tìm thấy thông tin sản phẩm!', 'error');
+                this.showNotification('Chức năng đang được tải...', 'error');
             }
         } catch (error) {
-            this.showNotification('Có lỗi xảy ra khi thêm vào giỏ hàng', 'error');
+            console.error('Add to cart error:', error);
+            this.showNotification('Không thể thêm vào giỏ hàng. Vui lòng thử lại.', 'error');
         } finally {
             // Reset flag after a delay
             setTimeout(() => {
@@ -780,7 +753,7 @@ class SimilarProductsManager {
             return;
         }
         this.isAddingToCart = true;
-        
+
         const product = this.allProducts.find(p => p.productId === productId);
         if (!product) {
             this.showNotification('Không tìm thấy sản phẩm', 'error');
@@ -794,13 +767,13 @@ class SimilarProductsManager {
 
         // Add to cart with quantity
         this.addToCartWithQuantityValue(productId, product.name, product.price, quantity);
-        
+
         // Close modal
         const modal = bootstrap.Modal.getInstance(document.getElementById('quickViewModal'));
         if (modal) {
             modal.hide();
         }
-        
+
         // Reset flag after a delay
         setTimeout(() => {
             this.isAddingToCart = false;
@@ -810,49 +783,16 @@ class SimilarProductsManager {
     // Add to cart with specific quantity
     async addToCartWithQuantityValue(productId, productName, price, quantity) {
         try {
-            let success = false;
-            
-            // Check if cart functionality exists
-            if (window.cartManager && typeof window.cartManager.addItem === 'function') {
-                await window.cartManager.addItem(productId, quantity);
-                success = true;
-            }
-            // Fallback to global app cart
-            else if (window.app && window.app.cartItems) {
-                // Validate data first
-                if (productId && productName && price && !isNaN(price)) {
-                    const product = this.allProducts.find(p => p.productId === productId);
-                    if (product) {
-                        const existingItem = window.app.cartItems.find(item => item.id === productId);
-                        
-                        if (existingItem) {
-                            existingItem.quantity += quantity;
-                        } else {
-                            window.app.cartItems.push({
-                                id: productId,
-                                name: productName,
-                                price: price,
-                                quantity: quantity,
-                                image: product.images && product.images.length > 0 ? product.images[0].imageUrl : '/static/user/images/no-image.png'
-                            });
-                        }
-                        
-                        if (window.app.updateCartDisplay) {
-                            window.app.updateCartDisplay();
-                        }
-                        success = true;
-                    }
-                }
-            }
-            
-            // Show single notification based on success
-            if (success) {
-                this.showNotification(`${quantity} x ${productName} đã được thêm vào giỏ hàng thành công!`, 'success');
+            // Sử dụng addProductToCartBackend để gọi API backend
+            if (window.app && window.app.addProductToCartBackend) {
+                await window.app.addProductToCartBackend(productId, quantity, true);
+                await window.app.refreshCartBadge?.();
             } else {
-                this.showNotification('Không tìm thấy thông tin sản phẩm!', 'error');
+                this.showNotification('Chức năng đang được tải...', 'error');
             }
         } catch (error) {
-            this.showNotification('Có lỗi xảy ra khi thêm vào giỏ hàng', 'error');
+            console.error('Add to cart error:', error);
+            this.showNotification('Không thể thêm vào giỏ hàng. Vui lòng thử lại.', 'error');
         }
     }
 
@@ -922,46 +862,46 @@ class SimilarProductsManager {
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    
+
     // Add quantity methods to app if they don't exist
     if (window.app && !window.app.incrementQuantity) {
-        window.app.incrementQuantity = function() {
+        window.app.incrementQuantity = function () {
             const quantityInput = document.getElementById('quantityInput');
             if (!quantityInput) return;
-            
+
             const currentValue = parseInt(quantityInput.value) || 0;
             const maxStock = parseInt(quantityInput.getAttribute('max')) || 10;
             const maxAllowed = Math.min(maxStock, 99); // Tối đa 99 sản phẩm
-            
+
             if (currentValue < maxAllowed) {
                 quantityInput.value = currentValue + 1;
                 this.validateQuantity();
             }
         };
-        
-        window.app.decrementQuantity = function() {
+
+        window.app.decrementQuantity = function () {
             const quantityInput = document.getElementById('quantityInput');
             if (!quantityInput) return;
-            
+
             const currentValue = parseInt(quantityInput.value) || 0;
-            
+
             if (currentValue > 1) {
                 quantityInput.value = currentValue - 1;
                 this.validateQuantity();
             }
         };
-        
-        window.app.validateQuantity = function() {
+
+        window.app.validateQuantity = function () {
             const quantityInput = document.getElementById('quantityInput');
             const errorDiv = document.getElementById('quantityError');
             const errorMessage = document.getElementById('quantityErrorMessage');
-            
+
             if (!quantityInput || !errorDiv || !errorMessage) return;
-            
+
             const currentValue = parseInt(quantityInput.value) || 0;
             const maxStock = parseInt(quantityInput.getAttribute('max')) || 10;
             const maxAllowed = Math.min(maxStock, 99); // Tối đa 99 sản phẩm
-            
+
             // Allow empty input for better UX (user can clear and type new number)
             if (quantityInput.value === '' || quantityInput.value === '0') {
                 // Hide error message when input is empty (user is typing)
@@ -969,13 +909,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 quantityInput.classList.remove('is-invalid');
                 return;
             }
-            
+
             if (currentValue > maxAllowed) {
                 // Show error message
                 errorDiv.style.display = 'block';
                 errorMessage.textContent = `Số lượng tối đa là ${maxAllowed} sản phẩm.`;
                 quantityInput.classList.add('is-invalid');
-                
+
                 // Reset to max allowed
                 quantityInput.value = maxAllowed;
             } else if (currentValue < 1) {
@@ -983,7 +923,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 errorDiv.style.display = 'block';
                 errorMessage.textContent = 'Số lượng tối thiểu là 1.';
                 quantityInput.classList.add('is-invalid');
-                
+
                 // Reset to minimum
                 quantityInput.value = 1;
             } else {
@@ -992,14 +932,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 quantityInput.classList.remove('is-invalid');
             }
         };
-        
-        window.app.validateQuantityOnBlur = function() {
+
+        window.app.validateQuantityOnBlur = function () {
             const quantityInput = document.getElementById('quantityInput');
             if (!quantityInput) return;
-            
+
             const currentValue = parseInt(quantityInput.value) || 0;
             const maxStock = parseInt(quantityInput.getAttribute('max')) || 10;
-            
+
             // If input is empty or 0, set to minimum
             if (quantityInput.value === '' || currentValue < 1) {
                 quantityInput.value = 1;
@@ -1007,11 +947,11 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         };
     }
-    
+
     // Get product ID from hidden input or data attribute
     const productIdInput = document.getElementById('productId');
     const productId = productIdInput ? productIdInput.value : null;
-    
+
     if (productId) {
         window.similarProductsManager = new SimilarProductsManager(productId);
     }
@@ -1025,46 +965,46 @@ document.addEventListener('DOMContentLoaded', () => {
             window.app.incrementQuantity = () => {
                 const quantityInput = document.getElementById('quantityInput');
                 if (!quantityInput) return;
-                
+
                 const currentValue = parseInt(quantityInput.value) || 0;
                 const maxStock = parseInt(quantityInput.getAttribute('max')) || 10;
                 const maxAllowed = Math.min(maxStock, 99); // Tối đa 99 sản phẩm
-                
+
                 if (currentValue < maxAllowed) {
                     quantityInput.value = currentValue + 1;
                     window.app.validateQuantity();
                 }
             };
-            
+
             window.app.decrementQuantity = () => {
                 const quantityInput = document.getElementById('quantityInput');
                 if (!quantityInput) return;
-                
+
                 const currentValue = parseInt(quantityInput.value) || 0;
-                
+
                 if (currentValue > 1) {
                     quantityInput.value = currentValue - 1;
                     window.app.validateQuantity();
                 }
             };
-            
-            window.app.validateQuantity = function() {
+
+            window.app.validateQuantity = function () {
                 const quantityInput = document.getElementById('quantityInput');
                 const errorDiv = document.getElementById('quantityError');
                 const errorMessage = document.getElementById('quantityErrorMessage');
-                
+
                 if (!quantityInput || !errorDiv || !errorMessage) return;
-                
+
                 const currentValue = parseInt(quantityInput.value) || 0;
                 const maxStock = parseInt(quantityInput.getAttribute('max')) || 10;
                 const maxAllowed = Math.min(maxStock, 99); // Tối đa 99 sản phẩm
-                
+
                 if (quantityInput.value === '' || quantityInput.value === '0') {
                     errorDiv.style.display = 'none';
                     quantityInput.classList.remove('is-invalid');
                     return;
                 }
-                
+
                 if (currentValue < 1) {
                     quantityInput.value = 1;
                     errorDiv.style.display = 'block';
@@ -1080,15 +1020,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     quantityInput.classList.remove('is-invalid');
                 }
             };
-            
-            window.app.validateQuantityOnBlur = function() {
+
+            window.app.validateQuantityOnBlur = function () {
                 const quantityInput = document.getElementById('quantityInput');
                 if (quantityInput && (quantityInput.value === '' || quantityInput.value === '0')) {
                     quantityInput.value = 1;
                 }
                 window.app.validateQuantity();
             };
-            
+
         }
     }, 500); // Wait 500ms for app to be ready
 });

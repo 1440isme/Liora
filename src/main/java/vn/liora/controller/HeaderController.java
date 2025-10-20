@@ -34,22 +34,22 @@ public class HeaderController {
         ApiResponse<List<CategoryResponse>> response = new ApiResponse<>();
         try {
             System.out.println("Loading categories for header...");
-            
+
             // Lấy cây danh mục với cấu trúc đầy đủ (3 tầng)
             List<CategoryResponse> categoryTree = categoryService.getCategoryTree();
-            
+
             System.out.println("Found " + categoryTree.size() + " root categories");
             System.out.println("Category names: " + categoryTree.stream().map(cat -> cat.getName()).toList());
-            
+
             response.setResult(categoryTree);
             response.setMessage("Lấy danh sách danh mục cho header thành công");
             response.setCode(200);
-            
+
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             System.err.println("Error loading categories: " + e.getMessage());
             e.printStackTrace();
-            
+
             response.setCode(500);
             response.setMessage("Lỗi khi lấy danh mục cho header: " + e.getMessage());
             return ResponseEntity.internalServerError().body(response);

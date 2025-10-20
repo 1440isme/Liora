@@ -21,4 +21,10 @@ public interface IAuthenticationService {
     AuthenticationResponse refreshToken(RefreshRequest request) throws ParseException, JOSEException;
 
     String generateTokenForOAuth2User(User user) throws JOSEException;
+
+    /**
+     * Force refresh token for user when roles are updated
+     * This invalidates all existing tokens for the user and generates a new one
+     */
+    String forceRefreshTokenForUser(String username) throws JOSEException;
 }

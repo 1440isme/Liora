@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import vn.liora.dto.request.ApiResponse;
 import vn.liora.dto.response.UserResponse;
@@ -17,6 +18,7 @@ import java.util.List;
 @RequestMapping("/admin/api/users")
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+@PreAuthorize("hasAuthority('user.view')")
 public class AdminUserController {
     IUserService userService;
 
@@ -35,6 +37,7 @@ public class AdminUserController {
     }
 
     @PostMapping
+    @PreAuthorize("hasAuthority('user.create')")
     public ApiResponse<UserResponse> create(@Valid @RequestBody UserCreationRequest request) {
         return ApiResponse.<UserResponse>builder()
                 .result(userService.createUser(request))
@@ -42,6 +45,7 @@ public class AdminUserController {
     }
 
     @PutMapping("/{userId}")
+    @PreAuthorize("hasAuthority('user.update')")
     public ApiResponse<UserResponse> update(@PathVariable Long userId, @RequestBody UserUpdateRequest request) {
         return ApiResponse.<UserResponse>builder()
                 .result(userService.updateUser(userId, request))
@@ -49,6 +53,7 @@ public class AdminUserController {
     }
 
     @DeleteMapping("/{userId}")
+    @PreAuthorize("hasAuthority('user.delete')")
     public ApiResponse<String> delete(@PathVariable Long userId) {
         userService.deleteById(userId);
         return ApiResponse.<String>builder().result("User has been deleted").build();

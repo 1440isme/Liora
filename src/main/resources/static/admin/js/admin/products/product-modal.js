@@ -168,7 +168,11 @@ class ProductModalManager {
                 // Reload page to refresh data
                 setTimeout(() => location.reload(), 1000);
             } else {
-                this.showError(result.message || 'Có lỗi xảy ra khi xóa');
+                if (result.message && (result.message.includes('đã có lịch sử bán hàng') || result.message.includes('has been sold'))) {
+                    this.showError(result.message || 'Không thể xóa sản phẩm đã có lịch sử bán hàng. Vui lòng tạm dừng sản phẩm thay vì xóa.');
+                } else {
+                    this.showError(result.message || 'Có lỗi xảy ra khi xóa');
+                }
             }
         } catch (error) {
             console.error('Error deleting product:', error);

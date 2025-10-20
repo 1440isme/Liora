@@ -169,7 +169,7 @@
                             </div>
                             <div class="card-body text-center">
                                 <div class="mb-3">
-                                    <img th:src="${user.avatarUrl != null ? user.avatarUrl : '/admin/images/users/placeholder.jpg'}"
+                                    <img th:src="${user.avatarUrl != null ? user.avatarUrl : 'https://placehold.co/300x300'}"
                                         th:alt="${user.fullName}" class="img-thumbnail rounded-circle" width="150"
                                         height="150" style="object-fit: cover;">
                                 </div>

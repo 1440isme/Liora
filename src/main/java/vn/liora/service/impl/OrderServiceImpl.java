@@ -34,6 +34,7 @@ import vn.liora.service.IImageService;
 import vn.liora.service.IOrderService;
 import vn.liora.service.IProductService;
 import vn.liora.service.IGhnShippingService;
+import vn.liora.service.EmailService;
 import vn.liora.entity.Discount;
 import vn.liora.repository.DiscountRepository;
 
@@ -61,6 +62,7 @@ public class OrderServiceImpl implements IOrderService {
     IImageService imageService;
     IProductService productService;
     IGhnShippingService ghnShippingService;
+    EmailService emailService;
 
     @Override
     @Transactional
@@ -82,13 +84,13 @@ public class OrderServiceImpl implements IOrderService {
 
             // Map địa chỉ GHN từ request (nếu FE gửi) để tính phí chuẩn
             if (request.getDistrictId() != null) {
-                order.setDistrict(String.valueOf(request.getDistrictId()));
+                order.setDistrictId(request.getDistrictId());
             }
             if (request.getWardCode() != null) {
-                order.setWard(request.getWardCode());
+                order.setWardCode(request.getWardCode());
             }
-            if (request.getProvinceName() != null) {
-                order.setProvince(request.getProvinceName());
+            if (request.getProvinceId() != null) {
+                order.setProvinceId(request.getProvinceId());
             }
 
             List<OrderProduct> orderProducts = selected.stream()
@@ -106,33 +108,44 @@ public class OrderServiceImpl implements IOrderService {
             BigDecimal totalDiscount = BigDecimal.ZERO;
             BigDecimal total = subtotal;
 
-            if (request.getDiscountId() != null && user != null) {
+            if ((request.getDiscountId() != null || request.getDiscountCode() != null) && user != null) {
                 try {
-                    // Kiểm tra discount có tồn tại không
-                    Discount discount = discountRepository.findById(request.getDiscountId())
-                            .orElseThrow(() -> new AppException(ErrorCode.DISCOUNT_NOT_FOUND));
+                    Discount discount = null;
 
-                    // Kiểm tra có thể áp dụng discount không (chỉ cho user đã đăng nhập)
-                    if (user != null && discountService.canApplyDiscount(request.getDiscountId(), user.getUserId(), subtotal)) {
+                    // ✅ Xử lý discount theo discountCode (ưu tiên)
+                    if (request.getDiscountCode() != null && !request.getDiscountCode().trim().isEmpty()) {
+                        discount = discountService.findAvailableDiscountByCode(request.getDiscountCode());
+                        if (discount == null) {
+                            log.warn("Discount code {} not found or not available", request.getDiscountCode());
+                        }
+                    }
+                    // ✅ Fallback: xử lý theo discountId
+                    else if (request.getDiscountId() != null) {
+                        discount = discountRepository.findById(request.getDiscountId())
+                                .orElseThrow(() -> new AppException(ErrorCode.DISCOUNT_NOT_FOUND));
+                    }
+
+                    // ✅ Áp dụng discount nếu tìm thấy
+                    if (discount != null && discountService.canApplyDiscount(discount.getDiscountId(), user.getUserId(), subtotal)) {
                         // Tính discount amount
-                        totalDiscount = discountService.calculateDiscountAmount(request.getDiscountId(), subtotal);
+                        totalDiscount = discountService.calculateDiscountAmount(discount.getDiscountId(), subtotal);
                         total = subtotal.subtract(totalDiscount);
 
                         // Set discount cho order
                         order.setDiscount(discount);
 
                         // Tăng usage count
-                        discountService.incrementUsageCount(request.getDiscountId());
+                        discountService.incrementUsageCount(discount.getDiscountId());
 
-                        log.info("Applied discount {} to order. Discount amount: {}",
-                                request.getDiscountId(), totalDiscount);
+                        log.info("Applied discount {} (code: {}) to order. Discount amount: {}",
+                                discount.getDiscountId(), discount.getName(), totalDiscount);
                     } else {
-                        log.warn("Cannot apply discount {} to order. User: {}, Subtotal: {}",
-                                request.getDiscountId(), user != null ? user.getUserId() : "Guest", subtotal);
+                        log.warn("Cannot apply discount to order. User: {}, Subtotal: {}, Discount: {}",
+                                user != null ? user.getUserId() : "Guest", subtotal,
+                                discount != null ? discount.getDiscountId() : "null");
                     }
                 } catch (Exception e) {
-                    log.warn("Error applying discount {}: {}. Order will be created without discount.",
-                            request.getDiscountId(), e.getMessage());
+                    log.warn("Error applying discount: {}. Order will be created without discount.", e.getMessage());
                     // Nếu không áp dụng được discount, vẫn tạo đơn hàng bình thường
                 }
             }
@@ -160,7 +173,7 @@ public class OrderServiceImpl implements IOrderService {
             final Order savedOrder = orderRepository.save(order);
             orderProducts.forEach(op -> op.setOrder(savedOrder));
             orderProductRepository.saveAll(orderProducts);
-            
+
             // Cập nhật stock cho từng sản phẩm trong đơn hàng
             for (OrderProduct orderProduct : orderProducts) {
                 try {
@@ -171,23 +184,23 @@ public class OrderServiceImpl implements IOrderService {
                     // Cập nhật stock và sold count
                     productService.updateStock(product.getProductId(), newStock);
                     productService.updateSoldCount(product.getProductId(), product.getSoldCount() + orderedQuantity);
-                    
-                    log.info("Updated stock for product {}: {} -> {} (ordered: {})", 
+
+                    log.info("Updated stock for product {}: {} -> {} (ordered: {})",
                             product.getProductId(), currentStock, newStock, orderedQuantity);
-                            
+
                 } catch (Exception e) {
-                    log.error("Error updating stock for product {}: {}", 
+                    log.error("Error updating stock for product {}: {}",
                             orderProduct.getProduct().getProductId(), e.getMessage());
                     // Không throw exception để không rollback toàn bộ đơn hàng
                 }
             }
-            
+
             cartProductRepository.deleteAll(selected);
 
             // Tạo vận đơn GHN ngay khi đặt hàng nếu không dùng VNPAY (COD)
             try {
                 if (request.getPaymentMethod() != null && !"VNPAY".equalsIgnoreCase(request.getPaymentMethod())) {
-                    if (savedOrder.getDistrict() != null && savedOrder.getWard() != null) {
+                    if (savedOrder.getDistrictId() != null && savedOrder.getWardCode() != null) {
                         ghnShippingService.createShippingOrder(savedOrder);
                         log.info("Created GHN shipping order (COD) for Order {}", savedOrder.getIdOrder());
                     } else {
@@ -201,6 +214,32 @@ public class OrderServiceImpl implements IOrderService {
             Long userIdLog = (user != null ? user.getUserId() : null);
             log.info("Order created successfully. Order ID: {}, User: {}, Total: {}, Discount: {}",
                     savedOrder.getIdOrder(), userIdLog, total, totalDiscount);
+
+            // Gửi email xác nhận đơn hàng
+            try {
+                OrderResponse orderResponse = orderMapper.toOrderResponse(savedOrder);
+                List<OrderProductResponse> orderProductResponses = orderProducts.stream()
+                        .map(orderProductMapper::toOrderProductResponse)
+                        .collect(Collectors.toList());
+
+                if (user != null) {
+                    // User đã đăng nhập
+                    emailService.sendOrderConfirmationEmail(
+                            user.getEmail(),
+                            user.getFirstname() + " " + user.getLastname(),
+                            orderResponse,
+                            orderProductResponses);
+                } else {
+                    // Guest user
+                    emailService.sendGuestOrderConfirmationEmail(
+                            request.getEmail(),
+                            orderResponse,
+                            orderProductResponses);
+                }
+            } catch (Exception e) {
+                log.error("Failed to send order confirmation email: {}", e.getMessage());
+                // Không throw exception để không rollback đơn hàng
+            }
 
             return orderMapper.toOrderResponse(savedOrder);
 
@@ -314,6 +353,7 @@ public class OrderServiceImpl implements IOrderService {
 
     @Autowired
     private ReviewRepository reviewRepository;
+
     @Override
     public List<OrderResponse> getMyOrdersPaginated(Long userId, int page, int size) {
         User user = userRepository.findById(userId)
@@ -344,20 +384,20 @@ public class OrderServiceImpl implements IOrderService {
     public List<OrderResponse> getAllOrders() {
         List<Order> orders = orderRepository.findAll();
         return orderMapper.toOrderResponseList(orders);
-//        List<Order> orders = orderRepository.findAll();
-//        List<OrderResponse> responses = orderMapper.toOrderResponseList(orders);
-//
-//        // Set hasReview cho từng order
-//        for (int i = 0; i < orders.size(); i++) {
-//            Order order = orders.get(i);
-//            OrderResponse response = responses.get(i);
-//
-//            // Kiểm tra xem có review nào cho đơn hàng này không
-//            boolean hasReview = reviewRepository.existsByOrderId(order.getIdOrder());
-//            response.setHasReview(hasReview);
-//        }
-//
-//        return responses;
+        // List<Order> orders = orderRepository.findAll();
+        // List<OrderResponse> responses = orderMapper.toOrderResponseList(orders);
+        //
+        // // Set hasReview cho từng order
+        // for (int i = 0; i < orders.size(); i++) {
+        // Order order = orders.get(i);
+        // OrderResponse response = responses.get(i);
+        //
+        // // Kiểm tra xem có review nào cho đơn hàng này không
+        // boolean hasReview = reviewRepository.existsByOrderId(order.getIdOrder());
+        // response.setHasReview(hasReview);
+        // }
+        //
+        // return responses;
     }
 
     @Override
@@ -492,4 +532,8 @@ public class OrderServiceImpl implements IOrderService {
     public List<TopCustomerResponse> getTopSpenders(int limit) {
         return orderRepository.findTopSpenders(PageRequest.of(0, limit));
     }
+    public Long count() {
+        return orderRepository.count();
+    }
+
 }

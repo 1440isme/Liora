@@ -84,29 +84,29 @@ class NewestProductsPageManager {
         const nextBtn = document.getElementById('nextBtn');
         const mainImage = document.getElementById('mainProductImage');
         const thumbnails = document.querySelectorAll('.thumbnail-item');
-        
+
         if (!product.images || product.images.length <= 1) {
             // Hide navigation buttons if only one image
             if (prevBtn) prevBtn.style.display = 'none';
             if (nextBtn) nextBtn.style.display = 'none';
             return;
         }
-        
+
         let currentImageIndex = 0;
-        
+
         // Update main image
         const updateMainImage = (index) => {
             if (product.images && product.images[index]) {
                 mainImage.src = product.images[index].imageUrl;
                 mainImage.alt = product.name;
-                
+
                 // Update thumbnail selection
                 thumbnails.forEach((thumb, i) => {
                     thumb.classList.toggle('active', i === index);
                 });
             }
         };
-        
+
         // Previous button
         if (prevBtn) {
             prevBtn.addEventListener('click', () => {
@@ -114,7 +114,7 @@ class NewestProductsPageManager {
                 updateMainImage(currentImageIndex);
             });
         }
-        
+
         // Next button
         if (nextBtn) {
             nextBtn.addEventListener('click', () => {
@@ -122,7 +122,7 @@ class NewestProductsPageManager {
                 updateMainImage(currentImageIndex);
             });
         }
-        
+
         // Thumbnail click handlers
         thumbnails.forEach((thumb, index) => {
             thumb.addEventListener('click', () => {
@@ -138,14 +138,14 @@ class NewestProductsPageManager {
             // Use first image as main image
             return product.images[0].imageUrl || product.images[0];
         }
-        return product.mainImageUrl || '/uploads/products/default.jpg';
+        return product.mainImageUrl || '/user/img/default-product.jpg';
     }
 
     // Generate image thumbnails for slider
     generateImageThumbnails(product) {
         // Use product images if available, otherwise fallback to main image
         let images = [];
-        
+
         if (product.images && product.images.length > 0) {
             // Use actual product images
             images = product.images;
@@ -154,15 +154,15 @@ class NewestProductsPageManager {
             images = [{ imageUrl: product.mainImageUrl }];
         } else {
             // Default image
-            images = [{ imageUrl: '/uploads/products/default.jpg' }];
+            images = [{ imageUrl: '/user/img/default-product.jpg' }];
         }
-        
+
         return images.map((image, index) => `
             <div class="thumbnail-item ${index === 0 ? 'active' : ''}" data-index="${index}">
                 <img src="${image.imageUrl || image}" 
                      alt="${product.name}" 
                      class="img-fluid rounded"
-                     onerror="this.src='/uploads/products/default.jpg'">
+                     onerror="this.src='/user/img/default-product.jpg'">
             </div>
         `).join('');
     }
@@ -170,8 +170,7 @@ class NewestProductsPageManager {
 
     // Generate stars for modal
     generateStarsForModal(rating, reviewCount = 0) {
-        console.log('generateStarsForModal called with rating:', rating, 'reviewCount:', reviewCount);
-        
+
         // Logic đúng cho Quick View modal
         if (!rating || rating === 0 || rating === '0' || rating === null || rating === undefined) {
             console.log('Modal: Rating is 0 or no reviews, showing empty stars');
@@ -181,29 +180,29 @@ class NewestProductsPageManager {
             }
             return stars;
         }
-        
+
         const numRating = parseFloat(rating);
         const fullStars = Math.floor(numRating);
         const hasHalfStar = numRating % 1 >= 0.5;
         const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
-        
+
         let stars = '';
-        
+
         // Full stars
         for (let i = 0; i < fullStars; i++) {
             stars += '<i class="fas fa-star"></i>';
         }
-        
+
         // Half star
         if (hasHalfStar) {
             stars += '<i class="fas fa-star-half-alt"></i>';
         }
-        
+
         // Empty stars
         for (let i = 0; i < emptyStars; i++) {
             stars += '<i class="far fa-star"></i>';
         }
-        
+
         return stars;
     }
 
@@ -211,7 +210,7 @@ class NewestProductsPageManager {
     getQuickViewActions(product) {
         const status = this.getProductStatus(product);
         const isDisabled = status !== 'available';
-        
+
         if (status === 'deactivated') {
             return `
                 <div class="alert alert-warning text-center">
@@ -229,7 +228,7 @@ class NewestProductsPageManager {
                 </div>
             `;
         }
-        
+
         return `
             <!-- Buy Now & Add to Cart Buttons (Same Row) -->
             <div class="row g-2">
@@ -278,7 +277,7 @@ class NewestProductsPageManager {
         if (quantityInput) {
             const value = parseInt(quantityInput.value);
             const maxValue = parseInt(quantityInput.max) || 99;
-            
+
             if (value < 1) {
                 quantityInput.value = 1;
             } else if (value > maxValue) {
@@ -292,7 +291,7 @@ class NewestProductsPageManager {
         if (quantityInput) {
             const value = parseInt(quantityInput.value);
             const maxValue = parseInt(quantityInput.max) || 99;
-            
+
             if (isNaN(value) || value < 1) {
                 quantityInput.value = 1;
             } else if (value > maxValue) {
@@ -302,15 +301,29 @@ class NewestProductsPageManager {
     }
 
     // Add to cart with quantity (copied from category-products)
-    addToCartWithQuantity(productId) {
+        async addToCartWithQuantity(productId) {
         const quantityInput = document.getElementById('quantityInput');
-        const quantity = quantityInput ? parseInt(quantityInput.value) : 1;
-        
-        const product = this.products.find(p => p.productId === productId);
-        if (!product) {
-            this.showNotification('Không tìm thấy sản phẩm', 'error');
-            return;
+        const quantity = quantityInput ? parseInt(quantityInput.value) || 1 : 1;
+
+        try {
+            // Sử dụng addProductToCartBackend để gọi API backend
+            if (window.app && window.app.addProductToCartBackend) {
+                await window.app.addProductToCartBackend(productId, quantity, true);
+                await window.app.refreshCartBadge?.();
+            } else {
+                this.showNotification('Chức năng đang được tải...', 'error');
+            }
+        } catch (error) {
+            console.error('Add to cart error:', error);
+            this.showNotification('Không thể thêm vào giỏ hàng. Vui lòng thử lại.', 'error');
         }
+
+        // Close modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('quickViewModal'));
+        if (modal) {
+            modal.hide();
+        }
+    }
 
         // Validate quantity against stock
         if (quantity > product.stock) {
@@ -322,7 +335,7 @@ class NewestProductsPageManager {
         if (window.app && window.app.cartItems) {
             // Check if product already in cart
             const existingItem = window.app.cartItems.find(item => item.id === productId);
-            
+
             if (existingItem) {
                 const newTotalQuantity = existingItem.quantity + quantity;
                 if (newTotalQuantity > product.stock) {
@@ -336,7 +349,7 @@ class NewestProductsPageManager {
                     quantity: quantity
                 });
             }
-            
+
             // Update cart display
             if (window.app.updateCartDisplay) {
                 window.app.updateCartDisplay();
@@ -351,7 +364,7 @@ class NewestProductsPageManager {
     buyNow(productId) {
         const quantityInput = document.getElementById('quantityInput');
         const quantity = quantityInput ? parseInt(quantityInput.value) : 1;
-        
+
         const product = this.products.find(p => p.productId === productId);
         if (!product) {
             this.showNotification('Không tìm thấy sản phẩm', 'error');
@@ -368,7 +381,7 @@ class NewestProductsPageManager {
         if (window.app && window.app.cartItems) {
             // Check if product already in cart
             const existingItem = window.app.cartItems.find(item => item.id === productId);
-            
+
             if (existingItem) {
                 const newTotalQuantity = existingItem.quantity + quantity;
                 if (newTotalQuantity > product.stock) {
@@ -382,22 +395,22 @@ class NewestProductsPageManager {
                     quantity: quantity
                 });
             }
-            
+
             // Update cart display
             if (window.app.updateCartDisplay) {
                 window.app.updateCartDisplay();
             }
         }
-        
+
         // Show success message
         this.showNotification(`${quantity} x ${product.name} đã được thêm vào giỏ hàng! Đang chuyển đến trang thanh toán...`, 'success');
-        
+
         // Close modal
         const modal = bootstrap.Modal.getInstance(document.getElementById('quickViewModal'));
         if (modal) {
             modal.hide();
         }
-        
+
         // Redirect to checkout after a short delay
         setTimeout(() => {
             window.location.href = '/checkout';
@@ -405,27 +418,30 @@ class NewestProductsPageManager {
     }
 
     // Add to cart from product card (copied from category-products)
-    async addToCart(productId, productName, price) {
-        console.log('addToCart called for productId:', productId, 'productName:', productName);
-        console.log('window.cartManager exists:', !!window.cartManager);
-        console.log('window.cartManager:', window.cartManager);
-        
+        async addToCart(productId, productName, price) {
         try {
-            // Check if cart functionality exists
-            if (window.cartManager && window.cartManager.addItem) {
-                console.log('Using cartManager.addItem');
-                await window.cartManager.addItem(productId, 1, price);
-                this.showNotification(`${productName} đã được thêm vào giỏ hàng!`, 'success');
+            // Sử dụng addProductToCartBackend để gọi API backend
+            if (window.app && window.app.addProductToCartBackend) {
+                await window.app.addProductToCartBackend(productId, 1, true);
+                await window.app.refreshCartBadge?.();
+            } else {
+                this.showNotification('Chức năng đang được tải...', 'error');
+            }
+        } catch (error) {
+            console.error('Add to cart error:', error);
+            this.showNotification('Không thể thêm vào giỏ hàng. Vui lòng thử lại.', 'error');
+        }
+    } đã được thêm vào giỏ hàng!`, 'success');
                 return;
             }
-            
+
             // Fallback to app cart
             if (window.app && window.app.cartItems) {
                 console.log('Using app.cartItems fallback');
-                
+
                 // Check if product already in cart
                 const existingItem = window.app.cartItems.find(item => item.id === productId);
-                
+
                 if (existingItem) {
                     existingItem.quantity += 1;
                 } else {
@@ -447,16 +463,16 @@ class NewestProductsPageManager {
                         });
                     }
                 }
-                
+
                 // Update cart display
                 if (window.app.updateCartDisplay) {
                     window.app.updateCartDisplay();
                 }
-                
+
                 this.showNotification(`${productName} đã được thêm vào giỏ hàng!`, 'success');
                 return;
             }
-            
+
             // Final fallback: show notification
             console.log('Using final fallback - notification only');
             this.showNotification(`${productName} đã được thêm vào giỏ hàng`, 'success');
@@ -514,14 +530,14 @@ class NewestProductsPageManager {
             this.currentFilters.minPrice = min;
             this.currentFilters.maxPrice = max;
         }
-        this.currentPage = 0;
-        this.loadProducts();
+        // Don't load products immediately - wait for apply button
+        console.log('Price range updated:', this.currentFilters.minPrice, this.currentFilters.maxPrice);
     }
 
     handleBrandFilterChange(event) {
         const brandId = event.target.value;
         const isChecked = event.target.checked;
-        
+
         if (isChecked) {
             if (!this.currentFilters.brands.includes(brandId)) {
                 this.currentFilters.brands.push(brandId);
@@ -529,7 +545,7 @@ class NewestProductsPageManager {
         } else {
             this.currentFilters.brands = this.currentFilters.brands.filter(b => b !== brandId);
         }
-        
+
         // Don't load products immediately - wait for apply button
         console.log('Brand filter updated:', this.currentFilters.brands);
     }
@@ -537,7 +553,7 @@ class NewestProductsPageManager {
     handleRatingFilterChange(event) {
         const rating = parseInt(event.target.value);
         const isChecked = event.target.checked;
-        
+
         if (isChecked) {
             if (!this.currentFilters.ratings.includes(rating)) {
                 this.currentFilters.ratings.push(rating);
@@ -545,13 +561,14 @@ class NewestProductsPageManager {
         } else {
             this.currentFilters.ratings = this.currentFilters.ratings.filter(r => r !== rating);
         }
-        
+
         // Don't load products immediately - wait for apply button
         console.log('Rating filter updated:', this.currentFilters.ratings);
     }
 
     handleSortChange(event) {
         this.currentFilters.sort = event.target.value;
+        // Load products immediately when sort changes
         this.currentPage = 0;
         this.loadProducts();
     }
@@ -570,20 +587,20 @@ class NewestProductsPageManager {
             ratings: [],
             sort: ''
         };
-        
+
         // Reset form elements
         const priceRangeSelect = document.getElementById('priceRange');
         if (priceRangeSelect) priceRangeSelect.value = '';
-        
+
         const brandCheckboxes = document.querySelectorAll('#brandFilters input[type="checkbox"]');
         brandCheckboxes.forEach(checkbox => checkbox.checked = false);
-        
+
         const ratingCheckboxes = document.querySelectorAll('input[type="checkbox"][value^="rating"], input[type="checkbox"][id^="rating"]');
         ratingCheckboxes.forEach(checkbox => checkbox.checked = false);
-        
+
         const sortSelect = document.getElementById('sortSelect');
         if (sortSelect) sortSelect.value = '';
-        
+
         this.currentPage = 0;
         this.loadProducts();
     }
@@ -593,8 +610,12 @@ class NewestProductsPageManager {
         this.showLoading();
 
         try {
-            const sortSelect = document.getElementById('sortSelect');
-            const sortValue = sortSelect ? sortSelect.value : 'created,desc';
+            // Use sort from currentFilters, fallback to sortSelect value, then default
+            let sortValue = this.currentFilters.sort;
+            if (!sortValue) {
+                const sortSelect = document.getElementById('sortSelect');
+                sortValue = sortSelect ? sortSelect.value : 'created,desc';
+            }
             const [sortBy, sortDir] = sortValue.split(',');
 
             const params = new URLSearchParams({
@@ -621,11 +642,11 @@ class NewestProductsPageManager {
             console.log('Loading products with params:', params.toString());
             const response = await fetch(`/api/products/newest-advanced?${params}`);
             console.log('Newest products API response:', response.status);
-            
+
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            
+
             const data = await response.json();
             console.log('Newest products API data:', data);
             console.log('Data code:', data.code);
@@ -658,11 +679,11 @@ class NewestProductsPageManager {
         const grid = document.getElementById('productsGrid');
         const emptyState = document.getElementById('emptyState');
         const loadingSpinner = document.getElementById('loadingSpinner');
-        
+
         console.log('Grid element:', grid);
         console.log('Empty state element:', emptyState);
         console.log('Loading spinner element:', loadingSpinner);
-        
+
         if (!grid) {
             console.log('Grid element not found');
             return;
@@ -680,7 +701,7 @@ class NewestProductsPageManager {
             if (emptyState) {
                 emptyState.style.display = 'block';
             }
-            
+
             // Update empty state message based on filters
             const hasFilters = this.hasActiveFilters();
             if (hasFilters) {
@@ -730,22 +751,22 @@ class NewestProductsPageManager {
                 return `<div class="error-card">Error loading product: ${product.name}</div>`;
             }
         }).join('');
-        
+
         console.log('Generated HTML length:', html.length);
         grid.innerHTML = html;
         console.log('Grid updated with', this.products.length, 'products');
-        
+
         console.log('Products rendered:', this.products.length);
         console.log('Grid element:', grid);
         console.log('Grid computed style:', window.getComputedStyle(grid).display);
     }
 
     hasActiveFilters() {
-        return this.currentFilters.minPrice !== null || 
-               this.currentFilters.maxPrice !== null || 
-               this.currentFilters.brands.length > 0 || 
-               this.currentFilters.ratings.length > 0 ||
-               this.currentFilters.search !== '';
+        return this.currentFilters.minPrice !== null ||
+            this.currentFilters.maxPrice !== null ||
+            this.currentFilters.brands.length > 0 ||
+            this.currentFilters.ratings.length > 0 ||
+            this.currentFilters.search !== '';
     }
 
     createProductCard(product) {
@@ -756,10 +777,10 @@ class NewestProductsPageManager {
         return `
             <div class="product-card ${statusClass}">
                     <div class="position-relative">
-                        <img src="${product.mainImageUrl || '/uploads/products/default.jpg'}" 
+                        <img src="${product.mainImageUrl || '/user/img/default-product.jpg'}" 
                              class="card-img-top" 
                              alt="${product.name}"
-                             onerror="this.src='/uploads/products/default.jpg'">
+                             onerror="this.src='/user/img/default-product.jpg'">
                         
                     <!-- Product Status Badge - Removed to avoid overlapping with image -->
                         
@@ -816,8 +837,8 @@ class NewestProductsPageManager {
                                     data-product-name="${product.name}"
                                         data-product-price="${product.price}"
                                         ${productStatus !== 'available' ? 'disabled' : ''}
-                                        title="${productStatus === 'out_of_stock' ? 'Hết hàng' : 
-                                          productStatus === 'deactivated' ? 'Ngừng kinh doanh' : 'Thêm vào giỏ'}"
+                                        title="${productStatus === 'out_of_stock' ? 'Hết hàng' :
+                productStatus === 'deactivated' ? 'Ngừng kinh doanh' : 'Thêm vào giỏ'}"
                                         onclick="window.newestProductsPageManager.addToCart(${product.productId}, '${product.name}', ${product.price})">
                                 <i class="fas fa-shopping-cart"></i>
                             </button>
@@ -829,29 +850,19 @@ class NewestProductsPageManager {
     }
 
     getProductStatus(product) {
-        // Debug: Log giá trị để kiểm tra
-        console.log('Product status debug:', {
-            productId: product.productId,
-            name: product.name,
-            isActive: product.isActive,
-            available: product.available,
-            stock: product.stock
-        });
-        
+        // Product status validation
+
         // 1. Kiểm tra ngừng kinh doanh (ưu tiên cao nhất)
         if (!product.isActive) {
-            console.log('Product is deactivated:', product.name);
             return 'deactivated';
         }
-        
+
         // 2. Kiểm tra hết hàng (chỉ khi sản phẩm còn active)
         if (product.stock <= 0) {
-            console.log('Product is out of stock:', product.name);
             return 'out_of_stock';
         }
-        
+
         // 3. Sản phẩm có sẵn
-        console.log('Product is available:', product.name);
         return 'available';
     }
 
@@ -883,7 +894,7 @@ class NewestProductsPageManager {
     getProductStatusBadge(product) {
         const status = this.getProductStatus(product);
         console.log('getProductStatusBadge called with status:', status);
-        
+
         switch (status) {
             case 'deactivated':
                 console.log('Returning deactivated badge');
@@ -911,11 +922,11 @@ class NewestProductsPageManager {
             }
             return stars;
         }
-        
+
         const fullStars = Math.floor(rating);
         const hasHalfStar = rating % 1 >= 0.5;
         const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
-        
+
         let stars = '';
         for (let i = 0; i < fullStars; i++) {
             stars += '<i class="fas fa-star text-warning"></i>';
@@ -933,12 +944,12 @@ class NewestProductsPageManager {
         if (!price || price === null || price === undefined) {
             return '0 ₫';
         }
-        
+
         const numPrice = parseFloat(price);
         if (isNaN(numPrice)) {
             return '0 ₫';
         }
-        
+
         return new Intl.NumberFormat('vi-VN', {
             style: 'currency',
             currency: 'VND',
@@ -964,16 +975,16 @@ class NewestProductsPageManager {
                 // Get previous threshold percentage
                 const prevThreshold = thresholds[thresholds.indexOf(threshold) - 1];
                 const basePercentage = prevThreshold ? prevThreshold.percentage : 0;
-                
+
                 // Calculate progress within this threshold
                 const prevMax = prevThreshold ? prevThreshold.max : 0;
                 const range = threshold.max - prevMax;
                 const progress = ((soldCount - prevMax) / range) * (threshold.percentage - basePercentage);
-                
+
                 return Math.min(100, basePercentage + progress);
             }
         }
-        
+
         return 100; // For very high sales
     }
 
@@ -981,7 +992,7 @@ class NewestProductsPageManager {
         const loading = document.getElementById('loadingSpinner');
         const grid = document.getElementById('productsGrid');
         const empty = document.getElementById('emptyState');
-        
+
         if (loading) loading.style.display = 'block';
         if (grid) grid.style.display = 'none';
         if (empty) empty.style.display = 'none';
@@ -990,7 +1001,7 @@ class NewestProductsPageManager {
     hideLoading() {
         const loading = document.getElementById('loadingSpinner');
         const grid = document.getElementById('productsGrid');
-        
+
         if (loading) loading.style.display = 'none';
         if (grid) grid.style.display = 'block';
     }
@@ -999,11 +1010,11 @@ class NewestProductsPageManager {
         const loading = document.getElementById('loadingSpinner');
         const grid = document.getElementById('productsGrid');
         const empty = document.getElementById('emptyState');
-        
+
         if (loading) loading.style.display = 'none';
         if (grid) grid.style.display = 'none';
         if (empty) empty.style.display = 'block';
-        
+
         this.updateResultsCount();
     }
 
@@ -1028,7 +1039,7 @@ class NewestProductsPageManager {
         if (!paginationList) return;
 
         let paginationHTML = '';
-        
+
         // Previous button
         const prevDisabled = this.currentPage === 0 ? 'disabled' : '';
         paginationHTML += `
@@ -1074,9 +1085,43 @@ class NewestProductsPageManager {
     async loadBrands() {
         try {
             console.log('Loading brands for newest products...');
-            
-            // Try newest brands API first
-            let response = await fetch('/api/products/newest-brands');
+
+            // Load both brands and counts, then combine them
+            const [brandsResponse, countsResponse] = await Promise.all([
+                fetch('/api/products/newest-brands'),
+                fetch('/api/products/newest-brands-with-count')
+            ]);
+
+            let brands = [];
+            let brandCounts = {};
+
+            // Get brands with IDs
+            if (brandsResponse.ok) {
+                const brandsData = await brandsResponse.json();
+                if (brandsData.code === 1000 && brandsData.result) {
+                    brands = brandsData.result;
+                    console.log('Loaded brands with IDs:', brands);
+                }
+            }
+
+            // Get brand counts
+            if (countsResponse.ok) {
+                const countsData = await countsResponse.json();
+                if (countsData.code === 1000 && countsData.result) {
+                    brandCounts = countsData.result;
+                    console.log('Loaded brand counts:', brandCounts);
+                }
+            }
+
+            // Combine brands with counts
+            if (brands.length > 0) {
+                this.displayBrandFiltersWithCountAndIds(brands, brandCounts);
+                return;
+            }
+
+            // Fallback: try newest brands API only
+            console.log('Trying fallback: newest brands');
+            const response = await fetch('/api/products/newest-brands');
             if (response.ok) {
                 const data = await response.json();
                 if (data.code === 1000 && data.result) {
@@ -1085,19 +1130,7 @@ class NewestProductsPageManager {
                     return;
                 }
             }
-            
-            // Fallback: try newest brands with count
-            console.log('Trying fallback: newest brands with count');
-            response = await fetch('/api/products/newest-brands-with-count');
-            if (response.ok) {
-                const data = await response.json();
-                if (data.code === 1000 && data.result) {
-                    console.log('Using newest brands with count:', data.result);
-                    this.displayBrandFiltersWithCount(data.result);
-                    return;
-                }
-            }
-            
+
             // Final fallback: load all brands from admin API
             console.log('Trying final fallback: load all brands');
             const fallbackResponse = await fetch('/admin/api/brands/all');
@@ -1110,7 +1143,7 @@ class NewestProductsPageManager {
                     return;
                 }
             }
-            
+
             console.error('All brand loading attempts failed');
             this.displayBrandFilters([]);
         } catch (error) {
@@ -1139,7 +1172,7 @@ class NewestProductsPageManager {
             <div class="form-check">
                 <input class="form-check-input" type="checkbox" value="${brand.brandId}" id="brand-${brand.brandId}">
                 <label class="form-check-label" for="brand-${brand.brandId}">
-                    ${brand.brandName || brand.name}
+                    ${brand.brandName || brand.name} (${brand.productCount || 0})
                 </label>
             </div>
         `).join('');
@@ -1165,6 +1198,31 @@ class NewestProductsPageManager {
                 </label>
             </div>
         `).join('');
+
+        brandFilters.innerHTML = brandHTML;
+    }
+
+    displayBrandFiltersWithCountAndIds(brands, brandCounts) {
+        const brandFilters = document.getElementById('brandFilters');
+        if (!brandFilters) return;
+
+        if (brands.length === 0) {
+            brandFilters.innerHTML = '<p class="text-muted">Không có thương hiệu nào</p>';
+            return;
+        }
+
+        const brandHTML = brands.map(brand => {
+            const brandName = brand.name || brand.brandName;
+            const count = brandCounts[brandName] || 0;
+            return `
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" value="${brand.brandId}" id="brand-${brand.brandId}">
+                    <label class="form-check-label" for="brand-${brand.brandId}">
+                        ${brandName} (${count})
+                    </label>
+                </div>
+            `;
+        }).join('');
 
         brandFilters.innerHTML = brandHTML;
     }
@@ -1224,7 +1282,7 @@ class NewestProductsPageManager {
                                                  src="${this.getMainImageUrl(product)}" 
                                                  class="img-fluid rounded" 
                                                  alt="${product.name}"
-                                                 onerror="this.src='/uploads/products/default.jpg'">
+                                                 onerror="this.src='/user/img/default-product.jpg'">
                                             <button class="slider-nav slider-next" id="nextBtn">
                                                 <i class="fas fa-chevron-right"></i>
                                             </button>
@@ -1328,16 +1386,16 @@ class NewestProductsPageManager {
 
         // Add slider navigation event listeners
         this.setupSliderNavigation(product);
-        
+
         // Remove modal from DOM when hidden
-        document.getElementById('quickViewModal').addEventListener('hidden.bs.modal', function() {
+        document.getElementById('quickViewModal').addEventListener('hidden.bs.modal', function () {
             this.remove();
         });
     }
 }
 
 // Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     if (document.getElementById('productsGrid')) {
         window.newestProductsPageManager = new NewestProductsPageManager();
         window.newestProductsPageManager.init();

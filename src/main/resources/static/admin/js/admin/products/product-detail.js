@@ -161,7 +161,7 @@ class ProductDetailManager {
                          style="width: 100%; aspect-ratio: 4/3; object-fit: contain; cursor: pointer;"
                          alt="Hình ảnh chính"
                          onclick="this.style.transform = this.style.transform ? '' : 'scale(1.1)'; this.style.transition = 'transform 0.3s ease';"
-                         onerror="this.src='/admin/images/placeholder.jpg'">
+                         onerror="this.src='https://placehold.co/300x300'">
                     ${mainImage.isMain ? '<div class="badge bg-primary position-absolute top-0 start-0 m-2">Chính</div>' : ''}
                 </div>
         `;
@@ -182,7 +182,7 @@ class ProductDetailManager {
                              style="width: 100%; aspect-ratio: 1; object-fit: contain; cursor: pointer;"
                              alt="Hình ảnh ${index + 2}"
                              onclick="this.style.transform = this.style.transform ? '' : 'scale(1.1)'; this.style.transition = 'transform 0.3s ease';"
-                             onerror="this.src='/admin/images/placeholder.jpg'">
+                             onerror="this.src='https://placehold.co/300x300'">
                     </div>
                 `;
             });
@@ -283,8 +283,8 @@ class ProductDetailManager {
                 }, 2000);
             } else {
                 const error = await response.json();
-                if (error.message && error.message.includes('has been sold')) {
-                    this.showNotification('Không thể xóa sản phẩm đã có đơn hàng. Vui lòng tạm dừng sản phẩm thay vì xóa.', 'error');
+                if (error.message && (error.message.includes('đã có lịch sử bán hàng') || error.message.includes('has been sold'))) {
+                    this.showNotification(error.message || 'Không thể xóa sản phẩm đã có lịch sử bán hàng. Vui lòng tạm dừng sản phẩm thay vì xóa.', 'error');
                 } else {
                     this.showNotification(error.message || 'Có lỗi xảy ra', 'error');
                 }

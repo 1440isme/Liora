@@ -34,27 +34,27 @@
             padding: 8px 0;
             box-shadow: none;
         }
-        
+
         .breadcrumb-item a {
             color: #6c757d;
             transition: color 0.3s ease;
         }
-        
+
         .breadcrumb-item a:hover {
             color: #E8A2B0;
         }
-        
+
         .breadcrumb-item.active {
             color: #495057;
             font-weight: 500;
         }
-        
-        .breadcrumb-item + .breadcrumb-item::before {
+
+        .breadcrumb-item+.breadcrumb-item::before {
             content: "›";
             color: #adb5bd;
             font-weight: bold;
         }
-        
+
         /* Namespace: product-detail-gallery - Tránh xung đột với global styles */
         .product-detail-gallery {
             position: relative;
@@ -594,124 +594,120 @@
                                 </div>
                                 <!-- Progress Bar -->
                                 <div class="progress" style="height: 8px;">
-                                    <div class="progress-bar product-detail-progress-bar" 
-                                         role="progressbar" 
-                                         th:style="'width: ' + ${#numbers.formatDecimal(T(vn.liora.util.SalesProgressUtil).calculateProgress(product.soldCount != null ? product.soldCount : 0), 1, 1)} + '%'"
-                                         aria-valuenow="0" 
-                                         aria-valuemin="0" 
-                                         aria-valuemax="100">
+                                    <div class="progress-bar product-detail-progress-bar" role="progressbar"
+                                        th:style="'width: ' + ${#numbers.formatDecimal(T(vn.liora.util.SalesProgressUtil).calculateProgress(product.soldCount != null ? product.soldCount : 0), 1, 1)} + '%'"
+                                        aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
                                     </div>
                                 </div>
                             </div>
-                            
+
                         </div>
-                        
+
                         <!-- Brand and Category -->
                         <div class="mb-3">
                             <div class="d-flex flex-wrap gap-3">
                                 <div>
                                     <span class="text-muted">Thương hiệu:</span>
-                                    <a th:href="@{'/brand/' + ${product.brandId}}" class="product-detail-brand fw-semibold text-decoration-none" 
-                                       th:text="${product.brandName}" 
-                                       style="color: var(--pink-primary) !important; transition: color 0.3s ease;"
-                                       onmouseover="this.style.color='var(--pink-dark) !important'"
-                                       onmouseout="this.style.color='var(--pink-primary) !important'">Brand Name</a>
+                                    <a th:href="@{'/brand/' + ${product.brandId}}"
+                                        class="product-detail-brand fw-semibold text-decoration-none"
+                                        th:text="${product.brandName}"
+                                        style="color: var(--pink-primary) !important; transition: color 0.3s ease;"
+                                        onmouseover="this.style.color='var(--pink-dark) !important'"
+                                        onmouseout="this.style.color='var(--pink-primary) !important'">Brand Name</a>
                                 </div>
                                 <div>
                                     <span class="text-muted">Danh mục:</span>
-                                    <a th:href="@{'/product/view/category/' + ${product.categoryId}}" class="fw-semibold text-decoration-none" 
-                                       th:text="${product.categoryName}"
-                                       style="color: var(--pink-primary) !important; transition: color 0.3s ease;"
-                                       onmouseover="this.style.color='var(--pink-dark) !important'"
-                                       onmouseout="this.style.color='var(--pink-primary) !important'">Category Name</a>
+                                    <a th:href="@{'/product/view/category/' + ${product.categoryId}}"
+                                        class="fw-semibold text-decoration-none" th:text="${product.categoryName}"
+                                        style="color: var(--pink-primary) !important; transition: color 0.3s ease;"
+                                        onmouseover="this.style.color='var(--pink-dark) !important'"
+                                        onmouseout="this.style.color='var(--pink-primary) !important'">Category Name</a>
                                 </div>
                             </div>
+                        </div>
+
+                        <!-- Price -->
+                        <div class="mb-4">
+                            <div class="d-flex align-items-center">
+                                <span class="h2 fw-bold text-dark me-3"
+                                    th:text="${#numbers.formatDecimal(product.price, 0, 'COMMA', 0, 'POINT')} + ' ₫'">0
+                                    ₫</span>
+                            </div>
+                        </div>
 
 
-                            <!-- Price -->
-                            <div class="mb-4">
-                                <div class="d-flex align-items-center">
-                                    <span class="h2 fw-bold text-dark me-3"
-                                        th:text="${#numbers.formatDecimal(product.price, 0, 'COMMA', 0, 'POINT')} + ' ₫'">0
-                                        ₫</span>
+                        <!-- Quantity -->
+                        <div class="mb-4">
+                            <div class="mb-2">
+                                <span class="fw-semibold">Số lượng:</span>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                <button class="btn btn-outline-secondary btn-sm" onclick="decreaseQuantity()"
+                                    th:disabled="${product.stock == 0 or !product.isActive}">-</button>
+                                <input type="number" class="form-control text-center mx-2 quantity-input"
+                                    style="width: 80px;" value="1" min="1" th:max="${product.stock}" id="quantityInput"
+                                    oninput="validateQuantityInput()" onblur="validateQuantityOnBlur()"
+                                    th:disabled="${product.stock == 0 or !product.isActive}">
+                                <button class="btn btn-outline-secondary btn-sm" onclick="increaseQuantity()"
+                                    th:disabled="${product.stock == 0 or !product.isActive}">+</button>
+                            </div>
+                        </div>
+
+                        <!-- Stock Info -->
+                        <div class="mb-4" th:if="${product.stock > 0 and product.isActive}">
+                            <span class="text-muted">Tồn kho:</span>
+                            <span class="fw-semibold" th:text="${product.stock}">0</span>
+                            <span class="text-muted">sản phẩm</span>
+                        </div>
+
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex gap-2">
+                            <!-- Add to Cart Button -->
+                            <button th:if="${product.stock > 0 and product.isActive}"
+                                class="btn btn-pink btn-lg text-white fw-semibold" onclick="addToCart()"
+                                th:data-product-id="${product.productId}" th:data-product-name="${product.name}"
+                                th:data-product-price="${product.price}">
+                                Thêm vào giỏ
+                            </button>
+                            <button th:if="${product.stock == 0 and product.isActive}"
+                                class="btn btn-secondary btn-lg text-white fw-semibold" disabled>
+                                <i class="fas fa-times-circle me-2"></i>Hết hàng
+                            </button>
+                            <button th:if="${!product.isActive}" class="btn btn-warning btn-lg text-white fw-semibold"
+                                disabled>
+                                <i class="fas fa-ban me-2"></i>Ngừng kinh doanh
+                            </button>
+
+                            <!-- Buy Now Button -->
+                            <button th:if="${product.stock > 0 and product.isActive}"
+                                class="btn btn-dark btn-lg text-white fw-semibold" onclick="buyNow()"
+                                th:data-product-id="${product.productId}" th:data-product-name="${product.name}"
+                                th:data-product-price="${product.price}">
+                                Mua ngay
+                            </button>
+                        </div>
+
+                        <!-- Out of Stock Notice -->
+                        <div th:if="${product.stock == 0 and product.isActive}" class="mt-3">
+                            <div class="alert alert-warning d-flex align-items-center" role="alert">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <div>
+                                    <strong>Sản phẩm tạm thời hết hàng!</strong><br>
+                                    <small>Vui lòng liên hệ với chúng tôi để được thông báo khi có hàng trở
+                                        lại.</small>
                                 </div>
                             </div>
+                        </div>
 
-
-                            <!-- Quantity -->
-                            <div class="mb-4">
-                                <div class="mb-2">
-                                    <span class="fw-semibold">Số lượng:</span>
-                                </div>
-                                <div class="d-flex align-items-center">
-                                    <button class="btn btn-outline-secondary btn-sm" onclick="decreaseQuantity()"
-                                        th:disabled="${product.stock == 0 or !product.isActive}">-</button>
-                                    <input type="number" class="form-control text-center mx-2 quantity-input"
-                                        style="width: 80px;" value="1" min="1" th:max="${product.stock}"
-                                        id="quantityInput" oninput="validateQuantityInput()"
-                                        onblur="validateQuantityOnBlur()"
-                                        th:disabled="${product.stock == 0 or !product.isActive}">
-                                    <button class="btn btn-outline-secondary btn-sm" onclick="increaseQuantity()"
-                                        th:disabled="${product.stock == 0 or !product.isActive}">+</button>
-                                </div>
-                            </div>
-
-                            <!-- Stock Info -->
-                            <div class="mb-4" th:if="${product.stock > 0 and product.isActive}">
-                                <span class="text-muted">Tồn kho:</span>
-                                <span class="fw-semibold" th:text="${product.stock}">0</span>
-                                <span class="text-muted">sản phẩm</span>
-                            </div>
-
-
-                            <!-- Action Buttons -->
-                            <div class="d-flex gap-2">
-                                <!-- Add to Cart Button -->
-                                <button th:if="${product.stock > 0 and product.isActive}"
-                                    class="btn btn-pink btn-lg text-white fw-semibold" onclick="addToCart()"
-                                    th:data-product-id="${product.productId}" th:data-product-name="${product.name}"
-                                    th:data-product-price="${product.price}">
-                                    Thêm vào giỏ
-                                </button>
-                                <button th:if="${product.stock == 0 and product.isActive}"
-                                    class="btn btn-secondary btn-lg text-white fw-semibold" disabled>
-                                    <i class="fas fa-times-circle me-2"></i>Hết hàng
-                                </button>
-                                <button th:if="${!product.isActive}"
-                                    class="btn btn-warning btn-lg text-white fw-semibold" disabled>
-                                    <i class="fas fa-ban me-2"></i>Ngừng kinh doanh
-                                </button>
-
-                                <!-- Buy Now Button -->
-                                <button th:if="${product.stock > 0 and product.isActive}"
-                                    class="btn btn-dark btn-lg text-white fw-semibold" onclick="buyNow()"
-                                    th:data-product-id="${product.productId}" th:data-product-name="${product.name}"
-                                    th:data-product-price="${product.price}">
-                                    Mua ngay
-                                </button>
-                            </div>
-
-                            <!-- Out of Stock Notice -->
-                            <div th:if="${product.stock == 0 and product.isActive}" class="mt-3">
-                                <div class="alert alert-warning d-flex align-items-center" role="alert">
-                                    <i class="fas fa-info-circle me-2"></i>
-                                    <div>
-                                        <strong>Sản phẩm tạm thời hết hàng!</strong><br>
-                                        <small>Vui lòng liên hệ với chúng tôi để được thông báo khi có hàng trở
-                                            lại.</small>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Discontinued Notice -->
-                            <div th:if="${!product.isActive}" class="mt-3">
-                                <div class="alert alert-danger d-flex align-items-center" role="alert">
-                                    <i class="fas fa-ban me-2"></i>
-                                    <div>
-                                        <strong>Sản phẩm đã ngừng kinh doanh!</strong><br>
-                                        <small>Chúng tôi xin lỗi vì sự bất tiện này. Vui lòng tham khảo các sản phẩm
-                                            khác.</small>
-                                    </div>
+                        <!-- Discontinued Notice -->
+                        <div th:if="${!product.isActive}" class="mt-3">
+                            <div class="alert alert-danger d-flex align-items-center" role="alert">
+                                <i class="fas fa-ban me-2"></i>
+                                <div>
+                                    <strong>Sản phẩm đã ngừng kinh doanh!</strong><br>
+                                    <small>Chúng tôi xin lỗi vì sự bất tiện này. Vui lòng tham khảo các sản phẩm
+                                        khác.</small>
                                 </div>
                             </div>
                         </div>
@@ -719,6 +715,7 @@
                 </div>
             </div>
         </div>
+    </div>
     </div>
 
     <!-- Promotions Section -->
@@ -790,8 +787,117 @@
                             </div>
                         </div>
                         <div class="tab-pane fade" id="reviews" role="tabpanel" aria-labelledby="reviews-tab">
-                            <div class="text-center text-muted py-4">
-                                Tính năng đánh giá sản phẩm sẽ được phát triển sau.
+                            <!-- Reviews Section -->
+                            <div class="reviews-section">
+                                <!-- Overall Rating Summary -->
+                                <div class="reviews-summary mb-4">
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="rating-overview text-center">
+                                                <div class="overall-rating">
+                                                    <span class="rating-number" id="overallRating">0</span>
+                                                    <span class="rating-out-of">trên 5</span>
+                                                </div>
+                                                <div class="rating-stars" id="overallStars">
+                                                    <i class="fas fa-star"></i>
+                                                    <i class="fas fa-star"></i>
+                                                    <i class="fas fa-star"></i>
+                                                    <i class="fas fa-star"></i>
+                                                    <i class="fas fa-star"></i>
+                                                </div>
+                                                <div class="total-reviews" id="totalReviews">0 đánh giá</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-8">
+                                            <div class="rating-breakdown">
+                                                <div class="rating-bar" data-rating="5">
+                                                    <span class="rating-label">5 sao</span>
+                                                    <div class="progress">
+                                                        <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                                    </div>
+                                                    <span class="rating-count">0</span>
+                                                </div>
+                                                <div class="rating-bar" data-rating="4">
+                                                    <span class="rating-label">4 sao</span>
+                                                    <div class="progress">
+                                                        <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                                    </div>
+                                                    <span class="rating-count">0</span>
+                                                </div>
+                                                <div class="rating-bar" data-rating="3">
+                                                    <span class="rating-label">3 sao</span>
+                                                    <div class="progress">
+                                                        <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                                    </div>
+                                                    <span class="rating-count">0</span>
+                                                </div>
+                                                <div class="rating-bar" data-rating="2">
+                                                    <span class="rating-label">2 sao</span>
+                                                    <div class="progress">
+                                                        <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                                    </div>
+                                                    <span class="rating-count">0</span>
+                                                </div>
+                                                <div class="rating-bar" data-rating="1">
+                                                    <span class="rating-label">1 sao</span>
+                                                    <div class="progress">
+                                                        <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                                    </div>
+                                                    <span class="rating-count">0</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Rating Filters -->
+                                <div class="rating-filters mb-4">
+                                    <div class="filter-buttons">
+                                        <button class="filter-btn active" data-rating="all">
+                                            Tất Cả
+                                        </button>
+                                        <button class="filter-btn" data-rating="5">
+                                            5 Sao (<span class="count">0</span>)
+                                        </button>
+                                        <button class="filter-btn" data-rating="4">
+                                            4 Sao (<span class="count">0</span>)
+                                        </button>
+                                        <button class="filter-btn" data-rating="3">
+                                            3 Sao (<span class="count">0</span>)
+                                        </button>
+                                        <button class="filter-btn" data-rating="2">
+                                            2 Sao (<span class="count">0</span>)
+                                        </button>
+                                        <button class="filter-btn" data-rating="1">
+                                            1 Sao (<span class="count">0</span>)
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Reviews List -->
+                                <div class="reviews-list" id="reviewsList">
+                                    <!-- Reviews will be loaded here -->
+                                </div>
+
+                                <!-- Loading Spinner -->
+                                <div class="text-center py-4" id="reviewsLoading" style="display: none;">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Đang tải...</span>
+                                    </div>
+                                </div>
+
+                                <!-- No Reviews Message -->
+                                <div class="text-center py-4" id="noReviewsMessage" style="display: none;">
+                                    <i class="fas fa-comment-slash fa-3x text-muted mb-3"></i>
+                                    <p class="text-muted">Chưa có đánh giá nào cho sản phẩm này.</p>
+                                </div>
+
+                                <!-- Pagination -->
+                                <nav aria-label="Reviews pagination" id="reviewsPagination" style="display: none;">
+                                    <ul class="pagination justify-content-center">
+                                        <!-- Pagination will be generated here -->
+                                    </ul>
+                                </nav>
                             </div>
                         </div>
                     </div>
@@ -894,7 +1000,7 @@
             const maxStock = parseInt(quantityInput.getAttribute('max'));
             const maxAllowed = Math.min(maxStock, 99); // Tối đa 99 sản phẩm
             const currentValue = parseInt(quantityInput.value);
-            
+
             if (currentValue < maxAllowed) {
                 quantityInput.value = currentValue + 1;
             } else {
@@ -921,7 +1027,7 @@
             if (quantityInput.value === '' || quantityInput.value === '0') {
                 return; // Allow empty or 0 while typing
             }
-            
+
             if (currentValue > maxAllowed) {
                 quantityInput.value = maxAllowed;
                 showNotification(`Số lượng tối đa là ${maxAllowed} sản phẩm!`, 'error');
@@ -1566,9 +1672,14 @@
 
             function isOverflowing(el) { return el.scrollHeight > el.clientHeight + 4; }
 
-            // Hide toggle if not overflowing
+            // Hide toggle and fade if not overflowing
             if (!isOverflowing(collapsible)) {
                 toggleBtn.style.display = 'none';
+                // Also hide the fade overlay when content is short
+                const fadeElement = collapsible.querySelector('.product-description-fade');
+                if (fadeElement) {
+                    fadeElement.style.display = 'none';
+                }
             }
 
             toggleBtn.addEventListener('click', function () {

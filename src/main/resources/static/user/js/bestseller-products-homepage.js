@@ -10,20 +10,20 @@ class BestsellerProductsHomepageManager {
         this.emptyEl = document.getElementById('homepageBestsellerProductsEmpty');
         this.prevBtn = document.getElementById('homepageBestsellerPrevBtn');
         this.nextBtn = document.getElementById('homepageBestsellerNextBtn');
-        
+
         if (!this.gridEl) {
             console.warn('Homepage bestseller products grid not found');
             return;
         }
-        
+
         this.init();
     }
-    
+
     init() {
         this.loadBestsellerProducts();
         this.setupEventListeners();
     }
-    
+
     setupEventListeners() {
         if (this.prevBtn) {
             this.prevBtn.addEventListener('click', () => this.scrollLeft());
@@ -32,24 +32,24 @@ class BestsellerProductsHomepageManager {
             this.nextBtn.addEventListener('click', () => this.scrollRight());
         }
     }
-    
+
     async loadBestsellerProducts() {
         try {
             this.showLoading();
-            
+
             console.log('Loading bestseller products...');
             const response = await fetch('/api/products/best-selling?limit=8');
             const data = await response.json();
-            
+
             console.log('API Response:', data);
-            
+
             if (data.code === 1000 && data.result && data.result.length > 0) {
                 this.allProducts = data.result;
                 console.log('Loaded products:', this.allProducts);
                 this.renderBestsellerProducts(this.allProducts);
-                
+
                 this.gridEl.addEventListener('scroll', () => this.updateNavigationButtons());
-                
+
                 // Update navigation buttons immediately after rendering
                 this.updateNavigationButtons();
             } else {
@@ -61,34 +61,34 @@ class BestsellerProductsHomepageManager {
             this.showEmpty();
         }
     }
-    
+
     showLoading() {
         if (this.loadingEl) this.loadingEl.style.display = 'block';
         if (this.emptyEl) this.emptyEl.style.display = 'none';
         if (this.gridEl) this.gridEl.style.display = 'none';
     }
-    
+
     showEmpty() {
         if (this.loadingEl) this.loadingEl.style.display = 'none';
         if (this.emptyEl) this.emptyEl.style.display = 'block';
         if (this.gridEl) this.gridEl.style.display = 'none';
     }
-    
+
     renderBestsellerProducts(products) {
         if (!this.gridEl) return;
-        
+
         const productsHTML = products.map(product => this.createProductCard(product)).join('');
         this.gridEl.innerHTML = productsHTML;
-        
+
         if (this.loadingEl) this.loadingEl.style.display = 'none';
         if (this.emptyEl) this.emptyEl.style.display = 'none';
         if (this.gridEl) this.gridEl.style.display = 'flex';
     }
-    
+
     createProductCard(product) {
         const productStatus = this.getProductStatus(product);
         const statusClass = this.getProductStatusClass(productStatus);
-        
+
         // Safe property access with fallbacks
         const productId = product.productId || product.id || 0;
         const productName = product.name || 'Tên sản phẩm';
@@ -96,18 +96,20 @@ class BestsellerProductsHomepageManager {
         const brandName = product.brandName || 'Thương hiệu';
         const reviewCount = product.reviewCount || product.ratingCount || 0;
         const currentPrice = product.currentPrice || product.price || 0;
-        
+
         return `
             <div class="product-card ${statusClass}">
                 <div class="position-relative">
                     <img src="${this.getMainImageUrl(product)}" 
                          class="card-img-top" 
                          alt="${productName}"
-                         onerror="this.src='/uploads/products/default.jpg'">
+                         onerror="this.src='/user/img/default-product.jpg'"
+                         onclick="window.location.href='/product/${productId}'"
+                         style="cursor: pointer;">
                     
                     <div class="product-actions">
                         <button class="quick-view-btn" 
-                                onclick="if(window.homepageBestsellerProductsManager) window.homepageBestsellerProductsManager.showQuickView(${productId}); else alert('Chức năng đang được tải...');"
+                                onclick="if(window.app) window.app.showQuickView(${productId}); else alert('Chức năng đang được tải...');"
                                 title="Xem nhanh">
                             <i class="fas fa-eye"></i>
                         </button>
@@ -134,40 +136,54 @@ class BestsellerProductsHomepageManager {
                         <span class="rating-count">(${reviewCount} đánh giá)</span>
                     </div>
                     
-                    <div class="mt-auto">
-                        <div class="price-section d-flex justify-content-between align-items-center">
-                            <span class="current-price">
-                                ${this.formatPrice(currentPrice)}
-                            </span>
-                            <button class="add-to-cart-icon homepage-bestseller-cart-btn" 
-                                    data-product-id="${productId}"
-                                    data-product-name="${productName}"
-                                    data-product-price="${currentPrice}"
-                                    title="Thêm vào giỏ"
-                                    onclick="event.preventDefault(); event.stopPropagation(); window.homepageBestsellerProductsManager.addToCart(${productId}, '${productName}', ${currentPrice})">
-                                <i class="fas fa-shopping-cart"></i>
-                            </button>
+                        <div class="mt-auto">
+                            <!-- Sales Progress Bar -->
+                            <div class="sales-progress mb-3">
+                                <div class="sales-info d-flex justify-content-between align-items-center mb-1">
+                                    <span class="sales-label">Đã bán</span>
+                                    <span class="sales-count">${this.formatNumber(product.soldCount || 0)}</span>
+                                </div>
+                                <div class="progress">
+                                    <div class="progress-bar" 
+                                         style="width: ${this.calculateSalesProgress(product.soldCount || 0)}%"
+                                         role="progressbar">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="price-section d-flex justify-content-between align-items-center">
+                                <span class="current-price">
+                                    ${this.formatPrice(currentPrice)}
+                                </span>
+                                <button class="add-to-cart-icon homepage-bestseller-cart-btn" 
+                                        data-product-id="${productId}"
+                                        data-product-name="${productName}"
+                                        data-product-price="${currentPrice}"
+                                        title="Thêm vào giỏ"
+                                        onclick="event.preventDefault(); event.stopPropagation(); if(window.app && window.app.addProductToCartBackend) { window.app.addProductToCartBackend(${productId}, 1, true).then(() => window.app.refreshCartBadge?.()).catch(() => alert('Không thể thêm vào giỏ hàng')); } else { alert('Chức năng đang được tải...'); }">
+                                    <i class="fas fa-shopping-cart"></i>
+                                </button>
+                            </div>
                         </div>
-                    </div>
                 </div>
             </div>
         `;
     }
-    
+
     getMainImageUrl(product) {
         // Check for mainImageUrl first (from API response)
         if (product.mainImageUrl) {
             return product.mainImageUrl;
         }
-        
+
         // Fallback to images array
         if (product.images && product.images.length > 0) {
             return product.images[0].imageUrl;
         }
-        
-        return '/uploads/products/default.jpg';
+
+        return '/user/img/default-product.jpg';
     }
-    
+
     getProductStatus(product) {
         if (!product.available) return 'out-of-stock';
         if (product.stock <= 0) return 'out-of-stock';
@@ -208,26 +224,26 @@ class BestsellerProductsHomepageManager {
         for (let i = 0; i < emptyStars; i++) {
             stars += '<i class="far fa-star" style="color: #ccc !important; font-weight: 400 !important;"></i>';
         }
-        
+
         return stars;
     }
-    
+
     formatPrice(price) {
         if (!price || price === null || price === undefined) {
             return '0 ₫';
         }
-        
+
         const numPrice = parseFloat(price);
         if (isNaN(numPrice)) {
             return '0 ₫';
         }
-        
+
         return new Intl.NumberFormat('vi-VN', {
             style: 'currency',
             currency: 'VND'
         }).format(numPrice);
     }
-    
+
     scrollLeft() {
         if (this.gridEl) {
             const cardWidth = 280 + 24; // card width + gap
@@ -235,14 +251,14 @@ class BestsellerProductsHomepageManager {
                 left: -cardWidth,
                 behavior: 'smooth'
             });
-            
+
             // Update buttons after scroll animation
             setTimeout(() => {
                 this.updateNavigationButtons();
             }, 300);
         }
     }
-    
+
     scrollRight() {
         if (this.gridEl) {
             const cardWidth = 280 + 24; // card width + gap
@@ -250,19 +266,19 @@ class BestsellerProductsHomepageManager {
                 left: cardWidth,
                 behavior: 'smooth'
             });
-            
+
             // Update buttons after scroll animation
             setTimeout(() => {
                 this.updateNavigationButtons();
             }, 300);
         }
     }
-    
+
     updateNavigationButtons() {
         if (!this.gridEl || !this.allProducts) return;
-        
+
         const navigationContainer = document.querySelector('.bestseller-products-homepage-section .navigation-buttons');
-        
+
         if (this.allProducts.length <= 4) {
             console.log('Hiding navigation buttons - 4 or fewer products');
             if (navigationContainer) {
@@ -276,19 +292,19 @@ class BestsellerProductsHomepageManager {
             }
             return;
         }
-        
+
         console.log('Showing navigation buttons - more than 4 products');
         if (navigationContainer) {
             navigationContainer.classList.remove('hidden');
         }
-        
+
         const scrollLeft = this.gridEl.scrollLeft;
         const maxScrollLeft = this.gridEl.scrollWidth - this.gridEl.clientWidth;
-        
+
         // Add small tolerance for floating point precision
         const isAtStart = scrollLeft <= 1;
         const isAtEnd = scrollLeft >= (maxScrollLeft - 1);
-        
+
         console.log('Bestseller navigation buttons update:', {
             scrollLeft,
             maxScrollLeft,
@@ -300,7 +316,7 @@ class BestsellerProductsHomepageManager {
             prevBtnExists: !!this.prevBtn,
             nextBtnExists: !!this.nextBtn
         });
-        
+
         if (this.prevBtn) {
             this.prevBtn.disabled = isAtStart;
             console.log('Bestseller prev button disabled:', isAtStart);
@@ -310,57 +326,29 @@ class BestsellerProductsHomepageManager {
             console.log('Bestseller next button disabled:', isAtEnd);
         }
     }
-    
+
     async addToCart(productId, productName, price) {
         try {
-            let success = false;
-            
-            // Check if cart functionality exists
-            if (window.cartManager) {
-                await window.cartManager.addItem(productId, 1);
-                success = true;
-            }
-            // Fallback: Try to use global cart if available
-            else if (window.app && window.app.cartItems) {
-                const product = this.allProducts.find(p => (p.productId || p.id) === productId);
-                if (product) {
-                    const existingItem = window.app.cartItems.find(item => item.id === productId);
-                    
-                    if (existingItem) {
-                        existingItem.quantity += 1;
-                    } else {
-                        window.app.cartItems.push({
-                            ...product,
-                            quantity: 1
-                        });
-                    }
-                    
-                    if (window.app.updateCartDisplay) {
-                        window.app.updateCartDisplay();
-                    }
-                    success = true;
-                }
-            }
-            
-            // Show single notification based on success
-            if (success) {
-                this.showNotification(`${productName} đã được thêm vào giỏ hàng thành công!`, 'success');
+            // Sử dụng addProductToCartBackend để gọi API backend
+            if (window.app && window.app.addProductToCartBackend) {
+                await window.app.addProductToCartBackend(productId, 1, true);
+                await window.app.refreshCartBadge?.();
             } else {
-                this.showNotification('Không tìm thấy thông tin sản phẩm!', 'error');
+                this.showNotification('Chức năng đang được tải...', 'error');
             }
         } catch (error) {
-            console.error('Error adding to cart:', error);
-            this.showNotification('Có lỗi xảy ra khi thêm vào giỏ hàng', 'error');
+            console.error('Add to cart error:', error);
+            this.showNotification('Không thể thêm vào giỏ hàng. Vui lòng thử lại.', 'error');
         }
     }
-    
+
     async showQuickView(productId) {
         const product = this.allProducts.find(p => (p.productId || p.id) === productId);
         if (!product) {
             this.showNotification('Không tìm thấy sản phẩm', 'error');
             return;
         }
-        
+
         // Load product images if not already loaded
         if (!product.images) {
             try {
@@ -373,17 +361,17 @@ class BestsellerProductsHomepageManager {
                 product.images = [];
             }
         }
-        
+
         this.createQuickViewModal(product);
     }
-    
+
     createQuickViewModal(product) {
         // Remove existing modal and backdrop if any
         const existingModal = document.getElementById('homepageBestsellerQuickViewModal');
         if (existingModal) {
             existingModal.remove();
         }
-        
+
         // Remove any existing backdrop
         const existingBackdrop = document.querySelector('.modal-backdrop');
         if (existingBackdrop) {
@@ -412,7 +400,7 @@ class BestsellerProductsHomepageManager {
                                                  src="${this.getMainImageUrl(product)}" 
                                                  class="img-fluid rounded" 
                                                  alt="${product.name}"
-                                                 onerror="this.src='/uploads/products/default.jpg'">
+                                                 onerror="this.src='/user/img/default-product.jpg'">
                                             <button class="slider-nav slider-next" id="homepageBestsellerModalNextBtn">
                                                 <i class="fas fa-chevron-right"></i>
                                             </button>
@@ -495,7 +483,7 @@ class BestsellerProductsHomepageManager {
 
         // Add modal to body
         document.body.insertAdjacentHTML('beforeend', modalHTML);
-        
+
         // Show modal with proper backdrop
         const modal = new bootstrap.Modal(document.getElementById('homepageBestsellerQuickViewModal'), {
             backdrop: true,
@@ -503,7 +491,7 @@ class BestsellerProductsHomepageManager {
             focus: true
         });
         modal.show();
-        
+
         // Ensure backdrop has proper z-index
         setTimeout(() => {
             const backdrop = document.querySelector('.modal-backdrop');
@@ -512,10 +500,10 @@ class BestsellerProductsHomepageManager {
                 backdrop.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
             }
         }, 10);
-        
+
         // Add slider navigation event listeners
         this.setupSliderNavigation(product);
-        
+
         // Clean up when modal is hidden
         document.getElementById('homepageBestsellerQuickViewModal').addEventListener('hidden.bs.modal', () => {
             const modalElement = document.getElementById('homepageBestsellerQuickViewModal');
@@ -531,7 +519,7 @@ class BestsellerProductsHomepageManager {
             document.body.style.paddingRight = '';
         }, { once: true });
     }
-    
+
     generateImageThumbnails(product) {
         if (!product.images || product.images.length === 0) {
             return `
@@ -554,7 +542,7 @@ class BestsellerProductsHomepageManager {
 
     getProductStatusBadge(product) {
         const status = this.getProductStatus(product);
-        
+
         switch (status) {
             case 'out-of-stock':
                 return '<span class="badge bg-danger">Hết hàng</span>';
@@ -568,7 +556,7 @@ class BestsellerProductsHomepageManager {
     getQuickViewActions(product) {
         const status = this.getProductStatus(product);
         const isDisabled = status !== 'available';
-        
+
         if (status === 'out-of-stock') {
             return `
                 <div class="alert alert-danger text-center">
@@ -577,7 +565,7 @@ class BestsellerProductsHomepageManager {
                 </div>
             `;
         }
-        
+
         return `
             <!-- Buy Now & Add to Cart Buttons (Same Row) -->
             <div class="row g-2">
@@ -613,25 +601,25 @@ class BestsellerProductsHomepageManager {
         const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
 
         let stars = '';
-        
+
         // Full stars
         for (let i = 0; i < fullStars; i++) {
             stars += '<i class="fas fa-star" style="color: #ffc107 !important;"></i>';
         }
-        
+
         // Half star
         if (hasHalfStar) {
             stars += '<i class="fas fa-star-half-alt" style="color: #ffc107 !important;"></i>';
         }
-        
+
         // Empty stars
         for (let i = 0; i < emptyStars; i++) {
             stars += '<i class="far fa-star" style="color: #ccc !important; font-weight: 400 !important;"></i>';
         }
-        
+
         return stars;
     }
-    
+
     setupSliderNavigation(product) {
         // Wait for modal to be fully rendered
         setTimeout(() => {
@@ -639,7 +627,7 @@ class BestsellerProductsHomepageManager {
             const nextBtn = document.getElementById('homepageBestsellerModalNextBtn');
             const mainImage = document.getElementById('homepageBestsellerModalMainProductImage');
             const thumbnails = document.querySelectorAll('#homepageBestsellerQuickViewModal .thumbnail-item');
-            
+
             console.log('Setting up slider navigation:', {
                 prevBtn: !!prevBtn,
                 nextBtn: !!nextBtn,
@@ -647,29 +635,29 @@ class BestsellerProductsHomepageManager {
                 thumbnails: thumbnails.length,
                 productImages: product.images ? product.images.length : 0
             });
-            
+
             if (!product.images || product.images.length <= 1) {
                 // Hide navigation buttons if only one image
                 if (prevBtn) prevBtn.style.display = 'none';
                 if (nextBtn) nextBtn.style.display = 'none';
                 return;
             }
-            
+
             let currentImageIndex = 0;
-            
+
             // Update main image
             const updateMainImage = (index) => {
                 if (product.images && product.images[index] && mainImage) {
                     mainImage.src = product.images[index].imageUrl;
                     mainImage.alt = product.name;
-                    
+
                     // Update thumbnail selection
                     thumbnails.forEach((thumb, i) => {
                         thumb.classList.toggle('active', i === index);
                     });
                 }
             };
-            
+
             // Previous button
             if (prevBtn) {
                 prevBtn.addEventListener('click', (e) => {
@@ -679,7 +667,7 @@ class BestsellerProductsHomepageManager {
                     updateMainImage(currentImageIndex);
                 });
             }
-            
+
             // Next button
             if (nextBtn) {
                 nextBtn.addEventListener('click', (e) => {
@@ -689,7 +677,7 @@ class BestsellerProductsHomepageManager {
                     updateMainImage(currentImageIndex);
                 });
             }
-            
+
             // Thumbnail click handlers
             thumbnails.forEach((thumb, index) => {
                 thumb.addEventListener('click', (e) => {
@@ -701,7 +689,7 @@ class BestsellerProductsHomepageManager {
             });
         }, 100); // Small delay to ensure modal is rendered
     }
-    
+
     // Quantity management methods for quick view modal
     decrementQuantity(productId) {
         const quantityInput = document.getElementById(`homepageBestsellerQuantityInput_${productId}`);
@@ -749,11 +737,6 @@ class BestsellerProductsHomepageManager {
             errorDiv.style.display = 'block';
             errorMessage.textContent = 'Số lượng không thể nhỏ hơn 1.';
             quantityInput.classList.add('is-invalid');
-        } else if (currentValue > maxAllowed) {
-            quantityInput.value = maxAllowed;
-            errorDiv.style.display = 'block';
-            errorMessage.textContent = `Số lượng tối đa là ${maxAllowed} sản phẩm.`;
-            quantityInput.classList.add('is-invalid');
         } else {
             errorDiv.style.display = 'none';
             quantityInput.classList.remove('is-invalid');
@@ -778,7 +761,7 @@ class BestsellerProductsHomepageManager {
 
         // Add to cart first
         await this.addToCart(productId, product.name, product.currentPrice || product.price);
-        
+
         // Redirect to checkout
         window.location.href = '/checkout';
     }
@@ -797,7 +780,7 @@ class BestsellerProductsHomepageManager {
 
         // Add to cart with quantity
         this.addToCartWithQuantityValue(productId, product.name, product.currentPrice || product.price, quantity);
-        
+
         // Close modal
         const modal = bootstrap.Modal.getInstance(document.getElementById('homepageBestsellerQuickViewModal'));
         if (modal) {
@@ -808,53 +791,20 @@ class BestsellerProductsHomepageManager {
     // Add to cart with specific quantity
     async addToCartWithQuantityValue(productId, productName, price, quantity) {
         try {
-            let success = false;
-            
-            // Check if cart functionality exists
-            if (window.cartManager && typeof window.cartManager.addItem === 'function') {
-                await window.cartManager.addItem(productId, quantity);
-                success = true;
-            }
-            // Fallback to global app cart
-            else if (window.app && window.app.cartItems) {
-                // Validate data first
-                if (productId && productName && price && !isNaN(price)) {
-                    const product = this.allProducts.find(p => (p.productId || p.id) === productId);
-                    if (product) {
-                        const existingItem = window.app.cartItems.find(item => item.id === productId);
-                        
-                        if (existingItem) {
-                            existingItem.quantity += quantity;
-                        } else {
-                            window.app.cartItems.push({
-                                id: productId,
-                                name: productName,
-                                price: price,
-                                quantity: quantity,
-                                image: product.images && product.images.length > 0 ? product.images[0].imageUrl : '/static/user/images/no-image.png'
-                            });
-                        }
-                        
-                        if (window.app.updateCartDisplay) {
-                            window.app.updateCartDisplay();
-                        }
-                        success = true;
-                    }
-                }
-            }
-            
-            // Show single notification based on success
-            if (success) {
-                this.showNotification(`${quantity} x ${productName} đã được thêm vào giỏ hàng thành công!`, 'success');
+            // Sử dụng addProductToCartBackend để gọi API backend
+            if (window.app && window.app.addProductToCartBackend) {
+                await window.app.addProductToCartBackend(productId, quantity, true);
+                await window.app.refreshCartBadge?.();
             } else {
-                this.showNotification('Không tìm thấy thông tin sản phẩm!', 'error');
+                this.showNotification('Chức năng đang được tải...', 'error');
             }
         } catch (error) {
-            this.showNotification('Có lỗi xảy ra khi thêm vào giỏ hàng', 'error');
+            console.error('Add to cart error:', error);
+            this.showNotification('Không thể thêm vào giỏ hàng. Vui lòng thử lại.', 'error');
         }
     }
-    
-    
+
+
     showNotification(message, type = 'info') {
         const toast = document.createElement('div');
         toast.className = `toast align-items-center text-white bg-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} border-0`;
@@ -883,6 +833,40 @@ class BestsellerProductsHomepageManager {
                 toast.parentNode.removeChild(toast);
             }
         }, 3000);
+    }
+
+    calculateSalesProgress(soldCount) {
+        // Define different thresholds for progress calculation - optimized for better visual appeal
+        const thresholds = [
+            { max: 50, percentage: 30 },     // 0-50: 0-30% (tăng từ 20%)
+            { max: 100, percentage: 40 },    // 50-100: 30-40%
+            { max: 500, percentage: 55 },   // 100-500: 40-55%
+            { max: 1000, percentage: 70 },   // 500-1000: 55-70%
+            { max: 5000, percentage: 85 },   // 1000-5000: 70-85%
+            { max: 10000, percentage: 95 },  // 5000-10000: 85-95%
+            { max: Infinity, percentage: 100 } // >10000: 95-100%
+        ];
+
+        for (const threshold of thresholds) {
+            if (soldCount <= threshold.max) {
+                // Get previous threshold percentage
+                const prevThreshold = thresholds[thresholds.indexOf(threshold) - 1];
+                const basePercentage = prevThreshold ? prevThreshold.percentage : 0;
+
+                // Calculate progress within this threshold
+                const prevMax = prevThreshold ? prevThreshold.max : 0;
+                const range = threshold.max - prevMax;
+                const progress = ((soldCount - prevMax) / range) * (threshold.percentage - basePercentage);
+
+                return Math.min(100, basePercentage + progress);
+            }
+        }
+
+        return 100; // For very high sales
+    }
+
+    formatNumber(number) {
+        return new Intl.NumberFormat('vi-VN').format(number);
     }
 }
 
