@@ -46,6 +46,8 @@ public interface IReviewService {
     Long getReviewCountByProductId(Long productId);
     Map<String, Object> getProductReviewStatistics(Long productId);
     
+    Map<String, Object> getMultipleProductsReviewStatistics(List<Long> productIds);
+    
     // ========== ADMIN FUNCTIONS ==========
     List<ReviewResponse> findAllReviewsForAdmin();
     Page<ReviewResponse> findAllReviewsForAdmin(Pageable pageable);
