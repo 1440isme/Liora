@@ -384,6 +384,135 @@
             justify-content: center;
             font-size: 12px;
             color: #666;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .discount-info-icon:hover {
+            background: #ff6b9d;
+            color: white;
+        }
+
+        /* Popup styles */
+        .discount-popup {
+            position: absolute;
+            top: -10px;
+            right: 30px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            padding: 16px;
+            min-width: 280px;
+            max-width: 320px;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            border: 1px solid #e0e0e0;
+        }
+
+        .discount-popup.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .discount-popup::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            right: -8px;
+            width: 0;
+            height: 0;
+            border-left: 8px solid white;
+            border-top: 8px solid transparent;
+            border-bottom: 8px solid transparent;
+        }
+
+        .discount-popup::after {
+            content: '';
+            position: absolute;
+            top: 19px;
+            right: -9px;
+            width: 0;
+            height: 0;
+            border-left: 9px solid #e0e0e0;
+            border-top: 9px solid transparent;
+            border-bottom: 9px solid transparent;
+        }
+
+        .popup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .popup-code {
+            font-weight: bold;
+            color: #333;
+            font-size: 16px;
+        }
+
+        .popup-copy-icon {
+            width: 24px;
+            height: 24px;
+            background: #ff6b9d;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .popup-copy-icon:hover {
+            background: #e55a8a;
+        }
+
+        .popup-expiry {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+
+        .popup-expiry-label {
+            color: #666;
+        }
+
+        .popup-expiry-date {
+            color: #333;
+            font-weight: 500;
+        }
+
+        .popup-conditions {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .popup-conditions li {
+            position: relative;
+            padding-left: 16px;
+            margin-bottom: 6px;
+            font-size: 13px;
+            color: #666;
+            line-height: 1.4;
+        }
+
+        .popup-conditions li::before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            color: #ff6b9d;
+            font-weight: bold;
         }
 
         .discount-description {
@@ -533,8 +662,26 @@
                     <div class="discount-card-right">
                         <div class="discount-header">
                             <div class="discount-title">${discount.name}</div>
-                            <div class="discount-info-icon" title="Thông tin chi tiết">
+                            <div class="discount-info-icon" title="Thông tin chi tiết" 
+                                 data-discount-code="${discount.name}"
+                                 data-discount-expiry="${formatDate(discount.endDate)}"
+                                 data-discount-conditions="${getDiscountConditions(discount)}">
                                 i
+                                <div class="discount-popup">
+                                    <div class="popup-header">
+                                        <div class="popup-code">${discount.name}</div>
+                                        <div class="popup-copy-icon" onclick="copyDiscountCode('${discount.name}', this)">
+                                            <i class="fas fa-copy"></i>
+                                        </div>
+                                    </div>
+                                    <div class="popup-expiry">
+                                        <span class="popup-expiry-label">Hạn sử dụng</span>
+                                        <span class="popup-expiry-date">${formatDate(discount.endDate)}</span>
+                                    </div>
+                                    <ul class="popup-conditions">
+                                        ${getDiscountConditionsHTML(discount)}
+                                    </ul>
+                                </div>
                             </div>
                         </div>
                         
@@ -556,10 +703,91 @@
 
             // Initialize slider
             initializeSlider();
+            
+            // Initialize popup hover effects
+            initializeDiscountPopups();
         }
 
         function getDiscountIcon(discount) {
             return '<i class="mdi mdi-ticket-percent-outline"></i>';
+        }
+
+        function getDiscountConditions(discount) {
+            // Generate conditions based on discount type and properties
+            const conditions = [];
+            
+            // Basic conditions that apply to most discounts
+            conditions.push("Không áp dụng đồng thời mã giảm giá khác");
+            
+            // Add specific conditions based on discount properties
+            if (discount.minimumOrderAmount && discount.minimumOrderAmount > 0) {
+                conditions.push(`Áp dụng cho đơn hàng từ ${formatCurrency(discount.minimumOrderAmount)}`);
+            }
+            
+            if (discount.maximumDiscountAmount && discount.maximumDiscountAmount > 0) {
+                conditions.push(`Giảm tối đa ${formatCurrency(discount.maximumDiscountAmount)}`);
+            }
+            
+            if (discount.isForNewCustomers) {
+                conditions.push("Chỉ áp dụng cho khách hàng mới");
+            }
+            
+            // Default condition if no specific conditions
+            if (conditions.length === 1) {
+                conditions.push("Sao chép mã và nhập mã khuyến mãi ở trang thanh toán");
+            }
+            
+            return conditions.join('|');
+        }
+
+        function getDiscountConditionsHTML(discount) {
+            const conditions = getDiscountConditions(discount).split('|');
+            return conditions.map(condition => `<li>${condition}</li>`).join('');
+        }
+
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('vi-VN', {
+                style: 'currency',
+                currency: 'VND'
+            }).format(amount);
+        }
+
+        function initializeDiscountPopups() {
+            const infoIcons = document.querySelectorAll('.discount-info-icon');
+            
+            infoIcons.forEach(icon => {
+                const popup = icon.querySelector('.discount-popup');
+                let hoverTimeout;
+                
+                // Show popup on mouse enter
+                icon.addEventListener('mouseenter', () => {
+                    clearTimeout(hoverTimeout);
+                    // Hide all other popups first
+                    document.querySelectorAll('.discount-popup').forEach(p => {
+                        p.classList.remove('show');
+                    });
+                    // Show current popup
+                    popup.classList.add('show');
+                });
+                
+                // Hide popup on mouse leave
+                icon.addEventListener('mouseleave', () => {
+                    hoverTimeout = setTimeout(() => {
+                        popup.classList.remove('show');
+                    }, 100);
+                });
+                
+                // Keep popup visible when hovering over it
+                popup.addEventListener('mouseenter', () => {
+                    clearTimeout(hoverTimeout);
+                });
+                
+                popup.addEventListener('mouseleave', () => {
+                    hoverTimeout = setTimeout(() => {
+                        popup.classList.remove('show');
+                    }, 100);
+                });
+            });
         }
 
         function formatDate(dateString) {
