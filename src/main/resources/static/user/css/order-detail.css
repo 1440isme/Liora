@@ -746,7 +746,15 @@
 }
 
 /* Brand name hover effect */
-.table .brand-link:hover {
+.brand-link {
+    transition: color 0.3s ease;
+}
+
+.brand-link:hover {
+    color: #e8a2b0 !important;
+}
+
+.brand-link:hover small {
     color: #e8a2b0 !important;
 }
 
@@ -755,4 +763,17 @@
     border-color: #e8a2b0 !important;
     transform: scale(1.05);
     transition: all 0.3s ease;
+}
+
+/* Product link hover effect */
+.product-link {
+    transition: color 0.3s ease;
+}
+
+.product-link:hover {
+    color: #e8a2b0 !important;
+}
+
+.product-link:hover h6 {
+    color: #e8a2b0 !important;
 }

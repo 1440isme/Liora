@@ -118,7 +118,12 @@ class OrderManager {
             this.filterOrders();
 
             this.renderOrderTable();
-            this.updatePagination();
+            // Không gọi updatePagination() ở đây vì filterOrders() đã gọi rồi
+            
+            // Thêm delay nhỏ để đảm bảo DOM đã sẵn sàng
+            setTimeout(() => {
+                this.updatePagination();
+            }, 100);
 
             // Load statistics sau khi đã có dữ liệu
             this.loadStatistics();
@@ -474,6 +479,7 @@ class OrderManager {
         const dateFrom = $('#filterDateFrom').val();
         const dateTo = $('#filterDateTo').val();
 
+
         this.filteredOrders = this.orders.filter(order => {
             let matches = true;
 
@@ -499,6 +505,7 @@ class OrderManager {
             return matches;
         });
 
+
         this.currentPage = 1;
         this.renderOrderTable();
         this.updatePagination();
@@ -513,7 +520,11 @@ class OrderManager {
         const pagination = $('#pagination');
         pagination.empty();
 
-        if (this.totalPages <= 1) return;
+        if (this.totalPages <= 1) {
+            // Vẫn cần update pagination info ngay cả khi không có pagination
+            this.updatePaginationInfo();
+            return;
+        }
 
         // Previous button
         pagination.append(`
@@ -541,10 +552,21 @@ class OrderManager {
             </li>
         `);
 
-        // Update info
-        const start = (this.currentPage - 1) * this.pageSize + 1;
-        const end = Math.min(this.currentPage * this.pageSize, this.filteredOrders.length);
-        $('#paginationInfo').text(`Hiển thị ${start}-${end} trong tổng số ${this.filteredOrders.length} đơn hàng`);
+        // Update pagination info
+        this.updatePaginationInfo();
+    }
+
+    updatePaginationInfo() {
+        const paginationInfoElement = $('#paginationInfo');
+        
+        if (this.filteredOrders.length === 0) {
+            paginationInfoElement.html('Hiển thị 0-0 trong tổng số 0 đơn hàng');
+        } else {
+            const start = (this.currentPage - 1) * this.pageSize + 1;
+            const end = Math.min(this.currentPage * this.pageSize, this.filteredOrders.length);
+            const displayText = `Hiển thị ${start}-${end} trong tổng số ${this.filteredOrders.length} đơn hàng`;
+            paginationInfoElement.html(displayText);
+        }
     }
 
     goToPage(page) {

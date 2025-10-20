@@ -40,8 +40,9 @@ class CartPage {
         $(document).on('keypress', '.quantity-input', (e) => {
             if (e.which === 13) { // Enter key
                 e.preventDefault();
-                console.log('Enter pressed, validating...', e.target.value);
-                this.handleQuantityInputChange(e);
+                console.log('Enter pressed, saving quantity...', e.target.value);
+                // Blur input để trigger validation và save
+                $(e.target).blur();
             }
         });
 
@@ -389,6 +390,16 @@ class CartPage {
             this.showToast(`Bạn chỉ được phép mua tối đa ${maxStock} sản phẩm`, 'warning');
             console.log('Set to maximum:', maxStock);
             await this.updateCartProductQuantity(cartProductId, value);
+        } else {
+            // Số lượng hợp lệ, cập nhật vào giỏ hàng
+            console.log('Valid quantity, updating cart:', value);
+            try {
+                await this.updateCartProductQuantity(cartProductId, value);
+              
+            } catch (error) {
+                console.error('Error updating quantity:', error);
+                this.showToast('Có lỗi xảy ra khi cập nhật số lượng', 'error');
+            }
         }
     }
 
