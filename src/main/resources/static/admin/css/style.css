@@ -35430,31 +35430,34 @@ dl li {
 .categories-page .table tbody tr {
   contain: layout style;
 }
+
 /*# sourceMappingURL=maps/style.css.map */
 
 /* Sorting styles */
 .sortable {
-    cursor: pointer;
-    user-select: none;
+  cursor: pointer;
+  user-select: none;
 }
 
 .sortable:hover {
-    background-color: #f8f9fa;
+  background-color: #f8f9fa;
 }
 
 .sort-icon {
-    opacity: 0.5;
-    transition: opacity 0.2s;
+  opacity: 0.5;
+  transition: opacity 0.2s;
 }
 
 .sortable:hover .sort-icon {
-    opacity: 1;
+  opacity: 1;
 }
 
 .sort-asc .sort-icon::before {
-    content: "\F0140"; /* mdi-arrow-up */
+  content: "\F0140";
+  /* mdi-arrow-up */
 }
 
 .sort-desc .sort-icon::before {
-    content: "\F0143"; /* mdi-arrow-down */
+  content: "\F0143";
+  /* mdi-arrow-down */
 }

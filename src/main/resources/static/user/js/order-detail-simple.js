@@ -234,7 +234,7 @@ function openReviewModal(orderId) {
 
 async function loadOrderProductsForReview(orderId) {
     console.log('loadOrderProductsForReview called with orderId:', orderId);
-    
+
     const token = localStorage.getItem('access_token');
     if (!token) {
         alert('Vui lòng đăng nhập để đánh giá');
@@ -277,7 +277,7 @@ async function loadOrderProductsForReview(orderId) {
             console.log('Rendering review products:', products);
             renderReviewProducts(products);
             console.log('Showing modal');
-            
+
             // Đảm bảo modal được khởi tạo trước khi show
             if (ensureModalInitialized()) {
                 $('#reviewModal').modal('show');
@@ -395,13 +395,15 @@ function renderReviewProducts(products) {
         container.append(productHtml);
     });
 
-    // Add star rating functionality
-    $('.star-rating .star').click(function () {
+    // Add star rating functionality - sử dụng event delegation để tránh gán nhiều lần
+    $(document).off('click', '.star-rating .star').on('click', '.star-rating .star', function () {
         const card = $(this).closest('.card');
         if (card.hasClass('border-success')) return; // Đã đánh giá rồi
 
         const rating = $(this).data('rating');
         const stars = $(this).parent().find('.star');
+
+        console.log('Star clicked, rating:', rating);
 
         // Update star states
         stars.each(function (index) {
@@ -415,6 +417,7 @@ function renderReviewProducts(products) {
 
         // Store rating
         card.data('rating', rating);
+        console.log('Rating stored:', card.data('rating'));
     });
 
     // Nếu đã có review, hiển thị sao đã được chọn
@@ -439,17 +442,17 @@ function renderReviewProducts(products) {
 // Thêm function kiểm tra review status
 async function checkReviewStatusAndOpen(orderId) {
     console.log('checkReviewStatusAndOpen called with orderId:', orderId);
-    
+
     try {
         const token = localStorage.getItem('access_token');
         if (!token) {
             alert('Vui lòng đăng nhập');
             return;
         }
-        
+
         // Đảm bảo currentOrderId được set
         currentOrderId = orderId;
-        
+
         // Lấy danh sách sản phẩm
         const response = await fetch(`/api/orders/${orderId}/items`, {
             headers: { 'Authorization': `Bearer ${token}` }
@@ -520,7 +523,7 @@ async function openViewReviewModal(orderId) {
 
             renderViewReviewProducts(products);
             console.log('Showing modal');
-            
+
             // Đảm bảo modal được khởi tạo trước khi show
             if (ensureModalInitialized()) {
                 $('#reviewModal').modal('show');
@@ -659,22 +662,24 @@ function renderViewReviewProducts(products) {
             </div>
         `;
         container.append(productHtml);
-        
+
         // ✅ FIX: Lưu existing review data vào data attribute của card
         if (hasReview && existingReview) {
             const card = $(`.card[data-order-product-id="${product.idOrderProduct}"]`);
             card.data('existing-review', existingReview);
         }
     });
-    
-    // Add star rating functionality for new reviews
-    $('.star-rating .star').click(function() {
+
+    // Add star rating functionality for new reviews - sử dụng event delegation
+    $(document).off('click', '.star-rating .star').on('click', '.star-rating .star', function () {
         const card = $(this).closest('.card');
         const rating = $(this).data('rating');
         const stars = $(this).parent().find('.star');
-        
+
+        console.log('Star clicked in view modal, rating:', rating);
+
         // Update star states
-        stars.each(function(index) {
+        stars.each(function (index) {
             const starElement = $(this);
             if (index < rating) {
                 starElement.addClass('filled');
@@ -682,9 +687,10 @@ function renderViewReviewProducts(products) {
                 starElement.removeClass('filled');
             }
         });
-        
+
         // Store rating
         card.data('rating', rating);
+        console.log('Rating stored in view modal:', card.data('rating'));
     });
 
     // Update modal title and buttons
@@ -693,7 +699,7 @@ function renderViewReviewProducts(products) {
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
         <button type="button" class="btn btn-primary" onclick="submitAllReviews()">Gửi đánh giá</button>
     `);
-    
+
     // Đảm bảo tất cả nút "Sửa" đều hiển thị khi reload
     $('.edit-btn').show();
 }
@@ -768,10 +774,12 @@ function editReview(orderProductId) {
     });
     card.data('rating', existingReview.rating);
 
-    // Add click handlers
-    card.find('.star').click(function () {
+    // Add click handlers - sử dụng event delegation
+    card.off('click', '.star').on('click', '.star', function () {
         const rating = $(this).data('rating');
         const stars = $(this).parent().find('.star');
+
+        console.log('Star clicked in edit mode, rating:', rating);
 
         stars.each(function (index) {
             const starElement = $(this);
@@ -782,17 +790,18 @@ function editReview(orderProductId) {
             }
         });
         card.data('rating', rating);
-        
+        console.log('Rating stored in edit mode:', card.data('rating'));
+
         // Lưu thay đổi rating
         saveReviewChanges(orderProductId);
     });
 
     // Add change handlers để lưu thay đổi vào pending-changes
-    card.find('textarea').on('input', function() {
+    card.find('textarea').on('input', function () {
         saveReviewChanges(orderProductId);
     });
-    
-    card.find('input[type="checkbox"]').on('change', function() {
+
+    card.find('input[type="checkbox"]').on('change', function () {
         saveReviewChanges(orderProductId);
     });
 
@@ -811,27 +820,27 @@ function saveReviewChanges(orderProductId) {
         alert('Vui lòng chọn ít nhất 1 sao');
         return false;
     }
-    
+
     // Lưu thay đổi vào data của card
     card.data('pending-changes', {
         rating: rating,
         content: content,
         anonymous: anonymous
     });
-    
+
     return true;
 }
 
 // Thêm function cancel edit review
 function cancelEdit(orderProductId) {
     const card = $(`.card[data-order-product-id="${orderProductId}"]`);
-    
+
     // Xóa pending changes
     card.removeData('pending-changes');
-    
+
     // Hiện lại nút "Sửa"
     card.find('.edit-btn').show();
-    
+
     // Reload view để quay về trạng thái ban đầu
     openViewReviewModal(currentOrderId);
 }
@@ -892,7 +901,7 @@ async function updateReviewButtonStatus(orderId) {
             const products = await response.json();
             let hasAnyReview = false;
             let allReviewed = true;
-            
+
             // Kiểm tra trạng thái review của tất cả sản phẩm
             for (let product of products) {
                 const reviewCheckResponse = await fetch(`/api/reviews/check/${product.idOrderProduct}`, {
@@ -932,7 +941,7 @@ function ensureModalInitialized() {
         console.error('Review modal not found in DOM');
         return false;
     }
-    
+
     // Kiểm tra xem modal có được khởi tạo với Bootstrap không
     if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
         // Modal đã được khởi tạo với Bootstrap
@@ -944,9 +953,9 @@ function ensureModalInitialized() {
 }
 
 // Gọi function này khi trang load
-$(document).ready(function() {
+$(document).ready(function () {
     console.log('Document ready - initializing order detail page');
-    
+
     // Lấy order ID từ URL
     const pathParts = window.location.pathname.split('/');
     const orderId = pathParts[pathParts.length - 1];
@@ -956,12 +965,12 @@ $(document).ready(function() {
         // Cập nhật trạng thái nút đánh giá
         updateReviewButtonStatus(parseInt(orderId));
     }
-    
+
     // Đảm bảo modal được khởi tạo
     setTimeout(() => {
         ensureModalInitialized();
     }, 100);
-    
+
     // Check if URL has #review hash
     if (window.location.hash === '#review') {
         console.log('Review hash found, opening modal');
@@ -986,17 +995,18 @@ async function submitAllReviews() {
 
     $('.card[data-order-product-id]').each(function () {
         const orderProductId = $(this).data('order-product-id');
-        const rating = $(this).data('rating');
+        let rating = $(this).data('rating');
         const existingReview = $(this).data('existing-review');
         const pendingChanges = $(this).data('pending-changes');
-        
+        const card = $(this);
+
         // Xử lý review đã sửa (có pending changes)
         if (pendingChanges) {
             if (!pendingChanges.rating || pendingChanges.rating < 1) {
                 hasInvalidReview = true;
                 return;
             }
-            
+
             updatedReviews.push({
                 reviewId: existingReview.reviewId,
                 rating: pendingChanges.rating,
@@ -1008,28 +1018,41 @@ async function submitAllReviews() {
         }
 
         // Chỉ xét điều kiện với sản phẩm chưa đánh giá (không có class border-success)
-        const isAlreadyReviewed = $(this).hasClass('border-success');
+        const isAlreadyReviewed = card.hasClass('border-success');
         if (isAlreadyReviewed) {
             return; // Bỏ qua sản phẩm đã đánh giá
         }
 
         // Chỉ xử lý sản phẩm có form đánh giá (có textarea)
-        const textarea = $(this).find('textarea');
+        const textarea = card.find('textarea');
         if (textarea.length === 0) {
             return; // Bỏ qua sản phẩm không có form đánh giá
         }
 
         const content = textarea.val() ? textarea.val().trim() : '';
-        const anonymous = $(this).find('input[type="checkbox"]').is(':checked');
+        const anonymous = card.find('input[type="checkbox"]').is(':checked');
+
+        // Debug: Log để kiểm tra
+        console.log('Product:', orderProductId, 'Rating:', rating, 'Content:', content);
+        console.log('Card data rating:', card.data('rating'));
+        console.log('Card has rating data:', card.data('rating') !== undefined);
+
+        // Lấy rating từ card data nếu không có từ data attribute
+        if (!rating && card.data('rating')) {
+            rating = card.data('rating');
+            console.log('Using rating from card data:', rating);
+        }
 
         // Kiểm tra nếu có nội dung mà không có rating
         if (content && (!rating || rating < 1 || rating > 5)) {
+            console.log('Invalid: có nội dung nhưng không có rating hợp lệ');
             hasInvalidReview = true;
             return;
         }
 
-        // Chỉ submit nếu có rating
+        // Chỉ submit nếu có rating (nội dung có thể để trống)
         if (rating && rating >= 1 && rating <= 5) {
+            console.log('Valid review:', { orderProductId, rating, content, anonymous });
             newReviews.push({
                 orderProductId: orderProductId,
                 rating: rating,
@@ -1037,6 +1060,11 @@ async function submitAllReviews() {
                 anonymous: anonymous
             });
             hasValidReview = true;
+        } else if (content) {
+            // Nếu có nội dung nhưng không có rating hợp lệ
+            console.log('Invalid: có nội dung nhưng rating không hợp lệ:', rating);
+            hasInvalidReview = true;
+            return;
         }
     });
 
@@ -1089,16 +1117,16 @@ async function submitAllReviews() {
                 throw new Error(errorData.message || 'Không thể cập nhật đánh giá');
             }
         }
-        
+
         // Đóng modal
         $('#reviewModal').modal('hide');
 
         // Hiển thị toast thông báo thành công
-        const message = newReviews.length > 0 && updatedReviews.length > 0 
+        const message = newReviews.length > 0 && updatedReviews.length > 0
             ? 'Đánh giá và cập nhật thành công! ✨'
-            : newReviews.length > 0 
-            ? 'Đánh giá thành công! ✨'
-            : 'Cập nhật đánh giá thành công! ✨';
+            : newReviews.length > 0
+                ? 'Đánh giá thành công! ✨'
+                : 'Cập nhật đánh giá thành công! ✨';
         showToast(message, 'success');
 
         // Cập nhật trạng thái nút đánh giá
@@ -1111,3 +1139,11 @@ async function submitAllReviews() {
         alert('Lỗi: ' + error.message);
     }
 }
+
+// Global functions để có thể gọi từ HTML
+window.cancelOrder = cancelOrder;
+window.reorderOrder = reorderOrder;
+window.checkReviewStatusAndOpen = checkReviewStatusAndOpen;
+window.submitAllReviews = submitAllReviews;
+window.editReview = editReview;
+window.cancelEdit = cancelEdit;
