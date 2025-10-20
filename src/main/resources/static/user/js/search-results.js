@@ -165,54 +165,272 @@ class SearchResultsManager {
     }
 
     createQuickViewModal(product) {
-        const existing = document.getElementById('quickViewModal');
-        if (existing) existing.remove();
-        const images = (product.images && product.images.length > 0) ? product.images : [{ imageUrl: product.mainImageUrl || '/user/img/default-product.jpg' }];
-        const thumbs = images.map((img, i) => `<div class="thumbnail-item ${i === 0 ? 'active' : ''}"><img src="${img.imageUrl}" class="thumbnail-img" alt="${product.name}" onerror="this.src='/user/img/default-product.jpg'"></div>`).join('');
-        const html = `
-            <div class="modal fade" id="quickViewModal" tabindex="-1" aria-labelledby="quickViewModalLabel" aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered"><div class="modal-content">
-                    <div class="modal-header border-0"><h5 class="modal-title" id="quickViewModalLabel">Xem nhanh sản phẩm</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
-                    <div class="modal-body"><div class="row">
-                        <div class="col-md-6"><div class="product-image-slider"><div class="main-image-container mb-3">
-                            <button class="slider-nav slider-prev" id="quickPrev"><i class="fas fa-chevron-left"></i></button>
-                            <img id="quickMain" src="${images[0].imageUrl}" class="img-fluid rounded" alt="${product.name}" onerror="this.src='/user/img/default-product.jpg'">
-                            <button class="slider-nav slider-next" id="quickNext"><i class="fas fa-chevron-right"></i></button>
-                        </div><div class="thumbnail-slider"><div class="thumbnail-container d-flex gap-2">${thumbs}</div></div></div></div>
-                        <div class="col-md-6">
-                            <h4 class="product-name mb-3"><a href="/product/${product.productId || product.id}" class="text-decoration-none text-dark">${product.name}</a></h4>
-                            <p class="brand-name text-muted mb-2">${product.brandName || 'Thương hiệu'}</p>
-                            <div class="price-section mb-4"><span class="current-price h4 text-primary">${this.formatPrice(product.price)}</span></div>
-                            <div class="quantity-selector mb-4"><div class="d-flex align-items-center">
-                                <label class="form-label mb-0" style="margin-right: 2rem;">Số lượng:</label>
-                                <div class="input-group" style="max-width: 150px;">
-                                    <button class="btn btn-outline-secondary" type="button" onclick="window.searchResultsManager.decQty()">-</button>
-                                    <input type="number" class="form-control text-center" value="1" min="1" max="${Math.min(product.stock || 10, 99)}" id="quickQty" onchange="window.searchResultsManager.valQty()" oninput="window.searchResultsManager.valQty()" onblur="window.searchResultsManager.valQtyBlur()">
-                                    <button class="btn btn-outline-secondary" type="button" onclick="window.searchResultsManager.incQty()">+</button>
-                                </div>
-                            </div><div id="quickQtyErr" class="text-danger mt-2" style="display:none;"><i class="fas fa-info-circle me-1"></i><span id="quickQtyMsg">Số lượng tối đa bạn có thể mua là ${Math.min(product.stock || 10, 99)}.</span></div></div>
-                            <div class="d-grid gap-2"><div class="row g-2"><div class="col-6">
-                                <button class="btn btn-danger btn-lg w-100" onclick="window.searchResultsManager.buyNow(${product.productId || product.id})"><i class="fas fa-bolt me-1"></i>Mua ngay</button>
-                            </div><div class="col-6">
-                                <button class="btn btn-primary btn-lg w-100" onclick="event.preventDefault(); event.stopPropagation(); window.searchResultsManager.addToCartWithQuantity(${product.productId || product.id})"><i class="fas fa-shopping-cart me-1"></i>Thêm vào giỏ</button>
-                            </div></div>
-                            <a href="/product/${product.productId || product.id}" class="btn btn-outline-primary btn-lg"><i class="fas fa-info-circle me-2"></i>Xem chi tiết sản phẩm</a></div>
+        // Remove existing modal and backdrop if any
+        const existingModal = document.getElementById('homepageBestsellerQuickViewModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+
+        // Remove any existing backdrop
+        const existingBackdrop = document.querySelector('.modal-backdrop');
+        if (existingBackdrop) {
+            existingBackdrop.remove();
+        }
+
+        const modalHTML = `
+            <div class="modal fade" id="homepageBestsellerQuickViewModal" tabindex="-1" aria-labelledby="homepageBestsellerQuickViewModalLabel" aria-hidden="true" style="z-index: 9999 !important;">
+                <div class="modal-dialog modal-dialog-centered modal-xl" style="max-width: 900px;">
+                    <div class="modal-content" style="z-index: 10000 !important;">
+                        <div class="modal-header border-0">
+                            <h5 class="modal-title" id="homepageBestsellerQuickViewModalLabel">Xem nhanh sản phẩm</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
-                    </div></div>
-                </div></div>
-            </div>`;
-        document.body.insertAdjacentHTML('beforeend', html);
-        const modal = new bootstrap.Modal(document.getElementById('quickViewModal'));
+                        <div class="modal-body">
+                            <div class="row">
+                                <!-- Product Image Slider -->
+                                <div class="col-md-6">
+                                    <div class="product-image-slider">
+                                        <!-- Main Image -->
+                                        <div class="main-image-container mb-3">
+                                            <button class="slider-nav slider-prev" id="homepageBestsellerModalPrevBtn">
+                                                <i class="fas fa-chevron-left"></i>
+                                            </button>
+                                            <img id="homepageBestsellerModalMainProductImage" 
+                                                 src="${this.getMainImageUrl(product)}" 
+                                                 class="img-fluid rounded" 
+                                                 alt="${product.name}"
+                                                 onerror="this.src='/user/img/default-product.jpg'">
+                                            <button class="slider-nav slider-next" id="homepageBestsellerModalNextBtn">
+                                                <i class="fas fa-chevron-right"></i>
+                                            </button>
+                                        </div>
+                                        
+                                        <!-- Thumbnail Slider -->
+                                        <div class="thumbnail-slider">
+                                            <div class="thumbnail-container d-flex gap-2">
+                                                ${this.generateImageThumbnails(product)}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Product Info -->
+                                <div class="col-md-6">
+                                    <h4 class="product-name mb-3">
+                                        <a href="/product/${product.productId}" class="text-decoration-none text-dark">
+                                            ${product.name}
+                                        </a>
+                                    </h4>
+                                    <p class="brand-name text-muted mb-2">${product.brandName || 'Thương hiệu'}</p>
+                                    
+                                    <!-- Product Status -->
+                                    <div class="product-status mb-3">
+                                        ${this.getProductStatusBadge(product)}
+                                        <span class="ms-2 text-muted">Mã sản phẩm: ${product.productId}</span>
+                                    </div>
+                                    
+                                    <!-- Rating -->
+                                    <div class="rating mb-3">
+                                        <span class="stars">
+                                            ${this.generateStarsForModal(product.averageRating || product.rating || 0, product.reviewCount || product.ratingCount || 0)}
+                                        </span>
+                                        <span class="review-count ms-2">(${product.reviewCount || product.ratingCount || 0} đánh giá)</span>
+                                    </div>
+                                    
+                                    <!-- Price -->
+                                    <div class="price-section mb-4">
+                                        <span class="current-price h4 text-primary">
+                                            ${this.formatPrice(product.currentPrice || product.price)}
+                                        </span>
+                                    </div>
+                                    
+                                    <!-- Quantity Selector -->
+                                    <div class="quantity-selector mb-4">
+                                        <div class="d-flex align-items-center">
+                                            <label class="form-label mb-0" style="margin-right: 2rem;">Số lượng:</label>
+                                            <div class="input-group" style="max-width: 150px;">
+                                                <button class="btn btn-outline-secondary" type="button" onclick="window.searchResultsManager.decQty()">-</button>
+                                                <input type="number" class="form-control text-center" value="1" min="1" max="${Math.min(product.stock || 10, 99)}" id="quickQty" onchange="window.searchResultsManager.valQty()" oninput="window.searchResultsManager.valQty()" onblur="window.searchResultsManager.valQtyBlur()">
+                                                <button class="btn btn-outline-secondary" type="button" onclick="window.searchResultsManager.incQty()">+</button>
+                                            </div>
+                                        </div>
+                                        <!-- Error Message -->
+                                        <div id="quickQtyErr" class="text-danger mt-2" style="display: none;">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            <span id="quickQtyMsg">Số lượng tối đa bạn có thể mua là ${Math.min(product.stock || 10, 99)}.</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Actions -->
+                                    <div class="d-grid gap-2">
+                                        ${this.getQuickViewActions(product)}
+                                        
+                                        <!-- View Details Button -->
+                                        <a href="/product/${product.productId}" 
+                                           class="btn btn-outline-primary btn-lg">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            Xem chi tiết sản phẩm
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Add modal to body
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+        // Show modal with proper backdrop
+        const modal = new bootstrap.Modal(document.getElementById('homepageBestsellerQuickViewModal'), {
+            backdrop: true,
+            keyboard: true,
+            focus: true
+        });
         modal.show();
+
+        // Ensure backdrop has proper z-index
         setTimeout(() => {
-            const main = document.getElementById('quickMain');
-            const t = Array.from(document.querySelectorAll('.thumbnail-item'));
-            let i = 0; const upd = (k) => { i = (k + images.length) % images.length; if (main) main.src = images[i].imageUrl; t.forEach((n, idx) => n.classList.toggle('active', idx === i)); };
-            document.getElementById('quickPrev')?.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); upd(i - 1); });
-            document.getElementById('quickNext')?.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); upd(i + 1); });
-            t.forEach((n, idx) => n.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); upd(idx); }));
-        }, 50);
-        document.getElementById('quickViewModal').addEventListener('hidden.bs.modal', function () { this.remove(); });
+            const backdrop = document.querySelector('.modal-backdrop');
+            if (backdrop) {
+                backdrop.style.zIndex = '9998';
+                backdrop.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+            }
+        }, 10);
+
+        // Add slider navigation event listeners
+        this.setupSliderNavigation(product);
+
+        // Clean up when modal is hidden
+        document.getElementById('homepageBestsellerQuickViewModal').addEventListener('hidden.bs.modal', () => {
+            const modalElement = document.getElementById('homepageBestsellerQuickViewModal');
+            if (modalElement) {
+                modalElement.remove();
+            }
+            const backdrop = document.querySelector('.modal-backdrop');
+            if (backdrop) {
+                backdrop.remove();
+            }
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+        }, { once: true });
+    }
+
+    // Helpers for Quick View
+    getMainImageUrl(product) {
+        if (product && product.mainImageUrl) return product.mainImageUrl;
+        if (product && Array.isArray(product.images) && product.images.length > 0) {
+            const first = product.images[0];
+            return (first && (first.imageUrl || first)) || '/user/img/default-product.jpg';
+        }
+        return '/user/img/default-product.jpg';
+    }
+
+    generateImageThumbnails(product) {
+        let images = [];
+        if (product && Array.isArray(product.images) && product.images.length > 0) {
+            images = product.images;
+        } else if (product && product.mainImageUrl) {
+            images = [{ imageUrl: product.mainImageUrl }];
+        } else {
+            images = [{ imageUrl: '/user/img/default-product.jpg' }];
+        }
+        return images.map((img, idx) => `
+            <div class="thumbnail-item ${idx === 0 ? 'active' : ''}" style="cursor:pointer;">
+                <img src="${img.imageUrl || img}" class="thumbnail-img" alt="${product.name}" onerror="this.src='/user/img/default-product.jpg'" style="width:60px;height:60px;object-fit:cover;border:2px solid ${idx === 0 ? '#0d6efd' : 'transparent'};border-radius:4px;"/>
+            </div>
+        `).join('');
+    }
+
+    getProductStatus(product) {
+        if (!product) return 'out_of_stock';
+        if (product.deactivated || product.isActive === false) return 'deactivated';
+        if (product.available === false) return 'out_of_stock';
+        if (typeof product.stock === 'number' && product.stock <= 0) return 'out_of_stock';
+        return 'available';
+    }
+
+    getProductStatusBadge(product) {
+        const status = this.getProductStatus(product);
+        if (status === 'deactivated') return '<span class="badge bg-warning text-dark">Ngừng kinh doanh</span>';
+        if (status === 'out_of_stock') return '<span class="badge bg-danger">Hết hàng</span>';
+        return '<span class="badge bg-success">Còn hàng</span>';
+    }
+
+    generateStarsForModal(rating, reviewCount = 0) {
+        const r = Number(rating) || 0;
+        if (r <= 0) return '<i class="far fa-star" style="color:#ccc"></i>'.repeat(5);
+        const full = Math.floor(r);
+        const half = (r % 1) >= 0.5 ? 1 : 0;
+        const empty = 5 - full - half;
+        return `${'<i class="fas fa-star text-warning"></i>'.repeat(full)}${half ? '<i class="fas fa-star-half-alt text-warning"></i>' : ''}${'<i class=\"far fa-star\" style=\"color:#ccc\"></i>'.repeat(empty)}`;
+    }
+
+    getQuickViewActions(product) {
+        const status = this.getProductStatus(product);
+        if (status === 'deactivated') {
+            return `
+                <div class="alert alert-warning text-center">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Sản phẩm đã ngừng kinh doanh
+                </div>
+            `;
+        }
+        if (status === 'out_of_stock') {
+            return `
+                <div class="alert alert-danger text-center">
+                    <i class="fas fa-times-circle me-2"></i>
+                    Sản phẩm đã hết hàng
+                </div>
+            `;
+        }
+        return `
+            <div class="row g-2">
+                <div class="col-6">
+                    <button class="btn btn-danger btn-lg w-100" onclick="window.searchResultsManager.buyNow(${product.productId})">
+                        <i class="fas fa-bolt me-1"></i> Mua ngay
+                    </button>
+                </div>
+                <div class="col-6">
+                    <button class="btn btn-primary btn-lg w-100" onclick="window.searchResultsManager.addToCartWithQuantity(${product.productId})">
+                        <i class="fas fa-shopping-cart me-1"></i> Thêm vào giỏ
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    setupSliderNavigation(product) {
+        setTimeout(() => {
+            const prevBtn = document.getElementById('homepageBestsellerModalPrevBtn');
+            const nextBtn = document.getElementById('homepageBestsellerModalNextBtn');
+            const mainImage = document.getElementById('homepageBestsellerModalMainProductImage');
+            const thumbnails = document.querySelectorAll('#homepageBestsellerQuickViewModal .thumbnail-item');
+
+            if (!product || !Array.isArray(product.images) || product.images.length <= 1) {
+                if (prevBtn) prevBtn.style.display = 'none';
+                if (nextBtn) nextBtn.style.display = 'none';
+                return;
+            }
+
+            let currentIndex = 0;
+            const updateMain = (idx) => {
+                if (!mainImage) return;
+                const img = product.images[idx];
+                if (img) {
+                    mainImage.src = img.imageUrl || img;
+                    mainImage.alt = product.name || '';
+                    thumbnails.forEach((t, i) => t.classList.toggle('active', i === idx));
+                }
+            };
+
+            if (prevBtn) prevBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); currentIndex = currentIndex > 0 ? currentIndex - 1 : product.images.length - 1; updateMain(currentIndex); });
+            if (nextBtn) nextBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); currentIndex = currentIndex < product.images.length - 1 ? currentIndex + 1 : 0; updateMain(currentIndex); });
+            thumbnails.forEach((thumb, idx) => thumb.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); currentIndex = idx; updateMain(currentIndex); }));
+        }, 100);
     }
 
     decQty() { const i = document.getElementById('quickQty'); if (!i) return; const v = parseInt(i.value || '1', 10); if (v > 1) i.value = String(v - 1); this.valQty(); }
