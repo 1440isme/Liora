@@ -169,6 +169,13 @@ class NewestProductsPageManager {
         grid.style.padding = '2rem 1rem';
 
         grid.innerHTML = this.products.map((p) => this.createProductCard(p)).join('');
+
+        // Trigger rating load sau khi render xong
+        setTimeout(() => {
+            if (window.loadProductRatings) {
+                window.loadProductRatings();
+            }
+        }, 500);
     }
 
     createProductCard(product) {
@@ -181,7 +188,7 @@ class NewestProductsPageManager {
 
         return `
             <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
-                <div class="card h-100 product-card">
+                <div class=" product-card">
                     <div class="position-relative">
                         <img src="${imageUrl}" class="card-img-top" alt="${name}"
                              onerror="this.src='/user/img/default-product.jpg'"
@@ -200,6 +207,53 @@ class NewestProductsPageManager {
                         <p class="brand-name">
                             <a href="/brand/${brandId}" class="text-decoration-none text-muted brand-link">${brandName}</a>
                         </p>
+                        
+                        <!-- Rating sẽ được load bởi ProductRatingUtils -->
+                        <div class="product-rating" data-product-id="${productId}">
+                            <div class="star-rating">
+                                <div class="star empty">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="2">
+                                        <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                                    </svg>
+                                </div>
+                                <div class="star empty">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="2">
+                                        <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                                    </svg>
+                                </div>
+                                <div class="star empty">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="2">
+                                        <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                                    </svg>
+                                </div>
+                                <div class="star empty">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="2">
+                                        <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                                    </svg>
+                                </div>
+                                <div class="star empty">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="2">
+                                        <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                                    </svg>
+                                </div>
+                            </div>
+                            <span class="rating-count">(0)</span>
+                        </div>
+                    
+                        <!-- Sales Progress Bar -->
+                        <div class="sales-progress mb-3">
+                            <div class="sales-info d-flex justify-content-between align-items-center mb-1">
+                                <span class="sales-label">Đã bán</span>
+                                <span class="sales-count">${this.formatNumber(product.soldCount || 0)}</span>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar" 
+                                     style="width: ${this.calculateSalesProgress(product.soldCount || 0)}%"
+                                     role="progressbar">
+                                </div>
+                            </div>
+                        </div>
+                        
                         <div class="mt-auto d-flex justify-content-between align-items-center">
                             <span class="current-price">${this.formatPrice(price)}</span>
                             <button class="add-to-cart-icon" title="Thêm vào giỏ"
@@ -319,6 +373,20 @@ class NewestProductsPageManager {
                                             ${this.generateStarsForModal(product.averageRating || product.rating || 0, product.reviewCount || product.ratingCount || 0)}
                                         </span>
                                         <span class="review-count ms-2">(${product.reviewCount || product.ratingCount || 0} đánh giá)</span>
+                                    </div>
+                                    
+                                    <!-- Sales Progress -->
+                                    <div class="sales-progress mb-3">
+                                        <div class="sales-info d-flex justify-content-between align-items-center mb-1">
+                                            <span class="sales-label">Đã bán</span>
+                                            <span class="sales-count">${this.formatNumber(product.soldCount || 0)}</span>
+                                        </div>
+                                        <div class="progress">
+                                            <div class="progress-bar" 
+                                                 style="width: ${this.calculateSalesProgress(product.soldCount || 0)}%"
+                                                 role="progressbar">
+                                            </div>
+                                        </div>
                                     </div>
                                     
                                     <!-- Price -->
@@ -773,6 +841,42 @@ class NewestProductsPageManager {
     incQty() { const i = document.getElementById('quickQty'); if (!i) return; const v = parseInt(i.value || '1', 10); const m = parseInt(i.getAttribute('max') || '99', 10); if (v < m) i.value = String(v + 1); this.valQty(); }
     valQty() { const i = document.getElementById('quickQty'); const e = document.getElementById('quickQtyErr'); const m = document.getElementById('quickQtyMsg'); if (!i || !e || !m) return; const v = parseInt(i.value || '1', 10); const mx = parseInt(i.getAttribute('max') || '99', 10); if (isNaN(v) || v < 1) { i.value = '1'; e.style.display = 'none'; i.classList.remove('is-invalid'); return; } if (v > mx) { i.value = String(mx); e.style.display = 'block'; m.textContent = `Số lượng tối đa là ${mx} sản phẩm.`; i.classList.add('is-invalid'); } else { e.style.display = 'none'; i.classList.remove('is-invalid'); } }
     valQtyBlur() { const i = document.getElementById('quickQty'); if (i && (!i.value || i.value === '0')) i.value = '1'; this.valQty(); }
+
+    // Helper method to format numbers (e.g., 1000 -> 1.000)
+    formatNumber(number) {
+        return new Intl.NumberFormat('vi-VN').format(number);
+    }
+
+    // Helper method to calculate sales progress percentage
+    calculateSalesProgress(soldCount) {
+        // Define different thresholds for progress calculation - optimized for better visual appeal
+        const thresholds = [
+            { max: 50, percentage: 30 },     // 0-50: 0-30% (tăng từ 20%)
+            { max: 100, percentage: 40 },    // 50-100: 30-40%
+            { max: 500, percentage: 55 },   // 100-500: 40-55%
+            { max: 1000, percentage: 70 },   // 500-1000: 55-70%
+            { max: 5000, percentage: 85 },   // 1000-5000: 70-85%
+            { max: 10000, percentage: 95 },  // 5000-10000: 85-95%
+            { max: Infinity, percentage: 100 } // >10000: 95-100%
+        ];
+
+        for (const threshold of thresholds) {
+            if (soldCount <= threshold.max) {
+                // Get previous threshold percentage
+                const prevThreshold = thresholds[thresholds.indexOf(threshold) - 1];
+                const basePercentage = prevThreshold ? prevThreshold.percentage : 0;
+
+                // Calculate progress within this threshold
+                const prevMax = prevThreshold ? prevThreshold.max : 0;
+                const range = threshold.max - prevMax;
+                const progress = ((soldCount - prevMax) / range) * (threshold.percentage - basePercentage);
+
+                return Math.min(100, basePercentage + progress);
+            }
+        }
+
+        return 100; // For very high sales
+    }
 }
 
 document.addEventListener('DOMContentLoaded', () => {

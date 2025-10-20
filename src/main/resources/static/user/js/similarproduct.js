@@ -124,9 +124,9 @@ class SimilarProductsManager {
             console.log('🔍 Loading brands for similar products...');
             const response = await fetch(`/api/products/${this.productId}/similar-brands`);
             const data = await response.json();
-            
+
             console.log('🔍 Similar brands API response:', data);
-            
+
             if (data.code === 1000 && data.result) {
                 const brandFiltersContainer = document.getElementById('brandFilters');
                 if (brandFiltersContainer) {
@@ -390,7 +390,7 @@ class SimilarProductsManager {
                         <span class="stars">
                             ${this.renderStars(product.averageRating || 0, product.ratingCount || 0)}
                         </span>
-                        <span class="rating-count">(${product.ratingCount || 0} đánh giá)</span>
+                        <span class="rating-count">(${product.ratingCount || 0})</span>
                     </div>
                     
                     <div class="mt-auto">

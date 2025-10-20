@@ -162,7 +162,7 @@ class SimilarProductsManager {
                         <span class="stars">
                             ${this.renderStars(product.averageRating || 0, product.ratingCount || 0)}
                         </span>
-                        <span class="rating-count">(${product.ratingCount || 0} đánh giá)</span>
+                        <span class="rating-count">(${product.ratingCount || 0})</span>
                     </div>
                     
                     <div class="mt-auto">

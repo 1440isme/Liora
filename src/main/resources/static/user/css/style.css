@@ -54,7 +54,7 @@ h3 {
 /* Product Card Styles */
 .product-card {
     border: 1px solid var(--border-pink-light);
-    border-radius: 8px;
+    border-radius: 3px;
     transition: all 0.3s ease;
     overflow: hidden;
     background: white;

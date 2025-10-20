@@ -65,25 +65,33 @@ public class PaymentController {
             log.warn("Return handler could not process IPN inline: {}", e.getMessage());
         }
 
-        // Fallback DEV ONLY (cấu hình): nếu chưa xử lý được nhưng thấy code=00, cập
-        // nhật trạng thái để không kẹt UI
-        if (!processed && Boolean.TRUE.equals(trustReturnWhenIpnMissing) && "00".equals(code)) {
+        // Fallback DEV ONLY (cấu hình): nếu chưa xử lý được nhưng thấy code=00/24, cập
+        // nhật tối thiểu để không kẹt UI
+        if (!processed && Boolean.TRUE.equals(trustReturnWhenIpnMissing) && ("00".equals(code) || "24".equals(code))) {
             try {
                 vnpayPaymentRepository.findByVnpTxnRef(orderRef).ifPresent(vnp -> {
                     var orderOpt = orderRepository.findById(vnp.getIdOrder());
                     if (orderOpt.isPresent()) {
                         var order = orderOpt.get();
-                        if (!"PAID".equalsIgnoreCase(order.getPaymentStatus())) {
-                            order.setPaymentStatus("PAID");
-                            order.setOrderStatus("PAID");
-                            // Tạo GHN ngay trong fallback dev nếu đủ thông tin địa chỉ
-                            try {
-                                if (order.getDistrictId() != null && order.getWardCode() != null) {
-                                    ghnShippingService.createShippingOrder(order);
+                        if ("00".equals(code)) {
+                            if (!"PAID".equalsIgnoreCase(order.getPaymentStatus())) {
+                                order.setPaymentStatus("PAID");
+
+                                // Tạo GHN ngay trong fallback dev nếu đủ thông tin địa chỉ
+                                try {
+                                    if (order.getDistrictId() != null && order.getWardCode() != null) {
+                                        ghnShippingService.createShippingOrder(order);
+                                    }
+                                } catch (Exception ignore) {
                                 }
-                            } catch (Exception ignore) {
+                                orderRepository.save(order);
                             }
-                            orderRepository.save(order);
+                        } else if ("24".equals(code)) {
+                            if (!"CANCELLED".equalsIgnoreCase(order.getPaymentStatus())) {
+                                order.setPaymentStatus("CANCELLED");
+                                // Giữ orderStatus hiện tại (thường là PENDING)
+                                orderRepository.save(order);
+                            }
                         }
                     }
                 });

@@ -62,8 +62,7 @@
                         </button>
 
                         <button class="btn btn-primary me-2" th:if="${order.orderStatus == 'COMPLETED'}"
-                            th:onclick="'checkReviewStatusAndOpen(' + ${order.idOrder} + ')'"
-                            id="reviewButton">
+                            th:onclick="'checkReviewStatusAndOpen(' + ${order.idOrder} + ')'" id="reviewButton">
                             <i class="fas fa-star me-1"></i> <span id="reviewButtonText">Đánh giá</span>
                         </button>
 
@@ -131,7 +130,8 @@
                                         <tbody>
                                             <tr th:each="product : ${orderProducts}">
                                                 <td>
-                                                    <a th:href="@{/product/{id}(id=${product.idProduct})}" style="text-decoration: none;">
+                                                    <a th:href="@{/product/{id}(id=${product.idProduct})}"
+                                                        style="text-decoration: none;">
                                                         <img th:src="${product.mainImageUrl}"
                                                             th:alt="${product.productName}" class="img-thumbnail"
                                                             style="width: 60px; height: 60px; object-fit: cover;"
@@ -140,11 +140,16 @@
                                                 </td>
                                                 <td>
                                                     <div>
-                                                        <a th:href="@{/product/{id}(id=${product.idProduct})}" class="text-decoration-none product-link" style="color: inherit;">
+                                                        <a th:href="@{/product/{id}(id=${product.idProduct})}"
+                                                            class="text-decoration-none product-link"
+                                                            style="color: inherit;">
                                                             <h6 class="mb-1" th:text="${product.productName}"></h6>
                                                         </a>
-                                                        <a th:href="@{/brand/{id}(id=${product.brandId})}" class="text-decoration-none brand-link" style="color: var(--accent-color);">
-                                                            <small class="text-muted" th:text="${product.brandName}"></small>
+                                                        <a th:href="@{/brand/{id}(id=${product.brandId})}"
+                                                            class="text-decoration-none brand-link"
+                                                            style="color: var(--accent-color);">
+                                                            <small class="text-muted"
+                                                                th:text="${product.brandName}"></small>
                                                         </a>
                                                     </div>
                                                 </td>
@@ -185,7 +190,7 @@
                                         <td th:text="${order.paymentMethod}"></td>
                                     </tr>
                                     <tr>
-                                        <td class="fw-medium">Trạng thái:</td>
+                                        <td class="fw-medium">Trạng thái đơn hàng:</td>
                                         <td>
                                             <span class="status-badge"
                                                 th:classappend="${order.orderStatus == 'PENDING'} ? 'status-pending' : 
@@ -196,6 +201,24 @@
                                                     <span th:case="'COMPLETED'">Hoàn tất</span>
                                                     <span th:case="'CANCELLED'">Đã hủy</span>
                                                     <span th:case="*" th:text="${order.orderStatus}"></span>
+                                                </span>
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-medium">Trạng thái thanh toán:</td>
+                                        <td>
+                                            <span class="status-badge"
+                                                th:classappend="${order.paymentStatus == 'PENDING'} ? 'status-pending' : 
+                                                                            (${order.paymentStatus == 'PAID'} ? 'status-completed' : 
+                                                                            (${order.paymentStatus == 'CANCELLED'} ? 'status-cancelled' : 
+                                                                            (${order.paymentStatus == 'FAILED'} ? 'status-failed' : 'status-pending')))">
+                                                <span th:switch="${order.paymentStatus}">
+                                                    <span th:case="'PENDING'">Chờ thanh toán</span>
+                                                    <span th:case="'PAID'">Đã thanh toán</span>
+                                                    <span th:case="'CANCELLED'">Đã hủy</span>
+                                                    <span th:case="'FAILED'">Thanh toán thất bại</span>
+                                                    <span th:case="*" th:text="${order.paymentStatus}"></span>
                                                 </span>
                                             </span>
                                         </td>
@@ -284,7 +307,7 @@
     <!-- Scripts -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script th:src="@{/user/js/order-detail.js}"></script>
+    <script th:src="@{/user/js/order-detail-simple.js}"></script>
     <script th:src="@{/user/js/main.js}"></script>
     <script th:src="@{/user/js/cart.js}"></script>
 
@@ -338,7 +361,7 @@
         .btn-warning.text-white {
             color: white !important;
         }
-        
+
         .btn-warning.text-white i {
             color: white !important;
         }

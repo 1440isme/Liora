@@ -114,7 +114,6 @@ body {
 #productsGrid .product-card,
 body #productsGrid .product-card {
     background: white !important;
-    border-radius: 3px !important;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
     transition: all 0.3s ease !important;
     overflow: hidden !important;
@@ -514,7 +513,7 @@ body #productsGrid .product-card .card-title {
 
 #quickViewModal .modal-content {
     border-radius: 8px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
     font-family: 'Gilroy', 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
@@ -708,7 +707,7 @@ body #productsGrid .product-card .card-title {
 #quickViewModal .modal-content {
     border: none;
     border-radius: 8px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
     font-family: 'Gilroy', 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
@@ -845,20 +844,20 @@ body #productsGrid .product-card .card-title {
         gap: 0.75rem;
         padding: 0.75rem;
     }
-    
+
     #productsGrid .product-card .card-img-top {
         height: 150px;
         padding: 10px;
     }
-    
+
     #productsGrid .product-card .card-body {
         padding: 0.75rem;
     }
-    
+
     #productsGrid .product-card .card-title {
         font-size: 0.8rem;
     }
-    
+
     #productsGrid .product-card .current-price {
         font-size: 1rem;
     }
@@ -870,19 +869,19 @@ body #productsGrid .product-card .card-title {
         gap: 0.5rem;
         padding: 0.5rem;
     }
-    
+
     #productsGrid .product-card .card-img-top {
         height: 180px;
     }
-    
+
     .product-name-link {
         font-size: 0.9rem;
     }
-    
+
     .current-price {
         font-size: 1rem;
     }
-    
+
     .btn-primary,
     .btn-danger,
     .btn-outline-primary,

@@ -221,6 +221,13 @@ public class PaymentServiceImpl implements PaymentService {
             vnpayPayment.setPaidAmount(paidAmount);
             vnpayPayment.setPaidAt(LocalDateTime.now());
             vnpayPayment.setFailureReason(null);
+        } else if ("24".equals(responseCode)) { // 24: User cancel payment at VNPAY
+            order.setPaymentStatus("CANCELLED");
+            // Giữ orderStatus ở trạng thái hiện tại (thường là PENDING)
+
+            // Update VnpayPayment entity
+            vnpayPayment.setVnpResponseCode(responseCode);
+            vnpayPayment.setFailureReason("VNPAY user cancelled (code=24)");
         } else {
             order.setPaymentStatus("FAILED");
 

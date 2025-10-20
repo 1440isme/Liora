@@ -409,7 +409,7 @@ class BestsellerProductsPageManager {
 
         return `
             <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
-                <div class="card h-100 product-card ${statusClass}">
+                <div class=" product-card ${statusClass}">
                     <div class="position-relative">
                         <img src="${this.getMainImageUrl(product)}" 
                              class="card-img-top" 
@@ -444,7 +444,7 @@ class BestsellerProductsPageManager {
                             <span class="stars">
                                 ${this.renderStars(product.averageRating || product.rating || 0, reviewCount)}
                             </span>
-                            <span class="rating-count">(${reviewCount} đánh giá)</span>
+                            <span class="rating-count">(${reviewCount})</span>
                         </div>
                         
                         <div class="mt-auto">

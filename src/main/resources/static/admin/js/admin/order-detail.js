@@ -160,8 +160,11 @@ class OrderDetailManager {
         // Payment method - đặt trước trạng thái
         $('#paymentMethod').text(order.paymentMethod || 'Tiền mặt');
 
-        // Bỏ trạng thái thanh toán, chỉ hiển thị trạng thái đơn hàng - đặt sau phương thức
+        // Trạng thái đơn hàng
         $('#orderStatus').html(`<span class="badge ${this.getOrderStatusClass(order.orderStatus)}">${this.getOrderStatusText(order.orderStatus)}</span>`);
+
+        // Trạng thái thanh toán
+        $('#paymentStatus').html(`<span class="badge ${this.getPaymentStatusClass(order.paymentStatus)}">${this.getPaymentStatusText(order.paymentStatus)}</span>`);
 
         // Order details - sử dụng trường total thay vì totalAmount
         const formattedAmount = new Intl.NumberFormat('vi-VN', {
@@ -528,6 +531,32 @@ class OrderDetailManager {
             case 'PENDING': return 'bg-warning';
             case 'COMPLETED': return 'bg-success';
             case 'CANCELLED': return 'bg-danger';
+            default: return 'bg-secondary';
+        }
+    }
+
+    // Map text trạng thái thanh toán để hiển thị
+    getPaymentStatusText(status) {
+        if (!status) return 'Chưa xác định';
+        const upperStatus = status.toUpperCase();
+        switch (upperStatus) {
+            case 'PENDING': return 'Chờ thanh toán';
+            case 'PAID': return 'Đã thanh toán';
+            case 'CANCELLED': return 'Đã hủy';
+            case 'FAILED': return 'Thanh toán thất bại';
+            default: return status;
+        }
+    }
+
+    // Map class cho badge trạng thái thanh toán
+    getPaymentStatusClass(status) {
+        if (!status) return 'bg-secondary';
+        const upperStatus = status.toUpperCase();
+        switch (upperStatus) {
+            case 'PENDING': return 'bg-warning';
+            case 'PAID': return 'bg-success';
+            case 'CANCELLED': return 'bg-danger';
+            case 'FAILED': return 'bg-danger';
             default: return 'bg-secondary';
         }
     }
