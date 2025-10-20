@@ -668,8 +668,8 @@
                                         <span class="popup-expiry-date">${formatDate(discount.endDate)}</span>
                                     </div>
                                     <div class="popup-usage">
-                                        <span class="popup-usage-label">Lượt dùng/user</span>
-                                        <span class="popup-usage-count">${discount.usageLimitPerUser || 'Không giới hạn'}</span>
+                                        <span class="popup-usage-label">Lượt dùng</span>
+                                        <span class="popup-usage-count">${discount.userUsageLimit && discount.userUsageLimit > 0 ? discount.userUsageLimit : 'Không giới hạn'}</span>
                                     </div>
                                 </div>
                             </div>
