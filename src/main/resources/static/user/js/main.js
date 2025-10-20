@@ -513,7 +513,8 @@ class LioraApp {
 
         console.log('Rating is not 0, showing stars based on rating:', rating);
         const fullStars = Math.floor(rating);
-        const hasHalfStar = rating % 1 !== 0;
+        const decimalPart = rating % 1;
+        const hasHalfStar = decimalPart > 0;
         const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
 
         return [

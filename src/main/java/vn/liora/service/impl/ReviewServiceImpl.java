@@ -234,6 +234,11 @@ public class ReviewServiceImpl implements IReviewService {
     }
 
     @Override
+    public Long getTotalReviewCountByProductId(Long productId) {
+        return reviewRepository.getTotalReviewCountByProductId(productId);
+    }
+
+    @Override
     public Map<String, Object> getProductReviewStatistics(Long productId) {
         Map<String, Object> statistics = new HashMap<>();
         

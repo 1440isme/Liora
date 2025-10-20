@@ -44,11 +44,15 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     Optional<Review> findByOrderProductIdOrderProductAndUserId(Long orderProductId, Long userId);
     
     // ====== CUSTOM QUERIES ======
-    @Query("SELECT AVG(r.rating) FROM Review r WHERE r.productId = :productId AND r.isVisible = true")
+    @Query("SELECT AVG(r.rating) FROM Review r WHERE r.productId = :productId")
     Double getAverageRatingByProductId(@Param("productId") Long productId);
     
     @Query("SELECT COUNT(r) FROM Review r WHERE r.productId = :productId AND r.isVisible = true")
     Long getReviewCountByProductId(@Param("productId") Long productId);
+    
+    // Đếm tất cả reviews (bao gồm cả ẩn) để tính average rating chính xác
+    @Query("SELECT COUNT(r) FROM Review r WHERE r.productId = :productId")
+    Long getTotalReviewCountByProductId(@Param("productId") Long productId);
     
     // Thống kê theo rating cho sản phẩm
     @Query("SELECT COUNT(r) FROM Review r WHERE r.productId = :productId AND r.rating = :rating AND r.isVisible = true")

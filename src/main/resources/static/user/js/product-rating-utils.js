@@ -39,8 +39,12 @@ class ProductRatingUtils {
         const count = reviewCount || 0;
         
         let starsHTML = '';
+        const fullStars = Math.floor(rating);
+        const decimalPart = rating % 1;
+        const hasHalfStar = decimalPart > 0;
+        
         for (let i = 1; i <= 5; i++) {
-            if (i <= Math.floor(rating)) {
+            if (i <= fullStars) {
                 // Full star
                 starsHTML += `
                     <div class="star filled">
@@ -49,7 +53,7 @@ class ProductRatingUtils {
                         </svg>
                     </div>
                 `;
-            } else if (i === Math.ceil(rating) && rating % 1 !== 0) {
+            } else if (i === fullStars + 1 && hasHalfStar) {
                 // Half star
                 starsHTML += `
                     <div class="star half">
