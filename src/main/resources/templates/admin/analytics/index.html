@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{admin/fragments/admin-head :: admin-head('Thống kê chi tiết - Liora Admin')}"></head>
+
+<body class="with-welcome-text">
+<div class="container-scroller">
+    <div class="container-fluid page-body-wrapper">
+        <div th:replace="~{admin/layout/admin-navbar}"></div>
+        <div th:replace="~{admin/layout/admin-sidebar}"></div>
+
+        <div class="main-panel">
+            <div class="content-wrapper">
+                <div class="row">
+                    <div class="col-sm-12">
+                        <div class="home-tab">
+                            <div class="d-sm-flex align-items-center justify-content-between border-bottom">
+                                <ul class="nav nav-tabs" role="tablist">
+                                    <li class="nav-item">
+                                        <a class="nav-link active ps-0" id="overview-tab" data-bs-toggle="tab"
+                                           href="#revenue" role="tab" aria-controls="revenue"
+                                           aria-selected="true">Thống kê doanh thu</a>
+                                    </li>
+                                </ul>
+                                <div class="d-flex gap-2 mb-2">
+                                    <button id="exportExcel" class="btn btn-outline-success btn-sm">
+                                        <i class="mdi mdi-file-excel"></i> Xuất Excel
+                                    </button>
+                                    <button id="exportPDF" class="btn btn-outline-danger btn-sm">
+                                        <i class="mdi mdi-file-pdf"></i> Xuất PDF
+                                    </button>
+                                </div>
+                            </div>
+
+
+
+                            <div class="tab-content tab-content-basic mt-3">
+                                <div class="tab-pane fade show active" id="revenue" role="tabpanel">
+                                    <div class="tab-pane fade show active" id="overview" role="tabpanel"
+                                         aria-labelledby="overview">
+                                        <div th:replace="~{admin/analytics/components/statistics-cards}"></div>
+                                    <!-- BIỂU ĐỒ DOANH THU -->
+                                    <div class="card card-rounded shadow-sm mb-4">
+                                        <div class="card-body">
+                                            <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+                                                <h4 class="card-title card-title-dash mb-2">
+                                                    📊 Biểu Đồ Doanh Thu
+                                                </h4>
+
+                                                <div class="d-flex flex-wrap align-items-center gap-2">
+                                                    <!-- Input thời gian -->
+                                                    <input type="date" id="startDate" class="form-control form-control-sm" style="width:150px;" max="">
+                                                    <input type="date" id="endDate" class="form-control form-control-sm" style="width:150px;" max="">
+
+                                                    <!-- Chọn nhóm -->
+                                                    <select id="groupType" class="form-select form-select-sm bg-white text-dark border-secondary"
+                                                            style="width:100px;">
+                                                        <option value="day" selected>Ngày</option>
+                                                        <option value="month">Tháng</option>
+                                                        <option value="year">Năm</option>
+                                                    </select>
+
+                                                    <!-- Nút chọn loại biểu đồ -->
+                                                    <div class="btn-group" role="group">
+                                                        <button id="btnTime" class="btn btn-outline-primary btn-sm active">Theo thời gian</button>
+                                                        <button id="btnCategory" class="btn btn-outline-success btn-sm">Theo danh mục</button>
+                                                        <button id="btnBrand" class="btn btn-outline-warning btn-sm">Theo thương hiệu</button>
+                                                    </div>
+
+                                                    <!-- Nút cập nhật -->
+                                                    <button id="refreshChart" class="btn btn-outline-secondary btn-sm">
+                                                        <i class="mdi mdi-refresh"></i> Cập nhật
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <div class="chartjs-bar-wrapper mt-3" style="height: 420px;">
+                                                <canvas id="analyticsRevenueChart"></canvas>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-lg-6 mb-4">
+                                            <div th:replace="~{admin/analytics/components/recent-orders}"></div>
+                                        </div>
+                                        <div class="col-lg-6 mb-4">
+                                            <div th:replace="~{admin/analytics/components/top-products}"></div>
+                                        </div>
+                                        <div class="col-lg-6 mb-4">
+                                            <div th:replace="~{admin/analytics/components/customers}"></div>
+                                        </div>
+                                    </div>
+
+                                </div> <!-- end tab -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div th:replace="~{admin/layout/admin-footer}"></div>
+        </div>
+    </div>
+</div>
+
+<div th:replace="~{admin/fragments/admin-scripts :: admin-scripts}"></div>
+
+<!-- ================= CUSTOM SCRIPT ================= -->
+<!-- Thư viện xuất Excel -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<!-- Thư viện xuất PDF (html2pdf + html2canvas + jsPDF) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const ctx = document.getElementById("analyticsRevenueChart").getContext("2d");
+        let chart;
+        let currentType = "time";
+
+        const today = new Date();
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(today.getDate() - 7);
+
+        document.getElementById("startDate").value = sevenDaysAgo.toISOString().split("T")[0];
+        document.getElementById("endDate").value = today.toISOString().split("T")[0];
+
+// Gán max cho input (không vượt hôm nay)
+        const todayStr = today.toISOString().split("T")[0];
+        document.getElementById("startDate").setAttribute("max", todayStr);
+        document.getElementById("endDate").setAttribute("max", todayStr);
+
+
+        const endInputEl = document.getElementById("endDate");
+        if (new Date(endInputEl.value) > today) {
+            endInputEl.value = todayStr;
+        }
+
+        async function loadChart() {
+            const groupType = document.getElementById("groupType").value;
+            const startInput = document.getElementById("startDate").value;
+            const endInput = document.getElementById("endDate").value;
+            let startDate, endDate;
+            let labels = [];
+            let values = [];
+
+            // Nếu chưa chọn, mặc định 7 ngày gần nhất
+            if (!startInput || !endInput) {
+                const end = new Date();
+                const start = new Date();
+                start.setDate(end.getDate() - 7);
+                startDate = `${start.toISOString().split("T")[0]}T00:00:00`;
+                endDate = `${end.toISOString().split("T")[0]}T23:59:59`;
+                document.getElementById("startDate").value = start.toISOString().split("T")[0];
+                document.getElementById("endDate").value = end.toISOString().split("T")[0];
+            } else {
+                startDate = `${startInput}T00:00:00`;
+                endDate = `${endInput}T23:59:59`;
+            }
+
+            // Ràng buộc ngày
+            if (new Date(startInput) > new Date(endInput)) {
+                alert("⛔ Ngày bắt đầu không được lớn hơn ngày kết thúc!");
+                return;
+            }
+
+            // Lấy dữ liệu
+            const url = `/admin/revenue?type=${currentType}&groupType=${groupType}&startDate=${startDate}&endDate=${endDate}`;
+            const res = await fetch(url);
+            const data = await res.json();
+            console.log("👉 groupType:", groupType, "data:", data);
+
+
+            // === XỬ LÝ DỮ LIỆU ===
+            if (currentType === "time") {
+                const filledData = {};
+                const start = new Date(startInput);
+                const end = new Date(endInput);
+                end.setHours(23, 59, 59, 999);
+
+                if (groupType === "day") {
+                    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+                        const key = d.toLocaleDateString("en-CA");
+                        filledData[key] = data[key] || 0;
+                    }
+                } else if (groupType === "month") {
+                    const startMonth = new Date(start.getFullYear(), start.getMonth(), 1);
+                    const endMonth = new Date(end.getFullYear(), end.getMonth(), 1);
+                    for (let m = new Date(startMonth); m <= endMonth; m.setMonth(m.getMonth() + 1)) {
+                        const key = `${m.getFullYear()}-${String(m.getMonth() + 1).padStart(2, "0")}`;
+
+                        // tìm key dạng "Tháng 10", "T10", "10", v.v.
+                        const monthName = `Tháng ${m.getMonth() + 1}`;
+                        const foundKey = Object.keys(data).find(k =>
+                            k === key ||
+                            k === monthName ||
+                            k.endsWith(monthName) ||
+                            k.includes(monthName) ||
+                            k === `${m.getMonth() + 1}/${m.getFullYear()}`
+                        );
+
+                        filledData[key] = foundKey ? data[foundKey] : 0;
+                    }
+                }
+                else if (groupType === "year") {
+                    for (let y = start.getFullYear(); y <= end.getFullYear(); y++) {
+                        const foundKey = Object.keys(data).find(k => k === String(y) || k.includes(y));
+                        filledData[y] = foundKey ? data[foundKey] : 0;
+                    }
+                }
+
+                labels = Object.keys(filledData);
+                values = Object.values(filledData);
+            } else {
+                // ✅ category / brand
+                labels = Object.keys(data);
+                values = Object.values(data);
+            }
+
+            // === VẼ BIỂU ĐỒ ===
+            if (chart) chart.destroy();
+
+            chart = new Chart(ctx, {
+                type: currentType === "time" ? "line" : "bar",
+                data: {
+                    labels,
+                    datasets: [{
+                        label: "Doanh thu (₫)",
+                        data: values,
+                        backgroundColor:
+                            currentType === "brand" ? "rgba(255, 206, 86, 0.5)" :
+                                currentType === "category" ? "rgba(75, 192, 192, 0.5)" :
+                                    "rgba(54, 162, 235, 0.3)",
+                        borderColor: "rgb(54, 162, 235)",
+                        borderWidth: 2,
+                        fill: currentType === "time",
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { callback: val => val.toLocaleString("vi-VN") + " ₫" }
+                        },
+                        x: {
+                            ticks: {
+                                callback: (value, index) => {
+                                    const label = labels[index];
+                                    if (currentType === "time" && groupType === "day") {
+                                        const d = new Date(label);
+                                        return `${d.getDate()}/${d.getMonth() + 1}`;
+                                    }
+                                    if (currentType === "time" && groupType === "month") {
+                                        const [year, month] = label.split("-");
+                                        return `T${month}/${year}`;
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: true, position: "top" },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => "Doanh thu: " + ctx.parsed.y.toLocaleString("vi-VN") + " ₫"
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Sự kiện
+        document.getElementById("btnTime").addEventListener("click", () => switchType("btnTime", "time"));
+        document.getElementById("btnCategory").addEventListener("click", () => switchType("btnCategory", "category"));
+        document.getElementById("btnBrand").addEventListener("click", () => switchType("btnBrand", "brand"));
+        document.getElementById("refreshChart").addEventListener("click", loadChart);
+        document.getElementById("groupType").addEventListener("change", () => {
+            if (currentType === "time") loadChart();
+        });
+
+        function switchType(id, type) {
+            currentType = type;
+            document.querySelectorAll(".btn-group button").forEach(btn => btn.classList.remove("active"));
+            document.getElementById(id).classList.add("active");
+            loadChart();
+        }
+
+        loadChart();// Mặc định khi mở trang
+
+        // ====== XUẤT TOÀN TRANG THỐNG KÊ ======
+        document.getElementById("exportExcel").addEventListener("click", function () {
+            const reportElement = document.querySelector(".content-wrapper");
+            if (!reportElement) {
+                alert("⚠️ Không tìm thấy nội dung để xuất!");
+                return;
+            }
+
+            // Lấy toàn bộ text trong khu vực content
+            const textContent = reportElement.innerText.split("\n").filter(line => line.trim() !== "");
+            const exportData = textContent.map(line => [line]);
+
+            const ws = XLSX.utils.aoa_to_sheet(exportData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Báo cáo");
+
+            const now = new Date().toISOString().split("T")[0];
+            XLSX.writeFile(wb, `BaoCao_Liora_${now}.xlsx`);
+        });
+
+        document.getElementById("exportPDF").addEventListener("click", function () {
+            const reportElement = document.querySelector(".content-wrapper");
+            if (!reportElement) {
+                alert("⚠️ Không tìm thấy nội dung để xuất!");
+                return;
+            }
+
+            const opt = {
+                margin:       0.5,
+                filename:     `BaoCao_Liora_${new Date().toISOString().split("T")[0]}.pdf`,
+                image:        { type: 'jpeg', quality: 0.95 },
+                html2canvas:  { scale: 2, useCORS: true },
+                jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+            };
+
+            html2pdf().set(opt).from(reportElement).save();
+        });
+    });
+</script>
+
+</body>
+</html>

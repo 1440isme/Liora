@@ -83,6 +83,13 @@ class BestsellerProductsHomepageManager {
         if (this.loadingEl) this.loadingEl.style.display = 'none';
         if (this.emptyEl) this.emptyEl.style.display = 'none';
         if (this.gridEl) this.gridEl.style.display = 'flex';
+        
+        // Trigger rating load sau khi render xong
+        setTimeout(() => {
+            if (window.loadProductRatings) {
+                window.loadProductRatings();
+            }
+        }, 500);
     }
 
     createProductCard(product) {
@@ -98,7 +105,7 @@ class BestsellerProductsHomepageManager {
         const currentPrice = product.currentPrice || product.price || 0;
 
         return `
-            <div class="product-card ${statusClass}">
+            <div class="product-card ${statusClass}" data-product-id="${productId}">
                 <div class="position-relative">
                     <img src="${this.getMainImageUrl(product)}" 
                          class="card-img-top" 
@@ -129,11 +136,36 @@ class BestsellerProductsHomepageManager {
                         </a>
                     </p>
                     
-                    <div class="rating">
-                        <span class="stars">
-                            ${this.renderStars(product.averageRating || product.rating || 0, reviewCount)}
-                        </span>
-                        <span class="rating-count">(${reviewCount} đánh giá)</span>
+                    <!-- Rating sẽ được load bởi ProductRatingUtils -->
+                    <div class="product-rating" data-product-id="${productId}">
+                        <div class="star-rating">
+                            <div class="star empty">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="2">
+                                    <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                                </svg>
+                            </div>
+                            <div class="star empty">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="2">
+                                    <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                                </svg>
+                            </div>
+                            <div class="star empty">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="2">
+                                    <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                                </svg>
+                            </div>
+                            <div class="star empty">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="2">
+                                    <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                                </svg>
+                            </div>
+                            <div class="star empty">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="2">
+                                    <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                                </svg>
+                            </div>
+                        </div>
+                        <span class="rating-count">(0)</span>
                     </div>
                     
                         <div class="mt-auto">
@@ -160,7 +192,7 @@ class BestsellerProductsHomepageManager {
                                         data-product-name="${productName}"
                                         data-product-price="${currentPrice}"
                                         title="Thêm vào giỏ"
-                                        onclick="event.preventDefault(); event.stopPropagation(); if(window.app) window.app.addToCart(${productId}); else alert('Chức năng đang được tải...');">
+                                        onclick="event.preventDefault(); event.stopPropagation(); if(window.app && window.app.addProductToCartBackend) { window.app.addProductToCartBackend(${productId}, 1, true).then(() => window.app.refreshCartBadge?.()).catch(() => alert('Không thể thêm vào giỏ hàng')); } else { alert('Chức năng đang được tải...'); }">
                                     <i class="fas fa-shopping-cart"></i>
                                 </button>
                             </div>
@@ -199,34 +231,7 @@ class BestsellerProductsHomepageManager {
         }
     }
 
-    renderStars(rating, reviewCount = 0) {
-        // Logic đúng cho product card - giống generateStarsForModal
-        // Chỉ hiển thị sao rỗng khi rating = 0 hoặc không có rating
-        if (!rating || rating === 0 || rating === '0' || rating === null || rating === undefined) {
-            let stars = '';
-            for (let i = 0; i < 5; i++) {
-                stars += '<i class="far fa-star" style="color: #ccc !important; font-weight: 400 !important;"></i>';
-            }
-            return stars;
-        }
-
-        const fullStars = Math.floor(rating);
-        const hasHalfStar = rating % 1 >= 0.5;
-        const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
-
-        let stars = '';
-        for (let i = 0; i < fullStars; i++) {
-            stars += '<i class="fas fa-star text-warning"></i>';
-        }
-        if (hasHalfStar) {
-            stars += '<i class="fas fa-star-half-alt text-warning"></i>';
-        }
-        for (let i = 0; i < emptyStars; i++) {
-            stars += '<i class="far fa-star" style="color: #ccc !important; font-weight: 400 !important;"></i>';
-        }
-
-        return stars;
-    }
+    // renderStars function removed - now using ProductRatingUtils
 
     formatPrice(price) {
         if (!price || price === null || price === undefined) {
@@ -329,44 +334,16 @@ class BestsellerProductsHomepageManager {
 
     async addToCart(productId, productName, price) {
         try {
-            let success = false;
-
-            // Check if cart functionality exists
-            if (window.cartManager) {
-                await window.cartManager.addItem(productId, 1);
-                success = true;
-            }
-            // Fallback: Try to use global cart if available
-            else if (window.app && window.app.cartItems) {
-                const product = this.allProducts.find(p => (p.productId || p.id) === productId);
-                if (product) {
-                    const existingItem = window.app.cartItems.find(item => item.id === productId);
-
-                    if (existingItem) {
-                        existingItem.quantity += 1;
-                    } else {
-                        window.app.cartItems.push({
-                            ...product,
-                            quantity: 1
-                        });
-                    }
-
-                    if (window.app.updateCartDisplay) {
-                        window.app.updateCartDisplay();
-                    }
-                    success = true;
-                }
-            }
-
-            // Show single notification based on success
-            if (success) {
-                this.showNotification(`${productName} đã được thêm vào giỏ hàng thành công!`, 'success');
+            // Sử dụng addProductToCartBackend để gọi API backend
+            if (window.app && window.app.addProductToCartBackend) {
+                await window.app.addProductToCartBackend(productId, 1, true);
+                await window.app.refreshCartBadge?.();
             } else {
-                this.showNotification('Không tìm thấy thông tin sản phẩm!', 'error');
+                this.showNotification('Chức năng đang được tải...', 'error');
             }
         } catch (error) {
-            console.error('Error adding to cart:', error);
-            this.showNotification('Có lỗi xảy ra khi thêm vào giỏ hàng', 'error');
+            console.error('Add to cart error:', error);
+            this.showNotification('Không thể thêm vào giỏ hàng. Vui lòng thử lại.', 'error');
         }
     }
 
@@ -765,11 +742,6 @@ class BestsellerProductsHomepageManager {
             errorDiv.style.display = 'block';
             errorMessage.textContent = 'Số lượng không thể nhỏ hơn 1.';
             quantityInput.classList.add('is-invalid');
-        } else if (currentValue > maxAllowed) {
-            quantityInput.value = maxAllowed;
-            errorDiv.style.display = 'block';
-            errorMessage.textContent = `Số lượng tối đa là ${maxAllowed} sản phẩm.`;
-            quantityInput.classList.add('is-invalid');
         } else {
             errorDiv.style.display = 'none';
             quantityInput.classList.remove('is-invalid');
@@ -824,49 +796,16 @@ class BestsellerProductsHomepageManager {
     // Add to cart with specific quantity
     async addToCartWithQuantityValue(productId, productName, price, quantity) {
         try {
-            let success = false;
-
-            // Check if cart functionality exists
-            if (window.cartManager && typeof window.cartManager.addItem === 'function') {
-                await window.cartManager.addItem(productId, quantity);
-                success = true;
-            }
-            // Fallback to global app cart
-            else if (window.app && window.app.cartItems) {
-                // Validate data first
-                if (productId && productName && price && !isNaN(price)) {
-                    const product = this.allProducts.find(p => (p.productId || p.id) === productId);
-                    if (product) {
-                        const existingItem = window.app.cartItems.find(item => item.id === productId);
-
-                        if (existingItem) {
-                            existingItem.quantity += quantity;
-                        } else {
-                            window.app.cartItems.push({
-                                id: productId,
-                                name: productName,
-                                price: price,
-                                quantity: quantity,
-                                image: product.images && product.images.length > 0 ? product.images[0].imageUrl : '/static/user/images/no-image.png'
-                            });
-                        }
-
-                        if (window.app.updateCartDisplay) {
-                            window.app.updateCartDisplay();
-                        }
-                        success = true;
-                    }
-                }
-            }
-
-            // Show single notification based on success
-            if (success) {
-                this.showNotification(`${quantity} x ${productName} đã được thêm vào giỏ hàng thành công!`, 'success');
+            // Sử dụng addProductToCartBackend để gọi API backend
+            if (window.app && window.app.addProductToCartBackend) {
+                await window.app.addProductToCartBackend(productId, quantity, true);
+                await window.app.refreshCartBadge?.();
             } else {
-                this.showNotification('Không tìm thấy thông tin sản phẩm!', 'error');
+                this.showNotification('Chức năng đang được tải...', 'error');
             }
         } catch (error) {
-            this.showNotification('Có lỗi xảy ra khi thêm vào giỏ hàng', 'error');
+            console.error('Add to cart error:', error);
+            this.showNotification('Không thể thêm vào giỏ hàng. Vui lòng thử lại.', 'error');
         }
     }
 

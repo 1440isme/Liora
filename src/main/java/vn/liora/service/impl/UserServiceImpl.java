@@ -14,6 +14,7 @@ import org.springframework.util.StringUtils;
 import jakarta.transaction.Transactional;
 import vn.liora.dto.request.UserCreationRequest;
 import vn.liora.dto.request.UserUpdateRequest;
+import vn.liora.dto.request.ChangePasswordRequest;
 import vn.liora.dto.response.UserResponse;
 import vn.liora.entity.User;
 import vn.liora.enums.Role;
@@ -200,5 +201,46 @@ public class UserServiceImpl implements IUserService {
     @Override
     public Optional<User> findByUsername(String username) {
         return userRepository.findByUsername(username);
+    }
+
+    @Override
+    public long countNewCustomersThisMonth() {
+        return userRepository.countNewCustomersThisMonth();
+    }
+
+    @Transactional
+    public void changePassword(Long userId, ChangePasswordRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        // Verify current password
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            throw new AppException(ErrorCode.INVALID_PASSWORD);
+        }
+
+        // Check if new password and confirm password match
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw new AppException(ErrorCode.PASSWORD_NOT_MATCH);
+        }
+
+        // Check if new password is different from current password
+        if (passwordEncoder.matches(request.getNewPassword(), user.getPassword())) {
+            throw new AppException(ErrorCode.NEW_PASSWORD_SAME_AS_CURRENT);
+        }
+
+        // Update password
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        save(user);
+    }
+
+    @Override
+    @Transactional
+    public void deactivateAccount(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        // Set active to false instead of deleting
+        user.setActive(false);
+        save(user);
     }
 }

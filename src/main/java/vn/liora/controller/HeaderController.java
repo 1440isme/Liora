@@ -7,7 +7,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.security.access.prepost.PreAuthorize;
 import vn.liora.dto.request.ApiResponse;
 import vn.liora.dto.response.CategoryResponse;
 import vn.liora.service.ICategoryService;
@@ -31,7 +30,6 @@ public class HeaderController {
 
     // API endpoint để lấy categories cho header với cấu trúc 3 tầng
     @GetMapping("/categories/api")
-    @PreAuthorize("permitAll()")
     public ResponseEntity<ApiResponse<List<CategoryResponse>>> getHeaderCategoriesApi() {
         ApiResponse<List<CategoryResponse>> response = new ApiResponse<>();
         try {

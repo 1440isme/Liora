@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import jakarta.annotation.security.PermitAll;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.util.Map;
@@ -33,7 +32,6 @@ public class OrderDetailController {
 
     // Các endpoint cụ thể phải đặt TRƯỚC endpoint có path variable
     @GetMapping("/order-detail/access")
-    @PermitAll
     public String guestOrderAccessPage(Model model) {
         return "user/auth/guest-order-access";
     }
@@ -85,7 +83,6 @@ public class OrderDetailController {
     }
 
     @PostMapping("/order-detail/access")
-    @PermitAll
     public String handleGuestOrderAccess(@Valid @RequestBody GuestOrderAccessRequest request,
             HttpServletRequest httpRequest, Model model) {
         try {
@@ -128,7 +125,6 @@ public class OrderDetailController {
 
     // Endpoint mới cho tra cứu đơn hàng công khai
     @PostMapping("/order-lookup")
-    @PermitAll
     public ResponseEntity<?> lookupOrder(@RequestBody Map<String, Object> request) {
         try {
             Long orderId = Long.valueOf(request.get("orderId").toString());
@@ -206,7 +202,6 @@ public class OrderDetailController {
 
     // Endpoint có path variable phải đặt CUỐI CÙNG
     @GetMapping("/order-detail/{orderId}")
-    @PermitAll
     public String viewOrderDetail(@PathVariable Long orderId, @RequestParam(required = false) String token,
             @RequestParam(required = false) String guestEmail, HttpServletRequest httpRequest, Model model) {
         try {

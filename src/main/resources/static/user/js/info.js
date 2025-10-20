@@ -247,6 +247,51 @@ class UserInfoManager {
         if (submitEditBtn) {
             submitEditBtn.addEventListener('click', () => this.submitEditAddress());
         }
+
+        // Submit change password
+        const submitChangePasswordBtn = document.getElementById('btnSubmitChangePassword');
+        if (submitChangePasswordBtn) {
+            submitChangePasswordBtn.addEventListener('click', () => this.submitChangePassword());
+        }
+
+        // Submit delete account
+        const submitDeleteAccountBtn = document.getElementById('btnConfirmDeleteAccount');
+        if (submitDeleteAccountBtn) {
+            submitDeleteAccountBtn.addEventListener('click', () => this.submitDeleteAccount());
+        }
+
+        // Enable/disable delete account button based on checkbox
+        const confirmDeleteCheckbox = document.getElementById('confirmDeleteAccount');
+        if (confirmDeleteCheckbox) {
+            confirmDeleteCheckbox.addEventListener('change', (e) => {
+                const submitBtn = document.getElementById('btnConfirmDeleteAccount');
+                if (submitBtn) {
+                    submitBtn.disabled = !e.target.checked;
+                }
+            });
+        }
+
+        // Change Password modal events
+        const changePasswordModalEl = document.getElementById('changePasswordModal');
+        if (changePasswordModalEl) {
+            // Click outside để đóng modal
+            changePasswordModalEl.addEventListener('click', (e) => {
+                if (e.target === changePasswordModalEl) {
+                    this.closeChangePasswordModal();
+                }
+            });
+        }
+
+        // Delete Account modal events
+        const deleteAccountModalEl = document.getElementById('deleteAccountModal');
+        if (deleteAccountModalEl) {
+            // Click outside để đóng modal
+            deleteAccountModalEl.addEventListener('click', (e) => {
+                if (e.target === deleteAccountModalEl) {
+                    this.closeDeleteAccountModal();
+                }
+            });
+        }
     }
 
     handleEditSubmit(e) {
@@ -435,7 +480,7 @@ class UserInfoManager {
             // Show loading state
             ordersContainer.innerHTML = `
                 <div class="empty-state">
-                    <i class="fas fa-spinner fa-spin"></i>
+                    <i class="mdi mdi-loading mdi-spin"></i>
                     <h5>Đang tải đơn hàng...</h5>
                     <p>Vui lòng chờ trong giây lát</p>
                 </div>
@@ -469,7 +514,7 @@ class UserInfoManager {
             if (ordersWithProducts.length === 0 && page === 0) {
                 ordersContainer.innerHTML = `
                     <div class="empty-state">
-                        <i class="fas fa-shopping-bag"></i>
+                        <i class="mdi mdi-shopping"></i>
                         <h5>Chưa có đơn hàng nào</h5>
                         <p>Hãy mua sắm để xem lịch sử đơn hàng của bạn</p>
                         <a href="/" class="btn btn-primary">Mua sắm ngay</a>
@@ -489,7 +534,7 @@ class UserInfoManager {
             this.showToast('Không thể tải lịch sử đơn hàng', 'error');
             ordersContainer.innerHTML = `
                 <div class="empty-state">
-                    <i class="fas fa-exclamation-triangle"></i>
+                    <i class="mdi mdi-alert"></i>
                     <h5>Lỗi tải đơn hàng</h5>
                     <p>Vui lòng thử lại sau</p>
                     <button class="btn btn-primary" onclick="userInfoManager.loadOrders()">Thử lại</button>
@@ -519,7 +564,7 @@ class UserInfoManager {
                     <div class="order-basic-info">
                         <h5 class="order-id">Đơn hàng #${order.idOrder}</h5>
                         <p class="order-date">
-                            <i class="fas fa-calendar"></i>
+                            <i class="mdi mdi-calendar"></i>
                             ${orderDate}
                         </p>
                     </div>
@@ -542,7 +587,7 @@ class UserInfoManager {
                         </div>
                         ` : `
                         <div class="no-product">
-                            <i class="fas fa-box-open"></i>
+                            <i class="mdi mdi-package-variant"></i>
                             <span>Không có sản phẩm</span>
                         </div>
                         `}
@@ -558,27 +603,27 @@ class UserInfoManager {
                 
                 <div class="compact-order-actions">
                     <div class="click-hint">
-                        <i class="fas fa-mouse-pointer"></i>
+                        <i class="mdi mdi-cursor-pointer"></i>
                         <span>Xem chi tiết</span>
                     </div>
                     ${order.orderStatus === 'COMPLETED' ? `
                         ${reviewStatus.allReviewed ? `
                         <button class="btn btn-success btn-sm" disabled>
-                            <i class="fas fa-check"></i> Đã đánh giá
+                            <i class="mdi mdi-check"></i> Đã đánh giá
                         </button>
                         ` : reviewStatus.hasAnyReview ? `
                         <button class="btn btn-warning btn-sm text-white" onclick="event.stopPropagation(); userInfoManager.openReviewModal(${order.idOrder})">
-                            <i class="fas fa-star"></i> Xem đánh giá
+                            <i class="mdi mdi-star"></i> Xem đánh giá
                         </button>
                         ` : `
                         <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); userInfoManager.openReviewModal(${order.idOrder})">
-                            <i class="fas fa-star"></i> Đánh giá
+                            <i class="mdi mdi-star"></i> Đánh giá
                         </button>
                         `}
                         ` : ''}
                     ${order.orderStatus === 'COMPLETED' || order.orderStatus === 'CANCELLED' ? `
                     <button class="btn btn-outline-success btn-sm" onclick="event.stopPropagation(); userInfoManager.reorder(${order.idOrder})">
-                        <i class="fas fa-redo"></i> Mua lại
+                        <i class="mdi mdi-redo"></i> Mua lại
                     </button>
                     ` : ''}
                 </div>
@@ -607,7 +652,7 @@ class UserInfoManager {
             paginationHTML += `
                 <li class="page-item">
                     <button class="page-link" onclick="userInfoManager.loadOrders(${currentPage - 1})">
-                        <i class="fas fa-chevron-left"></i> Trước
+                        <i class="mdi mdi-chevron-left"></i> Trước
                     </button>
                 </li>
             `;
@@ -615,7 +660,7 @@ class UserInfoManager {
             paginationHTML += `
                 <li class="page-item disabled">
                     <span class="page-link">
-                        <i class="fas fa-chevron-left"></i> Trước
+                        <i class="mdi mdi-chevron-left"></i> Trước
                     </span>
                 </li>
             `;
@@ -646,7 +691,7 @@ class UserInfoManager {
             paginationHTML += `
                 <li class="page-item">
                     <button class="page-link" onclick="userInfoManager.loadOrders(${currentPage + 1})">
-                        Sau <i class="fas fa-chevron-right"></i>
+                        Sau <i class="mdi mdi-chevron-right"></i>
                     </button>
                 </li>
             `;
@@ -654,7 +699,7 @@ class UserInfoManager {
             paginationHTML += `
                 <li class="page-item disabled">
                     <span class="page-link">
-                        Sau <i class="fas fa-chevron-right"></i>
+                        Sau <i class="mdi mdi-chevron-right"></i>
                     </span>
                 </li>
             `;
@@ -691,7 +736,7 @@ class UserInfoManager {
                     <div class="order-info">
                         <h5 class="order-id">Đơn hàng #${order.idOrder}</h5>
                         <p class="order-date">
-                            <i class="fas fa-calendar"></i>
+                            <i class="mdi mdi-calendar"></i>
                             ${orderDate}
                         </p>
                     </div>
@@ -726,11 +771,11 @@ class UserInfoManager {
                 
                 <div class="order-actions">
                     <button class="btn btn-outline-primary btn-sm" onclick="userInfoManager.viewOrderDetail(${order.idOrder})">
-                        <i class="fas fa-eye"></i> Xem chi tiết
+                        <i class="mdi mdi-eye"></i> Xem chi tiết
                     </button>
                     ${order.orderStatus === 'COMPLETED' || order.orderStatus === 'CANCELLED' ? `
                     <button class="btn btn-outline-success btn-sm" onclick="userInfoManager.reorder(${order.idOrder})">
-                        <i class="fas fa-redo"></i> Mua lại
+                        <i class="mdi mdi-redo"></i> Mua lại
                     </button>
                     ` : ''}
                 </div>
@@ -1348,7 +1393,7 @@ class UserInfoManager {
         // Loading placeholder
         addressContainer.innerHTML = `
 			<div class="empty-state">
-				<i class="fas fa-spinner fa-spin"></i>
+				<i class="mdi mdi-loading mdi-spin"></i>
 				<h5>Đang tải địa chỉ...</h5>
 				<p>Vui lòng chờ trong giây lát</p>
 			</div>
@@ -1359,7 +1404,7 @@ class UserInfoManager {
             if (!token || !this.currentUser?.userId) {
                 addressContainer.innerHTML = `
 					<div class="empty-state">
-						<i class="fas fa-map-marker-alt"></i>
+						<i class="mdi mdi-map-marker"></i>
 						<h5>Chưa đăng nhập</h5>
 						<p>Vui lòng đăng nhập để quản lý địa chỉ</p>
 					</div>
@@ -1380,7 +1425,7 @@ class UserInfoManager {
             if (!Array.isArray(addresses) || addresses.length === 0) {
                 addressContainer.innerHTML = `
 					<div class="empty-state">
-						<i class="fas fa-map-marker-alt"></i>
+						<i class="mdi mdi-map-marker"></i>
 						<h5>Chưa có địa chỉ nào</h5>
 						<p>Hãy thêm địa chỉ giao hàng để mua sắm dễ dàng hơn</p>
 					</div>
@@ -1400,7 +1445,7 @@ class UserInfoManager {
             console.error(e);
             addressContainer.innerHTML = `
 				<div class="empty-state">
-					<i class="fas fa-exclamation-triangle"></i>
+					<i class="mdi mdi-alert"></i>
 					<h5>Lỗi khi tải địa chỉ</h5>
 					<p>Vui lòng thử lại sau</p>
 				</div>
@@ -1421,12 +1466,12 @@ class UserInfoManager {
 				<div class="card-body d-flex justify-content-between align-items-start flex-wrap">
 					<div class="me-3">
 						<h6 class="mb-1">${this.escapeHtml(addr?.name || '')} ${isDefault}</h6>
-						<div class="text-muted small mb-1"><i class="fas fa-phone me-1"></i>${this.escapeHtml(addr?.phone || '')}</div>
-						<div><i class="fas fa-location-dot me-1"></i>${this.escapeHtml(fullAddress)}</div>
+						<div class="text-muted small mb-1"><i class="mdi mdi-phone me-1"></i>${this.escapeHtml(addr?.phone || '')}</div>
+						<div><i class="mdi mdi-map-marker me-1"></i>${this.escapeHtml(fullAddress)}</div>
 					</div>
 					<div class="d-flex gap-2 mt-2 mt-md-0">
-						<button class="btn btn-sm btn-outline-primary" onclick="editAddress(${addr?.idAddress})"><i class="fas fa-edit"></i></button>
-						<button class="btn btn-sm btn-outline-danger" onclick="deleteAddress(${addr?.idAddress})"><i class="fas fa-trash"></i></button>
+						<button class="btn btn-sm btn-outline-primary" onclick="editAddress(${addr?.idAddress})"><i class="mdi mdi-pencil"></i></button>
+						<button class="btn btn-sm btn-outline-danger" onclick="deleteAddress(${addr?.idAddress})"><i class="mdi mdi-delete"></i></button>
 					</div>
 				</div>
 			</div>
@@ -1923,7 +1968,7 @@ class UserInfoManager {
         try {
             // Disable submit button to prevent double submission
             submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang lưu...';
+            submitBtn.innerHTML = '<i class="mdi mdi-loading mdi-spin"></i> Đang lưu...';
 
             const token = localStorage.getItem('access_token');
             if (!token || !this.currentUser?.userId) {
@@ -1984,7 +2029,7 @@ class UserInfoManager {
         } finally {
             // Re-enable submit button
             submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="fas fa-save"></i> Lưu địa chỉ';
+            submitBtn.innerHTML = '<i class="mdi mdi-content-save"></i> Lưu địa chỉ';
         }
     }
 
@@ -2079,20 +2124,265 @@ class UserInfoManager {
     }
 
     changePassword() {
-        this.showToast('Chức năng đổi mật khẩu sẽ được triển khai', 'info');
+        this.showChangePasswordModal();
     }
 
-    enable2FA() {
-        this.showToast('Chức năng xác thực 2FA sẽ được triển khai', 'info');
+    showChangePasswordModal() {
+        const modal = document.getElementById('changePasswordModal');
+        if (modal) {
+            modal.classList.add('show');
+            document.body.style.overflow = 'hidden';
+
+            // Reset form
+            this.resetChangePasswordForm();
+
+            // Focus vào input đầu tiên
+            setTimeout(() => {
+                const firstInput = modal.querySelector('input');
+                if (firstInput) firstInput.focus();
+            }, 100);
+        }
     }
 
-    toggleNotifications() {
-        this.showToast('Chức năng cài đặt thông báo sẽ được triển khai', 'info');
+    closeChangePasswordModal() {
+        const modal = document.getElementById('changePasswordModal');
+        if (modal) {
+            modal.classList.remove('show');
+            document.body.style.overflow = '';
+            this.resetChangePasswordForm();
+        }
     }
+
+    resetChangePasswordForm() {
+        const form = document.getElementById('changePasswordForm');
+        if (form) {
+            form.reset();
+            // Remove validation classes
+            const inputs = form.querySelectorAll('.form-control');
+            inputs.forEach(input => {
+                input.classList.remove('is-valid', 'is-invalid');
+            });
+        }
+    }
+
+    async submitChangePassword() {
+        try {
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                this.showError('Vui lòng đăng nhập');
+                return;
+            }
+
+            const form = document.getElementById('changePasswordForm');
+            if (!form) return;
+
+            const currentPassword = document.getElementById('currentPassword').value.trim();
+            const newPassword = document.getElementById('newPassword').value.trim();
+            const confirmPassword = document.getElementById('confirmPassword').value.trim();
+
+            // Validation
+            if (!currentPassword) {
+                this.showError('Vui lòng nhập mật khẩu hiện tại');
+                document.getElementById('currentPassword').focus();
+                return;
+            }
+
+            if (!newPassword) {
+                this.showError('Vui lòng nhập mật khẩu mới');
+                document.getElementById('newPassword').focus();
+                return;
+            }
+
+            if (newPassword.length < 8 || newPassword.length > 20) {
+                this.showError('Mật khẩu mới phải có từ 8 đến 20 ký tự');
+                document.getElementById('newPassword').focus();
+                return;
+            }
+
+            if (!confirmPassword) {
+                this.showError('Vui lòng xác nhận mật khẩu mới');
+                document.getElementById('confirmPassword').focus();
+                return;
+            }
+
+            if (newPassword !== confirmPassword) {
+                this.showError('Mật khẩu xác nhận không khớp');
+                document.getElementById('confirmPassword').focus();
+                return;
+            }
+
+            if (currentPassword === newPassword) {
+                this.showError('Mật khẩu mới phải khác mật khẩu hiện tại');
+                document.getElementById('newPassword').focus();
+                return;
+            }
+
+            // Disable submit button
+            const submitBtn = document.getElementById('btnSubmitChangePassword');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="mdi mdi-loading mdi-spin"></i> Đang xử lý...';
+            }
+
+            const requestData = {
+                currentPassword: currentPassword,
+                newPassword: newPassword,
+                confirmPassword: confirmPassword
+            };
+
+            const response = await fetch('/users/changePassword', {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestData)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                const errorMessage = errorData.message || 'Không thể đổi mật khẩu';
+
+                if (response.status === 400) {
+                    this.showError(errorMessage);
+                } else if (response.status === 401 || response.status === 403) {
+                    this.showError('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+                    setTimeout(() => {
+                        window.location.href = '/home';
+                    }, 2000);
+                } else {
+                    this.showError(errorMessage);
+                }
+                return;
+            }
+
+            const data = await response.json();
+            this.showToast('Đổi mật khẩu thành công!', 'success');
+            this.closeChangePasswordModal();
+
+        } catch (error) {
+            console.error('Error changing password:', error);
+            this.showError('Không thể đổi mật khẩu. Vui lòng thử lại sau.');
+        } finally {
+            // Re-enable submit button
+            const submitBtn = document.getElementById('btnSubmitChangePassword');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="mdi mdi-content-save"></i> Đổi mật khẩu';
+            }
+        }
+    }
+
+
 
     deleteAccount() {
-        if (confirm('Bạn có chắc chắn muốn xóa tài khoản? Hành động này không thể hoàn tác!')) {
-            this.showToast('Chức năng xóa tài khoản sẽ được triển khai', 'info');
+        this.showDeleteAccountModal();
+    }
+
+    showDeleteAccountModal() {
+        const modal = document.getElementById('deleteAccountModal');
+        if (modal) {
+            modal.classList.add('show');
+            document.body.style.overflow = 'hidden';
+
+            // Reset form
+            this.resetDeleteAccountForm();
+
+            // Focus vào checkbox
+            setTimeout(() => {
+                const checkbox = modal.querySelector('#confirmDeleteAccount');
+                if (checkbox) checkbox.focus();
+            }, 100);
+        }
+    }
+
+    closeDeleteAccountModal() {
+        const modal = document.getElementById('deleteAccountModal');
+        if (modal) {
+            modal.classList.remove('show');
+            document.body.style.overflow = '';
+            this.resetDeleteAccountForm();
+        }
+    }
+
+    resetDeleteAccountForm() {
+        const checkbox = document.getElementById('confirmDeleteAccount');
+        const submitBtn = document.getElementById('btnConfirmDeleteAccount');
+
+        if (checkbox) {
+            checkbox.checked = false;
+        }
+        if (submitBtn) {
+            submitBtn.disabled = true;
+        }
+    }
+
+    async submitDeleteAccount() {
+        try {
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                this.showError('Vui lòng đăng nhập');
+                return;
+            }
+
+            const confirmCheckbox = document.getElementById('confirmDeleteAccount');
+            if (!confirmCheckbox || !confirmCheckbox.checked) {
+                this.showError('Vui lòng xác nhận rằng bạn hiểu hậu quả của việc xóa tài khoản');
+                return;
+            }
+
+            // Disable submit button
+            const submitBtn = document.getElementById('btnConfirmDeleteAccount');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="mdi mdi-loading mdi-spin"></i> Đang xử lý...';
+            }
+
+            const response = await fetch('/users/deactivateAccount', {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                const errorMessage = errorData.message || 'Không thể xóa tài khoản';
+
+                if (response.status === 400) {
+                    this.showError(errorMessage);
+                } else if (response.status === 401 || response.status === 403) {
+                    this.showError('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+                    setTimeout(() => {
+                        window.location.href = '/home';
+                    }, 2000);
+                } else {
+                    this.showError(errorMessage);
+                }
+                return;
+            }
+
+            const data = await response.json();
+            this.showToast('Tài khoản đã được vô hiệu hóa thành công!', 'success');
+
+            // Clear local storage and redirect to home
+            setTimeout(() => {
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('liora_user');
+                window.location.href = '/home';
+            }, 2000);
+
+        } catch (error) {
+            console.error('Error deleting account:', error);
+            this.showError('Không thể xóa tài khoản. Vui lòng thử lại sau.');
+        } finally {
+            // Re-enable submit button
+            const submitBtn = document.getElementById('btnConfirmDeleteAccount');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="mdi mdi-delete"></i> Xóa tài khoản';
+            }
         }
     }
 
@@ -2181,8 +2471,8 @@ class UserInfoManager {
         loadingElement.style.zIndex = '9999';
         loadingElement.innerHTML = `
             <div class="text-center">
-                <div class="loading-spinner mb-3"></div>
-                <p>Đang tải thông tin...</p>
+                <i class="mdi mdi-loading mdi-spin" style="font-size: 2rem;"></i>
+                <p class="mt-3">Đang tải thông tin...</p>
             </div>
         `;
         document.body.appendChild(loadingElement);
@@ -2207,7 +2497,7 @@ class UserInfoManager {
         toast.setAttribute('role', 'alert');
         toast.innerHTML = `
             <div class="toast-header">
-                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'} text-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} me-2"></i>
+                <i class="mdi mdi-${type === 'success' ? 'check-circle' : type === 'error' ? 'alert-circle' : 'information'} text-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} me-2"></i>
                 <strong class="me-auto">Thông báo</strong>
                 <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
             </div>
@@ -2333,6 +2623,18 @@ function toggleNotifications() {
 function deleteAccount() {
     if (window.userInfoManager) {
         window.userInfoManager.deleteAccount();
+    }
+}
+
+function closeChangePasswordModal() {
+    if (window.userInfoManager) {
+        window.userInfoManager.closeChangePasswordModal();
+    }
+}
+
+function closeDeleteAccountModal() {
+    if (window.userInfoManager) {
+        window.userInfoManager.closeDeleteAccountModal();
     }
 }
 

@@ -65,6 +65,12 @@ class CategoryProductsManager {
             console.log('Category info response:', data);
 
             if (data.code === 1000 && data.result) {
+                // Check if category is active
+                if (data.result.isActive === false || data.result.isActive === null) {
+                    this.showCategoryUnavailable(data.result.name);
+                    return;
+                }
+                
                 this.displayCategoryTitle(data.result.name);
             }
         } catch (error) {
@@ -259,6 +265,13 @@ class CategoryProductsManager {
         console.log('Grid element:', grid);
         console.log('Grid computed style:', window.getComputedStyle(grid).display);
 
+        // Trigger rating load sau khi render xong
+        setTimeout(() => {
+            if (window.loadProductRatings) {
+                window.loadProductRatings();
+            }
+        }, 500);
+
         // Bind add to cart events - removed because we use onclick attributes
         // this.bindAddToCartEvents();
     }
@@ -269,7 +282,7 @@ class CategoryProductsManager {
         const statusText = this.getProductStatusText(productStatus);
 
         return `
-            <div class="product-card ${statusClass}">
+            <div class="product-card ${statusClass}" data-product-id="${product.productId}">
                     <div class="position-relative">
                         <img src="${product.mainImageUrl || '/user/img/default-product.jpg'}" 
                              class="card-img-top" 
@@ -302,11 +315,36 @@ class CategoryProductsManager {
                             </a>
                         </p>
                         
-                        <div class="rating">
-                            <span class="stars">
-                                ${this.generateStars(product.averageRating || 0, product.reviewCount || 0)}
-                            </span>
-                            <span class="review-count">(${product.reviewCount || 0})</span>
+                        <!-- Rating sẽ được load bởi ProductRatingUtils -->
+                        <div class="product-rating" data-product-id="${product.productId}">
+                            <div class="star-rating">
+                                <div class="star empty">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="2">
+                                        <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                                    </svg>
+                                </div>
+                                <div class="star empty">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="2">
+                                        <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                                    </svg>
+                                </div>
+                                <div class="star empty">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="2">
+                                        <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                                    </svg>
+                                </div>
+                                <div class="star empty">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="2">
+                                        <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                                    </svg>
+                                </div>
+                                <div class="star empty">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="2">
+                                        <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                                    </svg>
+                                </div>
+                            </div>
+                            <span class="rating-count">(0)</span>
                         </div>
                     
                     <!-- Sales Progress Bar -->
@@ -1074,6 +1112,36 @@ class CategoryProductsManager {
                 <p class="text-muted">${message}</p>
             `;
         }
+    }
+
+    // Show category unavailable message
+    showCategoryUnavailable(categoryName) {
+        const container = document.querySelector('.container-fluid .row');
+        if (!container) return;
+
+        container.innerHTML = `
+            <div class="col-12">
+                <div class="text-center py-5">
+                    <div class="error-icon mb-4">
+                        <i class="fas fa-exclamation-triangle fa-4x text-warning"></i>
+                    </div>
+                    <h2 class="text-danger mb-3">Danh mục tạm ngưng hoạt động</h2>
+                    <p class="text-muted mb-4">
+                        Danh mục "${categoryName}" hiện đang tạm ngưng hoạt động. Vui lòng quay lại sau.
+                    </p>
+                    <div class="d-flex justify-content-center gap-3">
+                        <a href="/" class="btn btn-primary btn-lg">
+                            <i class="fas fa-home me-2"></i>
+                            Về trang chủ
+                        </a>
+                        <a href="javascript:history.back()" class="btn btn-outline-secondary btn-lg">
+                            <i class="fas fa-arrow-left me-2"></i>
+                            Quay lại
+                        </a>
+                    </div>
+                </div>
+            </div>
+        `;
     }
 
     showNotification(message, type = 'info') {

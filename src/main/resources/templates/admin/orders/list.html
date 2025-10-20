@@ -30,11 +30,13 @@
                             <!-- Date Filter -->
                             <div class="d-flex align-items-center gap-2">
                                 <label class="form-label mb-0 text-nowrap">Từ ngày:</label>
-                                <input type="date" class="form-control form-control-sm" id="filterDateFrom" style="width: 140px;">
+                                <input type="date" class="form-control form-control-sm" id="filterDateFrom"
+                                    style="width: 140px;">
                             </div>
                             <div class="d-flex align-items-center gap-2">
                                 <label class="form-label mb-0 text-nowrap">Đến ngày:</label>
-                                <input type="date" class="form-control form-control-sm" id="filterDateTo" style="width: 140px;">
+                                <input type="date" class="form-control form-control-sm" id="filterDateTo"
+                                    style="width: 140px;">
                             </div>
                             <!-- Action Buttons -->
                             <div class="btn-wrapper">
@@ -134,7 +136,7 @@
                                     <label class="form-label">Tìm kiếm</label>
                                     <div class="input-group">
                                         <input type="text" class="form-control" id="searchOrder"
-                                               placeholder="Mã đơn hàng, tên khách hàng...">
+                                            placeholder="Mã đơn hàng, tên khách hàng...">
                                         <button class="btn btn-outline-secondary" type="button" id="btnSearch">
                                             <i class="mdi mdi-magnify"></i>
                                         </button>
@@ -152,7 +154,8 @@
                                 </div>
 
                                 <div class="col-md-1 mb-3 d-flex align-items-end">
-                                    <button type="button" class="btn btn-outline-secondary w-100" id="btnRefresh" title="Làm mới">
+                                    <button type="button" class="btn btn-outline-secondary w-100" id="btnRefresh"
+                                        title="Làm mới">
                                         <i class="mdi mdi-refresh"></i>
                                     </button>
                                 </div>
@@ -185,7 +188,8 @@
                             <!-- Pagination -->
                             <div class="d-flex justify-content-between align-items-center mt-3">
                                 <div>
-                                    <span id="paginationInfo" class="text-muted">Hiển thị 0-0 trong tổng số 0 đơn hàng</span>
+                                    <span id="paginationInfo" class="text-muted">Hiển thị 0-0 trong tổng số 0 đơn
+                                        hàng</span>
                                 </div>
                                 <nav>
                                     <ul class="pagination pagination-sm mb-0" id="pagination">
@@ -203,7 +207,8 @@
     </div>
 
     <!-- Order Detail Modal -->
-    <div class="modal fade" id="orderDetailModal" tabindex="-1" aria-labelledby="orderDetailModalLabel" aria-hidden="true">
+    <div class="modal fade" id="orderDetailModal" tabindex="-1" aria-labelledby="orderDetailModalLabel"
+        aria-hidden="true">
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header">
@@ -293,7 +298,8 @@
     </div>
 
     <!-- Update Order Status Modal -->
-    <div class="modal fade" id="updateStatusModal" tabindex="-1" aria-labelledby="updateStatusModalLabel" aria-hidden="true">
+    <div class="modal fade" id="updateStatusModal" tabindex="-1" aria-labelledby="updateStatusModalLabel"
+        aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
@@ -335,27 +341,34 @@
         .border-start-primary {
             border-left: 4px solid #4e73df !important;
         }
+
         .border-start-success {
             border-left: 4px solid #1cc88a !important;
         }
+
         .border-start-danger {
             border-left: 4px solid #e74a3b !important;
         }
+
         .border-start-warning {
             border-left: 4px solid #f6c23e !important;
         }
+
         .border-start-info {
             border-left: 4px solid #36b9cc !important;
         }
+
         .card-rounded {
             border-radius: 0.5rem;
             box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
         }
+
         .table th {
             border-top: none;
             font-weight: 600;
             color: #5a5c69;
         }
+
         .orders-page .content-wrapper {
             background-color: #f8f9fc;
         }

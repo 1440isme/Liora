@@ -114,6 +114,13 @@ class BestsellerProductsManager {
 
         const productsHTML = products.map(product => this.createProductCard(product)).join('');
         this.gridEl.innerHTML = productsHTML;
+        
+        // Trigger rating load sau khi render xong
+        setTimeout(() => {
+            if (window.loadProductRatings) {
+                window.loadProductRatings();
+            }
+        }, 500);
     }
 
     createProductCard(product) {
@@ -121,7 +128,7 @@ class BestsellerProductsManager {
         const statusClass = this.getProductStatusClass(productStatus);
 
         return `
-            <div class="product-card ${statusClass}">
+            <div class="product-card ${statusClass}" data-product-id="${product.productId}">
                 <div class="position-relative">
                     <img src="${product.mainImageUrl || '/user/img/default-product.jpg'}" 
                          class="card-img-top" 
@@ -152,11 +159,36 @@ class BestsellerProductsManager {
                         </a>
                     </p>
                     
-                    <div class="rating">
-                        <span class="stars">
-                            ${this.renderStars(product.averageRating || 0, product.ratingCount || 0)}
-                        </span>
-                        <span class="rating-count">(${product.ratingCount || 0} đánh giá)</span>
+                    <!-- Rating sẽ được load bởi ProductRatingUtils -->
+                    <div class="product-rating" data-product-id="${product.productId}">
+                        <div class="star-rating">
+                            <div class="star empty">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="2">
+                                    <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                                </svg>
+                            </div>
+                            <div class="star empty">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="2">
+                                    <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                                </svg>
+                            </div>
+                            <div class="star empty">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="2">
+                                    <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                                </svg>
+                            </div>
+                            <div class="star empty">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="2">
+                                    <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                                </svg>
+                            </div>
+                            <div class="star empty">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="2">
+                                    <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                                </svg>
+                            </div>
+                        </div>
+                        <span class="rating-count">(0)</span>
                     </div>
                     
                     <div class="mt-auto">
@@ -675,40 +707,16 @@ class BestsellerProductsManager {
         this.isAddingToCart = true;
 
         try {
-            let success = false;
-
-            if (window.cartManager) {
-                await window.cartManager.addItem(productId, 1);
-                success = true;
-            }
-            else if (window.app && window.app.cartItems) {
-                const product = this.allProducts.find(p => p.productId === productId);
-                if (product) {
-                    const existingItem = window.app.cartItems.find(item => item.id === productId);
-
-                    if (existingItem) {
-                        existingItem.quantity += 1;
-                    } else {
-                        window.app.cartItems.push({
-                            ...product,
-                            quantity: 1
-                        });
-                    }
-
-                    if (window.app.updateCartDisplay) {
-                        window.app.updateCartDisplay();
-                    }
-                    success = true;
-                }
-            }
-
-            if (success) {
-                this.showNotification(`${productName} đã được thêm vào giỏ hàng thành công!`, 'success');
+            // Sử dụng addProductToCartBackend để gọi API backend
+            if (window.app && window.app.addProductToCartBackend) {
+                await window.app.addProductToCartBackend(productId, 1, true);
+                await window.app.refreshCartBadge?.();
             } else {
-                this.showNotification('Không tìm thấy thông tin sản phẩm!', 'error');
+                this.showNotification('Chức năng đang được tải...', 'error');
             }
         } catch (error) {
-            this.showNotification('Có lỗi xảy ra khi thêm vào giỏ hàng', 'error');
+            console.error('Add to cart error:', error);
+            this.showNotification('Không thể thêm vào giỏ hàng. Vui lòng thử lại.', 'error');
         } finally {
             setTimeout(() => {
                 this.isAddingToCart = false;
@@ -746,45 +754,16 @@ class BestsellerProductsManager {
 
     async addToCartWithQuantityValue(productId, productName, price, quantity) {
         try {
-            let success = false;
-
-            if (window.cartManager && typeof window.cartManager.addItem === 'function') {
-                await window.cartManager.addItem(productId, quantity);
-                success = true;
-            }
-            else if (window.app && window.app.cartItems) {
-                if (productId && productName && price && !isNaN(price)) {
-                    const product = this.allProducts.find(p => p.productId === productId);
-                    if (product) {
-                        const existingItem = window.app.cartItems.find(item => item.id === productId);
-
-                        if (existingItem) {
-                            existingItem.quantity += quantity;
-                        } else {
-                            window.app.cartItems.push({
-                                id: productId,
-                                name: productName,
-                                price: price,
-                                quantity: quantity,
-                                image: product.images && product.images.length > 0 ? product.images[0].imageUrl : '/static/user/images/no-image.png'
-                            });
-                        }
-
-                        if (window.app.updateCartDisplay) {
-                            window.app.updateCartDisplay();
-                        }
-                        success = true;
-                    }
-                }
-            }
-
-            if (success) {
-                this.showNotification(`${quantity} x ${productName} đã được thêm vào giỏ hàng thành công!`, 'success');
+            // Sử dụng addProductToCartBackend để gọi API backend
+            if (window.app && window.app.addProductToCartBackend) {
+                await window.app.addProductToCartBackend(productId, quantity, true);
+                await window.app.refreshCartBadge?.();
             } else {
-                this.showNotification('Không tìm thấy thông tin sản phẩm!', 'error');
+                this.showNotification('Chức năng đang được tải...', 'error');
             }
         } catch (error) {
-            this.showNotification('Có lỗi xảy ra khi thêm vào giỏ hàng', 'error');
+            console.error('Add to cart error:', error);
+            this.showNotification('Không thể thêm vào giỏ hàng. Vui lòng thử lại.', 'error');
         }
     }
 

@@ -25,11 +25,11 @@ class FeaturedCategoryProductsManager {
     init() {
         try {
             this.getCategoryIdFromUrl();
-        this.bindEvents();
+            this.bindEvents();
             this.loadCategoryInfo();
             this.loadLevel3Categories();
-        this.loadBrands();
-        this.loadProducts();
+            this.loadBrands();
+            this.loadProducts();
         } catch (error) {
             console.error('Error in init():', error);
         }
@@ -89,13 +89,19 @@ class FeaturedCategoryProductsManager {
         if (!this.currentCategoryId) return;
 
         try {
-            const response = await fetch(`/api/categories/${this.currentCategoryId}`);
+            const response = await fetch(`/api/products/categories/${this.currentCategoryId}`);
             const data = await response.json();
 
             if (data.code === 1000 && data.result) {
+                // Check if category is active
+                if (data.result.isActive === false || data.result.isActive === null) {
+                    this.showCategoryUnavailable(data.result.name);
+                    return;
+                }
+                
                 const categoryName = data.result.name;
                 document.title = `${categoryName} - Liora`;
-                
+
                 const titleElement = document.querySelector('.page-title');
                 if (titleElement) {
                     titleElement.textContent = categoryName;
@@ -112,7 +118,7 @@ class FeaturedCategoryProductsManager {
         try {
             const response = await fetch(`/api/products/categories/${this.currentCategoryId}/level3-categories`);
             const data = await response.json();
-            
+
             if (data.code === 1000 && data.result) {
                 this.displayLevel3Categories(data.result);
             }
@@ -148,7 +154,7 @@ class FeaturedCategoryProductsManager {
         try {
             const response = await fetch(`/api/products/categories/${this.currentCategoryId}/brands-with-count`);
             const data = await response.json();
-            
+
             if (data.code === 1000 && data.result) {
                 this.displayBrands(data.result);
             }
@@ -224,7 +230,7 @@ class FeaturedCategoryProductsManager {
             }
 
             const data = await response.json();
-            
+
             if (data.code === 1000) {
                 this.products = data.result.content || [];
                 this.totalElements = data.result.totalElements || 0;
@@ -255,7 +261,7 @@ class FeaturedCategoryProductsManager {
             console.log('Grid element not found');
             return;
         }
-        
+
         if (this.products.length === 0) {
             grid.style.display = 'none';
             grid.innerHTML = '';
@@ -273,6 +279,13 @@ class FeaturedCategoryProductsManager {
 
         const html = this.products.map(product => this.createProductCard(product)).join('');
         grid.innerHTML = html;
+
+        // Trigger rating load sau khi render xong
+        setTimeout(() => {
+            if (window.loadProductRatings) {
+                window.loadProductRatings();
+            }
+        }, 500);
     }
 
     createProductCard(product) {
@@ -312,11 +325,36 @@ class FeaturedCategoryProductsManager {
                         </a>
                     </p>
                     
-                    <div class="rating">
-                        <span class="stars">
-                            ${this.generateStars(product.averageRating || 0, product.reviewCount || 0)}
-                        </span>
-                        <span class="review-count">(${product.reviewCount || 0})</span>
+                    <!-- Rating sẽ được load bởi ProductRatingUtils -->
+                    <div class="product-rating" data-product-id="${product.productId}">
+                        <div class="star-rating">
+                            <div class="star empty">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="2">
+                                    <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                                </svg>
+                            </div>
+                            <div class="star empty">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="2">
+                                    <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                                </svg>
+                            </div>
+                            <div class="star empty">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="2">
+                                    <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                                </svg>
+                            </div>
+                            <div class="star empty">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="2">
+                                    <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                                </svg>
+                            </div>
+                            <div class="star empty">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="2">
+                                    <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                                </svg>
+                            </div>
+                        </div>
+                        <span class="rating-count">(0)</span>
                     </div>
 
                     <!-- Sales Progress Bar -->
@@ -402,7 +440,7 @@ class FeaturedCategoryProductsManager {
         const fullStars = Math.floor(rating);
         const hasHalfStar = rating % 1 >= 0.5;
         const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
-        
+
         let stars = '';
         for (let i = 0; i < fullStars; i++) {
             stars += '<i class="fas fa-star text-warning"></i>';
@@ -448,7 +486,7 @@ class FeaturedCategoryProductsManager {
             { max: 10000, percentage: 95 },
             { max: Infinity, percentage: 100 }
         ];
-        
+
         for (const threshold of thresholds) {
             if (soldCount <= threshold.max) {
                 const prevThreshold = thresholds[thresholds.indexOf(threshold) - 1];
@@ -538,7 +576,7 @@ class FeaturedCategoryProductsManager {
         if (!paginationList) return;
 
         let paginationHTML = '';
-        
+
         // Previous button
         const prevDisabled = this.currentPage === 0 ? 'disabled' : '';
         paginationHTML += `
@@ -548,11 +586,11 @@ class FeaturedCategoryProductsManager {
                 </a>
             </li>
         `;
-        
+
         // Page numbers
         const startPage = Math.max(0, this.currentPage - 2);
         const endPage = Math.min(this.totalPages - 1, this.currentPage + 2);
-        
+
         for (let i = startPage; i <= endPage; i++) {
             const activeClass = i === this.currentPage ? 'active' : '';
             paginationHTML += `
@@ -561,7 +599,7 @@ class FeaturedCategoryProductsManager {
                 </li>
             `;
         }
-        
+
         // Next button
         const nextDisabled = this.currentPage >= this.totalPages - 1 ? 'disabled' : '';
         paginationHTML += `
@@ -619,47 +657,16 @@ class FeaturedCategoryProductsManager {
 
     async addToCart(productId, productName, price) {
         try {
-            if (window.cartManager && window.cartManager.addItem) {
-                await window.cartManager.addItem(productId, 1, price);
-                this.showNotification(`${productName} đã được thêm vào giỏ hàng!`, 'success');
-                return;
+            // Sử dụng addProductToCartBackend để gọi API backend
+            if (window.app && window.app.addProductToCartBackend) {
+                await window.app.addProductToCartBackend(productId, 1, true);
+                await window.app.refreshCartBadge?.();
+            } else {
+                this.showNotification('Chức năng đang được tải...', 'error');
             }
-
-            if (window.app && window.app.cartItems) {
-                const existingItem = window.app.cartItems.find(item => item.id === productId);
-
-                if (existingItem) {
-                    existingItem.quantity += 1;
-                } else {
-                    const product = this.products.find(p => p.productId === productId);
-                    if (product) {
-                        window.app.cartItems.push({
-                            ...product,
-                            quantity: 1
-                        });
-                    } else {
-                        window.app.cartItems.push({
-                            id: productId,
-                    productId: productId,
-                            name: productName,
-                            price: price,
-                    quantity: 1
-                        });
-                    }
-                }
-
-                if (window.app.updateCartDisplay) {
-                    window.app.updateCartDisplay();
-                }
-
-                this.showNotification(`${productName} đã được thêm vào giỏ hàng!`, 'success');
-                return;
-            }
-
-            this.showNotification(`${productName} đã được thêm vào giỏ hàng`, 'success');
         } catch (error) {
-            console.error('Error adding to cart:', error);
-            this.showNotification('Không thể thêm vào giỏ hàng', 'error');
+            console.error('Add to cart error:', error);
+            this.showNotification('Không thể thêm vào giỏ hàng. Vui lòng thử lại.', 'error');
         }
     }
 
@@ -690,7 +697,7 @@ class FeaturedCategoryProductsManager {
             delay: 3000
         });
         bsToast.show();
-        
+
         toast.addEventListener('hidden.bs.toast', () => {
             toast.remove();
         });
@@ -845,7 +852,7 @@ class FeaturedCategoryProductsManager {
                 </div>
             </div>
         `;
-        
+
         // Add modal to body
         document.body.insertAdjacentHTML('beforeend', modalHTML);
 
@@ -1082,20 +1089,29 @@ class FeaturedCategoryProductsManager {
     buyNow(productId) {
         const quantityInput = document.getElementById('quantityInput');
         const quantity = quantityInput ? parseInt(quantityInput.value) || 1 : 1;
-        
+
         // Redirect to checkout with product
         window.location.href = `/checkout?product=${productId}&quantity=${quantity}`;
     }
 
     // Add to cart with quantity
-    addToCartWithQuantity(productId) {
+    async addToCartWithQuantity(productId) {
         const quantityInput = document.getElementById('quantityInput');
         const quantity = quantityInput ? parseInt(quantityInput.value) || 1 : 1;
-        
-        // Add to cart logic here
-        console.log('Adding to cart with quantity:', productId, quantity);
-        this.showNotification(`Đã thêm ${quantity} sản phẩm vào giỏ hàng`, 'success');
-        
+
+        try {
+            // Sử dụng addProductToCartBackend để gọi API backend
+            if (window.app && window.app.addProductToCartBackend) {
+                await window.app.addProductToCartBackend(productId, quantity, true);
+                await window.app.refreshCartBadge?.();
+            } else {
+                this.showNotification('Chức năng đang được tải...', 'error');
+            }
+        } catch (error) {
+            console.error('Add to cart error:', error);
+            this.showNotification('Không thể thêm vào giỏ hàng. Vui lòng thử lại.', 'error');
+        }
+
         // Close modal
         const modal = bootstrap.Modal.getInstance(document.getElementById('quickViewModal'));
         if (modal) {
@@ -1113,9 +1129,9 @@ class FeaturedCategoryProductsManager {
             ${message}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         `;
-        
+
         document.body.appendChild(notification);
-        
+
         // Auto remove after 3 seconds
         setTimeout(() => {
             if (notification.parentNode) {
@@ -1123,12 +1139,42 @@ class FeaturedCategoryProductsManager {
             }
         }, 3000);
     }
+
+    // Show category unavailable message
+    showCategoryUnavailable(categoryName) {
+        const container = document.querySelector('.container-fluid .row');
+        if (!container) return;
+
+        container.innerHTML = `
+            <div class="col-12">
+                <div class="text-center py-5">
+                    <div class="error-icon mb-4">
+                        <i class="fas fa-exclamation-triangle fa-4x text-warning"></i>
+                    </div>
+                    <h2 class="text-danger mb-3">Danh mục tạm ngưng hoạt động</h2>
+                    <p class="text-muted mb-4">
+                        Danh mục "${categoryName}" hiện đang tạm ngưng hoạt động. Vui lòng quay lại sau.
+                    </p>
+                    <div class="d-flex justify-content-center gap-3">
+                        <a href="/" class="btn btn-primary btn-lg">
+                            <i class="fas fa-home me-2"></i>
+                            Về trang chủ
+                        </a>
+                        <a href="javascript:history.back()" class="btn btn-outline-secondary btn-lg">
+                            <i class="fas fa-arrow-left me-2"></i>
+                            Quay lại
+                        </a>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
 }
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function () {
     if (document.getElementById('productsGrid')) {
-    window.featuredCategoryProductsManager = new FeaturedCategoryProductsManager();
+        window.featuredCategoryProductsManager = new FeaturedCategoryProductsManager();
         window.featuredCategoryProductsManager.init();
     }
 });

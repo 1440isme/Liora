@@ -6,6 +6,7 @@ import vn.liora.dto.request.ProductCreationRequest;
 import vn.liora.dto.request.ProductUpdateRequest;
 import vn.liora.dto.response.ProductResponse;
 import vn.liora.dto.response.BrandResponse;
+import vn.liora.dto.response.TopProductResponse;
 import vn.liora.entity.Product;
 
 import java.math.BigDecimal;
@@ -78,6 +79,7 @@ public interface IProductService {
     // ========== BUSINESS QUERIES ==========
     List<Product> findTopSellingInStockProducts(Pageable pageable);
     List<Product> findHighRatedProductsWithPagination(BigDecimal minRating, Pageable pageable);
+    List<TopProductResponse> getTopSellingProducts(int limit);
 
     // ========== ADMIN QUERIES ==========
     Page<Product> findActiveProductsWithPagination(Pageable pageable);
@@ -112,5 +114,9 @@ public interface IProductService {
     
     // Advanced APIs for dedicated pages with filtering
     // Note: newest-advanced now uses direct controller logic like best-selling-advanced
+    
+    // ========== RATING MANAGEMENT ==========
+    void updateProductAverageRating(Long productId);
+    void updateAllProductsAverageRating();
 
 }
