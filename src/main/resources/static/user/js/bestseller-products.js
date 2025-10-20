@@ -426,6 +426,11 @@ class BestsellerProductsManager {
         // Add slider navigation event listeners
         this.setupSliderNavigation(product);
 
+        // Update review data after modal is shown
+        setTimeout(() => {
+            ProductRatingUtils.updateQuickViewReviewData(product.productId, 'bestsellerQuickViewModal');
+        }, 200);
+
         document.getElementById('bestsellerQuickViewModal').addEventListener('hidden.bs.modal', function () {
             this.remove();
         });

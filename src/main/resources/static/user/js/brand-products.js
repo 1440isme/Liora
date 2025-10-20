@@ -998,6 +998,11 @@ class BrandProductsManager {
         // Add slider navigation event listeners
         this.setupSliderNavigation(product);
 
+        // Update review data after modal is shown
+        setTimeout(() => {
+            ProductRatingUtils.updateQuickViewReviewData(product.productId);
+        }, 200);
+
         // Remove modal from DOM when hidden
         document.getElementById('quickViewModal').addEventListener('hidden.bs.modal', function () {
             this.remove();
@@ -1285,6 +1290,7 @@ class BrandProductsManager {
             }
         }, 5000);
     }
+
 }
 
 // Initialize when DOM is loaded
