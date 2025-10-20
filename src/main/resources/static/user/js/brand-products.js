@@ -1179,7 +1179,7 @@ class BrandProductsManager {
     }
 
     // Add to cart with quantity
-    async     async addToCartWithQuantity(productId) {
+    async addToCartWithQuantity(productId) {
         const quantityInput = document.getElementById('quantityInput');
         const quantity = quantityInput ? parseInt(quantityInput.value) || 1 : 1;
 
@@ -1203,67 +1203,8 @@ class BrandProductsManager {
         }
     }
 
-        // If not found, fetch from API
-        if (!product) {
-            try {
-                const response = await fetch(`/api/products/${productId}`);
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.code === 200 || data.code === 1000) {
-                        product = data.result;
-                    }
-                }
-            } catch (error) {
-                console.error('Error fetching product:', error);
-            }
-        }
-
-        if (!product) {
-            this.showNotification('Không tìm thấy sản phẩm', 'error');
-            return;
-        }
-
-        // Validate quantity against stock
-        if (quantity > product.stock) {
-            this.showNotification(`Số lượng bạn chọn (${quantity}) vượt quá số lượng tồn kho hiện có (${product.stock} sản phẩm). Vui lòng chọn số lượng phù hợp.`, 'error');
-            return;
-        }
-
-        // Try to add to global cart if available
-        if (window.app && window.app.cartItems) {
-            // Check if product already in cart
-            const existingItem = window.app.cartItems.find(item => item.id === productId);
-
-            if (existingItem) {
-                const newTotalQuantity = existingItem.quantity + quantity;
-                if (newTotalQuantity > product.stock) {
-                    this.showNotification(`Tổng số lượng trong giỏ hàng (${newTotalQuantity}) vượt quá tồn kho hiện có (${product.stock} sản phẩm). Vui lòng giảm số lượng.`, 'error');
-                    return;
-                }
-                existingItem.quantity = newTotalQuantity;
-            } else {
-                window.app.cartItems.push({
-                    ...product,
-                    quantity: quantity
-                });
-            }
-
-            // Update cart display
-            if (window.app.updateCartDisplay) {
-                window.app.updateCartDisplay();
-            }
-
-            this.showNotification(`${quantity} x ${product.name} đã được thêm vào giỏ hàng thành công!`, 'success');
-        } else {
-            // Fallback to simple add to cart
-            this.addToCart(productId);
-        }
-    }
-
+    // Buy now - chuẩn từ bestseller-products.js
     async buyNow(productId) {
-        const quantityInput = document.getElementById('quantityInput');
-        const quantity = quantityInput ? parseInt(quantityInput.value) : 1;
-
         let product = null;
         if (this.products && this.products.length > 0) {
             product = this.products.find(p => p.productId === productId);
@@ -1281,38 +1222,33 @@ class BrandProductsManager {
                 console.error('Error fetching product:', error);
             }
         }
+
         if (!product) {
-            this.showNotification('Không tìm thấy sản phẩm', 'error');
-            return;
-        }
-        if (quantity > product.stock) {
-            this.showNotification(`Số lượng bạn chọn (${quantity}) vượt quá số lượng tồn kho hiện có (${product.stock} sản phẩm). Vui lòng chọn số lượng phù hợp.`, 'error');
+            this.showNotification('Không tìm thấy sản phẩm!', 'error');
             return;
         }
 
-        try {
-            if (window.app && typeof window.app.buyNowBackend === 'function') {
-                await window.app.buyNowBackend(productId, quantity);
-                return;
-            }
-            this.showNotification('Không thể thực hiện Mua ngay. Vui lòng thử lại.', 'error');
-        } catch (_) {
-            this.showNotification('Không thể thực hiện Mua ngay. Vui lòng thử lại.', 'error');
-        }
+        // Lấy số lượng từ input trong QuickView
+        const quantityInput = document.getElementById('quantityInput');
+        const quantity = quantityInput ? (parseInt(quantityInput.value) || 1) : 1;
 
-        // Show success message
-        this.showNotification(`${quantity} x ${product.name} đã được thêm vào giỏ hàng! Đang chuyển đến trang thanh toán...`, 'success');
-
-        // Close modal
+        // Đóng modal trước khi chuyển trang
         const modal = bootstrap.Modal.getInstance(document.getElementById('quickViewModal'));
         if (modal) {
             modal.hide();
         }
 
-        // Redirect to checkout after a short delay
-        setTimeout(() => {
-            window.location.href = '/checkout';
-        }, 1500);
+        // Gọi buyNowBackend để thêm vào giỏ (tick choose=true) và chuyển tới checkout
+        if (window.app && typeof window.app.buyNowBackend === 'function') {
+            try {
+                await window.app.buyNowBackend(productId, quantity);
+            } catch (error) {
+                console.error('buyNow error:', error);
+                this.showNotification('Không thể thực hiện Mua ngay. Vui lòng thử lại.', 'error');
+            }
+        } else {
+            this.showNotification('Chức năng đang được tải...', 'error');
+        }
     }
 
     showNotification(message, type = 'info') {
@@ -1321,11 +1257,11 @@ class BrandProductsManager {
         toast.className = `toast align-items-center text-white bg-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} border-0`;
         toast.setAttribute('role', 'alert');
         toast.innerHTML = `
-            <div class="d-flex">
-                <div class="toast-body">${message}</div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-            </div>
-        `;
+                <div class="d-flex">
+                    <div class="toast-body">${message}</div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            `;
 
         // Add to page
         let container = document.querySelector('.toast-container');

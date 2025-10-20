@@ -631,8 +631,27 @@ class BestsellerProductsManager {
             return;
         }
 
-        await this.addToCart(productId, product.name, product.price);
-        window.location.href = '/checkout';
+        // Lấy số lượng từ input trong QuickView
+        const quantityInput = document.getElementById(`bestsellerQuickViewQuantityInput_${productId}`);
+        const quantity = quantityInput ? (parseInt(quantityInput.value) || 1) : 1;
+
+        // Đóng modal trước khi chuyển trang
+        const modal = bootstrap.Modal.getInstance(document.getElementById('bestsellerQuickViewModal'));
+        if (modal) {
+            modal.hide();
+        }
+
+        // Gọi buyNowBackend để thêm vào giỏ (tick choose=true) và chuyển tới checkout
+        if (window.app && typeof window.app.buyNowBackend === 'function') {
+            try {
+                await window.app.buyNowBackend(productId, quantity);
+            } catch (error) {
+                console.error('buyNow error:', error);
+                this.showNotification('Không thể thực hiện Mua ngay. Vui lòng thử lại.', 'error');
+            }
+        } else {
+            this.showNotification('Chức năng đang được tải...', 'error');
+        }
     }
 
     decrementQuantity(productId) {

@@ -70,7 +70,7 @@ class CategoryProductsManager {
                     this.showCategoryUnavailable(data.result.name);
                     return;
                 }
-                
+
                 this.displayCategoryTitle(data.result.name);
             }
         } catch (error) {
@@ -1004,12 +1004,12 @@ class CategoryProductsManager {
 
     updatePagination() {
         const pagination = document.getElementById('pagination');
-        
+
         if (!pagination) {
             console.log('Pagination element not found!');
             return;
         }
-        
+
         if (this.totalPages <= 1) {
             pagination.style.display = 'none';
             return;
@@ -1291,45 +1291,35 @@ class CategoryProductsManager {
         this.showNotification('Không thể thêm vào giỏ hàng', 'error');
     }
 
-    // Buy now - add to cart and redirect to checkout
+    // Buy now - chuẩn từ bestseller-products.js
     async buyNow(productId) {
-        const quantityInput = document.getElementById('quantityInput');
-        const quantity = quantityInput ? parseInt(quantityInput.value) : 1;
-
         const product = this.products.find(p => p.productId === productId);
         if (!product) {
-            this.showNotification('Không tìm thấy sản phẩm', 'error');
+            this.showNotification('Không tìm thấy sản phẩm!', 'error');
             return;
         }
 
-        if (quantity > product.stock) {
-            this.showNotification(`Số lượng bạn chọn (${quantity}) vượt quá số lượng tồn kho hiện có (${product.stock} sản phẩm). Vui lòng chọn số lượng phù hợp.`, 'error');
-            return;
-        }
+        // Lấy số lượng từ input trong QuickView
+        const quantityInput = document.getElementById('quantityInput');
+        const quantity = quantityInput ? (parseInt(quantityInput.value) || 1) : 1;
 
-        try {
-            if (window.app && typeof window.app.buyNowBackend === 'function') {
-                await window.app.buyNowBackend(productId, quantity);
-                return;
-            }
-            this.showNotification('Không thể thực hiện Mua ngay. Vui lòng thử lại.', 'error');
-        } catch (_) {
-            this.showNotification('Không thể thực hiện Mua ngay. Vui lòng thử lại.', 'error');
-        }
-
-        // Show success message
-        this.showNotification(`${quantity} x ${product.name} đã được thêm vào giỏ hàng! Đang chuyển đến trang thanh toán...`, 'success');
-
-        // Close modal
+        // Đóng modal trước khi chuyển trang
         const modal = bootstrap.Modal.getInstance(document.getElementById('quickViewModal'));
         if (modal) {
             modal.hide();
         }
 
-        // Redirect to checkout after a short delay
-        setTimeout(() => {
-            window.location.href = '/checkout';
-        }, 1500);
+        // Gọi buyNowBackend để thêm vào giỏ (tick choose=true) và chuyển tới checkout
+        if (window.app && typeof window.app.buyNowBackend === 'function') {
+            try {
+                await window.app.buyNowBackend(productId, quantity);
+            } catch (error) {
+                console.error('buyNow error:', error);
+                this.showNotification('Không thể thực hiện Mua ngay. Vui lòng thử lại.', 'error');
+            }
+        } else {
+            this.showNotification('Chức năng đang được tải...', 'error');
+        }
     }
 
     // Get main image URL for product

@@ -103,7 +103,7 @@ class NewestProductsHomepageManager {
     }
 
     createProductCard(product) {
-        const productId = product.productId || product.id || 0;
+        const productId = product.productId || 0;
         const productName = product.name || 'Tên sản phẩm';
         const brandName = product.brandName || product.brand?.name || 'Thương hiệu';
         const price = product.price || 0;
@@ -121,12 +121,12 @@ class NewestProductsHomepageManager {
                          class="card-img-top" 
                          alt="${productName}"
                          onerror="this.src='/user/img/default-product.jpg'"
-                         onclick="window.location.href='/product/${productId}'"
+                         onclick="window.location.href='/product/${product.productId}'"
                          style="cursor: pointer;">
                     
                     <div class="product-actions">
                         <button class="quick-view-btn" 
-                                onclick="if(window.app) window.app.showQuickView(${productId}); else alert('Chức năng đang được tải...');"
+                                onclick="if(window.app) window.app.showQuickView(${product.productId}); else alert('Chức năng đang được tải...');"
                                 title="Xem nhanh">
                             <i class="fas fa-eye"></i>
                         </button>
@@ -497,7 +497,7 @@ class NewestProductsHomepageManager {
                                 <!-- Product Info -->
                                 <div class="col-md-6">
                                     <h4 class="product-name mb-3">
-                                        <a href="/product/${product.productId || product.id}" class="text-decoration-none text-dark">
+                                        <a href="/product/${product.productId}" class="text-decoration-none text-dark">
                                             ${product.name}
                                         </a>
                                     </h4>
@@ -506,7 +506,7 @@ class NewestProductsHomepageManager {
                                     <!-- Product Status -->
                                     <div class="product-status mb-3">
                                         ${this.getProductStatusBadge(product)}
-                                        <span class="ms-2 text-muted">Mã sản phẩm: ${product.productId || product.id}</span>
+                                        <span class="ms-2 text-muted">Mã sản phẩm: ${product.productId}</span>
                                     </div>
                                     
                                     <!-- Rating -->
@@ -529,15 +529,15 @@ class NewestProductsHomepageManager {
                                         <div class="d-flex align-items-center">
                                             <label class="form-label mb-0" style="margin-right: 2rem;">Số lượng:</label>
                                             <div class="input-group" style="max-width: 150px;">
-                                                <button class="btn btn-outline-secondary" type="button" onclick="window.newestProductsHomepageManager.decrementQuantity('${product.productId || product.id}')">-</button>
-                                                <input type="number" class="form-control text-center" value="1" min="1" max="${Math.min(product.stock || 10, 99)}" id="homepageNewestQuantityInput_${product.productId || product.id}" onchange="window.newestProductsHomepageManager.validateQuantity('${product.productId || product.id}')" oninput="window.newestProductsHomepageManager.validateQuantity('${product.productId || product.id}')" onblur="window.newestProductsHomepageManager.validateQuantityOnBlur('${product.productId || product.id}')">
-                                                <button class="btn btn-outline-secondary" type="button" onclick="window.newestProductsHomepageManager.incrementQuantity('${product.productId || product.id}')">+</button>
+                                                <button class="btn btn-outline-secondary" type="button" onclick="window.newestProductsHomepageManager.decrementQuantity('${product.productId}')">-</button>
+                                                <input type="number" class="form-control text-center" value="1" min="1" max="${Math.min(product.stock || 10, 99)}" id="homepageNewestQuantityInput_${product.productId}" onchange="window.newestProductsHomepageManager.validateQuantity('${product.productId}')" oninput="window.newestProductsHomepageManager.validateQuantity('${product.productId}')" onblur="window.newestProductsHomepageManager.validateQuantityOnBlur('${product.productId}')">
+                                                <button class="btn btn-outline-secondary" type="button" onclick="window.newestProductsHomepageManager.incrementQuantity('${product.productId}')">+</button>
                                             </div>
                                         </div>
                                         <!-- Error Message -->
-                                        <div id="homepageNewestQuantityError_${product.productId || product.id}" class="text-danger mt-2" style="display: none;">
+                                        <div id="homepageNewestQuantityError_${product.productId}" class="text-danger mt-2" style="display: none;">
                                             <i class="fas fa-info-circle me-1"></i>
-                                            <span id="homepageNewestQuantityErrorMessage_${product.productId || product.id}">Số lượng tối đa bạn có thể mua là ${Math.min(product.stock || 10, 99)}.</span>
+                                            <span id="homepageNewestQuantityErrorMessage_${product.productId}">Số lượng tối đa bạn có thể mua là ${Math.min(product.stock || 10, 99)}.</span>
                                         </div>
                                     </div>
                                     
@@ -546,7 +546,7 @@ class NewestProductsHomepageManager {
                                         ${this.getQuickViewActions(product)}
                                         
                                         <!-- View Details Button -->
-                                        <a href="/product/${product.productId || product.id}" 
+                                        <a href="/product/${product.productId}" 
                                            class="btn btn-outline-primary btn-lg">
                                             <i class="fas fa-info-circle me-2"></i>
                                             Xem chi tiết sản phẩm
@@ -650,14 +650,14 @@ class NewestProductsHomepageManager {
             <div class="row g-2">
                 <div class="col-6">
                     <button class="btn btn-danger btn-lg w-100" 
-                            onclick="window.newestProductsHomepageManager.buyNow(${product.productId || product.id})">
+                            onclick="window.newestProductsHomepageManager.buyNow(${product.productId})">
                         <i class="fas fa-bolt me-1"></i>
                         Mua ngay
                     </button>
                 </div>
                 <div class="col-6">
                     <button class="btn btn-primary btn-lg w-100" 
-                            onclick="event.preventDefault(); event.stopPropagation(); window.newestProductsHomepageManager.addToCartWithQuantity(${product.productId || product.id})">
+                            onclick="event.preventDefault(); event.stopPropagation(); window.newestProductsHomepageManager.addToCartWithQuantity(${product.productId})">
                         <i class="fas fa-shopping-cart me-1"></i>
                         Thêm vào giỏ
                     </button>
@@ -835,19 +835,29 @@ class NewestProductsHomepageManager {
         this.validateQuantity(productId);
     }
 
-    // Buy now functionality
+    // Buy now functionality - chuẩn từ bestseller-products.js
     async buyNow(productId) {
-        const product = this.products.find(p => (p.productId || p.id) === productId);
-        if (!product) {
-            this.showNotification('Không tìm thấy sản phẩm!', 'error');
-            return;
+        // Lấy số lượng từ input trong QuickView
+        const quantityInput = document.getElementById('quantityInput');
+        const quantity = quantityInput ? (parseInt(quantityInput.value) || 1) : 1;
+
+        // Đóng modal trước khi chuyển trang
+        const modal = bootstrap.Modal.getInstance(document.getElementById('homepageNewestQuickViewModal'));
+        if (modal) {
+            modal.hide();
         }
 
-        // Add to cart first
-        await this.addToCart(productId, product.name, product.price);
-
-        // Redirect to checkout
-        window.location.href = '/checkout';
+        // Gọi buyNowBackend để thêm vào giỏ (tick choose=true) và chuyển tới checkout
+        if (window.app && typeof window.app.buyNowBackend === 'function') {
+            try {
+                await window.app.buyNowBackend(productId, quantity);
+            } catch (error) {
+                console.error('buyNow error:', error);
+                this.showNotification('Không thể thực hiện Mua ngay. Vui lòng thử lại.', 'error');
+            }
+        } else {
+            this.showNotification('Chức năng đang được tải...', 'error');
+        }
     }
 
     async addToCartWithQuantity(productId) {

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -21,29 +22,30 @@
 
     <!-- Custom CSS -->
     <link rel="stylesheet" th:href="@{/user/css/style.css}">
-    
+
     <!-- Inline CSS for hover effect -->
     <style>
         .product-name-link:hover {
             color: #E8A2B0 !important;
             text-decoration: none !important;
         }
+
         .brand-link:hover {
             color: #E8A2B0 !important;
             text-decoration: none !important;
         }
-        
+
         /* Hide numeric input arrows */
         #quickViewModal input[type="number"]::-webkit-outer-spin-button,
         #quickViewModal input[type="number"]::-webkit-inner-spin-button {
             -webkit-appearance: none;
             margin: 0;
         }
-        
+
         #quickViewModal input[type="number"] {
             -moz-appearance: textfield;
         }
-        
+
         /* Breadcrumb styling */
         .breadcrumb {
             background: transparent;
@@ -51,28 +53,29 @@
             padding: 8px 0;
             box-shadow: none;
         }
-        
+
         .breadcrumb-item a {
             color: #6c757d;
             transition: color 0.3s ease;
         }
-        
+
         .breadcrumb-item a:hover {
             color: #E8A2B0;
         }
-        
+
         .breadcrumb-item.active {
             color: #495057;
             font-weight: 500;
         }
-        
-        .breadcrumb-item + .breadcrumb-item::before {
+
+        .breadcrumb-item+.breadcrumb-item::before {
             content: "›";
             color: #adb5bd;
             font-weight: bold;
         }
     </style>
 </head>
+
 <body>
     <!-- Header -->
     <div th:replace="user/layout/user-header :: header"></div>
@@ -222,17 +225,17 @@
     <script th:src="@{/user/js/bestseller-products-page.js}"></script>
     <script>
         // Initialize bestseller products page
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM loaded, checking BestsellerProductsPageManager...');
-            console.log('window.bestsellerProductsPageManager:', window.bestsellerProductsPageManager);
-            
-            if (window.bestsellerProductsPageManager) {
-                console.log('BestsellerProductsPageManager found, initializing...');
+        document.addEventListener('DOMContentLoaded', function () {
+            try {
+                if (!window.bestsellerProductsPageManager) {
+                    window.bestsellerProductsPageManager = new BestsellerProductsPageManager();
+                }
                 window.bestsellerProductsPageManager.init();
-            } else {
-                console.error('BestsellerProductsPageManager not found!');
+            } catch (e) {
+                console.error('Failed to initialize BestsellerProductsPageManager:', e);
             }
         });
     </script>
 </body>
+
 </html>

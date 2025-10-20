@@ -449,8 +449,8 @@ class LioraApp {
                         <img src="${product.image}" class="product-image" alt="${product.name}">
                         <div class="position-absolute top-0 end-0 p-2">
                             <button class="btn btn-dark btn-sm rounded-circle quick-view-btn" 
-                                    data-product-id="${product.id}"
-                                    onclick="app.showQuickView(${product.id})"
+                                    data-product-id="${product.productId}"
+                                    onclick="app.showQuickView(${product.productId})"
                                     title="Xem nhanh">
                                 <i class="mdi mdi-eye"></i>
                             </button>
@@ -464,7 +464,7 @@ class LioraApp {
                     <div class="card-body">
                         <div class="product-brand">${product.brand || product.brandName || 'N/A'}</div>
                         <h5 class="product-title">
-                            <a href="/product/${product.id}" class="text-decoration-none text-dark">
+                            <a href="/product/${product.productId}" class="text-decoration-none text-dark">
                                 ${product.name}
                             </a>
                         </h5>
@@ -492,7 +492,7 @@ class LioraApp {
                                 <span class="product-price">${this.formatCurrency(product.price)}</span>
                                 ${product.originalPrice ? `<span class="product-original-price">${this.formatCurrency(product.originalPrice)}</span>` : ''}
                             </div>
-                            <button class="btn btn-pink-primary btn-sm rounded-pill add-to-cart" data-product-id="${product.id}">
+                            <button class="btn btn-pink-primary btn-sm rounded-pill add-to-cart" data-product-id="${product.productId}">
                                 Add to Cart
                             </button>
                         </div>
@@ -1472,6 +1472,13 @@ class LioraApp {
 
     // Show quick view popup
     async showQuickView(productId) {
+        // Validate productId
+        if (!productId || productId === 'undefined' || productId === 'null') {
+            console.error('Invalid productId:', productId);
+            this.showToast('Lỗi: Không tìm thấy sản phẩm', 'error');
+            return;
+        }
+
         let product = null;
 
         // Try to find product in current products array first
@@ -1586,7 +1593,11 @@ class LioraApp {
                                 
                                 <!-- Product Info -->
                                 <div class="col-md-6">
-                                    <h4 class="product-name mb-3">${product.name}</h4>
+                                    <h4 class="product-name mb-3">
+                                        <a href="/product/${product.productId}" class="text-decoration-none text-dark">
+                                            ${product.name}
+                                        </a>
+                                    </h4>
                                     <p class="brand-name text-muted mb-2">${product.brand || product.brandName || 'N/A'}</p>
                                     
                                     <!-- Product Status -->
@@ -1594,7 +1605,7 @@ class LioraApp {
                                         <span class="badge ${product.stock > 0 ? 'bg-success' : 'bg-danger'}">
                                             ${product.stock > 0 ? 'Còn hàng' : 'Hết hàng'}
                                         </span>
-                                        <span class="ms-2 text-muted">Mã sản phẩm: ${product.id || product.productId || 'N/A'}</span>
+                                        <span class="ms-2 text-muted">Mã sản phẩm: ${product.productId || 'N/A'}</span>
                                     </div>
                                     
                                     <!-- Rating -->
@@ -1650,7 +1661,7 @@ class LioraApp {
                                         <div class="row g-2">
                                             <div class="col-6">
                                                 <button class="btn btn-danger btn-lg w-100" 
-                                                        onclick="app.buyNow(${product.id})"
+                                                        onclick="app.buyNow(${product.productId})"
                                                         ${product.stock <= 0 ? 'disabled' : ''}>
                                                     <i class="mdi mdi-lightning-bolt me-1"></i>
                                                     ${product.stock > 0 ? 'Mua ngay' : 'Hết hàng'}
@@ -1658,7 +1669,7 @@ class LioraApp {
                                             </div>
                                             <div class="col-6">
                                                 <button class="btn btn-primary btn-lg w-100" 
-                                                        onclick="app.addToCartWithQuantity(${product.id || product.productId})"
+                                                        onclick="app.addToCartWithQuantity(${product.productId})"
                                                         ${product.stock <= 0 ? 'disabled' : ''}>
                                                     <i class="mdi mdi-cart-plus me-1"></i>
                                                     ${product.stock > 0 ? 'Thêm vào giỏ' : 'Hết hàng'}
@@ -1667,7 +1678,7 @@ class LioraApp {
                                         </div>
                                         
                                         <!-- View Details Button -->
-                                        <a href="/product/${product.id}" 
+                                        <a href="/product/${product.productId}" 
                                            class="btn btn-outline-primary btn-lg">
                                             <i class="mdi mdi-information me-2"></i>
                                             Xem chi tiết sản phẩm
@@ -1842,30 +1853,25 @@ class LioraApp {
         });
     }
 
-    // Buy now - add to cart and redirect to checkout
-    buyNow(productId) {
+    // Buy now - chuẩn từ bestseller-products.js
+    async buyNow(productId) {
+        // Lấy số lượng từ input trong QuickView
         const quantityInput = document.getElementById('quantityInput');
-        const quantity = quantityInput ? parseInt(quantityInput.value) : 1;
+        const quantity = quantityInput ? (parseInt(quantityInput.value) || 1) : 1;
 
-        // Get product info for notification
-        const product = ProductManager.getProductById(productId);
-
-        // Add to cart silently (no message)
-        this.addToCart(productId, quantity, false);
-
-        // Show single success message
-        this.showToast(`${quantity} x ${product ? product.name : 'sản phẩm'} đã được thêm vào giỏ hàng! Đang chuyển đến trang thanh toán...`, 'success');
-
-        // Close modal
+        // Đóng modal trước khi chuyển trang
         const modal = bootstrap.Modal.getInstance(document.getElementById('quickViewModal'));
         if (modal) {
             modal.hide();
         }
 
-        // Redirect to checkout after a short delay
-        setTimeout(() => {
-            window.location.href = '/checkout';
-        }, 1500);
+        // Gọi buyNowBackend để thêm vào giỏ (tick choose=true) và chuyển tới checkout
+        try {
+            await this.buyNowBackend(productId, quantity);
+        } catch (error) {
+            console.error('buyNow error:', error);
+            this.showToast('Không thể thực hiện Mua ngay. Vui lòng thử lại.', 'error');
+        }
     }
 
     // Get main image URL for product
