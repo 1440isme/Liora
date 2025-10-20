@@ -65,6 +65,12 @@ class CategoryProductsManager {
             console.log('Category info response:', data);
 
             if (data.code === 1000 && data.result) {
+                // Check if category is active
+                if (data.result.isActive === false || data.result.isActive === null) {
+                    this.showCategoryUnavailable(data.result.name);
+                    return;
+                }
+                
                 this.displayCategoryTitle(data.result.name);
             }
         } catch (error) {
@@ -1074,6 +1080,36 @@ class CategoryProductsManager {
                 <p class="text-muted">${message}</p>
             `;
         }
+    }
+
+    // Show category unavailable message
+    showCategoryUnavailable(categoryName) {
+        const container = document.querySelector('.container-fluid .row');
+        if (!container) return;
+
+        container.innerHTML = `
+            <div class="col-12">
+                <div class="text-center py-5">
+                    <div class="error-icon mb-4">
+                        <i class="fas fa-exclamation-triangle fa-4x text-warning"></i>
+                    </div>
+                    <h2 class="text-danger mb-3">Danh mục tạm ngưng hoạt động</h2>
+                    <p class="text-muted mb-4">
+                        Danh mục "${categoryName}" hiện đang tạm ngưng hoạt động. Vui lòng quay lại sau.
+                    </p>
+                    <div class="d-flex justify-content-center gap-3">
+                        <a href="/" class="btn btn-primary btn-lg">
+                            <i class="fas fa-home me-2"></i>
+                            Về trang chủ
+                        </a>
+                        <a href="javascript:history.back()" class="btn btn-outline-secondary btn-lg">
+                            <i class="fas fa-arrow-left me-2"></i>
+                            Quay lại
+                        </a>
+                    </div>
+                </div>
+            </div>
+        `;
     }
 
     showNotification(message, type = 'info') {
