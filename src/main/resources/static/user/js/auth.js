@@ -180,7 +180,38 @@ if (typeof AuthManager === 'undefined') {
                 try { const err = await res.json(); msg = err.message || msg; } catch (_) { }
                 throw new Error(msg);
             }
-            await this.signIn(username, password);
+
+            // Sử dụng token từ response đăng ký thay vì gọi signIn
+            const data = await res.json();
+            const result = data?.result;
+            const token = result?.token;
+
+            if (!token) {
+                throw new Error('Không nhận được token sau khi đăng ký');
+            }
+
+            // Lưu token và thông tin user
+            localStorage.setItem('access_token', token);
+            try {
+                document.cookie = `access_token=${token}; path=/; SameSite=Lax`;
+            } catch (_) { }
+            localStorage.setItem('authenticated', 'true');
+
+            // Decode token để lấy thông tin user
+            const tokenPayload = this.parseJwt(token);
+            const roles = this.extractRolesFromPayload(tokenPayload);
+            const displayName = tokenPayload?.name || tokenPayload?.fullName || username;
+            const isAdmin = roles.includes('ADMIN') || roles.includes('ROLE_ADMIN');
+
+            this.currentUser = {
+                username: result?.user?.username || username,
+                displayName,
+                roles,
+                isAdmin,
+                token
+            };
+
+            return this.currentUser;
         }
 
         async signIn(username, password) {
@@ -488,9 +519,6 @@ if (typeof AuthManager === 'undefined') {
 
                         // Update user display with new roles
                         this.updateUserDisplay();
-
-                        // Show notification
-                        this.showNotification('Quyền của bạn đã được cập nhật thành công!', 'success');
                     }
                 } else {
                     console.error('Failed to refresh token:', response.status);

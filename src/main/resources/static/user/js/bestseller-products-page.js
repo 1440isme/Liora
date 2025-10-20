@@ -199,11 +199,8 @@ class BestsellerProductsPageManager {
             const [minPrice, maxPrice] = value.split(',').map(Number);
             this.currentFilters.minPrice = minPrice;
             this.currentFilters.maxPrice = maxPrice;
-        } else {
-            this.currentFilters.minPrice = null;
-            this.currentFilters.maxPrice = null;
         }
-    }
+}
 
     handleBrandFilterChange(event) {
         console.log('Brand filter changed:', event.target.value, event.target.checked);
@@ -237,13 +234,8 @@ class BestsellerProductsPageManager {
             this.currentFilters.minPrice = minPrice;
             this.currentFilters.maxPrice = maxPrice;
             console.log('Price filter set:', { minPrice, maxPrice });
-        } else {
-            this.currentFilters.minPrice = null;
-            this.currentFilters.maxPrice = null;
-            console.log('No price filter');
         }
-
-        // Get selected brands (dynamic) - now using brand names instead of IDs
+// Get selected brands (dynamic) - now using brand names instead of IDs
         const brandCheckboxes = document.querySelectorAll('#brandFilters input[type="checkbox"]');
         this.currentFilters.brands = Array.from(brandCheckboxes)
             .filter(cb => cb.checked)
@@ -295,11 +287,8 @@ class BestsellerProductsPageManager {
                     params.append('sortBy', sortBy);
                     params.append('sortDir', sortDir);
                 }
-            } else {
-                console.log('No sort filter applied');
             }
-
-            console.log('Loading products with params:', params.toString());
+console.log('Loading products with params:', params.toString());
             console.log('Current filters:', this.currentFilters);
 
             const fullUrl = `/api/products/best-selling-advanced?${params}`;
@@ -326,12 +315,8 @@ class BestsellerProductsPageManager {
                 // Check if no products found
                 if (this.products.length === 0) {
                     this.showEmptyState('Không tìm thấy sản phẩm phù hợp');
-                } else {
-                    this.renderProducts();
-                    this.updateResultsCount();
-                    this.updatePagination();
                 }
-            } else {
+} else {
                 console.log('API error:', data.message);
                 this.showLoading(false);
                 this.showEmptyState('Chưa có sản phẩm bán chạy nào');
@@ -621,29 +606,19 @@ class BestsellerProductsPageManager {
         }
     }
 
-    async addToCart(productId, productName, price) {
+        async addToCart(productId, productName, price) {
         try {
-            let success = false;
-
-            // Check if cart functionality exists
-            if (window.cartManager) {
-                await window.cartManager.addItem(productId, 1);
-                success = true;
+            // Sử dụng addProductToCartBackend để gọi API backend
+            if (window.app && window.app.addProductToCartBackend) {
+                await window.app.addProductToCartBackend(productId, 1, true);
+                await window.app.refreshCartBadge?.();
             }
-            // Fallback: Try to use global cart if available
-            else if (window.app && window.app.cartItems) {
-                const product = this.products.find(p => (p.productId || p.id) === productId);
-                if (product) {
-                    const existingItem = window.app.cartItems.find(item => item.id === productId);
+} catch (error) {
+            console.error('Add to cart error:', error);
+            this.showNotification('Không thể thêm vào giỏ hàng. Vui lòng thử lại.', 'error');
+        }
+    }
 
-                    if (existingItem) {
-                        existingItem.quantity += 1;
-                    } else {
-                        window.app.cartItems.push({
-                            ...product,
-                            quantity: 1
-                        });
-                    }
 
                     if (window.app.updateCartDisplay) {
                         window.app.updateCartDisplay();
@@ -655,10 +630,8 @@ class BestsellerProductsPageManager {
             // Show single notification based on success
             if (success) {
                 this.showNotification(`${productName} đã được thêm vào giỏ hàng thành công!`, 'success');
-            } else {
-                this.showNotification('Không tìm thấy thông tin sản phẩm!', 'error');
             }
-        } catch (error) {
+} catch (error) {
             console.error('Error adding to cart:', error);
             this.showNotification('Có lỗi xảy ra khi thêm vào giỏ hàng', 'error');
         }
@@ -1035,16 +1008,8 @@ class BestsellerProductsPageManager {
             errorDiv.style.display = 'block';
             errorMessage.textContent = 'Số lượng không thể nhỏ hơn 1.';
             quantityInput.classList.add('is-invalid');
-        } else if (currentValue > maxAllowed) {
-            quantityInput.value = maxAllowed;
-            errorDiv.style.display = 'block';
-            errorMessage.textContent = `Số lượng tối đa là ${maxAllowed} sản phẩm.`;
-            quantityInput.classList.add('is-invalid');
-        } else {
-            errorDiv.style.display = 'none';
-            quantityInput.classList.remove('is-invalid');
         }
-    }
+}
 
     validateQuantityOnBlur(productId) {
         const quantityInput = document.getElementById(`quantityInput_${productId}`);
@@ -1070,12 +1035,27 @@ class BestsellerProductsPageManager {
     }
 
     // Add to cart with quantity
-    addToCartWithQuantity(productId) {
-        const product = this.products.find(p => (p.productId || p.id) === productId);
-        if (!product) {
-            this.showNotification('Không tìm thấy sản phẩm', 'error');
-            return;
+        async addToCartWithQuantity(productId) {
+        const quantityInput = document.getElementById('quantityInput');
+        const quantity = quantityInput ? parseInt(quantityInput.value) || 1 : 1;
+
+        try {
+            // Sử dụng addProductToCartBackend để gọi API backend
+            if (window.app && window.app.addProductToCartBackend) {
+                await window.app.addProductToCartBackend(productId, quantity, true);
+                await window.app.refreshCartBadge?.();
+            }
+} catch (error) {
+            console.error('Add to cart error:', error);
+            this.showNotification('Không thể thêm vào giỏ hàng. Vui lòng thử lại.', 'error');
         }
+
+        // Close modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('quickViewModal'));
+        if (modal) {
+            modal.hide();
+        }
+    }
 
         // Get quantity from input using unique ID
         const quantityInput = document.getElementById(`quantityInput_${productId}`);
@@ -1092,34 +1072,19 @@ class BestsellerProductsPageManager {
     }
 
     // Add to cart with specific quantity
-    async addToCartWithQuantityValue(productId, productName, price, quantity) {
+        async addToCartWithQuantityValue(productId, productName, price, quantity) {
         try {
-            let success = false;
-
-            // Check if cart functionality exists
-            if (window.cartManager && typeof window.cartManager.addItem === 'function') {
-                await window.cartManager.addItem(productId, quantity);
-                success = true;
+            // Sử dụng addProductToCartBackend để gọi API backend
+            if (window.app && window.app.addProductToCartBackend) {
+                await window.app.addProductToCartBackend(productId, quantity, true);
+                await window.app.refreshCartBadge?.();
             }
-            // Fallback to global app cart
-            else if (window.app && window.app.cartItems) {
-                // Validate data first
-                if (productId && productName && price && !isNaN(price)) {
-                    const product = this.products.find(p => (p.productId || p.id) === productId);
-                    if (product) {
-                        const existingItem = window.app.cartItems.find(item => item.id === productId);
+} catch (error) {
+            console.error('Add to cart error:', error);
+            this.showNotification('Không thể thêm vào giỏ hàng. Vui lòng thử lại.', 'error');
+        }
+    }
 
-                        if (existingItem) {
-                            existingItem.quantity += quantity;
-                        } else {
-                            window.app.cartItems.push({
-                                id: productId,
-                                name: productName,
-                                price: price,
-                                quantity: quantity,
-                                image: product.images && product.images.length > 0 ? product.images[0].imageUrl : '/static/user/images/no-image.png'
-                            });
-                        }
 
                         if (window.app.updateCartDisplay) {
                             window.app.updateCartDisplay();
@@ -1132,10 +1097,8 @@ class BestsellerProductsPageManager {
             // Show single notification based on success
             if (success) {
                 this.showNotification(`${quantity} x ${productName} đã được thêm vào giỏ hàng thành công!`, 'success');
-            } else {
-                this.showNotification('Không tìm thấy thông tin sản phẩm!', 'error');
             }
-        } catch (error) {
+} catch (error) {
             this.showNotification('Có lỗi xảy ra khi thêm vào giỏ hàng', 'error');
         }
     }

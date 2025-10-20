@@ -7,67 +7,81 @@ let pageSize = 10;
 let currentFilters = {};
 let currentSort = { field: 'createdAt', direction: 'desc' };
 
+// Utility function để thêm authentication header
+function getAuthHeaders() {
+    const token = localStorage.getItem('access_token');
+    const headers = {
+        'Content-Type': 'application/json'
+    };
+
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    return headers;
+}
+
 // Initialize page
-$(document).ready(function() {
+$(document).ready(function () {
     loadBrands();
     loadCategories();
     loadReviews();
     loadStatistics();
-    
+
     // Event listeners
-    $('#btnSearch').click(function() {
+    $('#btnSearch').click(function () {
         currentPage = 0;
         loadReviews();
     });
-    
-    $('#searchReview').keypress(function(e) {
+
+    $('#searchReview').keypress(function (e) {
         if (e.which === 13) {
             currentPage = 0;
             loadReviews();
         }
     });
-    
-    $('#filterRating, #filterBrand, #filterCategory, #filterProduct, #filterVisibility').change(function() {
+
+    $('#filterRating, #filterBrand, #filterCategory, #filterProduct, #filterVisibility').change(function () {
         currentPage = 0;
         loadReviews();
         loadStatistics();
     });
-    
-    $('#btnRefresh').click(function() {
+
+    $('#btnRefresh').click(function () {
         resetFilters();
         loadReviews();
         loadStatistics();
     });
-    
+
     // Brand change event
-    $('#filterBrand').change(function() {
+    $('#filterBrand').change(function () {
         const brandId = $(this).val();
         loadProducts(brandId, null);
         $('#filterCategory').val('');
         $('#filterProduct').val('');
     });
-    
+
     // Category change event
-    $('#filterCategory').change(function() {
+    $('#filterCategory').change(function () {
         const categoryId = $(this).val();
         const brandId = $('#filterBrand').val();
         loadProducts(brandId, categoryId);
         $('#filterProduct').val('');
     });
-    
+
     // Sortable column click events
-    $('.sortable').click(function() {
+    $('.sortable').click(function () {
         const field = $(this).data('sort');
         let direction = 'asc';
-        
+
         // If clicking the same column, toggle direction
         if (currentSort.field === field) {
             direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
         }
-        
+
         currentSort = { field: field, direction: direction };
         currentPage = 0;
-        
+
         updateSortIcons();
         loadReviews();
     });
@@ -77,10 +91,10 @@ $(document).ready(function() {
 function updateSortIcons() {
     $('.sortable').removeClass('sorted sorted-asc sorted-desc');
     $('.sort-icon').removeClass('mdi-arrow-up mdi-arrow-down').addClass('mdi-sort');
-    
+
     const $currentSortColumn = $(`.sortable[data-sort="${currentSort.field}"]`);
     $currentSortColumn.addClass('sorted');
-    
+
     if (currentSort.direction === 'asc') {
         $currentSortColumn.addClass('sorted-asc');
         $currentSortColumn.find('.sort-icon').removeClass('mdi-sort').addClass('mdi-arrow-up');
@@ -93,12 +107,13 @@ function updateSortIcons() {
 // Load reviews
 function loadReviews() {
     showLoading();
-    
+
     const filters = getCurrentFilters();
-    
+
     $.ajax({
         url: '/admin/api/reviews',
         method: 'GET',
+        headers: getAuthHeaders(),
         data: {
             page: currentPage,
             size: pageSize,
@@ -111,12 +126,12 @@ function loadReviews() {
             productId: filters.productId,
             isVisible: filters.isVisible
         },
-        success: function(response) {
+        success: function (response) {
             displayReviews(response.reviews);
             updatePagination(response);
             hideLoading();
         },
-        error: function(xhr) {
+        error: function (xhr) {
             hideLoading();
             showAlert('Lỗi khi tải danh sách đánh giá', 'error');
         }
@@ -126,20 +141,21 @@ function loadReviews() {
 // Load statistics
 function loadStatistics() {
     const filters = getCurrentFilters();
-    
+
     $.ajax({
         url: '/admin/api/reviews/statistics',
         method: 'GET',
+        headers: getAuthHeaders(),
         data: {
             rating: filters.rating,
             brandId: filters.brandId,
             categoryId: filters.categoryId,
             productId: filters.productId
         },
-        success: function(response) {
+        success: function (response) {
             updateStatistics(response);
         },
-        error: function(xhr) {
+        error: function (xhr) {
             console.error('Error loading statistics:', xhr);
         }
     });
@@ -150,15 +166,16 @@ function loadBrands() {
     $.ajax({
         url: '/admin/api/reviews/brands',
         method: 'GET',
-        success: function(response) {
+        headers: getAuthHeaders(),
+        success: function (response) {
             const select = $('#filterBrand');
             select.empty().append('<option value="">Tất cả thương hiệu</option>');
-            
-            response.forEach(function(brand) {
+
+            response.forEach(function (brand) {
                 select.append(`<option value="${brand.brandId}">${brand.name}</option>`);
             });
         },
-        error: function(xhr) {
+        error: function (xhr) {
             console.error('Error loading brands:', xhr);
         }
     });
@@ -169,15 +186,16 @@ function loadCategories() {
     $.ajax({
         url: '/admin/api/reviews/categories',
         method: 'GET',
-        success: function(response) {
+        headers: getAuthHeaders(),
+        success: function (response) {
             const select = $('#filterCategory');
             select.empty().append('<option value="">Tất cả danh mục</option>');
-            
-            response.forEach(function(category) {
+
+            response.forEach(function (category) {
                 select.append(`<option value="${category.categoryId}">${category.name}</option>`);
             });
         },
-        error: function(xhr) {
+        error: function (xhr) {
             console.error('Error loading categories:', xhr);
         }
     });
@@ -188,19 +206,20 @@ function loadProducts(brandId, categoryId) {
     $.ajax({
         url: '/admin/api/reviews/products',
         method: 'GET',
+        headers: getAuthHeaders(),
         data: {
             brandId: brandId,
             categoryId: categoryId
         },
-        success: function(response) {
+        success: function (response) {
             const select = $('#filterProduct');
             select.empty().append('<option value="">Tất cả sản phẩm</option>');
-            
-            response.forEach(function(product) {
+
+            response.forEach(function (product) {
                 select.append(`<option value="${product.productId}">${product.name}</option>`);
             });
         },
-        error: function(xhr) {
+        error: function (xhr) {
             console.error('Error loading products:', xhr);
         }
     });
@@ -210,7 +229,7 @@ function loadProducts(brandId, categoryId) {
 function displayReviews(reviews) {
     const tbody = $('#reviewTableBody');
     tbody.empty();
-    
+
     if (reviews.length === 0) {
         tbody.append(`
             <tr>
@@ -222,8 +241,8 @@ function displayReviews(reviews) {
         `);
         return;
     }
-    
-    reviews.forEach(function(review, index) {
+
+    reviews.forEach(function (review, index) {
         const row = createReviewRow(review, currentPage * pageSize + index + 1);
         tbody.append(row);
     });
@@ -231,24 +250,24 @@ function displayReviews(reviews) {
 
 // Create review row
 function createReviewRow(review, index) {
-    const content = review.content ? 
-        `<div class="content-preview" title="${review.content}">${review.content}</div>` : 
+    const content = review.content ?
+        `<div class="content-preview" title="${review.content}">${review.content}</div>` :
         '<span class="text-muted">Không có nội dung</span>';
-    
+
     const stars = generateStars(review.rating);
-    
+
     // Cập nhật format cho Ẩn danh - sử dụng text với fw-bold thay vì badge
-    const anonymous = review.anonymous ? 
-        '<span class="text-info fw-bold">Ẩn danh</span>' : 
+    const anonymous = review.anonymous ?
+        '<span class="text-info fw-bold">Ẩn danh</span>' :
         '<span class="text-secondary fw-bold">Hiển thị</span>';
-    
+
     // Cập nhật format cho Trạng thái - sử dụng text với fw-bold thay vì badge
-    const visibility = review.isVisible ? 
-        '<span class="text-success fw-bold">Hiển thị</span>' : 
+    const visibility = review.isVisible ?
+        '<span class="text-success fw-bold">Hiển thị</span>' :
         '<span class="text-danger fw-bold">Ẩn</span>';
-    
+
     const createdAt = formatDateTime(review.createdAt);
-    
+
     return `
         <tr>
             <td class="text-center">${index}</td>
@@ -287,12 +306,12 @@ function createReviewRow(review, index) {
 function toggleReviewVisibility(reviewId, currentVisibility) {
     const newVisibility = !currentVisibility;
     const action = newVisibility ? 'hiển thị' : 'ẩn';
-    
+
     // Lưu thông tin vào modal
     $('#confirmReviewId').val(reviewId);
     $('#confirmNewVisibility').val(newVisibility);
     $('#confirmActionText').text(action);
-    
+
     // Hiển thị modal xác nhận
     $('#confirmVisibilityModal').modal('show');
 }
@@ -302,18 +321,20 @@ function confirmToggleVisibility() {
     const reviewId = $('#confirmReviewId').val();
     const newVisibility = $('#confirmNewVisibility').val() === 'true';
     const action = newVisibility ? 'hiển thị' : 'ẩn';
-    
+
     $.ajax({
         url: `/admin/api/reviews/${reviewId}/visibility`,
         method: 'PUT',
-        data: { isVisible: newVisibility },
-        success: function(response) {
+        headers: getAuthHeaders(),
+        data: JSON.stringify({ isVisible: newVisibility }),
+        processData: false,
+        success: function (response) {
             $('#confirmVisibilityModal').modal('hide');
             showAlert(`Đã ${action} đánh giá thành công`, 'success');
             loadReviews();
             loadStatistics();
         },
-        error: function(xhr) {
+        error: function (xhr) {
             showAlert('Lỗi khi cập nhật trạng thái', 'error');
         }
     });
@@ -350,17 +371,17 @@ function viewReviewDetail(reviewId) {
 function showReviewDetailModal(review) {
     $('#modalReviewContent').text(review.content || 'Không có nội dung');
     $('#modalReviewRating').html(generateStars(review.rating) + ` <span class="ms-2">${review.rating}/5</span>`);
-    $('#modalReviewAnonymous').html(review.anonymous ? 
-        '<span class="text-info fw-bold">Ẩn danh</span>' : 
+    $('#modalReviewAnonymous').html(review.anonymous ?
+        '<span class="text-info fw-bold">Ẩn danh</span>' :
         '<span class="text-secondary fw-bold">Hiển thị tên</span>');
-    $('#modalReviewStatus').html(review.isVisible ? 
-        '<span class="text-success fw-bold">Hiển thị</span>' : 
+    $('#modalReviewStatus').html(review.isVisible ?
+        '<span class="text-success fw-bold">Hiển thị</span>' :
         '<span class="text-danger fw-bold">Ẩn</span>');
     $('#modalReviewUser').text(review.userDisplayName || 'Không xác định');
     $('#modalReviewProduct').text(review.productName || 'Không xác định');
     $('#modalReviewCreatedAt').text(formatDateTime(review.createdAt));
     $('#modalReviewLastUpdate').text(formatDateTime(review.lastUpdate));
-    
+
     $('#reviewDetailModal').modal('show');
 }
 
@@ -375,18 +396,20 @@ function updateReviewVisibility(reviewId, currentVisibility) {
 function saveReviewVisibility() {
     const reviewId = $('#updateReviewId').val();
     const isVisible = $('#updateReviewVisibility').val() === 'true';
-    
+
     $.ajax({
         url: `/admin/api/reviews/${reviewId}/visibility`,
         method: 'PUT',
-        data: { isVisible: isVisible },
-        success: function(response) {
+        headers: getAuthHeaders(),
+        data: JSON.stringify({ isVisible: isVisible }),
+        processData: false,
+        success: function (response) {
             $('#updateVisibilityModal').modal('hide');
             showAlert(response.message, 'success');
             loadReviews();
             loadStatistics();
         },
-        error: function(xhr) {
+        error: function (xhr) {
             showAlert('Lỗi khi cập nhật trạng thái', 'error');
         }
     });
@@ -421,10 +444,10 @@ function resetFilters() {
 function updatePagination(response) {
     const pagination = $('#pagination');
     pagination.empty();
-    
+
     const totalPages = response.totalPages;
     const currentPageNum = response.currentPage;
-    
+
     // Previous button
     if (response.hasPrevious) {
         pagination.append(`
@@ -433,11 +456,11 @@ function updatePagination(response) {
             </li>
         `);
     }
-    
+
     // Page numbers
     const startPage = Math.max(0, currentPageNum - 2);
     const endPage = Math.min(totalPages - 1, currentPageNum + 2);
-    
+
     for (let i = startPage; i <= endPage; i++) {
         const isActive = i === currentPageNum ? 'active' : '';
         pagination.append(`
@@ -446,7 +469,7 @@ function updatePagination(response) {
             </li>
         `);
     }
-    
+
     // Next button
     if (response.hasNext) {
         pagination.append(`
@@ -455,7 +478,7 @@ function updatePagination(response) {
             </li>
         `);
     }
-    
+
     // Update pagination info
     const startItem = currentPageNum * pageSize + 1;
     const endItem = Math.min((currentPageNum + 1) * pageSize, response.totalItems);
@@ -486,9 +509,9 @@ function showAlert(message, type) {
         </div>
     `;
     $('#alertContainer').html(alertHtml);
-    
+
     // Auto hide after 5 seconds
-    setTimeout(function() {
+    setTimeout(function () {
         $('.alert').alert('close');
     }, 5000);
 }

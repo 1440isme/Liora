@@ -27,7 +27,7 @@ public class UserOrderController {
     IOrderService orderService;
     UserRepository userRepository;
 
-    // ✅ 1. Tạo đơn hàng mới
+    // ✅ 1. Tạo đơn hàng mới (cho cả user và guest)
     @PostMapping("/{idCart}")
     public ResponseEntity<OrderResponse> createOrder(
             @PathVariable Long idCart,

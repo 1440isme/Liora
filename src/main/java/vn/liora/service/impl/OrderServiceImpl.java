@@ -470,4 +470,9 @@ public class OrderServiceImpl implements IOrderService {
         log.info("Order {} cancelled by user {}", orderId, userId);
     }
 
+    @Override
+    public Long count() {
+        return orderRepository.count();
+    }
+
 }

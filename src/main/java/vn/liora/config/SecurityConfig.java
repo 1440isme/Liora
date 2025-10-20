@@ -60,6 +60,14 @@ public class SecurityConfig {
                                 // User order lookup (for guests)
                                 "/user/order-detail/access", "/user/order-detail/set-session",
                                 "/user/order-detail-view", "/user/order-lookup", "/user/order-detail/*",
+                                // Public product pages (for guests)
+                                "/product/**", "/brand/**",
+                                // Public content pages (for guests)
+                                "/content/**",
+                                // Public cart pages (for guests)
+                                "/cart", "/checkout",
+                                // Public search and payment pages (for guests)
+                                "/search-results", "/payment/**",
                                 // Static resources (specific paths first)
                                 "/favicon.ico", "/static/**",
                                 // User static resources
@@ -71,12 +79,22 @@ public class SecurityConfig {
                                 "/css/**", "/js/**", "/images/**", "/fonts/**", "/vendors/**", "/webjars/**",
                                 // Upload endpoints (for file uploads)
                                 "/uploads/**",
+                                // User registration endpoint (for public access)
+                                "/users",
                                 // Cart API endpoints (for guests and users)
                                 "/cart/api/**", "/CartProduct/**",
+                                // Order API endpoints (for guests and users)
+                                "/order/**",
                                 // Content API endpoints (for public content)
                                 "/content/api/footer", "/content/api/header-bottom", "/api/home", "/api/header/**",
                                 // Product API endpoints (for public access)
                                 "/api/products/best-selling", "/api/products/newest", "/api/products/**",
+                                // Review API endpoints (for public access)
+                                "/api/reviews/product/**",
+                                // GHN API endpoints (for checkout and shipping)
+                                "/api/ghn/**",
+                                // Chatbot API endpoints (for public access)
+                                "/api/chatbot/**",
                                 // Admin API endpoints for public content
                                 "/admin/banners/api/active"
                 };
@@ -94,9 +112,9 @@ public class SecurityConfig {
                 return httpSecurity
                                 .authorizeHttpRequests(auth -> auth
                                                 .requestMatchers(getAllPublicEndpoints()).permitAll()
-                                                .requestMatchers("/info").permitAll()
+                                                .requestMatchers("/info").authenticated()
                                                 .requestMatchers("/users/myInfo").authenticated()
-                                                .requestMatchers("/user/**").authenticated()
+
                                                 .requestMatchers("/admin/**").authenticated()
                                                 .requestMatchers("/admin/api/**").authenticated()
                                                 .anyRequest().authenticated())

@@ -270,7 +270,7 @@ class ProductDetailManager {
     // Related Products
     async loadRelatedProducts() {
         try {
-            const response = await fetch(`/product/api/related/${this.productId}`);
+            const response = await fetch(`/api/products/similar/${this.productId}`);
             if (response.ok) {
                 const products = await response.json();
                 this.renderRelatedProducts(products);
@@ -486,7 +486,7 @@ class ReviewsManager {
         this.pageSize = 10;
         this.totalPages = 0;
         this.totalElements = 0;
-        
+
         this.init();
     }
 
@@ -516,12 +516,12 @@ class ReviewsManager {
     async loadReviews(page = 0, rating = null) {
         try {
             this.showLoading(true);
-            
+
             const params = new URLSearchParams({
                 page: page,
                 size: this.pageSize
             });
-            
+
             if (rating && rating !== 'all') {
                 params.append('rating', rating);
             }
@@ -534,12 +534,12 @@ class ReviewsManager {
                 this.currentRating = rating;
                 this.totalPages = data.totalPages;
                 this.totalElements = data.totalElements;
-                
+
                 this.updateStatistics(data.statistics);
                 this.renderReviews(data.reviews);
                 this.updatePagination();
                 this.updateFilterCounts(data.statistics.ratingCounts);
-                
+
                 this.showNoReviews(data.reviews.length === 0);
             } else {
                 console.error('Error loading reviews:', data.error);
@@ -558,15 +558,15 @@ class ReviewsManager {
         const overallRating = document.getElementById('overallRating');
         const overallStars = document.getElementById('overallStars');
         const totalReviews = document.getElementById('totalReviews');
-        
+
         if (overallRating) {
             overallRating.textContent = statistics.averageRating.toFixed(1);
         }
-        
+
         if (overallStars) {
             this.updateStars(overallStars, statistics.averageRating);
         }
-        
+
         if (totalReviews) {
             totalReviews.textContent = `${statistics.totalReviews} đánh giá`;
         }
@@ -599,11 +599,11 @@ class ReviewsManager {
             if (ratingBar) {
                 const progressBar = ratingBar.querySelector('.progress-bar');
                 const countSpan = ratingBar.querySelector('.rating-count');
-                
+
                 if (progressBar) {
                     progressBar.style.width = `${ratingPercentages[rating]}%`;
                 }
-                
+
                 if (countSpan) {
                     countSpan.textContent = ratingCounts[rating];
                 }
@@ -615,7 +615,7 @@ class ReviewsManager {
         document.querySelectorAll('.filter-btn').forEach(btn => {
             const rating = btn.dataset.rating;
             const countSpan = btn.querySelector('.count');
-            
+
             if (countSpan && rating !== 'all') {
                 countSpan.textContent = ratingCounts[rating] || 0;
             }
@@ -637,28 +637,28 @@ class ReviewsManager {
 
     createReviewHTML(review) {
         const reviewDate = new Date(review.createdAt).toLocaleDateString('vi-VN');
-        
+
         // Debug: Log review data để kiểm tra (có thể xóa sau khi fix xong)
         console.log('Review data:', review);
-        
+
         // Sử dụng userDisplayName từ backend (đã xử lý logic ẩn danh)
         const displayName = review.userDisplayName || 'Người dùng';
         const userInitial = displayName.charAt(0).toUpperCase();
-        
+
         // Tạo avatar từ userAvatar hoặc fallback
         let avatarHTML = '';
-        const hasValidAvatar = review.userAvatar && 
-                              review.userAvatar.trim() !== '' && 
-                              review.userAvatar !== 'null' && 
-                              review.userAvatar !== 'undefined';
-        
+        const hasValidAvatar = review.userAvatar &&
+            review.userAvatar.trim() !== '' &&
+            review.userAvatar !== 'null' &&
+            review.userAvatar !== 'undefined';
+
         if (hasValidAvatar) {
             avatarHTML = `<img src="${review.userAvatar}" alt="${displayName}" class="review-avatar-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">`;
         }
-        
+
         // Fallback avatar với chữ cái đầu
         avatarHTML += `<div class="review-avatar-text" style="${hasValidAvatar ? 'display: none;' : ''}">${userInitial}</div>`;
-        
+
         return `
             <div class="review-item">
                 <div class="review-header">
@@ -698,18 +698,18 @@ class ReviewsManager {
         if (!username || username.length <= 2) {
             return username;
         }
-        
+
         if (username.length === 3) {
             return username.charAt(0) + "*" + username.charAt(2);
         }
-        
+
         // Tạo chuỗi với chữ đầu, các dấu *, và chữ cuối
         let masked = username.charAt(0);
         for (let i = 1; i < username.length - 1; i++) {
             masked += "*";
         }
         masked += username.charAt(username.length - 1);
-        
+
         return masked;
     }
 
@@ -723,9 +723,9 @@ class ReviewsManager {
         }
 
         pagination.style.display = 'block';
-        
+
         let paginationHTML = '';
-        
+
         // Previous button
         if (this.currentPage > 0) {
             paginationHTML += `
@@ -774,7 +774,7 @@ class ReviewsManager {
         document.querySelectorAll('.filter-btn').forEach(btn => {
             btn.classList.remove('active');
         });
-        
+
         const activeBtn = document.querySelector(`[data-rating="${rating}"]`);
         if (activeBtn) {
             activeBtn.classList.add('active');
@@ -814,7 +814,7 @@ class ReviewsManager {
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     window.productDetailManager = new ProductDetailManager();
-    
+
     // Initialize reviews manager when reviews tab is shown
     const reviewsTab = document.getElementById('reviews-tab');
     if (reviewsTab) {

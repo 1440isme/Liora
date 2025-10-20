@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import vn.liora.dto.request.ApiResponse;
 import vn.liora.dto.request.UserCreationRequest;
 import vn.liora.dto.request.UserUpdateRequest;
+import vn.liora.dto.request.ChangePasswordRequest;
 import vn.liora.dto.response.UserResponse;
 import vn.liora.dto.response.OrderResponse;
 import vn.liora.dto.response.OrderProductResponse;
@@ -331,5 +332,61 @@ public class UserController {
         }
 
         return null;
+    }
+
+    @PutMapping("/changePassword")
+    public ResponseEntity<ApiResponse<Object>> changePassword(@Valid @RequestBody ChangePasswordRequest request) {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated()) {
+                throw new AppException(ErrorCode.UNAUTHENTICATED);
+            }
+
+            User currentUser = findUserByPrincipal(authentication);
+            if (currentUser == null) {
+                throw new AppException(ErrorCode.USER_NOT_FOUND);
+            }
+
+            // Change password
+            userService.changePassword(currentUser.getUserId(), request);
+
+            ApiResponse<Object> response = new ApiResponse<>();
+            response.setMessage("Đổi mật khẩu thành công");
+            response.setCode(1000);
+
+            return ResponseEntity.ok(response);
+        } catch (AppException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        }
+    }
+
+    @DeleteMapping("/deactivateAccount")
+    public ResponseEntity<ApiResponse<Object>> deactivateAccount() {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated()) {
+                throw new AppException(ErrorCode.UNAUTHENTICATED);
+            }
+
+            User currentUser = findUserByPrincipal(authentication);
+            if (currentUser == null) {
+                throw new AppException(ErrorCode.USER_NOT_FOUND);
+            }
+
+            // Deactivate account
+            userService.deactivateAccount(currentUser.getUserId());
+
+            ApiResponse<Object> response = new ApiResponse<>();
+            response.setMessage("Tài khoản đã được vô hiệu hóa thành công");
+            response.setCode(1000);
+
+            return ResponseEntity.ok(response);
+        } catch (AppException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        }
     }
 }

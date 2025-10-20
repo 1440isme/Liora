@@ -1147,14 +1147,29 @@ class BrandProductsManager {
     }
 
     // Add to cart with quantity
-    async addToCartWithQuantity(productId) {
+    async     async addToCartWithQuantity(productId) {
         const quantityInput = document.getElementById('quantityInput');
-        const quantity = quantityInput ? parseInt(quantityInput.value) : 1;
+        const quantity = quantityInput ? parseInt(quantityInput.value) || 1 : 1;
 
-        let product = null;
-        if (this.products && this.products.length > 0) {
-            product = this.products.find(p => p.productId === productId);
+        try {
+            // Sử dụng addProductToCartBackend để gọi API backend
+            if (window.app && window.app.addProductToCartBackend) {
+                await window.app.addProductToCartBackend(productId, quantity, true);
+                await window.app.refreshCartBadge?.();
+            } else {
+                this.showNotification('Chức năng đang được tải...', 'error');
+            }
+        } catch (error) {
+            console.error('Add to cart error:', error);
+            this.showNotification('Không thể thêm vào giỏ hàng. Vui lòng thử lại.', 'error');
         }
+
+        // Close modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('quickViewModal'));
+        if (modal) {
+            modal.hide();
+        }
+    }
 
         // If not found, fetch from API
         if (!product) {

@@ -725,17 +725,20 @@ class SearchResultsManager {
     }
 
     // Add to cart from product card
-    async addToCart(productId, productName, price) {
-        console.log('addToCart called for productId:', productId, 'productName:', productName);
-        console.log('window.cartManager exists:', !!window.cartManager);
-        console.log('window.cartManager:', window.cartManager);
-
+        async addToCart(productId, productName, price) {
         try {
-            // Check if cart functionality exists
-            if (window.cartManager && window.cartManager.addItem) {
-                console.log('Using cartManager.addItem');
-                await window.cartManager.addItem(productId, 1, price);
-                this.showNotification(`${productName} đã được thêm vào giỏ hàng!`, 'success');
+            // Sử dụng addProductToCartBackend để gọi API backend
+            if (window.app && window.app.addProductToCartBackend) {
+                await window.app.addProductToCartBackend(productId, 1, true);
+                await window.app.refreshCartBadge?.();
+            } else {
+                this.showNotification('Chức năng đang được tải...', 'error');
+            }
+        } catch (error) {
+            console.error('Add to cart error:', error);
+            this.showNotification('Không thể thêm vào giỏ hàng. Vui lòng thử lại.', 'error');
+        }
+    } đã được thêm vào giỏ hàng!`, 'success');
                 return;
             }
 
@@ -1231,15 +1234,29 @@ class SearchResultsManager {
     }
 
     // Add to cart with quantity
-    addToCartWithQuantity(productId) {
+        async addToCartWithQuantity(productId) {
         const quantityInput = document.getElementById('quantityInput');
-        const quantity = quantityInput ? parseInt(quantityInput.value) : 1;
+        const quantity = quantityInput ? parseInt(quantityInput.value) || 1 : 1;
 
-        const product = this.products.find(p => p.productId === productId);
-        if (!product) {
-            this.showNotification('Không tìm thấy sản phẩm', 'error');
-            return;
+        try {
+            // Sử dụng addProductToCartBackend để gọi API backend
+            if (window.app && window.app.addProductToCartBackend) {
+                await window.app.addProductToCartBackend(productId, quantity, true);
+                await window.app.refreshCartBadge?.();
+            } else {
+                this.showNotification('Chức năng đang được tải...', 'error');
+            }
+        } catch (error) {
+            console.error('Add to cart error:', error);
+            this.showNotification('Không thể thêm vào giỏ hàng. Vui lòng thử lại.', 'error');
         }
+
+        // Close modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('quickViewModal'));
+        if (modal) {
+            modal.hide();
+        }
+    }
 
         // Validate quantity against stock
         if (quantity > product.stock) {
