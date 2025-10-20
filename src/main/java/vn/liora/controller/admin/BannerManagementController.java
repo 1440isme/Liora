@@ -238,7 +238,6 @@ public class BannerManagementController {
     // API lấy danh sách banner active (cho frontend)
     @GetMapping("/api/active")
     @ResponseBody
-    @PreAuthorize("permitAll()")
     public ResponseEntity<List<BannerResponse>> getActiveBanners() {
         try {
             System.out.println("=== API: Getting active banners ===");

@@ -53,7 +53,12 @@ class LioraApp {
             // 1) Lấy/khởi tạo cart hiện tại (sẽ tạo cart guest nếu chưa có)
             const cartData = await this.apiCall('/cart/api/current', 'GET');
             const cartId = cartData.cartId;
-            if (!cartId) throw new Error('Missing cartId');
+            if (!cartId) {
+                console.error('Cart data:', cartData);
+                throw new Error('Missing cartId - cart may not be initialized');
+            }
+
+            console.log('Adding product to cart:', { productId, quantity, cartId });
 
             // 2) Gọi API thêm sản phẩm vào giỏ
             const addRaw = await this.apiCall(`/CartProduct/${cartId}`, 'POST', {
@@ -181,7 +186,7 @@ class LioraApp {
         const searchInputs = document.querySelectorAll('.search-input');
         searchInputs.forEach(input => {
             let searchTimeout;
-            
+
             // Input event with debounce
             input.addEventListener('input', (e) => {
                 clearTimeout(searchTimeout);
@@ -190,7 +195,7 @@ class LioraApp {
                     this.handleSearch(query);
                 }, 300); // Debounce search
             });
-            
+
             // Enter key event - immediate search
             input.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
@@ -447,7 +452,7 @@ class LioraApp {
                                     data-product-id="${product.id}"
                                     onclick="app.showQuickView(${product.id})"
                                     title="Xem nhanh">
-                                <i class="fas fa-eye"></i>
+                                <i class="mdi mdi-eye"></i>
                             </button>
                         </div>
                         ${product.discount ? `
@@ -457,15 +462,15 @@ class LioraApp {
                         ` : ''}
                     </div>
                     <div class="card-body">
-                        <div class="product-brand">${product.brand}</div>
+                        <div class="product-brand">${product.brand || product.brandName || 'N/A'}</div>
                         <h5 class="product-title">
                             <a href="/product/${product.id}" class="text-decoration-none text-dark">
                                 ${product.name}
                             </a>
                         </h5>
                         <div class="rating-stars mb-2">
-                            ${this.renderStars(product.rating)}
-                            <span class="rating-text ms-1">(${product.reviewCount})</span>
+                            ${this.renderStars(product.rating || product.averageRating || 0)}
+                            <span class="rating-text ms-1">(${product.reviewCount || 0})</span>
                         </div>
                         
                         <!-- Sales Progress Bar -->
@@ -484,8 +489,8 @@ class LioraApp {
                         
                         <div class="d-flex align-items-center justify-content-between">
                             <div>
-                                <span class="product-price">$${product.price.toFixed(2)}</span>
-                                ${product.originalPrice ? `<span class="product-original-price">$${product.originalPrice.toFixed(2)}</span>` : ''}
+                                <span class="product-price">${this.formatCurrency(product.price)}</span>
+                                ${product.originalPrice ? `<span class="product-original-price">${this.formatCurrency(product.originalPrice)}</span>` : ''}
                             </div>
                             <button class="btn btn-pink-primary btn-sm rounded-pill add-to-cart" data-product-id="${product.id}">
                                 Add to Cart
@@ -503,7 +508,7 @@ class LioraApp {
         // Nếu rating = 0 hoặc null/undefined, hiển thị 5 sao rỗng
         if (!rating || rating === 0 || rating === '0') {
             console.log('Rating is 0, showing empty stars');
-            return Array(5).fill('<i class="far fa-star"></i>').join('');
+            return Array(5).fill('<i class="mdi mdi-star-outline"></i>').join('');
         }
 
         console.log('Rating is not 0, showing stars based on rating:', rating);
@@ -512,9 +517,9 @@ class LioraApp {
         const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
 
         return [
-            ...Array(fullStars).fill('<i class="fas fa-star"></i>'),
-            ...(hasHalfStar ? ['<i class="fas fa-star-half-alt"></i>'] : []),
-            ...Array(emptyStars).fill('<i class="far fa-star"></i>')
+            ...Array(fullStars).fill('<i class="mdi mdi-star"></i>'),
+            ...(hasHalfStar ? ['<i class="mdi mdi-star-half"></i>'] : []),
+            ...Array(emptyStars).fill('<i class="mdi mdi-star-outline"></i>')
         ].join('');
     }
 
@@ -716,8 +721,8 @@ class LioraApp {
         }
 
         // Update wishlist button states
-        document.querySelectorAll(`[data-product-id="${productId}"] .fas.fa-heart`).forEach(icon => {
-            icon.className = this.isInWishlist(productId) ? 'fas fa-heart text-danger' : 'fas fa-heart text-muted';
+        document.querySelectorAll(`[data-product-id="${productId}"] .mdi-heart`).forEach(icon => {
+            icon.className = this.isInWishlist(productId) ? 'mdi mdi-heart text-danger' : 'mdi mdi-heart-outline text-muted';
         });
     }
 
@@ -768,7 +773,7 @@ class LioraApp {
         // Brand filter
         if (selectedBrands.length > 0) {
             filteredProducts = filteredProducts.filter(product =>
-                selectedBrands.includes(product.brand)
+                selectedBrands.includes(product.brand || product.brandName || '')
             );
         }
 
@@ -962,7 +967,7 @@ class LioraApp {
 
         // Sort categories alphabetically for better organization
         const sortedCategories = categories.sort((a, b) => a.name.localeCompare(b.name, 'vi'));
-        
+
         // Render Level 1 categories in left column with hover functionality
         sortedCategories.forEach(category => {
             const categoryItem = document.createElement('div');
@@ -1040,7 +1045,7 @@ class LioraApp {
     renderLevel2Categories(level2Categories, level3Categories, middleColumn, rightColumn) {
         // Sort level 2 categories alphabetically
         const sortedLevel2Categories = level2Categories.sort((a, b) => a.name.localeCompare(b.name, 'vi'));
-        
+
         // Create a single row with 4 level 2 categories
         const level2Row = document.createElement('div');
         level2Row.className = 'level2-row';
@@ -1309,7 +1314,7 @@ class LioraApp {
             const displayName = this.currentUser.name || this.currentUser.username || 'User';
             const rolesArr = Array.isArray(this.currentUser.roles) ? this.currentUser.roles.map(r => String(r).toUpperCase()) : [];
             const isAdmin = this.currentUser.isAdmin === true || rolesArr.includes('ADMIN') || rolesArr.includes('ROLE_ADMIN') || rolesArr.includes('MANAGER') || rolesArr.includes('ROLE_MANAGER');
-            const adminLink = isAdmin ? `<li><a class="dropdown-item" href="/admin" id="adminPanelLink"><i class="fas fa-tools me-2"></i>Trang quản trị</a></li>` : '';
+            const adminLink = isAdmin ? `<li><a class="dropdown-item" href="/admin" id="adminPanelLink"><i class="mdi mdi-cog me-2"></i>Trang quản trị</a></li>` : '';
 
             const userHTML = `
                 <div class="dropdown">
@@ -1330,11 +1335,11 @@ class LioraApp {
             const mobileUserHTML = `
                 <div class="text-dark fw-medium mb-2">Hi, ${displayName}! 💕</div>
                 <button class="btn btn-outline-pink w-100 rounded-pill mb-2" href="/info" onclick="app.openUserInfo()">
-                    <i class="fas fa-id-card me-2"></i>Thông tin cá nhân
+                    <i class="mdi mdi-account me-2"></i>Thông tin cá nhân
                 </button>
-                ${isAdmin ? '<a class="btn btn-outline-pink w-100 rounded-pill mb-2" href="/admin"><i class="fas fa-tools me-2"></i>Trang quản trị</a>' : ''}
+                ${isAdmin ? '<a class="btn btn-outline-pink w-100 rounded-pill mb-2" href="/admin"><i class="mdi mdi-cog me-2"></i>Trang quản trị</a>' : ''}
                 <button class="btn btn-outline-pink w-100 rounded-pill" href="/home" onclick="app.signOut()">
-                    <i class="fas fa-sign-out-alt me-2"></i>Đăng xuất
+                    <i class="mdi mdi-logout me-2"></i>Đăng xuất
                 </button>
             `;
 
@@ -1395,7 +1400,7 @@ class LioraApp {
         const toastHTML = `
             <div id="${toastId}" class="toast ${type}" role="alert">
                 <div class="toast-header">
-                    <i class="fas fa-${type === 'success' ? 'check-circle text-success' : type === 'error' ? 'exclamation-circle text-danger' : 'info-circle text-info'} me-2"></i>
+                    <i class="mdi mdi-${type === 'success' ? 'check-circle text-success' : type === 'error' ? 'alert-circle text-danger' : 'information text-info'} me-2"></i>
                     <strong class="me-auto">Liora Cosmetic</strong>
                     <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
                 </div>
@@ -1467,8 +1472,51 @@ class LioraApp {
 
     // Show quick view popup
     async showQuickView(productId) {
-        // Find product in current products array
-        const product = this.products.find(p => p.id === productId);
+        let product = null;
+
+        // Try to find product in current products array first
+        if (this.products && Array.isArray(this.products)) {
+            product = this.products.find(p => p.id === productId);
+        }
+
+        // If not found, try to find in other managers
+        if (!product) {
+            // Try bestseller products manager
+            if (window.bestsellerProductsManager && window.bestsellerProductsManager.products) {
+                product = window.bestsellerProductsManager.products.find(p => p.id === productId);
+            }
+
+            // Try newest products manager
+            if (!product && window.newestProductsManager && window.newestProductsManager.products) {
+                product = window.newestProductsManager.products.find(p => p.id === productId);
+            }
+
+            // Try bestseller products homepage manager
+            if (!product && window.bestsellerProductsHomepageManager && window.bestsellerProductsHomepageManager.products) {
+                product = window.bestsellerProductsHomepageManager.products.find(p => p.id === productId);
+            }
+
+            // Try newest products homepage manager
+            if (!product && window.newestProductsHomepageManager && window.newestProductsHomepageManager.products) {
+                product = window.newestProductsHomepageManager.products.find(p => p.id === productId);
+            }
+        }
+
+        // If still not found, try to fetch from API
+        if (!product) {
+            try {
+                const response = await fetch(`/api/products/${productId}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.code === 1000 && data.result) {
+                        product = data.result;
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching product:', error);
+            }
+        }
+
         if (!product) {
             this.showToast('Không tìm thấy sản phẩm', 'error');
             return;
@@ -1514,16 +1562,16 @@ class LioraApp {
                                     <div class="product-image-slider">
                                         <!-- Main Image -->
                                         <div class="main-image-container mb-3">
-                                            <button class="slider-nav slider-prev" id="prevBtn">
-                                                <i class="fas fa-chevron-left"></i>
+                                            <button class="slider-nav slider-prev" id="quickViewPrevBtn">
+                                                <i class="mdi mdi-chevron-left"></i>
                                             </button>
                                             <img id="mainProductImage" 
                                                  src="${this.getMainImageUrl(product)}" 
                                                  class="img-fluid rounded" 
                                                  alt="${product.name}"
                                                  onerror="this.src='/user/img/default-product.jpg'">
-                                            <button class="slider-nav slider-next" id="nextBtn">
-                                                <i class="fas fa-chevron-right"></i>
+                                            <button class="slider-nav slider-next" id="quickViewNextBtn">
+                                                <i class="mdi mdi-chevron-right"></i>
                                             </button>
                                         </div>
                                         
@@ -1539,22 +1587,22 @@ class LioraApp {
                                 <!-- Product Info -->
                                 <div class="col-md-6">
                                     <h4 class="product-name mb-3">${product.name}</h4>
-                                    <p class="brand-name text-muted mb-2">${product.brand}</p>
+                                    <p class="brand-name text-muted mb-2">${product.brand || product.brandName || 'N/A'}</p>
                                     
                                     <!-- Product Status -->
                                     <div class="product-status mb-3">
                                         <span class="badge ${product.stock > 0 ? 'bg-success' : 'bg-danger'}">
                                             ${product.stock > 0 ? 'Còn hàng' : 'Hết hàng'}
                                         </span>
-                                        <span class="ms-2 text-muted">Mã sản phẩm: ${product.id}</span>
+                                        <span class="ms-2 text-muted">Mã sản phẩm: ${product.id || product.productId || 'N/A'}</span>
                                     </div>
                                     
                                     <!-- Rating -->
                                     <div class="rating mb-3">
                                         <span class="stars">
-                                            ${this.renderStars(product.rating)}
+                                            ${this.renderStars(product.rating || product.averageRating || 0)}
                                         </span>
-                                        <span class="review-count ms-2">(${product.reviewCount} đánh giá)</span>
+                                        <span class="review-count ms-2">(${product.reviewCount || 0} đánh giá)</span>
                                     </div>
                                     
                                     <!-- Sales Progress -->
@@ -1574,9 +1622,9 @@ class LioraApp {
                                     <!-- Price -->
                                     <div class="price-section mb-4">
                                         <span class="current-price h4 text-primary">
-                                            $${product.price.toFixed(2)}
+                                            ${this.formatCurrency(product.price)}
                                         </span>
-                                        ${product.originalPrice ? `<span class="text-muted ms-2"><s>$${product.originalPrice.toFixed(2)}</s></span>` : ''}
+                                        ${product.originalPrice ? `<span class="text-muted ms-2"><s>${this.formatCurrency(product.originalPrice)}</s></span>` : ''}
                                     </div>
                                     
                                     <!-- Quantity Selector -->
@@ -1591,7 +1639,7 @@ class LioraApp {
                                         </div>
                                         <!-- Error Message -->
                                         <div id="quantityError" class="text-danger mt-2" style="display: none;">
-                                            <i class="fas fa-info-circle me-1"></i>
+                                            <i class="mdi mdi-information me-1"></i>
                                             <span id="quantityErrorMessage">Số lượng tối đa bạn có thể mua là ${Math.min(product.stock || 10, 99)}.</span>
                                         </div>
                                     </div>
@@ -1604,15 +1652,15 @@ class LioraApp {
                                                 <button class="btn btn-danger btn-lg w-100" 
                                                         onclick="app.buyNow(${product.id})"
                                                         ${product.stock <= 0 ? 'disabled' : ''}>
-                                                    <i class="fas fa-bolt me-1"></i>
+                                                    <i class="mdi mdi-lightning-bolt me-1"></i>
                                                     ${product.stock > 0 ? 'Mua ngay' : 'Hết hàng'}
                                                 </button>
                                             </div>
                                             <div class="col-6">
                                                 <button class="btn btn-primary btn-lg w-100" 
-                                                        onclick="app.addToCartWithQuantity(${product.id})"
+                                                        onclick="app.addToCartWithQuantity(${product.id || product.productId})"
                                                         ${product.stock <= 0 ? 'disabled' : ''}>
-                                                    <i class="fas fa-shopping-cart me-1"></i>
+                                                    <i class="mdi mdi-cart-plus me-1"></i>
                                                     ${product.stock > 0 ? 'Thêm vào giỏ' : 'Hết hàng'}
                                                 </button>
                                             </div>
@@ -1621,7 +1669,7 @@ class LioraApp {
                                         <!-- View Details Button -->
                                         <a href="/product/${product.id}" 
                                            class="btn btn-outline-primary btn-lg">
-                                            <i class="fas fa-info-circle me-2"></i>
+                                            <i class="mdi mdi-information me-2"></i>
                                             Xem chi tiết sản phẩm
                                         </a>
                                     </div>
@@ -1640,8 +1688,10 @@ class LioraApp {
         const modal = new bootstrap.Modal(document.getElementById('quickViewModal'));
         modal.show();
 
-        // Add slider navigation event listeners
-        this.setupSliderNavigation(product);
+        // Add slider navigation event listeners after modal is shown
+        setTimeout(() => {
+            this.setupSliderNavigation(product);
+        }, 100);
 
         // Remove modal from DOM when hidden
         document.getElementById('quickViewModal').addEventListener('hidden.bs.modal', function () {
@@ -1651,10 +1701,14 @@ class LioraApp {
 
     // Setup slider navigation
     setupSliderNavigation(product) {
-        const prevBtn = document.getElementById('prevBtn');
-        const nextBtn = document.getElementById('nextBtn');
+        console.log('Setting up slider navigation for product:', product);
+
+        const prevBtn = document.getElementById('quickViewPrevBtn');
+        const nextBtn = document.getElementById('quickViewNextBtn');
         const mainImage = document.getElementById('mainProductImage');
         const thumbnails = document.querySelectorAll('.thumbnail-item');
+
+        console.log('Navigation elements found:', { prevBtn, nextBtn, mainImage, thumbnails: thumbnails.length });
 
         if (!product.images || product.images.length <= 1) {
             // Hide navigation buttons if only one image
@@ -1663,10 +1717,15 @@ class LioraApp {
             return;
         }
 
+        // Show navigation buttons
+        if (prevBtn) prevBtn.style.display = 'block';
+        if (nextBtn) nextBtn.style.display = 'block';
+
         let currentImageIndex = 0;
 
         // Update main image
         const updateMainImage = (index) => {
+            console.log('Updating main image to index:', index);
             if (product.images && product.images[index]) {
                 mainImage.src = product.images[index].imageUrl;
                 mainImage.alt = product.name;
@@ -1678,29 +1737,50 @@ class LioraApp {
             }
         };
 
-        // Previous button
+        // Remove existing event listeners to prevent duplicates
         if (prevBtn) {
-            prevBtn.addEventListener('click', () => {
+            prevBtn.replaceWith(prevBtn.cloneNode(true));
+        }
+        if (nextBtn) {
+            nextBtn.replaceWith(nextBtn.cloneNode(true));
+        }
+
+        // Get fresh references after replacement
+        const newPrevBtn = document.getElementById('quickViewPrevBtn');
+        const newNextBtn = document.getElementById('quickViewNextBtn');
+
+        // Previous button
+        if (newPrevBtn) {
+            newPrevBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
                 currentImageIndex = currentImageIndex > 0 ? currentImageIndex - 1 : product.images.length - 1;
                 updateMainImage(currentImageIndex);
             });
+            console.log('Previous button event listener added');
         }
 
         // Next button
-        if (nextBtn) {
-            nextBtn.addEventListener('click', () => {
+        if (newNextBtn) {
+            newNextBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
                 currentImageIndex = currentImageIndex < product.images.length - 1 ? currentImageIndex + 1 : 0;
                 updateMainImage(currentImageIndex);
             });
+            console.log('Next button event listener added');
         }
 
         // Thumbnail click handlers
         thumbnails.forEach((thumb, index) => {
-            thumb.addEventListener('click', () => {
+            thumb.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
                 currentImageIndex = index;
                 updateMainImage(currentImageIndex);
             });
         });
+        console.log('Thumbnail event listeners added');
     }
 
     // Generate image thumbnails for slider
@@ -1744,8 +1824,17 @@ class LioraApp {
 
     // Add to cart with quantity
     addToCartWithQuantity(productId) {
+        // Validate productId
+        if (!productId || productId === 'undefined' || productId === 'null') {
+            console.error('Invalid productId:', productId);
+            this.showToast('Lỗi: Không tìm thấy sản phẩm', 'error');
+            return;
+        }
+
         const quantityInput = document.getElementById('quantityInput');
         const quantity = quantityInput ? parseInt(quantityInput.value) : 1;
+
+        console.log('addToCartWithQuantity called with:', { productId, quantity });
 
         // Gọi backend để đảm bảo tạo cart (guest/user) và thêm sản phẩm
         this.addProductToCartBackend(productId, quantity, true).catch(() => {
@@ -1935,7 +2024,7 @@ class BannerSlider {
     async loadBanners() {
         try {
             console.log('Fetching banners from API...');
-            const response = await fetch('/admin/banners/api/active', {
+            const response = await fetch('/content/api/banners', {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',

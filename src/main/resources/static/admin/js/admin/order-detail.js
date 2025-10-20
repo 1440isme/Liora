@@ -12,6 +12,24 @@ class OrderDetailManager {
         this.init();
     }
 
+    // Utility method để gửi request với authentication
+    async fetchWithAuth(url, options = {}) {
+        const token = localStorage.getItem('access_token');
+        const headers = {
+            'Content-Type': 'application/json',
+            ...options.headers
+        };
+
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        return fetch(url, {
+            ...options,
+            headers
+        });
+    }
+
     init() {
         if (this.orderId) {
             this.loadOrderDetail();
@@ -51,7 +69,7 @@ class OrderDetailManager {
                 return lastPart;
             }
         }
-        
+
         // Nếu không có trong path, thử lấy từ query parameter
         const urlParams = new URLSearchParams(window.location.search);
         const idFromQuery = urlParams.get('id');
@@ -59,7 +77,7 @@ class OrderDetailManager {
             console.log('OrderId from query:', idFromQuery);
             return idFromQuery;
         }
-        
+
         console.log('No orderId found in URL');
         return null;
     }
@@ -67,35 +85,28 @@ class OrderDetailManager {
     async loadOrderDetail() {
         try {
             this.showLoading();
-            
+
             console.log('Loading order detail for ID:', this.orderId);
-            
-            // Load all orders first (since we don't have a single order endpoint)
-            const response = await fetch(this.baseUrl);
-            
+
+            // Load specific order by ID
+            const response = await this.fetchWithAuth(`${this.baseUrl}/${this.orderId}`);
+
             if (!response.ok) {
                 throw new Error('Không thể tải thông tin đơn hàng');
             }
-            
-            const orders = await response.json();
-            console.log('Loaded orders:', orders);
-            console.log('Looking for order with ID:', this.orderId);
-            
-            // Sử dụng idOrder thay vì id (theo cấu trúc OrderResponse)
-            this.orderData = orders.find(order => {
-                console.log('Comparing:', order.idOrder, 'with', this.orderId);
-                return order.idOrder && order.idOrder.toString() === this.orderId.toString();
-            });
-            
+
+            this.orderData = await response.json();
+            console.log('Loaded order:', this.orderData);
+
             console.log('Found order:', this.orderData);
-            
+
             if (!this.orderData) {
                 throw new Error('Không tìm thấy đơn hàng');
             }
-            
+
             this.renderOrderDetail();
             this.updateTimeline();
-            
+
         } catch (error) {
             console.error('Error loading order detail:', error);
             this.showAlert('error', 'Lỗi', error.message);
@@ -106,11 +117,11 @@ class OrderDetailManager {
 
     renderOrderDetail() {
         const order = this.orderData;
-        
+
         // Update page title - sử dụng idOrder
         document.title = `Chi tiết đơn hàng #${order.idOrder} - Liora Admin`;
         $('#pageOrderId').text(`#${order.idOrder}`);
-        
+
         // Customer information - lấy trực tiếp từ Order
         $('#customerId').text(order.userId || 'N/A');
         $('#customerName').text(order.name || 'N/A');
@@ -158,10 +169,10 @@ class OrderDetailManager {
             currency: 'VND',
             minimumFractionDigits: 0
         }).format(order.total || 0).replace('₫', '₫');
-        
+
         $('#totalAmount').text(formattedAmount);
         $('#summaryTotal').text(formattedAmount);
-        
+
         // Shipping fee và discount
         const shippingFee = new Intl.NumberFormat('vi-VN', {
             style: 'currency',
@@ -170,7 +181,7 @@ class OrderDetailManager {
         }).format(order.shippingFee || 0).replace('₫', '₫');
         $('#shippingFee').text(shippingFee);
         $('#summaryShippingFee').text(shippingFee);
-        
+
         const discount = new Intl.NumberFormat('vi-VN', {
             style: 'currency',
             currency: 'VND',
@@ -178,7 +189,7 @@ class OrderDetailManager {
         }).format(order.totalDiscount || 0).replace('₫', '₫');
         $('#discount').text(discount);
         $('#summaryDiscount').text(`-${discount}`);
-        
+
         // Calculate subtotal
         const subtotal = (order.total || 0) - (order.shippingFee || 0) + (order.totalDiscount || 0);
         $('#subtotal').text(new Intl.NumberFormat('vi-VN', {
@@ -186,7 +197,7 @@ class OrderDetailManager {
             currency: 'VND',
             minimumFractionDigits: 0
         }).format(subtotal).replace('₫', '₫'));
-        
+
         // Order notes - sử dụng trường note từ Order
         $('#orderNotes').text(order.note || 'Không có ghi chú');
 
@@ -197,7 +208,7 @@ class OrderDetailManager {
         if (order.discountId && order.discountName) {
             $('#discountCodeRow').show();
             $('#discountCode').text(order.discountName);
-            
+
             // Hiển thị % giảm giá nếu có
             if (order.discountValue) {
                 $('#discountPercentRow').show();
@@ -293,30 +304,30 @@ class OrderDetailManager {
                         <h6 class="mb-1">${item.productName || `Sản phẩm #${item.idProduct}`}</h6>
                     </td>
                     <td class="text-center">
-                        ${item.productPrice ? 
-                            new Intl.NumberFormat('vi-VN', {
-                                style: 'currency',
-                                currency: 'VND',
-                                minimumFractionDigits: 0
-                            }).format(item.productPrice).replace('₫', '₫') : 
-                            (item.totalPrice && item.quantity ? 
-                                new Intl.NumberFormat('vi-VN', {
-                                    style: 'currency',
-                                    currency: 'VND',
-                                    minimumFractionDigits: 0
-                                }).format(item.totalPrice / item.quantity).replace('₫', '₫') : 'N/A'
-                            )
-                        }
+                        ${item.productPrice ?
+                    new Intl.NumberFormat('vi-VN', {
+                        style: 'currency',
+                        currency: 'VND',
+                        minimumFractionDigits: 0
+                    }).format(item.productPrice).replace('₫', '₫') :
+                    (item.totalPrice && item.quantity ?
+                        new Intl.NumberFormat('vi-VN', {
+                            style: 'currency',
+                            currency: 'VND',
+                            minimumFractionDigits: 0
+                        }).format(item.totalPrice / item.quantity).replace('₫', '₫') : 'N/A'
+                    )
+                }
                     </td>
                     <td class="text-center">
                         ${item.quantity || 0}
                     </td>
                     <td class="fw-bold text-primary text-end">
                         ${new Intl.NumberFormat('vi-VN', {
-                            style: 'currency',
-                            currency: 'VND',
-                            minimumFractionDigits: 0
-                        }).format(itemTotal).replace('₫', '₫')}
+                    style: 'currency',
+                    currency: 'VND',
+                    minimumFractionDigits: 0
+                }).format(itemTotal).replace('₫', '₫')}
                     </td>
                 </tr>
             `;
@@ -361,7 +372,7 @@ class OrderDetailManager {
 
     showUpdateStatusModal() {
         if (!this.orderData) return;
-        
+
         $('#updateOrderId').val(this.orderData.idOrder);
 
         // Map trạng thái hiện tại sang format chuẩn
@@ -392,11 +403,8 @@ class OrderDetailManager {
             const orderId = $('#updateOrderId').val();
             const orderStatus = $('#updateOrderStatus').val();
 
-            const response = await fetch(`${this.baseUrl}/${orderId}`, {
+            const response = await this.fetchWithAuth(`${this.baseUrl}/${orderId}`, {
                 method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
                 body: JSON.stringify({
                     orderStatus: orderStatus
                 })
@@ -459,9 +467,9 @@ class OrderDetailManager {
                 <div class="info-section">
                     <div class="info-title">Thông tin đơn hàng:</div>
                     <p><strong>Tổng tiền:</strong> ${new Intl.NumberFormat('vi-VN', {
-                        style: 'currency',
-                        currency: 'VND'
-                    }).format(order.total)}</p>
+            style: 'currency',
+            currency: 'VND'
+        }).format(order.total)}</p>
                     ${order.discountName ? `<p><strong>Mã giảm giá:</strong> ${order.discountName} (${order.discountValue || 0}%)</p>` : ''}
                     <p><strong>Trạng thái thanh toán:</strong> ${this.getPaymentStatusText(order.paymentStatus)}</p>
                     <p><strong>Trạng thái đơn hàng:</strong> ${this.getOrderStatusText(order.orderStatus)}</p>
@@ -561,7 +569,7 @@ class OrderDetailManager {
 }
 
 // Initialize when document is ready
-$(document).ready(function() {
+$(document).ready(function () {
     window.orderDetailManager = new OrderDetailManager();
 });
 

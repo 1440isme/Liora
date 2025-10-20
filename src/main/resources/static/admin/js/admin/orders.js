@@ -14,6 +14,24 @@ class OrderManager {
         this.init();
     }
 
+    // Utility method để gửi request với authentication
+    async fetchWithAuth(url, options = {}) {
+        const token = localStorage.getItem('access_token');
+        const headers = {
+            'Content-Type': 'application/json',
+            ...options.headers
+        };
+
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        return fetch(url, {
+            ...options,
+            headers
+        });
+    }
+
     init() {
         this.setDefaultDateRange();
         this.bindEvents();
@@ -87,7 +105,7 @@ class OrderManager {
     async loadOrders() {
         try {
             this.showLoading();
-            const response = await fetch(this.baseUrl);
+            const response = await this.fetchWithAuth(this.baseUrl);
 
             if (!response.ok) {
                 throw new Error('Không thể tải danh sách đơn hàng');
@@ -125,7 +143,7 @@ class OrderManager {
             if (dateTo) queryParams.append('dateTo', dateTo);
 
             // Load statistics với filter thời gian
-            const statsResponse = await fetch(`${this.baseUrl}/statistics?${queryParams.toString()}`);
+            const statsResponse = await this.fetchWithAuth(`${this.baseUrl}/statistics?${queryParams.toString()}`);
 
             if (statsResponse.ok) {
                 const stats = await statsResponse.json();
@@ -290,9 +308,9 @@ class OrderManager {
                     <td>
                         <span class="fw-bold text-success">
                             ${new Intl.NumberFormat('vi-VN', {
-                                style: 'currency',
-                                currency: 'VND'
-                            }).format(order.total || 0)}
+                style: 'currency',
+                currency: 'VND'
+            }).format(order.total || 0)}
                         </span>
                     </td>
                     <td>
@@ -400,11 +418,8 @@ class OrderManager {
             const orderId = $('#updateOrderId').val();
             const orderStatus = $('#updateOrderStatus').val(); // Keep as string
 
-            const response = await fetch(`${this.baseUrl}/${orderId}`, {
+            const response = await this.fetchWithAuth(`${this.baseUrl}/${orderId}`, {
                 method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
                 body: JSON.stringify({
                     orderStatus: orderStatus // Send only order status
                 })
@@ -434,18 +449,18 @@ class OrderManager {
             this.filteredOrders = this.orders.filter(order => {
                 // Tìm theo mã đơn hàng (hỗ trợ cả #1 và 1)
                 const orderIdMatch = order.idOrder.toString().includes(searchTerm) ||
-                                   order.idOrder.toString().includes(searchTerm.replace('#')) ||
-                                   (`#${order.idOrder}`).toLowerCase().includes(searchTerm);
+                    order.idOrder.toString().includes(searchTerm.replace('#')) ||
+                    (`#${order.idOrder}`).toLowerCase().includes(searchTerm);
 
                 // Tìm theo ID khách hàng
                 const userIdMatch = order.userId && order.userId.toString().includes(searchTerm);
 
                 // Tìm theo tên khách hàng
                 const customerNameMatch = order.customerName &&
-                                        order.customerName.toLowerCase().includes(searchTerm);
+                    order.customerName.toLowerCase().includes(searchTerm);
 
 
-                return orderIdMatch || userIdMatch || customerNameMatch ;
+                return orderIdMatch || userIdMatch || customerNameMatch;
             });
         }
 
@@ -576,7 +591,7 @@ class OrderManager {
     }
 
     getOrderStatusClass(status) {
-        switch(status) {
+        switch (status) {
             case 'PENDING':
                 return 'bg-warning';
             case 'CANCELLED':
@@ -589,7 +604,7 @@ class OrderManager {
     }
 
     getOrderStatusText(status) {
-        switch(status) {
+        switch (status) {
             case 'PENDING':
                 return 'Chờ xử lý';
             case 'CANCELLED':
@@ -638,7 +653,7 @@ class OrderManager {
 }
 
 // Initialize when document is ready
-$(document).ready(function() {
+$(document).ready(function () {
     window.orderManager = new OrderManager();
 });
 

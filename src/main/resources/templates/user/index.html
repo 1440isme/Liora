@@ -227,15 +227,13 @@
                         <div class="brand-track d-flex align-items-center">
                             <div class="brand-item px-4 opacity-1" th:each="brand : ${activeBrands}">
                                 <a th:href="@{'/brand/' + ${brand.brandId}}" class="text-decoration-none">
-                                    <img class="img-fluid" th:src="${brand.logoUrl}" th:alt="${brand.name}"
-                                        style="max-height:80px">
+                                    <img th:src="${brand.logoUrl}" th:alt="${brand.name}">
                                 </a>
                             </div>
                             <!-- Duplicate for seamless loop -->
                             <div class="brand-item px-4 opacity-1" th:each="brand : ${activeBrands}">
                                 <a th:href="@{'/brand/' + ${brand.brandId}}" class="text-decoration-none">
-                                    <img class="img-fluid" th:src="${brand.logoUrl}" th:alt="${brand.name}"
-                                        style="max-height:80px">
+                                    <img th:src="${brand.logoUrl}" th:alt="${brand.name}">
                                 </a>
                             </div>
                         </div>

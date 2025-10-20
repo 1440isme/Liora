@@ -1214,11 +1214,11 @@ class CheckoutPage {
         if (this.appliedDiscount) {
             // Sử dụng discount amount hiện tại, sẽ được cập nhật bởi recalculateDiscountAmount
             discountAmount = this.appliedDiscount.discountAmount || 0;
-            
+
             // Tính lại discount amount với subtotal mới (async)
             this.recalculateDiscountAmount(subtotal);
         }
-        
+
         const total = subtotal + this.shippingFee - discountAmount;
 
         $('#summary-subtotal').text(this.formatCurrency(subtotal));
@@ -1243,7 +1243,7 @@ class CheckoutPage {
     // ✅ FIX: Method để tính lại discount amount khi subtotal thay đổi
     async recalculateDiscountAmount(subtotal) {
         if (!this.appliedDiscount) return;
-        
+
         try {
             const response = await this.apiCall('/discounts/apply', 'POST', {
                 discountCode: this.appliedDiscount.discountCode,
@@ -1253,7 +1253,7 @@ class CheckoutPage {
             if (response.result) {
                 // Cập nhật discount amount mới
                 this.appliedDiscount.discountAmount = response.result.discountAmount;
-                
+
                 // Cập nhật UI với discount amount mới
                 $('#discount-row .fw-medium').text(`-${this.formatCurrency(this.appliedDiscount.discountAmount)}`);
                 const total = subtotal + this.shippingFee - this.appliedDiscount.discountAmount;
@@ -1861,8 +1861,15 @@ class CheckoutPage {
         const response = await fetch(url, options);
 
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+            // Kiểm tra content-type trước khi parse JSON
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+            } else {
+                // Nếu không phải JSON (có thể là HTML trang login), throw error với status
+                throw new Error(`HTTP error! status: ${response.status} - Server returned non-JSON response`);
+            }
         }
 
         // Với DELETE request, response có thể là empty body
@@ -1870,7 +1877,13 @@ class CheckoutPage {
             return { success: true };
         }
 
-        return await response.json();
+        // Kiểm tra content-type trước khi parse JSON
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+            return await response.json();
+        } else {
+            throw new Error('Server returned non-JSON response');
+        }
     }
 
     navigateToCart(event) {

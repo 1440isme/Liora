@@ -25,11 +25,11 @@ class FeaturedCategoryProductsManager {
     init() {
         try {
             this.getCategoryIdFromUrl();
-        this.bindEvents();
+            this.bindEvents();
             this.loadCategoryInfo();
             this.loadLevel3Categories();
-        this.loadBrands();
-        this.loadProducts();
+            this.loadBrands();
+            this.loadProducts();
         } catch (error) {
             console.error('Error in init():', error);
         }
@@ -89,13 +89,13 @@ class FeaturedCategoryProductsManager {
         if (!this.currentCategoryId) return;
 
         try {
-            const response = await fetch(`/api/categories/${this.currentCategoryId}`);
+            const response = await fetch(`/api/products/categories/${this.currentCategoryId}`);
             const data = await response.json();
 
             if (data.code === 1000 && data.result) {
                 const categoryName = data.result.name;
                 document.title = `${categoryName} - Liora`;
-                
+
                 const titleElement = document.querySelector('.page-title');
                 if (titleElement) {
                     titleElement.textContent = categoryName;
@@ -112,7 +112,7 @@ class FeaturedCategoryProductsManager {
         try {
             const response = await fetch(`/api/products/categories/${this.currentCategoryId}/level3-categories`);
             const data = await response.json();
-            
+
             if (data.code === 1000 && data.result) {
                 this.displayLevel3Categories(data.result);
             }
@@ -148,7 +148,7 @@ class FeaturedCategoryProductsManager {
         try {
             const response = await fetch(`/api/products/categories/${this.currentCategoryId}/brands-with-count`);
             const data = await response.json();
-            
+
             if (data.code === 1000 && data.result) {
                 this.displayBrands(data.result);
             }
@@ -224,7 +224,7 @@ class FeaturedCategoryProductsManager {
             }
 
             const data = await response.json();
-            
+
             if (data.code === 1000) {
                 this.products = data.result.content || [];
                 this.totalElements = data.result.totalElements || 0;
@@ -255,7 +255,7 @@ class FeaturedCategoryProductsManager {
             console.log('Grid element not found');
             return;
         }
-        
+
         if (this.products.length === 0) {
             grid.style.display = 'none';
             grid.innerHTML = '';
@@ -402,7 +402,7 @@ class FeaturedCategoryProductsManager {
         const fullStars = Math.floor(rating);
         const hasHalfStar = rating % 1 >= 0.5;
         const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
-        
+
         let stars = '';
         for (let i = 0; i < fullStars; i++) {
             stars += '<i class="fas fa-star text-warning"></i>';
@@ -448,7 +448,7 @@ class FeaturedCategoryProductsManager {
             { max: 10000, percentage: 95 },
             { max: Infinity, percentage: 100 }
         ];
-        
+
         for (const threshold of thresholds) {
             if (soldCount <= threshold.max) {
                 const prevThreshold = thresholds[thresholds.indexOf(threshold) - 1];
@@ -538,7 +538,7 @@ class FeaturedCategoryProductsManager {
         if (!paginationList) return;
 
         let paginationHTML = '';
-        
+
         // Previous button
         const prevDisabled = this.currentPage === 0 ? 'disabled' : '';
         paginationHTML += `
@@ -548,11 +548,11 @@ class FeaturedCategoryProductsManager {
                 </a>
             </li>
         `;
-        
+
         // Page numbers
         const startPage = Math.max(0, this.currentPage - 2);
         const endPage = Math.min(this.totalPages - 1, this.currentPage + 2);
-        
+
         for (let i = startPage; i <= endPage; i++) {
             const activeClass = i === this.currentPage ? 'active' : '';
             paginationHTML += `
@@ -561,7 +561,7 @@ class FeaturedCategoryProductsManager {
                 </li>
             `;
         }
-        
+
         // Next button
         const nextDisabled = this.currentPage >= this.totalPages - 1 ? 'disabled' : '';
         paginationHTML += `
@@ -619,47 +619,16 @@ class FeaturedCategoryProductsManager {
 
     async addToCart(productId, productName, price) {
         try {
-            if (window.cartManager && window.cartManager.addItem) {
-                await window.cartManager.addItem(productId, 1, price);
-                this.showNotification(`${productName} đã được thêm vào giỏ hàng!`, 'success');
-                return;
+            // Sử dụng addProductToCartBackend để gọi API backend
+            if (window.app && window.app.addProductToCartBackend) {
+                await window.app.addProductToCartBackend(productId, 1, true);
+                await window.app.refreshCartBadge?.();
+            } else {
+                this.showNotification('Chức năng đang được tải...', 'error');
             }
-
-            if (window.app && window.app.cartItems) {
-                const existingItem = window.app.cartItems.find(item => item.id === productId);
-
-                if (existingItem) {
-                    existingItem.quantity += 1;
-                } else {
-                    const product = this.products.find(p => p.productId === productId);
-                    if (product) {
-                        window.app.cartItems.push({
-                            ...product,
-                            quantity: 1
-                        });
-                    } else {
-                        window.app.cartItems.push({
-                            id: productId,
-                    productId: productId,
-                            name: productName,
-                            price: price,
-                    quantity: 1
-                        });
-                    }
-                }
-
-                if (window.app.updateCartDisplay) {
-                    window.app.updateCartDisplay();
-                }
-
-                this.showNotification(`${productName} đã được thêm vào giỏ hàng!`, 'success');
-                return;
-            }
-
-            this.showNotification(`${productName} đã được thêm vào giỏ hàng`, 'success');
         } catch (error) {
-            console.error('Error adding to cart:', error);
-            this.showNotification('Không thể thêm vào giỏ hàng', 'error');
+            console.error('Add to cart error:', error);
+            this.showNotification('Không thể thêm vào giỏ hàng. Vui lòng thử lại.', 'error');
         }
     }
 
@@ -690,7 +659,7 @@ class FeaturedCategoryProductsManager {
             delay: 3000
         });
         bsToast.show();
-        
+
         toast.addEventListener('hidden.bs.toast', () => {
             toast.remove();
         });
@@ -845,7 +814,7 @@ class FeaturedCategoryProductsManager {
                 </div>
             </div>
         `;
-        
+
         // Add modal to body
         document.body.insertAdjacentHTML('beforeend', modalHTML);
 
@@ -1082,20 +1051,29 @@ class FeaturedCategoryProductsManager {
     buyNow(productId) {
         const quantityInput = document.getElementById('quantityInput');
         const quantity = quantityInput ? parseInt(quantityInput.value) || 1 : 1;
-        
+
         // Redirect to checkout with product
         window.location.href = `/checkout?product=${productId}&quantity=${quantity}`;
     }
 
     // Add to cart with quantity
-    addToCartWithQuantity(productId) {
+    async addToCartWithQuantity(productId) {
         const quantityInput = document.getElementById('quantityInput');
         const quantity = quantityInput ? parseInt(quantityInput.value) || 1 : 1;
-        
-        // Add to cart logic here
-        console.log('Adding to cart with quantity:', productId, quantity);
-        this.showNotification(`Đã thêm ${quantity} sản phẩm vào giỏ hàng`, 'success');
-        
+
+        try {
+            // Sử dụng addProductToCartBackend để gọi API backend
+            if (window.app && window.app.addProductToCartBackend) {
+                await window.app.addProductToCartBackend(productId, quantity, true);
+                await window.app.refreshCartBadge?.();
+            } else {
+                this.showNotification('Chức năng đang được tải...', 'error');
+            }
+        } catch (error) {
+            console.error('Add to cart error:', error);
+            this.showNotification('Không thể thêm vào giỏ hàng. Vui lòng thử lại.', 'error');
+        }
+
         // Close modal
         const modal = bootstrap.Modal.getInstance(document.getElementById('quickViewModal'));
         if (modal) {
@@ -1113,9 +1091,9 @@ class FeaturedCategoryProductsManager {
             ${message}
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         `;
-        
+
         document.body.appendChild(notification);
-        
+
         // Auto remove after 3 seconds
         setTimeout(() => {
             if (notification.parentNode) {
@@ -1128,7 +1106,7 @@ class FeaturedCategoryProductsManager {
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function () {
     if (document.getElementById('productsGrid')) {
-    window.featuredCategoryProductsManager = new FeaturedCategoryProductsManager();
+        window.featuredCategoryProductsManager = new FeaturedCategoryProductsManager();
         window.featuredCategoryProductsManager.init();
     }
 });

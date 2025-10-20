@@ -57,7 +57,7 @@ public class HomeController {
     // Auth pages
     @GetMapping("/login")
     public String login() {
-        return "admin/auth/login";
+        return "/";
     }
 
     @GetMapping("/info")

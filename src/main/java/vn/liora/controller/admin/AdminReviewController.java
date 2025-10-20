@@ -105,11 +105,16 @@ public class AdminReviewController {
      * Cập nhật trạng thái hiển thị review
      */
     @PutMapping("/{id}/visibility")
-    @PreAuthorize("hasAuthority('review.update')")
+    @PreAuthorize("hasAuthority('review.manage')")
     public ResponseEntity<Map<String, Object>> updateReviewVisibility(
             @PathVariable Long id,
-            @RequestParam Boolean isVisible) {
+            @RequestBody Map<String, Object> requestBody) {
         try {
+            Boolean isVisible = (Boolean) requestBody.get("isVisible");
+            if (isVisible == null) {
+                return ResponseEntity.badRequest().body(Map.of("error", "isVisible parameter is required"));
+            }
+
             reviewService.updateReviewVisibility(id, isVisible);
 
             Map<String, Object> response = new HashMap<>();
