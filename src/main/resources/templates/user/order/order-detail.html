@@ -131,16 +131,21 @@
                                         <tbody>
                                             <tr th:each="product : ${orderProducts}">
                                                 <td>
-                                                    <img th:src="${product.mainImageUrl}"
-                                                        th:alt="${product.productName}" class="img-thumbnail"
-                                                        style="width: 60px; height: 60px; object-fit: cover;"
-                                                        onerror="this.src='https://placehold.co/60x60'">
+                                                    <a th:href="@{/product/{id}(id=${product.idProduct})}" style="text-decoration: none;">
+                                                        <img th:src="${product.mainImageUrl}"
+                                                            th:alt="${product.productName}" class="img-thumbnail"
+                                                            style="width: 60px; height: 60px; object-fit: cover;"
+                                                            onerror="this.src='https://placehold.co/60x60'">
+                                                    </a>
                                                 </td>
                                                 <td>
                                                     <div>
-                                                        <h6 class="mb-1" th:text="${product.productName}"></h6>
-                                                        <small class="text-muted"
-                                                            th:text="${product.brandName}"></small>
+                                                        <a th:href="@{/product/{id}(id=${product.idProduct})}" class="text-decoration-none product-link" style="color: inherit;">
+                                                            <h6 class="mb-1" th:text="${product.productName}"></h6>
+                                                        </a>
+                                                        <a th:href="@{/brand/{id}(id=${product.brandId})}" class="text-decoration-none brand-link" style="color: var(--accent-color);">
+                                                            <small class="text-muted" th:text="${product.brandName}"></small>
+                                                        </a>
                                                     </div>
                                                 </td>
                                                 <td class="text-center"
@@ -279,7 +284,7 @@
     <!-- Scripts -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script th:src="@{/user/js/order-detail-simple.js}"></script>
+    <script th:src="@{/user/js/order-detail.js}"></script>
     <script th:src="@{/user/js/main.js}"></script>
     <script th:src="@{/user/js/cart.js}"></script>
 

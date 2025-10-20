@@ -122,10 +122,10 @@ class SimilarProductsManager {
     async loadBrands() {
         try {
             console.log('🔍 Loading brands for similar products...');
-            const response = await fetch('/api/products/search-brands');
+            const response = await fetch(`/api/products/${this.productId}/similar-brands`);
             const data = await response.json();
             
-            console.log('🔍 Brands API response:', data);
+            console.log('🔍 Similar brands API response:', data);
             
             if (data.code === 1000 && data.result) {
                 const brandFiltersContainer = document.getElementById('brandFilters');
@@ -136,15 +136,15 @@ class SimilarProductsManager {
                             <label class="form-check-label" for="brand${brand.brandId}">${brand.name}</label>
                         </div>
                     `).join('');
-                    console.log('🔍 Loaded brands:', data.result.length);
+                    console.log('🔍 Loaded similar product brands:', data.result.length);
                 } else {
                     console.error('🔍 Brand filters container not found');
                 }
             } else {
-                console.error('🔍 Brands API error:', data);
+                console.error('🔍 Similar brands API error:', data);
             }
         } catch (error) {
-            console.error('🔍 Error loading brands:', error);
+            console.error('🔍 Error loading similar product brands:', error);
         }
     }
 

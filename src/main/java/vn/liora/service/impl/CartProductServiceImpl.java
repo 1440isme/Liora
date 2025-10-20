@@ -50,6 +50,8 @@ public class CartProductServiceImpl implements ICartProductService {
             cartProduct.setQuantity(cartProduct.getQuantity() + request.getQuantity());
             cartProduct.setTotalPrice(product.getPrice()
                     .multiply(BigDecimal.valueOf(cartProduct.getQuantity())));
+            // Khi cộng dồn từ reorder, đặt choose = true
+            cartProduct.setChoose(true);
         } else {
             // Nếu chưa có thì tạo mới
             cartProduct = cartProductMapper.toCartProduct(request);

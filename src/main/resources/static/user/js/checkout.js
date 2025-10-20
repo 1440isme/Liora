@@ -185,10 +185,12 @@ class CheckoutPage {
             if (defaultAddress) {
                 this.selectedAddressId = defaultAddress.idAddress;
                 this.fillAddressToForm(defaultAddress);
+                this.updateAddressDisplay();
             } else if (addresses.length > 0) {
                 // If no default, use first address
                 this.selectedAddressId = addresses[0].idAddress;
                 this.fillAddressToForm(addresses[0]);
+                this.updateAddressDisplay();
             }
         } catch (error) {
             this.showToast('Không thể tải danh sách địa chỉ', 'error');
@@ -614,10 +616,20 @@ class CheckoutPage {
             // Reload addresses and update form
             await this.loadAddresses();
 
-            // Close any open modals
-            this.closeAddressSelector();
+            // Close add/edit modals but keep address selector open
             this.closeAddAddressModal();
             this.closeEditAddressModal();
+            
+            // Refresh address selector modal if it's open
+            if (document.getElementById('addressSelectorModal')) {
+                this.refreshAddressSelectorModal();
+            }
+            
+            // If no addresses left, close the selector
+            if (!this.addresses || this.addresses.length === 0) {
+                this.closeAddressSelector();
+                this.showToast('Bạn đã xóa tất cả địa chỉ. Vui lòng thêm địa chỉ mới.', 'info');
+            }
         } catch (error) {
             this.showToast('Lỗi xóa địa chỉ', 'error');
             this.showToast('Không thể xóa địa chỉ', 'error');
@@ -691,6 +703,15 @@ class CheckoutPage {
 
         $('body').append(modalHTML);
         this.loadProvinces();
+        
+        // Debug: Check if there's pre-filled data and load accordingly
+        setTimeout(() => {
+            const districtSelect = document.getElementById('addrDistrict');
+            if (districtSelect && districtSelect.value) {
+                console.log('Pre-filled district found:', districtSelect.value);
+                this.loadWardsByDistrict(parseInt(districtSelect.value, 10));
+            }
+        }, 1000);
     }
 
     showEditAddressModal(address) {
@@ -908,6 +929,107 @@ class CheckoutPage {
         }
     }
 
+    // Update the address display in the UI
+    updateAddressDisplay() {
+        if (!this.selectedAddressId || !this.addresses) return;
+        
+        const selectedAddress = this.addresses.find(addr => addr.idAddress === this.selectedAddressId);
+        if (!selectedAddress) return;
+
+        // Update the address display in the shipping section
+        const addressDisplay = document.querySelector('.shipping-address-display');
+        if (addressDisplay) {
+            const fullAddress = [
+                selectedAddress.name,
+                selectedAddress.phone,
+                selectedAddress.addressDetail,
+                selectedAddress._wardName || '',
+                selectedAddress._districtName || '',
+                selectedAddress._provinceName || ''
+            ].filter(Boolean).join(', ');
+            
+            addressDisplay.innerHTML = `
+                <div class="selected-address">
+                    <strong>${selectedAddress.name}</strong> - ${selectedAddress.phone}
+                    <br>
+                    <small class="text-muted">${fullAddress}</small>
+                </div>
+            `;
+        }
+
+        // Update any address selector buttons or displays
+        const addressButton = document.querySelector('.btn-select-address');
+        if (addressButton) {
+            addressButton.innerHTML = `
+                <i class="fas fa-map-marker-alt me-2"></i>
+                ${selectedAddress.name} - ${selectedAddress._provinceName || ''}
+            `;
+        }
+
+        // Update address selector modal if it's open
+        this.refreshAddressSelectorModal();
+    }
+
+    // Refresh the address selector modal with updated data
+    refreshAddressSelectorModal() {
+        console.log('refreshAddressSelectorModal called');
+        const modal = document.getElementById('addressSelectorModal');
+        if (!modal) {
+            console.log('Address selector modal not found');
+            return;
+        }
+
+        const addressList = modal.querySelector('.address-list');
+        if (addressList && this.addresses) {
+            console.log('Refreshing address list with', this.addresses.length, 'addresses');
+            addressList.innerHTML = this.addresses.map(addr => this.createAddressOption(addr)).join('');
+            console.log('Address list refreshed successfully');
+        } else {
+            console.log('Address list element not found or no addresses');
+        }
+    }
+
+    async loadWardsByDistrict(districtId) {
+        console.log('loadWardsByDistrict called with districtId:', districtId);
+        const wardSelect = document.getElementById('addrWard');
+        if (!wardSelect) {
+            console.log('Ward select element not found');
+            return;
+        }
+        if (!districtId) {
+            console.log('No districtId provided');
+            wardSelect.innerHTML = '<option value="">Chọn Quận/Huyện trước</option>';
+            wardSelect.disabled = true;
+            return;
+        }
+
+        try {
+            wardSelect.disabled = true;
+            wardSelect.innerHTML = '<option value="">Đang tải Phường/Xã...</option>';
+
+            console.log('Fetching wards for district:', districtId);
+            const res = await fetch(`/api/ghn/wards/${districtId}`);
+            console.log('Wards API response status:', res.status);
+            
+            if (!res.ok) throw new Error('Không thể tải phường/xã');
+            const wards = await res.json();
+            console.log('Wards data received:', wards);
+
+            if (Array.isArray(wards) && wards.length > 0) {
+                this.populateSelect(wardSelect, wards.map(w => ({ value: (w.WardCode || w.wardCode), label: (w.WardName || w.name) })), 'Chọn Phường/Xã');
+                console.log('Wards loaded successfully, count:', wards.length);
+            } else {
+                throw new Error('Dữ liệu phường/xã không hợp lệ');
+            }
+            wardSelect.disabled = false;
+        } catch (e) {
+            console.error('Error loading wards:', e);
+            this.showToast('Lỗi tải phường/xã', 'error');
+            wardSelect.innerHTML = '<option value="">Không có dữ liệu phường/xã</option>';
+            wardSelect.disabled = true;
+        }
+    }
+
     async loadEditWards(districtId, selectedWardCode = null) {
         const wardSelect = document.getElementById('editAddrWard');
         if (!wardSelect) return;
@@ -1011,7 +1133,8 @@ class CheckoutPage {
 
             await this.apiCall(`/addresses/${this.currentUser.userId}`, 'POST', payload);
             this.showToast('Đã lưu địa chỉ thành công', 'success');
-            this.closeAddAddressModal();
+            
+            // Load addresses first before closing modal
             await this.loadAddresses();
 
             // If this is the first address or it's set as default, fill it to form
@@ -1020,7 +1143,17 @@ class CheckoutPage {
                 if (newAddress) {
                     this.selectedAddressId = newAddress.idAddress;
                     await this.fillAddressToForm(newAddress);
+                    // Update UI to show the selected address
+                    this.updateAddressDisplay();
                 }
+            }
+            
+            // Close modal after updating everything
+            this.closeAddAddressModal();
+            
+            // If address selector modal was open, refresh it
+            if (document.getElementById('addressSelectorModal')) {
+                this.refreshAddressSelectorModal();
             }
         } catch (e) {
             console.error(e);
@@ -1070,7 +1203,8 @@ class CheckoutPage {
 
             await this.apiCall(`/addresses/${this.currentUser.userId}/${currentAddressId}`, 'PUT', addressData);
             this.showToast('Cập nhật địa chỉ thành công', 'success');
-            this.closeEditAddressModal();
+            
+            // Load addresses first before closing modal
             await this.loadAddresses();
 
             // If this was the selected address, update the form
@@ -1078,7 +1212,17 @@ class CheckoutPage {
                 const updatedAddress = this.addresses.find(addr => addr.idAddress === currentAddressId);
                 if (updatedAddress) {
                     await this.fillAddressToForm(updatedAddress);
+                    // Update UI to show the updated address
+                    this.updateAddressDisplay();
                 }
+            }
+            
+            // Close modal after updating everything
+            this.closeEditAddressModal();
+            
+            // If address selector modal was open, refresh it
+            if (document.getElementById('addressSelectorModal')) {
+                this.refreshAddressSelectorModal();
             }
         } catch (e) {
             console.error('Lỗi cập nhật địa chỉ:', e);
@@ -1222,7 +1366,7 @@ class CheckoutPage {
         const total = subtotal + this.shippingFee - discountAmount;
 
         $('#summary-subtotal').text(this.formatCurrency(subtotal));
-        $('#summary-shipping').text(this.shippingFee === 0 ? 'Miễn phí' : this.formatCurrency(this.shippingFee));
+        $('#summary-shipping').text(this.shippingFee === 0 ? '0đ' : this.formatCurrency(this.shippingFee));
         $('#summary-total').text(this.formatCurrency(total));
 
         // Luôn hiển thị dòng giảm giá
@@ -1553,7 +1697,10 @@ class CheckoutPage {
         const fullAddress = `${addressDetail}, ${wardName || wardCode || ''}, ${districtName || ''}, ${provinceNameText || province || ''}`;
 
         const paymentMethod = $('input[name="paymentMethod"]:checked').val();
-        const notes = $('#orderNotes').val() || 'Không có ghi chú';
+        const rawNotes = $('#orderNotes').val();
+        const notes = (rawNotes && typeof rawNotes === 'string' ? rawNotes.trim() : '').length > 0
+            ? rawNotes.trim()
+            : 'Không có ghi chú';
 
         // Order data validation
 
