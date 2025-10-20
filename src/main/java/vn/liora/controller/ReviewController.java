@@ -18,6 +18,7 @@ import vn.liora.entity.User;
 import vn.liora.exception.AppException;
 import vn.liora.exception.ErrorCode;
 import vn.liora.repository.UserRepository;
+import vn.liora.service.IProductService;
 import vn.liora.service.IReviewService;
 
 import java.util.HashMap;
@@ -36,6 +37,9 @@ public class ReviewController {
 
     @Autowired
     private UserRepository userRepository;
+    
+    @Autowired
+    private IProductService productService;
 
     // ========== PUBLIC ENDPOINTS ==========
 
@@ -103,6 +107,42 @@ public class ReviewController {
             log.error("Error getting product review statistics: {}", e.getMessage());
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("error", "Không thể lấy thống kê đánh giá");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+
+    /**
+     * Lấy thống kê đánh giá cho nhiều sản phẩm (để hiển thị trên product cards)
+     */
+    @PostMapping("/products/statistics")
+    public ResponseEntity<Map<String, Object>> getMultipleProductsReviewStatistics(@RequestBody List<Long> productIds) {
+        try {
+            Map<String, Object> statistics = reviewService.getMultipleProductsReviewStatistics(productIds);
+            return ResponseEntity.ok(statistics);
+        } catch (Exception e) {
+            log.error("Error getting multiple products review statistics: {}", e.getMessage());
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Không thể lấy thống kê đánh giá");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+
+    /**
+     * Cập nhật average rating cho tất cả sản phẩm (Admin endpoint)
+     */
+    @PostMapping("/admin/update-all-ratings")
+    public ResponseEntity<Map<String, Object>> updateAllProductsAverageRating() {
+        try {
+            productService.updateAllProductsAverageRating();
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Đã cập nhật average rating cho tất cả sản phẩm");
+            response.put("success", true);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Error updating all products average rating: {}", e.getMessage());
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Không thể cập nhật average rating");
+            errorResponse.put("success", false);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }

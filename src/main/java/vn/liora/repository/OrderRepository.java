@@ -30,6 +30,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     List<Order> findByOrderByOrderDateDesc();
 
+    List<Order> findAllByOrderByIdOrderDesc();
+
     @Query("SELECT SUM(o.total) FROM Order o")
     BigDecimal getTotalRevenue();
 

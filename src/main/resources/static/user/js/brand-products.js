@@ -246,6 +246,13 @@ class BrandProductsManager {
         container.innerHTML = html;
 
         console.log('Products rendered:', products.length);
+
+        // Trigger rating load sau khi render xong
+        setTimeout(() => {
+            if (window.loadProductRatings) {
+                window.loadProductRatings();
+            }
+        }, 500);
     }
 
     createProductCard(product) {
@@ -291,11 +298,36 @@ class BrandProductsManager {
                             </a>
                         </p>
                         
-                        <div class="rating">
-                            <span class="stars">
-                                ${this.generateStars(product.averageRating || 0, product.reviewCount || 0)}
-                            </span>
-                            <span class="review-count">(${product.reviewCount || 0})</span>
+                        <!-- Rating sẽ được load bởi ProductRatingUtils -->
+                        <div class="product-rating" data-product-id="${product.productId}">
+                            <div class="star-rating">
+                                <div class="star empty">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="2">
+                                        <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                                    </svg>
+                                </div>
+                                <div class="star empty">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="2">
+                                        <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                                    </svg>
+                                </div>
+                                <div class="star empty">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="2">
+                                        <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                                    </svg>
+                                </div>
+                                <div class="star empty">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="2">
+                                        <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                                    </svg>
+                                </div>
+                                <div class="star empty">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="2">
+                                        <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                                    </svg>
+                                </div>
+                            </div>
+                            <span class="rating-count">(0)</span>
                         </div>
                     
                     <!-- Sales Progress Bar -->

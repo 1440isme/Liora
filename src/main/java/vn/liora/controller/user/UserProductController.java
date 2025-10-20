@@ -1241,6 +1241,40 @@ public class UserProductController {
         }
     }
 
+    // ========== SIMILAR PRODUCTS BRANDS ==========
+    @GetMapping("/{productId}/similar-brands")
+    public ResponseEntity<ApiResponse<List<BrandResponse>>> getSimilarProductBrands(@PathVariable Long productId) {
+        ApiResponse<List<BrandResponse>> response = new ApiResponse<>();
+        try {
+            // Get all products and find similar products using existing logic
+            List<Product> allProducts = productService.findAll();
+            ProductResponse originalProduct = productService.findById(productId);
+            List<Product> similarProducts = getSimilarProductsWithFallback(allProducts, originalProduct, productId);
+            
+            // Extract unique brands from similar products
+            List<BrandResponse> brands = similarProducts.stream()
+                    .map(Product::getBrand)
+                    .distinct()
+                    .map(brand -> BrandResponse.builder()
+                            .brandId(brand.getBrandId())
+                            .name(brand.getName())
+                            .logoUrl(brand.getLogoUrl())
+                            .isActive(brand.getIsActive())
+                            .build())
+                    .sorted((b1, b2) -> b1.getName().compareTo(b2.getName()))
+                    .toList();
+
+            response.setCode(1000);
+            response.setMessage("Lấy danh sách thương hiệu sản phẩm tương tự thành công");
+            response.setResult(brands);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.setCode(500);
+            response.setMessage("Lỗi khi lấy danh sách thương hiệu sản phẩm tương tự: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(response);
+        }
+    }
+
     // ========== BRAND FILTERS ==========
     @GetMapping("/categories/{categoryId}/brands")
     public ResponseEntity<ApiResponse<List<String>>> getBrandsByCategory(@PathVariable Long categoryId) {
