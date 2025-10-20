@@ -98,7 +98,7 @@ class FeaturedCategoryProductsManager {
                     this.showCategoryUnavailable(data.result.name);
                     return;
                 }
-                
+
                 const categoryName = data.result.name;
                 document.title = `${categoryName} - Liora`;
 
@@ -292,7 +292,9 @@ class FeaturedCategoryProductsManager {
                     <img src="${product.mainImageUrl || '/user/img/default-product.jpg'}" 
                          class="card-img-top" 
                          alt="${product.name}"
-                         onerror="this.src='/user/img/default-product.jpg'">
+                         onerror="this.src='/user/img/default-product.jpg'"
+                         onclick="window.location.href='/product/${product.productId}'"
+                         style="cursor: pointer;">
                     
                     <!-- Product Status Badge - Removed to avoid overlapping with image -->
                     
@@ -696,7 +698,7 @@ class FeaturedCategoryProductsManager {
         this.createQuickViewModal(product);
     }
 
-    // Create quick view modal
+    // Create quick view modal - sử dụng chuẩn từ main.js
     createQuickViewModal(product) {
         // Remove existing modal if any
         const existingModal = document.getElementById('quickViewModal');
@@ -713,22 +715,22 @@ class FeaturedCategoryProductsManager {
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
-            <div class="row">
+                            <div class="row">
                                 <!-- Product Image Slider -->
-                <div class="col-md-6">
+                                <div class="col-md-6">
                                     <div class="product-image-slider">
                                         <!-- Main Image -->
                                         <div class="main-image-container mb-3">
-                                            <button class="slider-nav slider-prev" id="prevBtn">
-                                                <i class="fas fa-chevron-left"></i>
+                                            <button class="slider-nav slider-prev" id="quickViewPrevBtn">
+                                                <i class="mdi mdi-chevron-left"></i>
                                             </button>
                                             <img id="mainProductImage" 
                                                  src="${this.getMainImageUrl(product)}" 
-                         class="img-fluid rounded" 
-                         alt="${product.name}"
+                                                 class="img-fluid rounded" 
+                                                 alt="${product.name}"
                                                  onerror="this.src='/user/img/default-product.jpg'">
-                                            <button class="slider-nav slider-next" id="nextBtn">
-                                                <i class="fas fa-chevron-right"></i>
+                                            <button class="slider-nav slider-next" id="quickViewNextBtn">
+                                                <i class="mdi mdi-chevron-right"></i>
                                             </button>
                                         </div>
                                         
@@ -739,27 +741,29 @@ class FeaturedCategoryProductsManager {
                                             </div>
                                         </div>
                                     </div>
-                </div>
+                                </div>
                                 
                                 <!-- Product Info -->
-                <div class="col-md-6">
+                                <div class="col-md-6">
                                     <h4 class="product-name mb-3">
                                         <a href="/product/${product.productId}" class="text-decoration-none text-dark">
                                             ${product.name}
                                         </a>
                                     </h4>
-                                    <p class="brand-name text-muted mb-2">${product.brandName || 'Thương hiệu'}</p>
+                                    <p class="brand-name text-muted mb-2">${product.brand || product.brandName || 'N/A'}</p>
                                     
                                     <!-- Product Status -->
                                     <div class="product-status mb-3">
-                                        ${this.getProductStatusBadge(product)}
-                                        <span class="ms-2 text-muted">Mã sản phẩm: ${product.productId}</span>
+                                        <span class="badge ${product.stock > 0 ? 'bg-success' : 'bg-danger'}">
+                                            ${product.stock > 0 ? 'Còn hàng' : 'Hết hàng'}
+                                        </span>
+                                        <span class="ms-2 text-muted">Mã sản phẩm: ${product.productId || 'N/A'}</span>
                                     </div>
                                     
                                     <!-- Rating -->
                                     <div class="rating mb-3">
                                         <span class="stars">
-                                            ${this.generateStarsForModal(product.averageRating || 0, product.reviewCount || 0)}
+                                            ${this.renderStars(product.rating || product.averageRating || 0)}
                                         </span>
                                         <span class="review-count ms-2">(${product.reviewCount || 0} đánh giá)</span>
                                     </div>
@@ -781,8 +785,9 @@ class FeaturedCategoryProductsManager {
                                     <!-- Price -->
                                     <div class="price-section mb-4">
                                         <span class="current-price h4 text-primary">
-                                            ${this.formatPrice(product.price)}
+                                            ${this.formatCurrency(product.price)}
                                         </span>
+                                        ${product.originalPrice ? `<span class="text-muted ms-2"><s>${this.formatCurrency(product.originalPrice)}</s></span>` : ''}
                                     </div>
                                     
                                     <!-- Quantity Selector -->
@@ -793,28 +798,46 @@ class FeaturedCategoryProductsManager {
                                                 <button class="btn btn-outline-secondary" type="button" onclick="window.featuredCategoryProductsManager.decrementQuantity()">-</button>
                                                 <input type="number" class="form-control text-center" value="1" min="1" max="${Math.min(product.stock || 10, 99)}" id="quantityInput" onchange="window.featuredCategoryProductsManager.validateQuantity()" oninput="window.featuredCategoryProductsManager.validateQuantity()" onblur="window.featuredCategoryProductsManager.validateQuantityOnBlur()">
                                                 <button class="btn btn-outline-secondary" type="button" onclick="window.featuredCategoryProductsManager.incrementQuantity()">+</button>
-            </div>
+                                            </div>
                                         </div>
                                         <!-- Error Message -->
                                         <div id="quantityError" class="text-danger mt-2" style="display: none;">
-                                            <i class="fas fa-info-circle me-1"></i>
+                                            <i class="mdi mdi-information me-1"></i>
                                             <span id="quantityErrorMessage">Số lượng tối đa bạn có thể mua là ${Math.min(product.stock || 10, 99)}.</span>
                                         </div>
                                     </div>
                                     
                                     <!-- Actions -->
-                                    ${this.getQuickViewActions(product)}
-                                    
-                                    <!-- View Details Button -->
-                                    <div class="mt-3">
+                                    <div class="d-grid gap-2">
+                                        <!-- Buy Now & Add to Cart Buttons (Same Row) -->
+                                        <div class="row g-2">
+                                            <div class="col-6">
+                                                <button class="btn btn-danger btn-lg w-100" 
+                                                        onclick="window.featuredCategoryProductsManager.buyNow(${product.productId})"
+                                                        ${product.stock <= 0 ? 'disabled' : ''}>
+                                                    <i class="mdi mdi-lightning-bolt me-1"></i>
+                                                    ${product.stock > 0 ? 'Mua ngay' : 'Hết hàng'}
+                                                </button>
+                                            </div>
+                                            <div class="col-6">
+                                                <button class="btn btn-primary btn-lg w-100" 
+                                                        onclick="window.featuredCategoryProductsManager.addToCartWithQuantity(${product.productId})"
+                                                        ${product.stock <= 0 ? 'disabled' : ''}>
+                                                    <i class="mdi mdi-cart-plus me-1"></i>
+                                                    ${product.stock > 0 ? 'Thêm vào giỏ' : 'Hết hàng'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- View Details Button -->
                                         <a href="/product/${product.productId}" 
-                                           class="btn btn-outline-primary btn-lg w-100">
-                                            <i class="fas fa-info-circle me-2"></i>
+                                           class="btn btn-outline-primary btn-lg">
+                                            <i class="mdi mdi-information me-2"></i>
                                             Xem chi tiết sản phẩm
                                         </a>
                                     </div>
                                 </div>
-                    </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -828,8 +851,10 @@ class FeaturedCategoryProductsManager {
         const modal = new bootstrap.Modal(document.getElementById('quickViewModal'));
         modal.show();
 
-        // Add slider navigation event listeners
-        this.setupSliderNavigation(product);
+        // Add slider navigation event listeners after modal is shown
+        setTimeout(() => {
+            this.setupSliderNavigation(product);
+        }, 100);
 
         // Remove modal from DOM when hidden
         document.getElementById('quickViewModal').addEventListener('hidden.bs.modal', function () {
@@ -1053,13 +1078,32 @@ class FeaturedCategoryProductsManager {
         }
     }
 
-    // Buy now action
-    buyNow(productId) {
+    // Buy now action - chuẩn từ main.js
+    async buyNow(productId) {
         const quantityInput = document.getElementById('quantityInput');
         const quantity = quantityInput ? parseInt(quantityInput.value) || 1 : 1;
 
-        // Redirect to checkout with product
-        window.location.href = `/checkout?product=${productId}&quantity=${quantity}`;
+        // Get product info for notification
+        const product = this.products.find(p => p.productId == productId);
+
+        // Sử dụng buyNowBackend để tick true sản phẩm trong cart
+        if (window.app && typeof window.app.buyNowBackend === 'function') {
+            try {
+                // Close modal trước
+                const modal = bootstrap.Modal.getInstance(document.getElementById('quickViewModal'));
+                if (modal) {
+                    modal.hide();
+                }
+
+                // Sử dụng buyNowBackend để tick true và chuyển checkout
+                await window.app.buyNowBackend(productId, quantity);
+            } catch (error) {
+                console.error('Buy now error:', error);
+                this.showNotification('Không thể thực hiện Mua ngay. Vui lòng thử lại.', 'error');
+            }
+        } else {
+            this.showNotification('Chức năng đang được tải...', 'error');
+        }
     }
 
     // Add to cart with quantity
@@ -1136,6 +1180,43 @@ class FeaturedCategoryProductsManager {
                 </div>
             </div>
         `;
+    }
+
+    // Render stars for rating - chuẩn từ main.js
+    renderStars(rating) {
+        const fullStars = Math.floor(rating);
+        const hasHalfStar = rating % 1 >= 0.5;
+        const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+
+        let starsHTML = '';
+
+        // Full stars
+        for (let i = 0; i < fullStars; i++) {
+            starsHTML += '<i class="mdi mdi-star text-warning"></i>';
+        }
+
+        // Half star
+        if (hasHalfStar) {
+            starsHTML += '<i class="mdi mdi-star-half text-warning"></i>';
+        }
+
+        // Empty stars
+        for (let i = 0; i < emptyStars; i++) {
+            starsHTML += '<i class="mdi mdi-star-outline text-muted"></i>';
+        }
+
+        return starsHTML;
+    }
+
+    // Format currency - chuẩn từ main.js
+    formatCurrency(amount) {
+        if (typeof amount !== 'number') {
+            amount = parseFloat(amount) || 0;
+        }
+        return new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND'
+        }).format(amount);
     }
 }
 

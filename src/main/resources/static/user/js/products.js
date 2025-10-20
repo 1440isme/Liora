@@ -274,17 +274,17 @@ class ProductManager {
 
     // Get product by ID
     static getProductById(id) {
-        return this.products.find(product => product.id === id);
+        return this.products.find(product => product.productId === id);
     }
 
     // Search products
     static searchProducts(query) {
         const searchTerm = query.toLowerCase();
-        return this.products.filter(product => 
+        return this.products.filter(product =>
             product.name.toLowerCase().includes(searchTerm) ||
             product.brand.toLowerCase().includes(searchTerm) ||
             product.description.toLowerCase().includes(searchTerm) ||
-            (product.ingredients && product.ingredients.some(ingredient => 
+            (product.ingredients && product.ingredients.some(ingredient =>
                 ingredient.toLowerCase().includes(searchTerm)
             ))
         );
@@ -297,7 +297,7 @@ class ProductManager {
 
     // Get products by price range
     static getProductsByPriceRange(min, max) {
-        return this.products.filter(product => 
+        return this.products.filter(product =>
             product.price >= min && product.price <= max
         );
     }
@@ -320,7 +320,7 @@ class ProductManager {
     // Sort products
     static sortProducts(products, sortBy) {
         const sortedProducts = [...products];
-        
+
         switch (sortBy) {
             case 'price-low':
                 return sortedProducts.sort((a, b) => a.price - b.price);
@@ -331,7 +331,7 @@ class ProductManager {
             case 'popularity':
                 return sortedProducts.sort((a, b) => b.reviewCount - a.reviewCount);
             case 'newest':
-                return sortedProducts.sort((a, b) => 
+                return sortedProducts.sort((a, b) =>
                     new Date(b.dateAdded) - new Date(a.dateAdded)
                 );
             case 'name':
@@ -350,7 +350,7 @@ class ProductManager {
         }
 
         if (criteria.brand && criteria.brand.length > 0) {
-            filtered = filtered.filter(product => 
+            filtered = filtered.filter(product =>
                 criteria.brand.includes(product.brand)
             );
         }
@@ -358,7 +358,7 @@ class ProductManager {
         if (criteria.priceMin !== undefined || criteria.priceMax !== undefined) {
             const min = criteria.priceMin || 0;
             const max = criteria.priceMax || Infinity;
-            filtered = filtered.filter(product => 
+            filtered = filtered.filter(product =>
                 product.price >= min && product.price <= max
             );
         }
@@ -385,8 +385,8 @@ class ProductManager {
         if (!product) return [];
 
         // Get products from same category and brand, excluding the current product
-        let recommendations = this.products.filter(p => 
-            p.id !== productId && 
+        let recommendations = this.products.filter(p =>
+            p.id !== productId &&
             (p.category === product.category || p.brand === product.brand)
         );
 
@@ -414,7 +414,7 @@ class ProductManager {
 
     // Update a product (for admin functionality)
     static updateProduct(productId, updates) {
-        const index = this.products.findIndex(product => product.id === productId);
+        const index = this.products.findIndex(product => product.productId === productId);
         if (index !== -1) {
             this.products[index] = { ...this.products[index], ...updates };
             return this.products[index];
@@ -424,7 +424,7 @@ class ProductManager {
 
     // Delete a product (for admin functionality)
     static deleteProduct(productId) {
-        const index = this.products.findIndex(product => product.id === productId);
+        const index = this.products.findIndex(product => product.productId === productId);
         if (index !== -1) {
             const deletedProduct = this.products.splice(index, 1)[0];
             return deletedProduct;

@@ -3051,6 +3051,23 @@ a.dropdown-item:hover {
     text-decoration: none !important;
 }
 
+/* QuickView Modal hover effects */
+#quickViewModal .product-name:hover {
+    color: #E8A2B0 !important;
+    text-decoration: none !important;
+    transition: color 0.3s ease !important;
+}
+
+/* Ensure hover works when product name is wrapped in <a> inside various QuickView modals */
+#quickViewModal .product-name a:hover,
+#bestsellerQuickViewModal .product-name a:hover,
+#homepageBestsellerQuickViewModal .product-name a:hover,
+#homepageNewestQuickViewModal .product-name a:hover {
+    color: #E8A2B0 !important;
+    text-decoration: none !important;
+    transition: color 0.3s ease !important;
+}
+
 .brand-link:hover {
     color: #E8A2B0 !important;
     text-decoration: none !important;

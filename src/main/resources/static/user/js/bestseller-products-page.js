@@ -66,18 +66,7 @@ class BestsellerProductsPageManager {
         }
     }
 
-    async loadBrands() {
-        try {
-            const response = await fetch('/api/products/brands');
-            const data = await response.json();
 
-            if (data.code === 1000 && data.result) {
-                this.displayBrandFilters(data.result);
-            }
-        } catch (error) {
-            console.error('Error loading brands:', error);
-        }
-    }
 
     async loadBrands() {
         console.log('loadBrands called for bestseller products');
@@ -200,7 +189,7 @@ class BestsellerProductsPageManager {
             this.currentFilters.minPrice = minPrice;
             this.currentFilters.maxPrice = maxPrice;
         }
-}
+    }
 
     handleBrandFilterChange(event) {
         console.log('Brand filter changed:', event.target.value, event.target.checked);
@@ -235,7 +224,7 @@ class BestsellerProductsPageManager {
             this.currentFilters.maxPrice = maxPrice;
             console.log('Price filter set:', { minPrice, maxPrice });
         }
-// Get selected brands (dynamic) - now using brand names instead of IDs
+        // Get selected brands (dynamic) - now using brand names instead of IDs
         const brandCheckboxes = document.querySelectorAll('#brandFilters input[type="checkbox"]');
         this.currentFilters.brands = Array.from(brandCheckboxes)
             .filter(cb => cb.checked)
@@ -288,7 +277,7 @@ class BestsellerProductsPageManager {
                     params.append('sortDir', sortDir);
                 }
             }
-console.log('Loading products with params:', params.toString());
+            console.log('Loading products with params:', params.toString());
             console.log('Current filters:', this.currentFilters);
 
             const fullUrl = `/api/products/best-selling-advanced?${params}`;
@@ -303,21 +292,53 @@ console.log('Loading products with params:', params.toString());
             const data = await response.json();
             console.log('API response:', data);
 
-            if (data.code === 1000) {
-                this.products = data.result.content || [];
-                this.totalElements = data.result.totalElements || 0;
-                this.totalPages = data.result.totalPages || 0;
+            // Accept both 1000 and 200 as success codes
+            if (data && (data.code === 1000 || data.code === 200)) {
+                // Support both paged and array results
+                const result = data.result || {};
+                const items = Array.isArray(result) ? result : (result.content || []);
+                this.products = items || [];
+                this.totalElements = Array.isArray(result) ? this.products.length : (result.totalElements || this.products.length);
+                this.totalPages = Array.isArray(result) ? 1 : (result.totalPages || 1);
+
                 console.log('Products loaded:', this.products.length, 'Total:', this.totalElements);
 
                 // Hide loading spinner
                 this.showLoading(false);
 
-                // Check if no products found
+                // Render products and update UI
+                this.renderProducts();
+                this.updateResultsCount();
+                this.updatePagination();
+
+                // If empty, fallback to simple best-selling endpoint
                 if (this.products.length === 0) {
-                    this.showEmptyState('Không tìm thấy sản phẩm phù hợp');
+                    console.log('Advanced API returned empty. Falling back to /api/products/best-selling');
+                    try {
+                        const fallbackUrl = `/api/products/best-selling?limit=${this.pageSize}`;
+                        const fbRes = await fetch(fallbackUrl);
+                        if (fbRes.ok) {
+                            const fbData = await fbRes.json();
+                            if (fbData && (fbData.code === 1000 || fbData.code === 200)) {
+                                const fbItems = Array.isArray(fbData.result) ? fbData.result : (fbData.result?.content || []);
+                                this.products = fbItems || [];
+                                this.totalElements = this.products.length;
+                                this.totalPages = 1;
+                                this.renderProducts();
+                                this.updateResultsCount();
+                                this.updatePagination();
+                            }
+                        }
+                    } catch (e) {
+                        console.log('Fallback load error:', e);
+                    }
+
+                    if (this.products.length === 0) {
+                        this.showEmptyState('Không tìm thấy sản phẩm phù hợp');
+                    }
                 }
-} else {
-                console.log('API error:', data.message);
+            } else {
+                console.log('API error:', data?.message);
                 this.showLoading(false);
                 this.showEmptyState('Chưa có sản phẩm bán chạy nào');
             }
@@ -606,34 +627,16 @@ console.log('Loading products with params:', params.toString());
         }
     }
 
-        async addToCart(productId, productName, price) {
+    async addToCart(productId, productName, price) {
         try {
             // Sử dụng addProductToCartBackend để gọi API backend
             if (window.app && window.app.addProductToCartBackend) {
                 await window.app.addProductToCartBackend(productId, 1, true);
                 await window.app.refreshCartBadge?.();
             }
-} catch (error) {
+        } catch (error) {
             console.error('Add to cart error:', error);
             this.showNotification('Không thể thêm vào giỏ hàng. Vui lòng thử lại.', 'error');
-        }
-    }
-
-
-                    if (window.app.updateCartDisplay) {
-                        window.app.updateCartDisplay();
-                    }
-                    success = true;
-                }
-            }
-
-            // Show single notification based on success
-            if (success) {
-                this.showNotification(`${productName} đã được thêm vào giỏ hàng thành công!`, 'success');
-            }
-} catch (error) {
-            console.error('Error adding to cart:', error);
-            this.showNotification('Có lỗi xảy ra khi thêm vào giỏ hàng', 'error');
         }
     }
 
@@ -682,16 +685,16 @@ console.log('Loading products with params:', params.toString());
                                     <div class="product-image-slider">
                                         <!-- Main Image -->
                                         <div class="main-image-container mb-3">
-                                            <button class="slider-nav slider-prev" id="prevBtn">
-                                                <i class="fas fa-chevron-left"></i>
+                                            <button class="slider-nav slider-prev" id="quickViewPrevBtn">
+                                                <i class="mdi mdi-chevron-left"></i>
                                             </button>
                                             <img id="mainProductImage" 
                                                  src="${this.getMainImageUrl(product)}" 
                                                  class="img-fluid rounded" 
                                                  alt="${product.name}"
                                                  onerror="this.src='/user/img/default-product.jpg'">
-                                            <button class="slider-nav slider-next" id="nextBtn">
-                                                <i class="fas fa-chevron-right"></i>
+                                            <button class="slider-nav slider-next" id="quickViewNextBtn">
+                                                <i class="mdi mdi-chevron-right"></i>
                                             </button>
                                         </div>
                                         
@@ -707,31 +710,48 @@ console.log('Loading products with params:', params.toString());
                                 <!-- Product Info -->
                                 <div class="col-md-6">
                                     <h4 class="product-name mb-3">
-                                        <a href="/product/${product.productId || product.id}" class="text-decoration-none text-dark">
+                                        <a href="/product/${product.productId}" class="text-decoration-none text-dark">
                                             ${product.name}
                                         </a>
                                     </h4>
-                                    <p class="brand-name text-muted mb-2">${product.brandName || 'Thương hiệu'}</p>
+                                    <p class="brand-name text-muted mb-2">${product.brand || product.brandName || 'N/A'}</p>
                                     
                                     <!-- Product Status -->
                                     <div class="product-status mb-3">
-                                        ${this.getProductStatusBadge(product)}
-                                        <span class="ms-2 text-muted">Mã sản phẩm: ${product.productId || product.id}</span>
+                                        <span class="badge ${product.stock > 0 ? 'bg-success' : 'bg-danger'}">
+                                            ${product.stock > 0 ? 'Còn hàng' : 'Hết hàng'}
+                                        </span>
+                                        <span class="ms-2 text-muted">Mã sản phẩm: ${product.productId || 'N/A'}</span>
                                     </div>
                                     
                                     <!-- Rating -->
                                     <div class="rating mb-3">
                                         <span class="stars">
-                                            ${this.generateStarsForModal(product.averageRating || product.rating || 0, product.reviewCount || product.ratingCount || 0)}
+                                            ${this.renderStars(product.rating || product.averageRating || 0)}
                                         </span>
-                                        <span class="review-count ms-2">(${product.reviewCount || product.ratingCount || 0} đánh giá)</span>
+                                        <span class="review-count ms-2">(${product.reviewCount || 0} đánh giá)</span>
+                                    </div>
+                                    
+                                    <!-- Sales Progress -->
+                                    <div class="sales-progress mb-3">
+                                        <div class="sales-info d-flex justify-content-between align-items-center mb-1">
+                                            <span class="sales-label">Đã bán</span>
+                                            <span class="sales-count">${this.formatNumber(product.soldCount || 0)}</span>
+                                        </div>
+                                        <div class="progress">
+                                            <div class="progress-bar" 
+                                                 style="width: ${this.calculateSalesProgress(product.soldCount || 0)}%"
+                                                 role="progressbar">
+                                            </div>
+                                        </div>
                                     </div>
                                     
                                     <!-- Price -->
                                     <div class="price-section mb-4">
                                         <span class="current-price h4 text-primary">
-                                            ${this.formatPrice(product.currentPrice || product.price)}
+                                            ${this.formatCurrency(product.price)}
                                         </span>
+                                        ${product.originalPrice ? `<span class="text-muted ms-2"><s>${this.formatCurrency(product.originalPrice)}</s></span>` : ''}
                                     </div>
                                     
                                     <!-- Quantity Selector -->
@@ -739,26 +759,44 @@ console.log('Loading products with params:', params.toString());
                                         <div class="d-flex align-items-center">
                                             <label class="form-label mb-0" style="margin-right: 2rem;">Số lượng:</label>
                                             <div class="input-group" style="max-width: 150px;">
-                                                <button class="btn btn-outline-secondary" type="button" onclick="window.bestsellerProductsPageManager.decrementQuantity('${product.productId || product.id}')">-</button>
-                                                <input type="number" class="form-control text-center" value="1" min="1" max="${Math.min(product.stock || 10, 99)}" id="quantityInput_${product.productId || product.id}" onchange="window.bestsellerProductsPageManager.validateQuantity('${product.productId || product.id}')" oninput="window.bestsellerProductsPageManager.validateQuantity('${product.productId || product.id}')" onblur="window.bestsellerProductsPageManager.validateQuantityOnBlur('${product.productId || product.id}')">
-                                                <button class="btn btn-outline-secondary" type="button" onclick="window.bestsellerProductsPageManager.incrementQuantity('${product.productId || product.id}')">+</button>
+                                                <button class="btn btn-outline-secondary" type="button" onclick="window.bestsellerProductsPageManager.decrementQuantity()">-</button>
+                                                <input type="number" class="form-control text-center" value="1" min="1" max="${Math.min(product.stock || 10, 99)}" id="quantityInput" onchange="window.bestsellerProductsPageManager.validateQuantity()" oninput="window.bestsellerProductsPageManager.validateQuantity()" onblur="window.bestsellerProductsPageManager.validateQuantityOnBlur()">
+                                                <button class="btn btn-outline-secondary" type="button" onclick="window.bestsellerProductsPageManager.incrementQuantity()">+</button>
                                             </div>
                                         </div>
                                         <!-- Error Message -->
-                                        <div id="quantityError_${product.productId || product.id}" class="text-danger mt-2" style="display: none;">
-                                            <i class="fas fa-info-circle me-1"></i>
-                                            <span id="quantityErrorMessage_${product.productId || product.id}">Số lượng tối đa bạn có thể mua là ${Math.min(product.stock || 10, 99)}.</span>
+                                        <div id="quantityError" class="text-danger mt-2" style="display: none;">
+                                            <i class="mdi mdi-information me-1"></i>
+                                            <span id="quantityErrorMessage">Số lượng tối đa bạn có thể mua là ${Math.min(product.stock || 10, 99)}.</span>
                                         </div>
                                     </div>
                                     
                                     <!-- Actions -->
                                     <div class="d-grid gap-2">
-                                        ${this.getQuickViewActions(product)}
+                                        <!-- Buy Now & Add to Cart Buttons (Same Row) -->
+                                        <div class="row g-2">
+                                            <div class="col-6">
+                                                <button class="btn btn-danger btn-lg w-100" 
+                                                        onclick="window.bestsellerProductsPageManager.buyNow(${product.productId})"
+                                                        ${product.stock <= 0 ? 'disabled' : ''}>
+                                                    <i class="mdi mdi-lightning-bolt me-1"></i>
+                                                    ${product.stock > 0 ? 'Mua ngay' : 'Hết hàng'}
+                                                </button>
+                                            </div>
+                                            <div class="col-6">
+                                                <button class="btn btn-primary btn-lg w-100" 
+                                                        onclick="window.bestsellerProductsPageManager.addToCartWithQuantity(${product.productId})"
+                                                        ${product.stock <= 0 ? 'disabled' : ''}>
+                                                    <i class="mdi mdi-cart-plus me-1"></i>
+                                                    ${product.stock > 0 ? 'Thêm vào giỏ' : 'Hết hàng'}
+                                                </button>
+                                            </div>
+                                        </div>
                                         
                                         <!-- View Details Button -->
-                                        <a href="/product/${product.productId || product.id}" 
+                                        <a href="/product/${product.productId}" 
                                            class="btn btn-outline-primary btn-lg">
-                                            <i class="fas fa-info-circle me-2"></i>
+                                            <i class="mdi mdi-information me-2"></i>
                                             Xem chi tiết sản phẩm
                                         </a>
                                     </div>
@@ -774,21 +812,18 @@ console.log('Loading products with params:', params.toString());
         document.body.insertAdjacentHTML('beforeend', modalHTML);
 
         // Show modal
-        const modal = new bootstrap.Modal(document.getElementById('quickViewModal'), {
-            backdrop: true
-        });
+        const modal = new bootstrap.Modal(document.getElementById('quickViewModal'));
         modal.show();
 
-        // Add slider navigation event listeners
-        this.setupSliderNavigation(product);
+        // Add slider navigation event listeners after modal is shown
+        setTimeout(() => {
+            this.setupSliderNavigation(product);
+        }, 100);
 
-        // Clean up when modal is hidden
-        document.getElementById('quickViewModal').addEventListener('hidden.bs.modal', () => {
-            const modalElement = document.getElementById('quickViewModal');
-            if (modalElement) {
-                modalElement.remove();
-            }
-        }, { once: true });
+        // Remove modal from DOM when hidden
+        document.getElementById('quickViewModal').addEventListener('hidden.bs.modal', function () {
+            this.remove();
+        });
     }
 
     generateImageThumbnails(product) {
@@ -842,14 +877,14 @@ console.log('Loading products with params:', params.toString());
             <div class="row g-2">
                 <div class="col-6">
                     <button class="btn btn-danger btn-lg w-100" 
-                            onclick="window.bestsellerProductsPageManager.buyNow(${product.productId || product.id})">
+                            onclick="window.bestsellerProductsPageManager.buyNow(${product.productId})">
                         <i class="fas fa-bolt me-1"></i>
                         Mua ngay
                     </button>
                 </div>
                 <div class="col-6">
                     <button class="btn btn-primary btn-lg w-100" 
-                            onclick="event.preventDefault(); event.stopPropagation(); window.bestsellerProductsPageManager.addToCartWithQuantity(${product.productId || product.id})">
+                            onclick="event.preventDefault(); event.stopPropagation(); window.bestsellerProductsPageManager.addToCartWithQuantity(${product.productId})">
                         <i class="fas fa-shopping-cart me-1"></i>
                         Thêm vào giỏ
                     </button>
@@ -1009,7 +1044,7 @@ console.log('Loading products with params:', params.toString());
             errorMessage.textContent = 'Số lượng không thể nhỏ hơn 1.';
             quantityInput.classList.add('is-invalid');
         }
-}
+    }
 
     validateQuantityOnBlur(productId) {
         const quantityInput = document.getElementById(`quantityInput_${productId}`);
@@ -1019,23 +1054,36 @@ console.log('Loading products with params:', params.toString());
         this.validateQuantity(productId);
     }
 
-    // Buy now functionality
+    // Buy now functionality - chuẩn từ main.js
     async buyNow(productId) {
+        const quantityInput = document.getElementById('quantityInput');
+        const quantity = quantityInput ? parseInt(quantityInput.value) || 1 : 1;
+
+        // Get product info for notification
         const product = this.products.find(p => (p.productId || p.id) === productId);
-        if (!product) {
-            this.showNotification('Không tìm thấy sản phẩm!', 'error');
-            return;
+
+        // Sử dụng buyNowBackend để tick true sản phẩm trong cart
+        if (window.app && typeof window.app.buyNowBackend === 'function') {
+            try {
+                // Close modal trước
+                const modal = bootstrap.Modal.getInstance(document.getElementById('quickViewModal'));
+                if (modal) {
+                    modal.hide();
+                }
+
+                // Sử dụng buyNowBackend để tick true và chuyển checkout
+                await window.app.buyNowBackend(productId, quantity);
+            } catch (error) {
+                console.error('Buy now error:', error);
+                this.showNotification('Không thể thực hiện Mua ngay. Vui lòng thử lại.', 'error');
+            }
+        } else {
+            this.showNotification('Chức năng đang được tải...', 'error');
         }
-
-        // Add to cart first
-        await this.addToCart(productId, product.name, product.currentPrice || product.price);
-
-        // Redirect to checkout
-        window.location.href = '/checkout';
     }
 
-    // Add to cart with quantity
-        async addToCartWithQuantity(productId) {
+    // Add to cart with quantity - chuẩn từ main.js
+    async addToCartWithQuantity(productId) {
         const quantityInput = document.getElementById('quantityInput');
         const quantity = quantityInput ? parseInt(quantityInput.value) || 1 : 1;
 
@@ -1044,25 +1092,13 @@ console.log('Loading products with params:', params.toString());
             if (window.app && window.app.addProductToCartBackend) {
                 await window.app.addProductToCartBackend(productId, quantity, true);
                 await window.app.refreshCartBadge?.();
+            } else {
+                this.showNotification('Chức năng đang được tải...', 'error');
             }
-} catch (error) {
+        } catch (error) {
             console.error('Add to cart error:', error);
             this.showNotification('Không thể thêm vào giỏ hàng. Vui lòng thử lại.', 'error');
         }
-
-        // Close modal
-        const modal = bootstrap.Modal.getInstance(document.getElementById('quickViewModal'));
-        if (modal) {
-            modal.hide();
-        }
-    }
-
-        // Get quantity from input using unique ID
-        const quantityInput = document.getElementById(`quantityInput_${productId}`);
-        const quantity = quantityInput ? parseInt(quantityInput.value) || 1 : 1;
-
-        // Add to cart with quantity
-        this.addToCartWithQuantityValue(productId, product.name, product.currentPrice || product.price, quantity);
 
         // Close modal
         const modal = bootstrap.Modal.getInstance(document.getElementById('quickViewModal'));
@@ -1072,34 +1108,19 @@ console.log('Loading products with params:', params.toString());
     }
 
     // Add to cart with specific quantity
-        async addToCartWithQuantityValue(productId, productName, price, quantity) {
+    async addToCartWithQuantityValue(productId, productName, price, quantity) {
         try {
-            // Sử dụng addProductToCartBackend để gọi API backend
             if (window.app && window.app.addProductToCartBackend) {
                 await window.app.addProductToCartBackend(productId, quantity, true);
                 await window.app.refreshCartBadge?.();
-            }
-} catch (error) {
-            console.error('Add to cart error:', error);
-            this.showNotification('Không thể thêm vào giỏ hàng. Vui lòng thử lại.', 'error');
-        }
-    }
-
-
-                        if (window.app.updateCartDisplay) {
-                            window.app.updateCartDisplay();
-                        }
-                        success = true;
-                    }
+                if (window.app.updateCartDisplay) {
+                    window.app.updateCartDisplay();
                 }
             }
-
-            // Show single notification based on success
-            if (success) {
-                this.showNotification(`${quantity} x ${productName} đã được thêm vào giỏ hàng thành công!`, 'success');
-            }
-} catch (error) {
-            this.showNotification('Có lỗi xảy ra khi thêm vào giỏ hàng', 'error');
+            this.showNotification(`${quantity} x ${productName} đã được thêm vào giỏ hàng thành công!`, 'success');
+        } catch (error) {
+            console.error('Add to cart error:', error);
+            this.showNotification('Không thể thêm vào giỏ hàng. Vui lòng thử lại.', 'error');
         }
     }
 
@@ -1108,11 +1129,11 @@ console.log('Loading products with params:', params.toString());
         toast.className = `toast align-items-center text-white bg-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} border-0`;
         toast.setAttribute('role', 'alert');
         toast.innerHTML = `
-            <div class="d-flex">
-                <div class="toast-body">${message}</div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-            </div>
-        `;
+                <div class="d-flex">
+                    <div class="toast-body">${message}</div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            `;
 
         let container = document.querySelector('.bestseller-page-toast-container');
         if (!container) {
@@ -1165,6 +1186,43 @@ console.log('Loading products with params:', params.toString());
 
     formatNumber(number) {
         return new Intl.NumberFormat('vi-VN').format(number);
+    }
+
+    // Render stars for rating - chuẩn từ main.js
+    renderStars(rating) {
+        const fullStars = Math.floor(rating);
+        const hasHalfStar = rating % 1 >= 0.5;
+        const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+
+        let starsHTML = '';
+
+        // Full stars
+        for (let i = 0; i < fullStars; i++) {
+            starsHTML += '<i class="mdi mdi-star text-warning"></i>';
+        }
+
+        // Half star
+        if (hasHalfStar) {
+            starsHTML += '<i class="mdi mdi-star-half text-warning"></i>';
+        }
+
+        // Empty stars
+        for (let i = 0; i < emptyStars; i++) {
+            starsHTML += '<i class="mdi mdi-star-outline text-muted"></i>';
+        }
+
+        return starsHTML;
+    }
+
+    // Format currency - chuẩn từ main.js
+    formatCurrency(amount) {
+        if (typeof amount !== 'number') {
+            amount = parseFloat(amount) || 0;
+        }
+        return new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND'
+        }).format(amount);
     }
 }
 

@@ -637,7 +637,7 @@ class SimilarProductsManager {
         }, 100); // Small delay to ensure modal is rendered
     }
 
-    // Buy now functionality
+    // Buy now functionality - chuẩn từ bestseller-products.js
     async buyNow(productId) {
         const product = this.allProducts.find(p => p.productId === productId);
         if (!product) {
@@ -645,11 +645,27 @@ class SimilarProductsManager {
             return;
         }
 
-        // Add to cart first
-        await this.addToCart(productId, product.name, product.price);
+        // Lấy số lượng từ input trong QuickView
+        const quantityInput = document.getElementById(`quickViewQuantityInput_${productId}`);
+        const quantity = quantityInput ? (parseInt(quantityInput.value) || 1) : 1;
 
-        // Redirect to checkout
-        window.location.href = '/checkout';
+        // Đóng modal trước khi chuyển trang
+        const modal = bootstrap.Modal.getInstance(document.getElementById('quickViewModal'));
+        if (modal) {
+            modal.hide();
+        }
+
+        // Gọi buyNowBackend để thêm vào giỏ (tick choose=true) và chuyển tới checkout
+        if (window.app && typeof window.app.buyNowBackend === 'function') {
+            try {
+                await window.app.buyNowBackend(productId, quantity);
+            } catch (error) {
+                console.error('buyNow error:', error);
+                this.showNotification('Không thể thực hiện Mua ngay. Vui lòng thử lại.', 'error');
+            }
+        } else {
+            this.showNotification('Chức năng đang được tải...', 'error');
+        }
     }
 
     // Quantity management methods for quick view modal

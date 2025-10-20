@@ -293,7 +293,7 @@ class ProductDetailManager {
                     <div class="card-body">
                         <h6 class="card-title">${product.name}</h6>
                         <p class="card-text">${this.formatPrice(product.price)}</p>
-                        <a href="/product/${product.id}" class="btn btn-outline-pink btn-sm">
+                        <a href="/product/${product.productId}" class="btn btn-outline-pink btn-sm">
                             Xem chi tiết
                         </a>
                     </div>
