@@ -21,7 +21,17 @@
                                            aria-selected="true">Thống kê doanh thu</a>
                                     </li>
                                 </ul>
+                                <div class="d-flex gap-2 mb-2">
+                                    <button id="exportExcel" class="btn btn-outline-success btn-sm">
+                                        <i class="mdi mdi-file-excel"></i> Xuất Excel
+                                    </button>
+                                    <button id="exportPDF" class="btn btn-outline-danger btn-sm">
+                                        <i class="mdi mdi-file-pdf"></i> Xuất PDF
+                                    </button>
+                                </div>
                             </div>
+
+
 
                             <div class="tab-content tab-content-basic mt-3">
                                 <div class="tab-pane fade show active" id="revenue" role="tabpanel">
@@ -29,7 +39,7 @@
                                          aria-labelledby="overview">
                                         <div th:replace="~{admin/analytics/components/statistics-cards}"></div>
                                     <!-- BIỂU ĐỒ DOANH THU -->
-                                    <div class="card card-rounded shadow-sm">
+                                    <div class="card card-rounded shadow-sm mb-4">
                                         <div class="card-body">
                                             <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
                                                 <h4 class="card-title card-title-dash mb-2">
@@ -96,6 +106,12 @@
 <div th:replace="~{admin/fragments/admin-scripts :: admin-scripts}"></div>
 
 <!-- ================= CUSTOM SCRIPT ================= -->
+<!-- Thư viện xuất Excel -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<!-- Thư viện xuất PDF (html2pdf + html2canvas + jsPDF) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 
@@ -120,7 +136,6 @@
         const endInputEl = document.getElementById("endDate");
         if (new Date(endInputEl.value) > today) {
             endInputEl.value = todayStr;
-            endDate = today.toISOString();
         }
 
         async function loadChart() {
@@ -277,7 +292,45 @@
             loadChart();
         }
 
-        loadChart(); // Mặc định khi mở trang
+        loadChart();// Mặc định khi mở trang
+
+        // ====== XUẤT TOÀN TRANG THỐNG KÊ ======
+        document.getElementById("exportExcel").addEventListener("click", function () {
+            const reportElement = document.querySelector(".content-wrapper");
+            if (!reportElement) {
+                alert("⚠️ Không tìm thấy nội dung để xuất!");
+                return;
+            }
+
+            // Lấy toàn bộ text trong khu vực content
+            const textContent = reportElement.innerText.split("\n").filter(line => line.trim() !== "");
+            const exportData = textContent.map(line => [line]);
+
+            const ws = XLSX.utils.aoa_to_sheet(exportData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Báo cáo");
+
+            const now = new Date().toISOString().split("T")[0];
+            XLSX.writeFile(wb, `BaoCao_Liora_${now}.xlsx`);
+        });
+
+        document.getElementById("exportPDF").addEventListener("click", function () {
+            const reportElement = document.querySelector(".content-wrapper");
+            if (!reportElement) {
+                alert("⚠️ Không tìm thấy nội dung để xuất!");
+                return;
+            }
+
+            const opt = {
+                margin:       0.5,
+                filename:     `BaoCao_Liora_${new Date().toISOString().split("T")[0]}.pdf`,
+                image:        { type: 'jpeg', quality: 0.95 },
+                html2canvas:  { scale: 2, useCORS: true },
+                jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+            };
+
+            html2pdf().set(opt).from(reportElement).save();
+        });
     });
 </script>
 

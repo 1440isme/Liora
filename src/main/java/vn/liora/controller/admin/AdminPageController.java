@@ -196,8 +196,8 @@ public class AdminPageController {
         model.addAttribute("returningCustomers", dashboardService.getReturningCustomers());
         model.addAttribute("newCustomersThisMonth", dashboardService.getNewCustomersThisMonth());
 
-        model.addAttribute("recentOrders", dashboardService.getRecentOrders(10));
-        model.addAttribute("topProducts", dashboardService.getTopProducts(10));
+        model.addAttribute("recentOrders", dashboardService.getRecentOrders(15));
+        model.addAttribute("topProducts", dashboardService.getTopProducts(15));
         model.addAttribute("lowStockProducts", dashboardService.getLowStockProductsList(10));
         model.addAttribute("topCustomers", dashboardService.getTopCustomers(10));
         return "admin/analytics/index";
