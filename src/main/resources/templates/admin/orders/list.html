@@ -144,12 +144,24 @@
                                 </div>
 
                                 <div class="col-md-2 mb-3">
-                                    <label class="form-label">Trạng thái</label>
+                                    <label class="form-label">Trạng thái đơn hàng</label>
                                     <select class="form-select" id="filterOrderStatus">
                                         <option value="">Tất cả</option>
                                         <option value="PENDING">Chờ xử lý</option>
                                         <option value="COMPLETED">Hoàn tất</option>
                                         <option value="CANCELLED">Đã hủy</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-2 mb-3">
+                                    <label class="form-label">Trạng thái thanh toán</label>
+                                    <select class="form-select" id="filterPaymentStatus">
+                                        <option value="">Tất cả</option>
+                                        <option value="PENDING">Chờ thanh toán</option>
+                                        <option value="PAID">Đã thanh toán</option>
+                                        <option value="FAILED">Thất bại</option>
+                                        <option value="CANCELLED">Đã hủy</option>
+                                        <option value="REFUNDED">Đã hoàn tiền</option>
                                     </select>
                                 </div>
 
@@ -170,13 +182,14 @@
                                 <table class="table table-hover align-middle">
                                     <thead class="table-light">
                                         <tr>
-                                            <th scope="col" width="5%"></th>
-                                            <th scope="col" width="12%">Mã đơn hàng</th>
-                                            <th scope="col" width="15%">Thời gian đặt</th>
-                                            <th scope="col" width="20%">Khách hàng</th>
-                                            <th scope="col" width="18%">Tổng tiền</th>
-                                            <th scope="col" width="18%">Trạng thái</th>
-                                            <th scope="col" width="12%">Thao tác</th>
+                                            <th scope="col" width="4%"></th>
+                                            <th scope="col" width="10%">Mã đơn hàng</th>
+                                            <th scope="col" width="12%">Thời gian đặt</th>
+                                            <th scope="col" width="18%">Khách hàng</th>
+                                            <th scope="col" width="15%">Tổng tiền</th>
+                                            <th scope="col" width="15%">Thanh toán</th>
+                                            <th scope="col" width="15%">Trạng thái</th>
+                                            <th scope="col" width="11%">Thao tác</th>
                                         </tr>
                                     </thead>
                                     <tbody id="orderTableBody">
@@ -265,8 +278,16 @@
                                             <td class="fw-bold text-primary" id="modalTotalAmount"></td>
                                         </tr>
                                         <tr>
-                                            <td class="fw-medium">Trạng thái:</td>
+                                            <td class="fw-medium">Trạng thái đơn hàng:</td>
                                             <td id="modalOrderStatus"></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-medium">Trạng thái thanh toán:</td>
+                                            <td id="modalPaymentStatus"></td>
+                                        </tr>
+                                        <tr>
+                                            <td class="fw-medium">Phương thức thanh toán:</td>
+                                            <td id="modalPaymentMethod"></td>
                                         </tr>
                                         <tr>
                                             <td class="fw-medium">Ghi chú:</td>
@@ -319,6 +340,17 @@
                                 <option value="PENDING">Chờ xử lý</option>
                                 <option value="COMPLETED">Hoàn tất</option>
                                 <option value="CANCELLED">Đã hủy</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="updatePaymentStatus" class="form-label">Trạng thái thanh toán</label>
+                            <select class="form-select" id="updatePaymentStatus" required>
+                                <option value="PENDING">Chờ thanh toán</option>
+                                <option value="PAID">Đã thanh toán</option>
+                                <option value="FAILED">Thất bại</option>
+                                <option value="CANCELLED">Đã hủy</option>
+                                <option value="REFUNDED">Đã hoàn tiền</option>
                             </select>
                         </div>
                     </form>

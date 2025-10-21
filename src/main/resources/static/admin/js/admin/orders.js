@@ -78,6 +78,10 @@ class OrderManager {
             this.filterOrders();
         });
 
+        $('#filterPaymentStatus').on('change', () => {
+            this.filterOrders();
+        });
+
         $('#filterDateFrom, #filterDateTo').on('change', () => {
             this.filterOrders();
         });
@@ -238,7 +242,7 @@ class OrderManager {
         if (this.filteredOrders.length === 0) {
             tbody.append(`
                 <tr>
-                    <td colspan="7" class="text-center py-4">
+                    <td colspan="8" class="text-center py-4">
                         <i class="mdi mdi-cart-off mdi-48px text-muted mb-3"></i>
                         <p class="text-muted">Không có đơn hàng nào</p>
                     </td>
@@ -317,6 +321,13 @@ class OrderManager {
                 currency: 'VND'
             }).format(order.total || 0)}
                         </span>
+                    </td>
+                    <td>
+                        <span class="badge ${this.getPaymentStatusClass(order.paymentStatus)}">
+                            ${this.getPaymentStatusText(order.paymentStatus)}
+                        </span>
+                        <br>
+                        <small class="text-muted">${this.getPaymentMethodText(order.paymentMethod)}</small>
                     </td>
                     <td>
                         <span class="badge ${this.getOrderStatusClass(order.orderStatus)}">
@@ -410,6 +421,23 @@ class OrderManager {
             // Show update status modal với string values
             $('#updateOrderId').val(orderId);
             $('#updateOrderStatus').val(order.orderStatus || 'PENDING'); // Set string value
+            $('#updatePaymentStatus').val(order.paymentStatus || 'PENDING'); // Set payment status
+            
+            // Bind event để tự động cập nhật trạng thái thanh toán khi thay đổi trạng thái đơn hàng
+            $('#updateOrderStatus').off('change').on('change', function() {
+                const selectedOrderStatus = $(this).val();
+                const currentPaymentStatus = $('#updatePaymentStatus').val();
+                const currentOrderStatus = order.orderStatus;
+                
+                if (selectedOrderStatus === 'COMPLETED' && currentPaymentStatus === 'PENDING') {
+                    $('#updatePaymentStatus').val('PAID');
+                } else if (selectedOrderStatus === 'CANCELLED' && currentPaymentStatus === 'PAID') {
+                    $('#updatePaymentStatus').val('REFUNDED');
+                } else if (selectedOrderStatus === 'PENDING' && currentPaymentStatus === 'REFUNDED' && currentOrderStatus === 'COMPLETED') {
+                    $('#updatePaymentStatus').val('PAID');
+                }
+            });
+            
             $('#updateStatusModal').modal('show');
 
         } catch (error) {
@@ -422,11 +450,35 @@ class OrderManager {
         try {
             const orderId = $('#updateOrderId').val();
             const orderStatus = $('#updateOrderStatus').val(); // Keep as string
+            const paymentStatus = $('#updatePaymentStatus').val(); // Get payment status
+
+            // Tự động cập nhật trạng thái thanh toán dựa trên trạng thái đơn hàng
+            let finalPaymentStatus = paymentStatus;
+            const order = this.orders.find(o => o.idOrder == orderId);
+            const currentOrderStatus = order ? order.orderStatus : '';
+            
+            if (orderStatus === 'COMPLETED') {
+                // Nếu đơn hàng hoàn tất, tự động đặt thanh toán thành "Đã thanh toán" nếu đang "Chờ thanh toán"
+                if (paymentStatus === 'PENDING') {
+                    finalPaymentStatus = 'PAID';
+                }
+            } else if (orderStatus === 'CANCELLED') {
+                // Nếu đơn hàng hủy và đã thanh toán, chuyển thành "Đã hoàn tiền"
+                if (paymentStatus === 'PAID') {
+                    finalPaymentStatus = 'REFUNDED';
+                }
+            } else if (orderStatus === 'PENDING') {
+                // Nếu đơn hàng từ COMPLETED chuyển về PENDING và đã hoàn tiền, chuyển về "Đã thanh toán"
+                if (paymentStatus === 'REFUNDED' && currentOrderStatus === 'COMPLETED') {
+                    finalPaymentStatus = 'PAID';
+                }
+            }
 
             const response = await this.fetchWithAuth(`${this.baseUrl}/${orderId}`, {
                 method: 'PUT',
                 body: JSON.stringify({
-                    orderStatus: orderStatus // Send only order status
+                    orderStatus: orderStatus,
+                    paymentStatus: finalPaymentStatus
                 })
             });
 
@@ -476,6 +528,7 @@ class OrderManager {
 
     filterOrders() {
         const orderStatus = $('#filterOrderStatus').val();
+        const paymentStatus = $('#filterPaymentStatus').val();
         const dateFrom = $('#filterDateFrom').val();
         const dateTo = $('#filterDateTo').val();
 
@@ -486,6 +539,11 @@ class OrderManager {
             // Filter by order status - now supports string values
             if (orderStatus !== '') {
                 matches = matches && (order.orderStatus === orderStatus);
+            }
+
+            // Filter by payment status
+            if (paymentStatus !== '') {
+                matches = matches && (order.paymentStatus === paymentStatus);
             }
 
             // Filter by date range
@@ -581,6 +639,7 @@ class OrderManager {
         this.currentPage = 1;
         $('#searchOrder').val('');
         $('#filterOrderStatus').val('');
+        $('#filterPaymentStatus').val('');
 
         // Thiết lập lại thời gian mặc định thay vì xóa trống
         this.setDefaultDateRange();
@@ -635,6 +694,55 @@ class OrderManager {
                 return 'Hoàn tất';
             default:
                 return 'Không xác định';
+        }
+    }
+
+    getPaymentStatusClass(status) {
+        switch (status) {
+            case 'PAID':
+                return 'bg-success';
+            case 'PENDING':
+                return 'bg-warning';
+            case 'FAILED':
+                return 'bg-danger';
+            case 'CANCELLED':
+                return 'bg-secondary';
+            case 'REFUNDED':
+                return 'bg-info';
+            default:
+                return 'bg-info';
+        }
+    }
+
+    getPaymentStatusText(status) {
+        switch (status) {
+            case 'PAID':
+                return 'Đã thanh toán';
+            case 'PENDING':
+                return 'Chờ thanh toán';
+            case 'FAILED':
+                return 'Thất bại';
+            case 'CANCELLED':
+                return 'Đã hủy';
+            case 'REFUNDED':
+                return 'Đã hoàn tiền';
+            default:
+                return 'Không xác định';
+        }
+    }
+
+    getPaymentMethodText(method) {
+        switch (method) {
+            case 'CASH':
+                return 'Tiền mặt';
+            case 'BANK_TRANSFER':
+                return 'Chuyển khoản';
+            case 'VNPAY':
+                return 'VNPay';
+            case 'COD':
+                return 'Thanh toán khi nhận hàng';
+            default:
+                return method || 'Không xác định';
         }
     }
 
