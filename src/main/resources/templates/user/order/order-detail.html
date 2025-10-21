@@ -189,7 +189,7 @@
                                         <td class="fw-medium">Phương thức:</td>
                                         <td th:text="${order.paymentMethod}"></td>
                                     </tr>
-                                    <tr>
+                                    <tr class="order-status-row">
                                         <td class="fw-medium">Trạng thái đơn hàng:</td>
                                         <td>
                                             <span class="status-badge"
@@ -205,7 +205,7 @@
                                             </span>
                                         </td>
                                     </tr>
-                                    <tr>
+                                    <tr class="payment-status-row">
                                         <td class="fw-medium">Trạng thái thanh toán:</td>
                                         <td>
                                             <span class="status-badge"
@@ -360,6 +360,21 @@
 
         .btn-warning.text-white {
             color: white !important;
+        }
+
+        /* Tăng khoảng cách giữa trạng thái đơn hàng và trạng thái thanh toán */
+        .order-status-row {
+            margin-bottom: 1rem;
+        }
+
+        .payment-status-row {
+            margin-top: 0.5rem;
+        }
+
+        .order-status-row td,
+        .payment-status-row td {
+            padding-top: 0.75rem;
+            padding-bottom: 0.75rem;
         }
 
         .btn-warning.text-white i {
