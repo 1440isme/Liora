@@ -174,16 +174,15 @@ public class OrderServiceImpl implements IOrderService {
             orderProducts.forEach(op -> op.setOrder(savedOrder));
             orderProductRepository.saveAll(orderProducts);
 
-            // Cập nhật stock cho từng sản phẩm trong đơn hàng
+            // Cập nhật stock cho từng sản phẩm trong đơn hàng (chỉ giảm stock, không tăng sold count)
             for (OrderProduct orderProduct : orderProducts) {
                 try {
                     Product product = orderProduct.getProduct();
                     Integer currentStock = product.getStock();
                     Integer orderedQuantity = orderProduct.getQuantity();
                     Integer newStock = currentStock - orderedQuantity;
-                    // Cập nhật stock và sold count
+                    // Chỉ cập nhật stock, sold count sẽ tăng khi đơn hàng hoàn tất
                     productService.updateStock(product.getProductId(), newStock);
-                    productService.updateSoldCount(product.getProductId(), product.getSoldCount() + orderedQuantity);
 
                     log.info("Updated stock for product {}: {} -> {} (ordered: {})",
                             product.getProductId(), currentStock, newStock, orderedQuantity);
@@ -329,9 +328,107 @@ public class OrderServiceImpl implements IOrderService {
         Order order = orderRepository.findById(idOrder)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
 
+        // Lưu trạng thái hiện tại
+        String currentPaymentStatus = order.getPaymentStatus();
+        String currentOrderStatus = order.getOrderStatus();
+        
+        // Cập nhật trạng thái đơn hàng
         orderMapper.updateOrder(order, request);
+        
+        // Tự động cập nhật trạng thái thanh toán và sold count dựa trên trạng thái đơn hàng
+        String newOrderStatus = request.getOrderStatus();
+        if ("COMPLETED".equals(newOrderStatus)) {
+            // Nếu đơn hàng hoàn tất và đã thanh toán, giữ nguyên trạng thái thanh toán
+            // Nếu chưa thanh toán, tự động đặt thành "Đã thanh toán"
+            if ("PENDING".equals(currentPaymentStatus)) {
+                order.setPaymentStatus("PAID");
+            }
+            
+            // Cập nhật sold count = số lượng sản phẩm trong đơn hàng khi hoàn tất
+            updateSoldCountForOrder(order, true);
+        } else {
+            // Tất cả các trạng thái khác (PENDING, CANCELLED): sold count = 0
+            if ("COMPLETED".equals(currentOrderStatus)) {
+                updateSoldCountForOrder(order, false);
+            }
+            
+            // Cập nhật trạng thái thanh toán cho các trường hợp khác
+            if ("CANCELLED".equals(newOrderStatus)) {
+                // Nếu đơn hàng bị hủy và đã thanh toán, chuyển thành "Đã hoàn tiền"
+                if ("PAID".equals(currentPaymentStatus)) {
+                    order.setPaymentStatus("REFUNDED");
+                }
+            } else if ("PENDING".equals(newOrderStatus)) {
+                // Nếu đơn hàng từ COMPLETED chuyển về PENDING và đã hoàn tiền, chuyển về "Đã thanh toán"
+                if ("REFUNDED".equals(currentPaymentStatus) && "COMPLETED".equals(currentOrderStatus)) {
+                    order.setPaymentStatus("PAID");
+                }
+            }
+        }
+        
         order = orderRepository.save(order);
         return orderMapper.toOrderResponse(order);
+    }
+
+    /**
+     * Cập nhật sold count cho các sản phẩm trong đơn hàng
+     * @param order đơn hàng
+     * @param isCompleted true nếu đơn hàng hoàn tất (+ số lượng), false nếu không hoàn tất (- số lượng)
+     */
+    private void updateSoldCountForOrder(Order order, boolean isCompleted) {
+        try {
+            List<OrderProduct> orderProducts = orderProductRepository.findByOrder(order);
+            for (OrderProduct orderProduct : orderProducts) {
+                try {
+                    Product product = orderProduct.getProduct();
+                    Integer currentSoldCount = product.getSoldCount();
+                    Integer quantity = orderProduct.getQuantity();
+                    Integer newSoldCount = isCompleted ? 
+                        currentSoldCount + quantity : 
+                        Math.max(0, currentSoldCount - quantity); // Đảm bảo không âm
+                    
+                    productService.updateSoldCount(product.getProductId(), newSoldCount);
+                    
+                    log.info("Updated sold count for product {}: {} -> {} (quantity: {}, isCompleted: {})",
+                            product.getProductId(), currentSoldCount, newSoldCount, quantity, isCompleted);
+                            
+                } catch (Exception e) {
+                    log.error("Error updating sold count for product {}: {}",
+                            orderProduct.getProduct().getProductId(), e.getMessage());
+                }
+            }
+        } catch (Exception e) {
+            log.error("Error updating sold count for order {}: {}", order.getIdOrder(), e.getMessage());
+        }
+    }
+
+    /**
+     * Hoàn lại stock cho các sản phẩm trong đơn hàng bị hủy
+     * @param order đơn hàng bị hủy
+     */
+    private void restoreStockForOrder(Order order) {
+        try {
+            List<OrderProduct> orderProducts = orderProductRepository.findByOrder(order);
+            for (OrderProduct orderProduct : orderProducts) {
+                try {
+                    Product product = orderProduct.getProduct();
+                    Integer currentStock = product.getStock();
+                    Integer quantity = orderProduct.getQuantity();
+                    Integer newStock = currentStock + quantity;
+                    
+                    productService.updateStock(product.getProductId(), newStock);
+                    
+                    log.info("Restored stock for product {}: {} -> {} (quantity: {})",
+                            product.getProductId(), currentStock, newStock, quantity);
+                            
+                } catch (Exception e) {
+                    log.error("Error restoring stock for product {}: {}",
+                            orderProduct.getProduct().getProductId(), e.getMessage());
+                }
+            }
+        } catch (Exception e) {
+            log.error("Error restoring stock for order {}: {}", order.getIdOrder(), e.getMessage());
+        }
     }
 
     @Override
