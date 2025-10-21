@@ -735,7 +735,7 @@ class BestsellerProductsPageManager {
                                     <!-- Rating -->
                                     <div class="rating mb-3">
                                         <span class="stars">
-                                            ${this.renderStars(product.rating || product.averageRating || 0)}
+                                            ${this.generateStarsForModal(product.rating || product.averageRating || 0, product.reviewCount || 0)}
                                         </span>
                                         <span class="review-count ms-2">(${product.reviewCount || 0} đánh giá)</span>
                                     </div>
