@@ -462,11 +462,13 @@ h3 {
     transition: all 0.3s ease;
 }
 
-#quickViewModal .btn-outline-primary:hover {
-    background: var(--pink-dark);
-    border-color: var(--pink-dark);
+#quickViewModal .btn-outline-primary:hover,
+#homepageBestsellerQuickViewModal .btn-outline-primary:hover {
+    background: linear-gradient(135deg, #FF6B9D 0%, #E91E63 100%);
+    border-color: #FF6B9D;
     color: white;
     transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(255, 107, 157, 0.4);
 }
 
 /* Quantity Validation Styles */

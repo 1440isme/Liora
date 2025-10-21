@@ -751,6 +751,9 @@ class BestsellerProductsManager {
             if (window.app && window.app.addProductToCartBackend) {
                 await window.app.addProductToCartBackend(productId, 1, true);
                 await window.app.refreshCartBadge?.();
+                if (window.cartPage && typeof window.cartPage.loadCartData === 'function') {
+                    await window.cartPage.loadCartData();
+                }
             } else {
                 this.showNotification('Chức năng đang được tải...', 'error');
             }
@@ -798,6 +801,9 @@ class BestsellerProductsManager {
             if (window.app && window.app.addProductToCartBackend) {
                 await window.app.addProductToCartBackend(productId, quantity, true);
                 await window.app.refreshCartBadge?.();
+                if (window.cartPage && typeof window.cartPage.loadCartData === 'function') {
+                    await window.cartPage.loadCartData();
+                }
             } else {
                 this.showNotification('Chức năng đang được tải...', 'error');
             }
