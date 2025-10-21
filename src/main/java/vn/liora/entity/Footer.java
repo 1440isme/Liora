@@ -24,7 +24,7 @@ public class Footer {
     @Column(name = "brand_name", nullable = false, columnDefinition = "NVARCHAR(255)")
     private String brandName;
 
-    @Column(name = "brand_description", columnDefinition = "TEXT")
+    @Column(name = "brand_description", columnDefinition = "NVARCHAR(255)")
     private String brandDescription;
 
     @Column(name = "is_active", nullable = false)

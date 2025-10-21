@@ -15,4 +15,7 @@ public class OrderUpdateRequest {
     @NotBlank(message = "Trạng thái đơn hàng không được để trống")
     @Pattern(regexp = "^(PENDING|COMPLETED|CANCELLED)$", message = "Trạng thái đơn hàng không hợp lệ")
     String orderStatus;
+
+    @Pattern(regexp = "^(PENDING|PAID|FAILED|CANCELLED|REFUNDED)$", message = "Trạng thái thanh toán không hợp lệ")
+    String paymentStatus;
 }
