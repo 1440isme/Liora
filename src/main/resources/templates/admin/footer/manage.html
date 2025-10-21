@@ -325,7 +325,7 @@
                         '<div class="col-md-3">' +
                         '<select class="form-select form-select-sm footer-link-type" ' +
                         'name="columns[' + index + '].items[' + itemIndex + '].linkType" data-index="' + index + '" data-item-index="' + itemIndex + '">' +
-                        '<option value="CATEGORY" ' + (item.linkType === 'CATEGORY' ? 'selected' : '') + '>Danh mục</option>' +
+                        '<option value="PARENT_CATEGORY" ' + (item.linkType === 'PARENT_CATEGORY' ? 'selected' : '') + '>Danh mục</option>' +
                         '<option value="PAGE" ' + (item.linkType === 'PAGE' ? 'selected' : '') + '>Trang</option>' +
                         '<option value="INTERNAL" ' + (item.linkType === 'INTERNAL' ? 'selected' : '') + '>Nội bộ</option>' +
                         '<option value="EXTERNAL" ' + (item.linkType === 'EXTERNAL' ? 'selected' : '') + '>Ngoài</option>' +
@@ -430,7 +430,7 @@
                 '<div class="col-md-3">' +
                 '<select class="form-select form-select-sm footer-link-type" ' +
                 'name="columns[' + columnIndex + '].items[' + itemIndex + '].linkType" data-index="' + columnIndex + '" data-item-index="' + itemIndex + '">' +
-                '<option value="CATEGORY">Danh mục</option>' +
+                '<option value="PARENT_CATEGORY">Danh mục</option>' +
                 '<option value="PAGE">Trang</option>' +
                 '<option value="INTERNAL">Nội bộ</option>' +
                 '<option value="EXTERNAL">Ngoài</option>' +
@@ -693,13 +693,16 @@
                                 <p class="text-light-muted mb-0">© 2025 Liora. All rights reserved.</p>
                             </div>
                             <div class="col-md-6 text-md-end">
-                                <div class="payment-methods d-flex justify-content-md-end gap-2 mt-2 mt-md-0">
-                                    <i class="fab fa-cc-visa fs-4 text-light-muted"></i>
-                                    <i class="fab fa-cc-mastercard fs-4 text-light-muted"></i>
-                                    <i class="fab fa-cc-paypal fs-4 text-light-muted"></i>
-                                    <i class="fab fa-cc-apple-pay fs-4 text-light-muted"></i>
-                                </div>
-                            </div>
+                <div class="payment-methods d-flex justify-content-md-end gap-2 mt-2 mt-md-0"
+                    id="footer-payment-methods">
+                    <i class="fab fa-cc-visa fs-4 text-light-muted"></i>
+                    <i class="fab fa-cc-mastercard fs-4 text-light-muted"></i>
+                    <img src="https://cdn.haitrieu.com/wp-content/uploads/2022/10/Icon-VNPAY-QR.png" alt="VNPAY"
+                        class="payment-logo" style="height: 24px;" title="VNPAY">
+                    <img src="https://upload.wikimedia.org/wikipedia/vi/f/fe/MoMo_Logo.png" alt="MOMO"
+                        class="payment-logo" style="height: 24px;" title="MOMO">
+                </div>
+            </div>
                         </div>
                     </div>
                 </div>
@@ -882,13 +885,16 @@
                                 <p class="text-light-muted mb-0">© 2025 Liora. All rights reserved.</p>
                             </div>
                             <div class="col-md-6 text-md-end">
-                                <div class="payment-methods d-flex justify-content-md-end gap-2 mt-2 mt-md-0">
-                                    <i class="fab fa-cc-visa fs-4 text-light-muted"></i>
-                                    <i class="fab fa-cc-mastercard fs-4 text-light-muted"></i>
-                                    <i class="fab fa-cc-paypal fs-4 text-light-muted"></i>
-                                    <i class="fab fa-cc-apple-pay fs-4 text-light-muted"></i>
-                                </div>
-                            </div>
+                <div class="payment-methods d-flex justify-content-md-end gap-2 mt-2 mt-md-0"
+                    id="footer-payment-methods">
+                    <i class="fab fa-cc-visa fs-4 text-light-muted"></i>
+                    <i class="fab fa-cc-mastercard fs-4 text-light-muted"></i>
+                    <img src="https://cdn.haitrieu.com/wp-content/uploads/2022/10/Icon-VNPAY-QR.png" alt="VNPAY"
+                        class="payment-logo" style="height: 24px;" title="VNPAY">
+                    <img src="https://upload.wikimedia.org/wikipedia/vi/f/fe/MoMo_Logo.png" alt="MOMO"
+                        class="payment-logo" style="height: 24px;" title="MOMO">
+                </div>
+            </div>
                         </div>
                     </div>
                 </div>

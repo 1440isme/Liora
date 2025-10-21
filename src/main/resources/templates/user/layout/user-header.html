@@ -229,13 +229,9 @@
                                 navLink.className = 'nav-link nav-button';
                                 navLink.textContent = item.title.toUpperCase();
 
-                                // Add click handler
+                                // Add click handler - all links load in current tab
                                 navLink.addEventListener('click', function (e) {
-                                    if (item.linkType === 'EXTERNAL') {
-                                        // External links open in new tab
-                                        e.preventDefault();
-                                        window.open(href, '_blank');
-                                    }
+                                    // All links load in current tab, no special handling needed
                                 });
 
                                 navItem.appendChild(navLink);
@@ -287,13 +283,8 @@
                             a.href = href;
                             a.textContent = subItem.title;
 
-                            // Add click handler for external links
-                            if (subItem.linkType === 'EXTERNAL') {
-                                a.addEventListener('click', function (e) {
-                                    e.preventDefault();
-                                    window.open(href, '_blank');
-                                });
-                            }
+                            // All dropdown items load in current tab
+                            // No special click handler needed
 
                             li.appendChild(a);
                             dropdownMenu.appendChild(li);
@@ -335,13 +326,8 @@
                                     a.href = href;
                                     a.textContent = subItem.title;
 
-                                    // Add click handler for external links
-                                    if (subItem.linkType === 'EXTERNAL') {
-                                        a.addEventListener('click', function (e) {
-                                            e.preventDefault();
-                                            window.open(href, '_blank');
-                                        });
-                                    }
+                                    // All dropdown items load in current tab
+                                    // No special click handler needed
 
                                     li.appendChild(a);
                                     dropdownMenu.appendChild(li);
