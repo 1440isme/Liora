@@ -67,18 +67,20 @@ h3 {
     font-family: 'Gilroy', 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
-/* Apply Gilroy font to all product card elements, except Font Awesome icons */
+/* Apply Gilroy font to all product card elements, except Font Awesome and MDI icons */
 .product-card * {
     font-family: 'Gilroy', 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
-/* Ensure Font Awesome icons are not affected by Gilroy font */
+/* Ensure Font Awesome and MDI icons are not affected by Gilroy font */
 .product-card .fas,
 .product-card .far,
 .product-card .fab,
 .product-card .fa,
-.product-card i[class*="fa-"] {
-    font-family: "Font Awesome 6 Free", "Font Awesome 6 Pro", "Font Awesome 6 Brands" !important;
+.product-card i[class*="fa-"],
+.product-card .mdi,
+.product-card i[class*="mdi-"] {
+    font-family: "Font Awesome 6 Free", "Font Awesome 6 Pro", "Font Awesome 6 Brands", "Material Design Icons" !important;
     font-weight: 900 !important;
 }
 
@@ -991,13 +993,15 @@ h3 {
     font-family: 'Gilroy', 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
-/* Ensure Font Awesome icons are not affected by Gilroy font */
+/* Ensure Font Awesome and MDI icons are not affected by Gilroy font */
 .product-card .fas,
 .product-card .far,
 .product-card .fab,
 .product-card .fa,
-.product-card i[class*="fa-"] {
-    font-family: "Font Awesome 6 Free", "Font Awesome 6 Pro", "Font Awesome 6 Brands" !important;
+.product-card i[class*="fa-"],
+.product-card .mdi,
+.product-card i[class*="mdi-"] {
+    font-family: "Font Awesome 6 Free", "Font Awesome 6 Pro", "Font Awesome 6 Brands", "Material Design Icons" !important;
     font-weight: 900 !important;
 }
 
@@ -1615,8 +1619,8 @@ header {
 .nav-list .nav-link {
     color: #333;
     text-decoration: none;
-    font-weight: 500;
-    font-size: 14px;
+    font-weight: 400;
+    font-size: 12px;
     padding: 8px 0;
     transition: all 0.3s ease;
     position: relative;
@@ -1834,13 +1838,15 @@ header {
     font-family: 'Gilroy', 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
-/* Ensure Font Awesome icons are not affected by Gilroy font */
+/* Ensure Font Awesome and MDI icons are not affected by Gilroy font */
 .product-card .fas,
 .product-card .far,
 .product-card .fab,
 .product-card .fa,
-.product-card i[class*="fa-"] {
-    font-family: "Font Awesome 6 Free", "Font Awesome 6 Pro", "Font Awesome 6 Brands" !important;
+.product-card i[class*="fa-"],
+.product-card .mdi,
+.product-card i[class*="mdi-"] {
+    font-family: "Font Awesome 6 Free", "Font Awesome 6 Pro", "Font Awesome 6 Brands", "Material Design Icons" !important;
     font-weight: 900 !important;
 }
 
@@ -2641,23 +2647,23 @@ header {
 }
 
 .banner-slider-container {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    position: relative !important;
+    width: 100% !important;
+    height: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
 }
 
 .banner-slider {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-    cursor: grab;
-    user-select: none;
-    will-change: transform;
+    position: relative !important;
+    width: 100% !important;
+    height: 100% !important;
+    display: flex !important;
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    cursor: grab !important;
+    user-select: none !important;
+    will-change: transform !important;
 }
 
 .banner-slider:active {
@@ -2698,32 +2704,34 @@ header {
 /* Removed banner content styles - no longer displaying text overlay */
 
 .slider-controls {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-    padding: 0 20px;
-    z-index: 3;
-    pointer-events: none;
+    position: absolute !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    width: 100% !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    padding: 0 20px !important;
+    z-index: 3 !important;
+    pointer-events: none !important;
 }
 
 .slider-btn {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.9);
-    border: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.2rem;
-    color: var(--pink-primary);
-    cursor: pointer;
-    transition: all 0.3s ease;
-    pointer-events: all;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    width: 50px !important;
+    height: 50px !important;
+    border-radius: 50% !important;
+    background: rgba(255, 255, 255, 0.9) !important;
+    border: none !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 1.2rem !important;
+    color: var(--pink-primary) !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    pointer-events: all !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
+    position: relative !important;
+    z-index: 10 !important;
 }
 
 .slider-btn:hover {
@@ -2758,7 +2766,7 @@ header {
 }
 
 .slider-dot.active {
-    background: rgba(0, 0, 0, 0.8);
+    background: rgba(0, 0, 0, 0.8) !important;
     transform: scale(1.2);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
@@ -2817,6 +2825,34 @@ header {
 }
 
 /* ========================================
+   BANNER SLIDER DEBUG STYLES
+   ======================================== */
+
+/* Ensure banner slider buttons are visible */
+#prevBtn,
+#nextBtn {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: relative !important;
+    z-index: 999 !important;
+}
+
+/* Ensure banner slider container is visible */
+#bannerSlider {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* Ensure slider dots are visible */
+#sliderDots {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* ========================================
    HEADER NAVIGATION STYLES
    ======================================== */
 
@@ -2841,11 +2877,11 @@ header {
     text-decoration: none !important;
     font-weight: 800 !important;
     /* Bolder */
-    font-size: 16px !important;
+    font-size: 15px !important;
     /* Larger */
     text-transform: uppercase;
     letter-spacing: 0.8px;
-    padding: 10px 20px;
+    padding: 8px 16px;
     border-radius: 4px;
     transition: all 0.3s ease;
     position: relative;
@@ -2875,11 +2911,11 @@ header {
     text-decoration: none !important;
     font-weight: 800 !important;
     /* Bolder */
-    font-size: 16px !important;
+    font-size: 15px !important;
     /* Larger */
     text-transform: uppercase;
     letter-spacing: 0.8px;
-    padding: 10px 20px;
+    padding: 8px 16px;
     border-radius: 4px;
     transition: all 0.3s ease;
     display: flex;

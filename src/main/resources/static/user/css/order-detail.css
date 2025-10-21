@@ -230,9 +230,11 @@
     border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
-/* Font Awesome Icons Color - Pink Theme */
+/* Font Awesome and MDI Icons Color - Pink Theme */
 .fas,
-.fa {
+.fa,
+.mdi,
+i[class*="mdi-"] {
     color: #e8a2b0 !important;
 }
 
@@ -555,9 +557,11 @@
     border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
-/* Font Awesome Icons Color - Pink Theme */
+/* Font Awesome and MDI Icons Color - Pink Theme */
 .fas,
-.fa {
+.fa,
+.mdi,
+i[class*="mdi-"] {
     color: #e8a2b0 !important;
 }
 
@@ -787,4 +791,17 @@
     background: rgba(220, 38, 38, 0.1);
     color: #b91c1c;
     border: 1px solid rgba(220, 38, 38, 0.3);
+}
+
+/* Ensure MDI icons have correct font-family */
+.mdi,
+i[class*="mdi-"] {
+    font-family: "Material Design Icons" !important;
+    font-weight: normal !important;
+    font-style: normal !important;
+    font-variant: normal !important;
+    text-transform: none !important;
+    line-height: 1 !important;
+    -webkit-font-smoothing: antialiased !important;
+    -moz-osx-font-smoothing: grayscale !important;
 }
