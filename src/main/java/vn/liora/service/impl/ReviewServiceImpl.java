@@ -246,8 +246,8 @@ public class ReviewServiceImpl implements IReviewService {
         Double averageRating = reviewRepository.getAverageRatingByProductId(productId);
         statistics.put("averageRating", averageRating != null ? averageRating : 0.0);
         
-        // Lấy tổng số review
-        Long totalReviews = reviewRepository.getReviewCountByProductId(productId);
+        // Lấy tổng số review (bao gồm cả ẩn) để hiển thị đúng count
+        Long totalReviews = reviewRepository.getTotalReviewCountByProductId(productId);
         statistics.put("totalReviews", totalReviews != null ? totalReviews : 0L);
         
         // Lấy số review theo từng rating (1-5 sao)
@@ -287,8 +287,8 @@ public class ReviewServiceImpl implements IReviewService {
             Double averageRating = reviewRepository.getAverageRatingByProductId(productId);
             productStats.put("averageRating", averageRating != null ? averageRating : 0.0);
             
-            // Lấy tổng số review
-            Long totalReviews = reviewRepository.getReviewCountByProductId(productId);
+            // Lấy tổng số review (bao gồm cả ẩn) để hiển thị đúng count
+            Long totalReviews = reviewRepository.getTotalReviewCountByProductId(productId);
             productStats.put("totalReviews", totalReviews != null ? totalReviews : 0L);
             
             result.put(productId.toString(), productStats);
