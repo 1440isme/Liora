@@ -325,9 +325,27 @@ public class OrderServiceImpl implements IOrderService {
     }
 
     @Override
+    @Transactional
     public OrderResponse updateOrderStatus(Long idOrder, OrderUpdateRequest request) {
         Order order = orderRepository.findById(idOrder)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+
+        // ✅ HOÀN LẠI DISCOUNT NẾU CHUYỂN THÀNH CANCELLED
+        if ("CANCELLED".equals(request.getOrderStatus()) && order.getDiscount() != null) {
+            try {
+                Discount discount = order.getDiscount();
+                // Giảm usage count của discount
+                if (discount.getUsedCount() > 0) {
+                    discount.setUsedCount(discount.getUsedCount() - 1);
+                    discountRepository.save(discount);
+                    log.info("Rolled back discount usage for discount {} (order {} cancelled by admin)", 
+                            discount.getDiscountId(), idOrder);
+                }
+            } catch (Exception e) {
+                log.warn("Failed to rollback discount usage for order {}: {}", idOrder, e.getMessage());
+                // Không throw exception để không ảnh hưởng đến việc cập nhật trạng thái đơn hàng
+            }
+        }
 
         orderMapper.updateOrder(order, request);
         order = orderRepository.save(order);
@@ -457,6 +475,23 @@ public class OrderServiceImpl implements IOrderService {
         // Kiểm tra xem đơn hàng có thể hủy không (chỉ hủy được khi đang PENDING)
         if (!"PENDING".equals(order.getOrderStatus())) {
             throw new AppException(ErrorCode.ORDER_CANNOT_BE_CANCELLED);
+        }
+
+        // ✅ HOÀN LẠI DISCOUNT NẾU CÓ
+        if (order.getDiscount() != null) {
+            try {
+                Discount discount = order.getDiscount();
+                // Giảm usage count của discount
+                if (discount.getUsedCount() > 0) {
+                    discount.setUsedCount(discount.getUsedCount() - 1);
+                    discountRepository.save(discount);
+                    log.info("Rolled back discount usage for discount {} (order {})", 
+                            discount.getDiscountId(), orderId);
+                }
+            } catch (Exception e) {
+                log.warn("Failed to rollback discount usage for order {}: {}", orderId, e.getMessage());
+                // Không throw exception để không ảnh hưởng đến việc hủy đơn hàng
+            }
         }
 
         // Cập nhật trạng thái đơn hàng thành CANCELLED
