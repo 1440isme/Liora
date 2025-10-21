@@ -301,6 +301,19 @@ class NewestProductsPageManager {
             product.images = product.imageUrls.map(u => ({ imageUrl: u }));
         }
 
+        // Load review statistics before creating modal
+        try {
+            const statistics = await ProductRatingUtils.loadReviewStatistics([productId]);
+            const productStats = statistics[productId.toString()];
+            if (productStats) {
+                product.averageRating = productStats.averageRating || 0;
+                product.reviewCount = productStats.totalReviews || 0;
+                console.log('Loaded rating data for modal:', product.averageRating, 'stars,', product.reviewCount, 'reviews');
+            }
+        } catch (error) {
+            console.error('Error loading rating data:', error);
+        }
+
         this.createQuickViewModal(product);
     }
 
@@ -444,12 +457,12 @@ class NewestProductsPageManager {
         });
         // Update review data after modal is shown
         setTimeout(() => {
-            ProductRatingUtils.updateQuickViewReviewData(product.productId, 'homepageBestsellerQuickViewModal');
-        }, 200);
+            ProductRatingUtils.updateQuickViewReviewData(product.productId, 'quickViewModal');
+        }, 500);
 
         // Clean up when modal is hidden
-        document.getElementById('homepageBestsellerQuickViewModal').addEventListener('hidden.bs.modal', () => {
-            const modalElement = document.getElementById('homepageBestsellerQuickViewModal');
+        document.getElementById('quickViewModal').addEventListener('hidden.bs.modal', () => {
+            const modalElement = document.getElementById('quickViewModal');
             if (modalElement) {
                 modalElement.remove();
             }

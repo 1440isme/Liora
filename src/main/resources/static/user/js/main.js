@@ -1576,6 +1576,19 @@ class LioraApp {
             }
         }
 
+        // Load review statistics before creating modal
+        try {
+            const statistics = await ProductRatingUtils.loadReviewStatistics([productId]);
+            const productStats = statistics[productId.toString()];
+            if (productStats) {
+                product.averageRating = productStats.averageRating || 0;
+                product.reviewCount = productStats.totalReviews || 0;
+                console.log('Loaded rating data for modal:', product.averageRating, 'stars,', product.reviewCount, 'reviews');
+            }
+        } catch (error) {
+            console.error('Error loading rating data:', error);
+        }
+
         this.createQuickViewModal(product);
     }
 

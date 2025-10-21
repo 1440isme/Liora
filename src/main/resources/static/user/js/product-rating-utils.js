@@ -186,7 +186,10 @@ class ProductRatingUtils {
 
             // Find rating container in modal
             const ratingContainer = modal.querySelector('.rating .stars');
-            const reviewCountSpan = modal.querySelector('.rating .review-count');
+            const reviewCountSpan = modal.querySelector('.rating .review-count, .review-count');
+            
+            console.log('Found rating container:', ratingContainer);
+            console.log('Found review count span:', reviewCountSpan);
             
             if (ratingContainer) {
                 // Generate stars HTML using the same logic as generateStarsForModal
@@ -218,7 +221,9 @@ class ProductRatingUtils {
 
             if (reviewCountSpan) {
                 reviewCountSpan.textContent = `(${reviewCount} đánh giá)`;
-                console.log('Updated review count in quick view');
+                console.log('Updated review count in quick view to:', reviewCount);
+            } else {
+                console.log('Review count span not found in modal');
             }
 
         } catch (error) {
