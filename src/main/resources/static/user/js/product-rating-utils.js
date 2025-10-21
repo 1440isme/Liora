@@ -39,12 +39,8 @@ class ProductRatingUtils {
         const count = reviewCount || 0;
         
         let starsHTML = '';
-        const fullStars = Math.floor(rating);
-        const decimalPart = rating % 1;
-        const hasHalfStar = decimalPart > 0;
-        
         for (let i = 1; i <= 5; i++) {
-            if (i <= fullStars) {
+            if (i <= Math.floor(rating)) {
                 // Full star
                 starsHTML += `
                     <div class="star filled">
@@ -53,7 +49,7 @@ class ProductRatingUtils {
                         </svg>
                     </div>
                 `;
-            } else if (i === fullStars + 1 && hasHalfStar) {
+            } else if (i === Math.ceil(rating) && rating % 1 !== 0) {
                 // Half star
                 starsHTML += `
                     <div class="star half">
@@ -160,62 +156,6 @@ class ProductRatingUtils {
                 this.updateProductCardRating(card, parseInt(productId), statistics);
             }
         });
-    }
-
-    // Update review data in quick view modal
-    static async updateQuickViewReviewData(productId, modalId = 'quickViewModal') {
-        try {
-            // Load review statistics for this product
-            const statistics = await this.loadReviewStatistics([productId]);
-            const productStats = statistics[productId.toString()];
-            
-            if (productStats) {
-                const modal = document.getElementById(modalId);
-                if (modal) {
-                    // Update stars
-                    const starsContainer = modal.querySelector('.rating .stars');
-                    if (starsContainer) {
-                        // Check if it's using FontAwesome icons or SVG
-                        const existingStars = starsContainer.querySelectorAll('i');
-                        if (existingStars.length > 0) {
-                            // FontAwesome icons - use renderStars method if available
-                            if (window.app && window.app.renderStars) {
-                                starsContainer.innerHTML = window.app.renderStars(productStats.averageRating || 0);
-                            } else {
-                                // Fallback: create simple star display
-                                const rating = productStats.averageRating || 0;
-                                const fullStars = Math.floor(rating);
-                                const decimalPart = rating % 1;
-                                const hasHalfStar = decimalPart > 0;
-                                
-                                let starsHTML = '';
-                                for (let i = 1; i <= 5; i++) {
-                                    if (i <= fullStars) {
-                                        starsHTML += '<i class="fas fa-star" style="color: #ffc107;"></i>';
-                                    } else if (i === fullStars + 1 && hasHalfStar) {
-                                        starsHTML += '<i class="fas fa-star-half-alt" style="color: #ffc107;"></i>';
-                                    } else {
-                                        starsHTML += '<i class="far fa-star" style="color: #ddd;"></i>';
-                                    }
-                                }
-                                starsContainer.innerHTML = starsHTML;
-                            }
-                        } else {
-                            // SVG stars - use createStarRatingHTML
-                            starsContainer.innerHTML = this.createStarRatingHTML(productStats.averageRating || 0, productStats.totalReviews || 0);
-                        }
-                    }
-                    
-                    // Update review count
-                    const reviewCountElement = modal.querySelector('.rating .review-count');
-                    if (reviewCountElement) {
-                        reviewCountElement.textContent = `(${productStats.totalReviews || 0} đánh giá)`;
-                    }
-                }
-            }
-        } catch (error) {
-            console.error('Error updating quick view review data:', error);
-        }
     }
 }
 
