@@ -1136,7 +1136,16 @@ class CartPage {
 
         // Kiểm tra tất cả sản phẩm đã chọn
         for (const item of selectedItems) {
+            console.log('Validating item:', {
+                productName: item.productName,
+                stock: item.stock,
+                available: item.available,
+                isActive: item.isActive,
+                quantity: item.quantity
+            });
+            
             const status = this.getProductStatus(item);
+            console.log('Product status:', status);
 
             // Nếu sản phẩm không hợp lệ (hết hàng hoặc ngừng kinh doanh)
             if (status !== 'available') {
@@ -1147,13 +1156,13 @@ class CartPage {
                     message = 'Sản phẩm đã ngừng kinh doanh';
                 }
 
-                this.showToast(`Đơn hàng có sản phẩm không hợp lệ: ${item.product.productName} (${message})`, 'error');
+                this.showToast(`Đơn hàng có sản phẩm không hợp lệ: ${item.productName || 'Sản phẩm không xác định'} (${message})`, 'error');
                 return false;
             }
 
             // Kiểm tra số lượng có vượt quá tồn kho không
             if (item.quantity > item.stock) {
-                this.showToast(`Sản phẩm ${item.product.productName} không đủ hàng (còn ${item.stock} sản phẩm)`, 'error');
+                this.showToast(`Sản phẩm ${item.productName || 'Sản phẩm không xác định'} không đủ hàng (còn ${item.stock} sản phẩm)`, 'error');
                 return false;
             }
         }
