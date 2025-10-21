@@ -441,7 +441,7 @@ class OrderDetailManager {
         for (const item of validItems) {
             try {
                 if (window.app && typeof window.app.addProductToCartBackend === 'function') {
-                    await window.app.addProductToCartBackend(item.productId, item.quantity, false);
+                    await window.app.addProductToCartBackend(item.productId, item.quantity, true);
                     successCount++;
                     
                     console.log(`Successfully added product ${item.productId} with quantity ${item.quantity}`);
