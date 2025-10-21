@@ -393,6 +393,13 @@ class BestsellerProductsPageManager {
         const productsHTML = this.products.map(product => this.createProductCard(product)).join('');
         productsGrid.innerHTML = productsHTML;
         productsGrid.style.display = 'block';
+        
+        // Trigger rating load sau khi render xong
+        setTimeout(() => {
+            if (window.loadProductRatings) {
+                window.loadProductRatings();
+            }
+        }, 500);
     }
 
     createProductCard(product) {
@@ -440,11 +447,36 @@ class BestsellerProductsPageManager {
                             </a>
                         </p>
                         
-                        <div class="rating">
-                            <span class="stars">
-                                ${this.renderStars(product.averageRating || product.rating || 0, reviewCount)}
-                            </span>
-                            <span class="rating-count">(${reviewCount})</span>
+                        <!-- Rating sẽ được load bởi ProductRatingUtils -->
+                        <div class="product-rating" data-product-id="${productId}">
+                            <div class="star-rating">
+                                <div class="star empty">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="2">
+                                        <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                                    </svg>
+                                </div>
+                                <div class="star empty">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="2">
+                                        <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                                    </svg>
+                                </div>
+                                <div class="star empty">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="2">
+                                        <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                                    </svg>
+                                </div>
+                                <div class="star empty">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="2">
+                                        <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                                    </svg>
+                                </div>
+                                <div class="star empty">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="2">
+                                        <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                                    </svg>
+                                </div>
+                            </div>
+                            <span class="rating-count">(0)</span>
                         </div>
                         
                         <div class="mt-auto">
@@ -520,35 +552,6 @@ class BestsellerProductsPageManager {
         }
     }
 
-    renderStars(rating, reviewCount = 0) {
-        // Logic đúng cho product card - giống generateStarsForModal
-        // Chỉ hiển thị sao rỗng khi rating = 0 hoặc không có rating
-        if (!rating || rating === 0 || rating === '0' || rating === null || rating === undefined) {
-            let stars = '';
-            for (let i = 0; i < 5; i++) {
-                stars += '<i class="far fa-star" style="color: #ccc !important; font-weight: 400 !important;"></i>';
-            }
-            return stars;
-        }
-
-        const fullStars = Math.floor(rating);
-        const decimalPart = rating % 1;
-        const hasHalfStar = decimalPart > 0;
-        const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
-
-        let stars = '';
-        for (let i = 0; i < fullStars; i++) {
-            stars += '<i class="fas fa-star text-warning"></i>';
-        }
-        if (hasHalfStar) {
-            stars += '<i class="fas fa-star-half-alt text-warning"></i>';
-        }
-        for (let i = 0; i < emptyStars; i++) {
-            stars += '<i class="far fa-star" style="color: #ccc !important; font-weight: 400 !important;"></i>';
-        }
-
-        return stars;
-    }
 
     formatPrice(price) {
         if (!price || price === null || price === undefined) {
@@ -899,6 +902,7 @@ class BestsellerProductsPageManager {
     }
 
     generateStarsForModal(rating, reviewCount = 0) {
+        // Logic đúng cho Quick View modal
         if (!rating || rating === 0 || rating === '0' || rating === null || rating === undefined) {
             let stars = '';
             for (let i = 0; i < 5; i++) {
@@ -907,28 +911,22 @@ class BestsellerProductsPageManager {
             return stars;
         }
 
+        console.log('Modal: Rating is not 0, showing stars based on rating:', rating);
         const fullStars = Math.floor(rating);
         const decimalPart = rating % 1;
         const hasHalfStar = decimalPart > 0;
         const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
 
         let stars = '';
-
-        // Full stars
         for (let i = 0; i < fullStars; i++) {
-            stars += '<i class="fas fa-star" style="color: #ffc107 !important;"></i>';
+            stars += '<i class="fas fa-star text-warning"></i>';
         }
-
-        // Half star
         if (hasHalfStar) {
-            stars += '<i class="fas fa-star-half-alt" style="color: #ffc107 !important;"></i>';
+            stars += '<i class="fas fa-star-half-alt text-warning"></i>';
         }
-
-        // Empty stars
         for (let i = 0; i < emptyStars; i++) {
             stars += '<i class="far fa-star" style="color: #ccc !important; font-weight: 400 !important;"></i>';
         }
-
         return stars;
     }
 
@@ -1194,32 +1192,6 @@ class BestsellerProductsPageManager {
         return new Intl.NumberFormat('vi-VN').format(number);
     }
 
-    // Render stars for rating - chuẩn từ main.js
-    renderStars(rating) {
-        const fullStars = Math.floor(rating);
-        const decimalPart = rating % 1;
-        const hasHalfStar = decimalPart > 0;
-        const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
-
-        let starsHTML = '';
-
-        // Full stars
-        for (let i = 0; i < fullStars; i++) {
-            starsHTML += '<i class="mdi mdi-star text-warning"></i>';
-        }
-
-        // Half star
-        if (hasHalfStar) {
-            starsHTML += '<i class="mdi mdi-star-half text-warning"></i>';
-        }
-
-        // Empty stars
-        for (let i = 0; i < emptyStars; i++) {
-            starsHTML += '<i class="mdi mdi-star-outline text-muted"></i>';
-        }
-
-        return starsHTML;
-    }
 
     // Format currency - chuẩn từ main.js
     formatCurrency(amount) {
