@@ -3,6 +3,7 @@ class SearchResultsManager {
         this.currentQuery = '';
         this.currentPage = 0;
         this.pageSize = 12;
+        this.currentProductId = null; // Track current product for quick view
         this.currentFilters = { minPrice: null, maxPrice: null, brands: [], ratings: [], sort: '' };
         this.products = [];
         this.totalElements = 0;
@@ -212,6 +213,7 @@ class SearchResultsManager {
     }
 
     async showQuickView(productId) {
+        this.currentProductId = productId; // Store current product ID
         const product = this.products.find(p => (p.productId || p.id) === productId);
         if (!product) return;
         if (!product.images && Array.isArray(product.imageUrls)) product.images = product.imageUrls.map(u => ({ imageUrl: u }));
@@ -219,24 +221,18 @@ class SearchResultsManager {
     }
 
     createQuickViewModal(product) {
-        // Remove existing modal and backdrop if any
-        const existingModal = document.getElementById('homepageBestsellerQuickViewModal');
+        // Remove existing modal if any
+        const existingModal = document.getElementById('quickViewModal');
         if (existingModal) {
             existingModal.remove();
         }
 
-        // Remove any existing backdrop
-        const existingBackdrop = document.querySelector('.modal-backdrop');
-        if (existingBackdrop) {
-            existingBackdrop.remove();
-        }
-
         const modalHTML = `
-            <div class="modal fade" id="homepageBestsellerQuickViewModal" tabindex="-1" aria-labelledby="homepageBestsellerQuickViewModalLabel" aria-hidden="true" style="z-index: 9999 !important;">
-                <div class="modal-dialog modal-dialog-centered modal-xl" style="max-width: 900px;">
-                    <div class="modal-content" style="z-index: 10000 !important;">
+            <div class="modal fade" id="quickViewModal" tabindex="-1" aria-labelledby="quickViewModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
                         <div class="modal-header border-0">
-                            <h5 class="modal-title" id="homepageBestsellerQuickViewModalLabel">Xem nhanh sản phẩm</h5>
+                            <h5 class="modal-title" id="quickViewModalLabel">Xem nhanh sản phẩm</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
@@ -246,15 +242,15 @@ class SearchResultsManager {
                                     <div class="product-image-slider">
                                         <!-- Main Image -->
                                         <div class="main-image-container mb-3">
-                                            <button class="slider-nav slider-prev" id="homepageBestsellerModalPrevBtn">
+                                            <button class="slider-nav slider-prev" id="prevBtn">
                                                 <i class="fas fa-chevron-left"></i>
                                             </button>
-                                            <img id="homepageBestsellerModalMainProductImage" 
+                                            <img id="mainProductImage" 
                                                  src="${this.getMainImageUrl(product)}" 
                                                  class="img-fluid rounded" 
                                                  alt="${product.name}"
                                                  onerror="this.src='/user/img/default-product.jpg'">
-                                            <button class="slider-nav slider-next" id="homepageBestsellerModalNextBtn">
+                                            <button class="slider-nav slider-next" id="nextBtn">
                                                 <i class="fas fa-chevron-right"></i>
                                             </button>
                                         </div>
@@ -286,9 +282,9 @@ class SearchResultsManager {
                                     <!-- Rating -->
                                     <div class="rating mb-3">
                                         <span class="stars">
-                                            ${this.generateStarsForModal(product.averageRating || product.rating || 0, product.reviewCount || product.ratingCount || 0)}
+                                            ${this.generateStarsForModal(product.averageRating || 0, product.reviewCount || 0)}
                                         </span>
-                                        <span class="review-count ms-2">(${product.reviewCount || product.ratingCount || 0} đánh giá)</span>
+                                        <span class="review-count ms-2">(${product.reviewCount || 0} đánh giá)</span>
                                     </div>
                                     
                                     <!-- Sales Progress -->
@@ -308,7 +304,7 @@ class SearchResultsManager {
                                     <!-- Price -->
                                     <div class="price-section mb-4">
                                         <span class="current-price h4 text-primary">
-                                            ${this.formatPrice(product.currentPrice || product.price)}
+                                            ${this.formatPrice(product.price)}
                                         </span>
                                     </div>
                                     
@@ -317,21 +313,21 @@ class SearchResultsManager {
                                         <div class="d-flex align-items-center">
                                             <label class="form-label mb-0" style="margin-right: 2rem;">Số lượng:</label>
                                             <div class="input-group" style="max-width: 150px;">
-                                                <button class="btn btn-outline-secondary" type="button" onclick="window.searchResultsManager.decQty()">-</button>
-                                                <input type="number" class="form-control text-center" value="1" min="1" max="${Math.min(product.stock || 10, 99)}" id="quickQty" onchange="window.searchResultsManager.valQty()" oninput="window.searchResultsManager.valQty()" onblur="window.searchResultsManager.valQtyBlur()">
-                                                <button class="btn btn-outline-secondary" type="button" onclick="window.searchResultsManager.incQty()">+</button>
+                                                <button class="btn btn-outline-secondary" type="button" onclick="app.decrementQuantity()">-</button>
+                                                <input type="number" class="form-control text-center" value="1" min="1" max="${Math.min(product.stock || 10, 99)}" id="quantityInput" onchange="app.validateQuantity()" oninput="app.validateQuantity()" onblur="app.validateQuantityOnBlur()">
+                                                <button class="btn btn-outline-secondary" type="button" onclick="app.incrementQuantity()">+</button>
                                             </div>
                                         </div>
                                         <!-- Error Message -->
-                                        <div id="quickQtyErr" class="text-danger mt-2" style="display: none;">
+                                        <div id="quantityError" class="text-danger mt-2" style="display: none;">
                                             <i class="fas fa-info-circle me-1"></i>
-                                            <span id="quickQtyMsg">Số lượng tối đa bạn có thể mua là ${Math.min(product.stock || 10, 99)}.</span>
+                                            <span id="quantityErrorMessage">Số lượng tối đa bạn có thể mua là ${Math.min(product.stock || 10, 99)}.</span>
                                         </div>
                                     </div>
                                     
                                     <!-- Actions -->
                                     <div class="d-grid gap-2">
-                                        ${this.getQuickViewActions(product)}
+                                        ${this.getQuickViewActions(product, this.currentProductId)}
                                         
                                         <!-- View Details Button -->
                                         <a href="/product/${product.productId}" 
@@ -351,40 +347,17 @@ class SearchResultsManager {
         // Add modal to body
         document.body.insertAdjacentHTML('beforeend', modalHTML);
 
-        // Show modal with proper backdrop
-        const modal = new bootstrap.Modal(document.getElementById('homepageBestsellerQuickViewModal'), {
-            backdrop: true,
-            keyboard: true,
-            focus: true
-        });
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('quickViewModal'));
         modal.show();
-
-        // Ensure backdrop has proper z-index
-        setTimeout(() => {
-            const backdrop = document.querySelector('.modal-backdrop');
-            if (backdrop) {
-                backdrop.style.zIndex = '9998';
-                backdrop.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-            }
-        }, 10);
 
         // Add slider navigation event listeners
         this.setupSliderNavigation(product);
 
-        // Clean up when modal is hidden
-        document.getElementById('homepageBestsellerQuickViewModal').addEventListener('hidden.bs.modal', () => {
-            const modalElement = document.getElementById('homepageBestsellerQuickViewModal');
-            if (modalElement) {
-                modalElement.remove();
-            }
-            const backdrop = document.querySelector('.modal-backdrop');
-            if (backdrop) {
-                backdrop.remove();
-            }
-            document.body.classList.remove('modal-open');
-            document.body.style.overflow = '';
-            document.body.style.paddingRight = '';
-        }, { once: true });
+        // Remove modal from DOM when hidden
+        document.getElementById('quickViewModal').addEventListener('hidden.bs.modal', function () {
+            this.remove();
+        });
     }
 
     // Helpers for Quick View
@@ -437,8 +410,10 @@ class SearchResultsManager {
         return `${'<i class="fas fa-star text-warning"></i>'.repeat(full)}${half ? '<i class="fas fa-star-half-alt text-warning"></i>' : ''}${'<i class=\"far fa-star\" style=\"color:#ccc\"></i>'.repeat(empty)}`;
     }
 
-    getQuickViewActions(product) {
+    getQuickViewActions(product, productId) {
         const status = this.getProductStatus(product);
+        const isDisabled = status !== 'available';
+
         if (status === 'deactivated') {
             return `
                 <div class="alert alert-warning text-center">
@@ -447,6 +422,7 @@ class SearchResultsManager {
                 </div>
             `;
         }
+
         if (status === 'out_of_stock') {
             return `
                 <div class="alert alert-danger text-center">
@@ -455,56 +431,185 @@ class SearchResultsManager {
                 </div>
             `;
         }
+
         return `
+            <!-- Buy Now & Add to Cart Buttons (Same Row) -->
             <div class="row g-2">
                 <div class="col-6">
-                    <button class="btn btn-danger btn-lg w-100" onclick="window.searchResultsManager.buyNow(${product.productId})">
-                        <i class="fas fa-bolt me-1"></i> Mua ngay
+                    <button class="btn btn-danger btn-lg w-100" 
+                            onclick="window.searchResultsManager.buyNow(${productId})">
+                        <i class="fas fa-bolt me-1"></i>
+                        Mua ngay
                     </button>
                 </div>
                 <div class="col-6">
-                    <button class="btn btn-primary btn-lg w-100" onclick="window.searchResultsManager.addToCartWithQuantity(${product.productId})">
-                        <i class="fas fa-shopping-cart me-1"></i> Thêm vào giỏ
+                    <button class="btn btn-primary btn-lg w-100" 
+                            onclick="window.searchResultsManager.addToCartWithQuantity(${productId})">
+                        <i class="fas fa-shopping-cart me-1"></i>
+                        Thêm vào giỏ
                     </button>
                 </div>
             </div>
         `;
     }
 
+
     setupSliderNavigation(product) {
-        setTimeout(() => {
-            const prevBtn = document.getElementById('homepageBestsellerModalPrevBtn');
-            const nextBtn = document.getElementById('homepageBestsellerModalNextBtn');
-            const mainImage = document.getElementById('homepageBestsellerModalMainProductImage');
-            const thumbnails = document.querySelectorAll('#homepageBestsellerQuickViewModal .thumbnail-item');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const mainImage = document.getElementById('mainProductImage');
+        const thumbnails = document.querySelectorAll('.thumbnail-item');
 
-            if (!product || !Array.isArray(product.images) || product.images.length <= 1) {
-                if (prevBtn) prevBtn.style.display = 'none';
-                if (nextBtn) nextBtn.style.display = 'none';
-                return;
+        if (!product || !Array.isArray(product.images) || product.images.length <= 1) {
+            if (prevBtn) prevBtn.style.display = 'none';
+            if (nextBtn) nextBtn.style.display = 'none';
+            return;
+        }
+
+        let currentImageIndex = 0;
+
+        const updateMainImage = (index) => {
+            if (product.images && product.images[index]) {
+                mainImage.src = product.images[index].imageUrl;
+                mainImage.alt = product.name;
+
+                // Update thumbnail selection
+                thumbnails.forEach((thumb, i) => {
+                    thumb.classList.toggle('active', i === index);
+                });
             }
+        };
 
-            let currentIndex = 0;
-            const updateMain = (idx) => {
-                if (!mainImage) return;
-                const img = product.images[idx];
-                if (img) {
-                    mainImage.src = img.imageUrl || img;
-                    mainImage.alt = product.name || '';
-                    thumbnails.forEach((t, i) => t.classList.toggle('active', i === idx));
-                }
-            };
+        // Previous button
+        if (prevBtn) {
+            prevBtn.addEventListener('click', () => {
+                currentImageIndex = currentImageIndex > 0 ? currentImageIndex - 1 : product.images.length - 1;
+                updateMainImage(currentImageIndex);
+            });
+        }
 
-            if (prevBtn) prevBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); currentIndex = currentIndex > 0 ? currentIndex - 1 : product.images.length - 1; updateMain(currentIndex); });
-            if (nextBtn) nextBtn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); currentIndex = currentIndex < product.images.length - 1 ? currentIndex + 1 : 0; updateMain(currentIndex); });
-            thumbnails.forEach((thumb, idx) => thumb.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); currentIndex = idx; updateMain(currentIndex); }));
-        }, 100);
+        // Next button
+        if (nextBtn) {
+            nextBtn.addEventListener('click', () => {
+                currentImageIndex = currentImageIndex < product.images.length - 1 ? currentImageIndex + 1 : 0;
+                updateMainImage(currentImageIndex);
+            });
+        }
+
+        // Thumbnail click handlers
+        thumbnails.forEach((thumb, index) => {
+            thumb.addEventListener('click', () => {
+                currentImageIndex = index;
+                updateMainImage(currentImageIndex);
+            });
+        });
     }
 
-    decQty() { const i = document.getElementById('quickQty'); if (!i) return; const v = parseInt(i.value || '1', 10); if (v > 1) i.value = String(v - 1); this.valQty(); }
-    incQty() { const i = document.getElementById('quickQty'); if (!i) return; const v = parseInt(i.value || '1', 10); const m = parseInt(i.getAttribute('max') || '99', 10); if (v < m) i.value = String(v + 1); this.valQty(); }
-    valQty() { const i = document.getElementById('quickQty'); const e = document.getElementById('quickQtyErr'); const m = document.getElementById('quickQtyMsg'); if (!i || !e || !m) return; const v = parseInt(i.value || '1', 10); const mx = parseInt(i.getAttribute('max') || '99', 10); if (isNaN(v) || v < 1) { i.value = '1'; e.style.display = 'none'; i.classList.remove('is-invalid'); return; } if (v > mx) { i.value = String(mx); e.style.display = 'block'; m.textContent = `Số lượng tối đa là ${mx} sản phẩm.`; i.classList.add('is-invalid'); } else { e.style.display = 'none'; i.classList.remove('is-invalid'); } }
-    valQtyBlur() { const i = document.getElementById('quickQty'); if (i && (!i.value || i.value === '0')) i.value = '1'; this.valQty(); }
+    // Add to cart with quantity
+    async addToCartWithQuantity(productId) {
+        const quantityInput = document.getElementById('quantityInput');
+        const quantity = quantityInput ? parseInt(quantityInput.value) || 1 : 1;
+
+        try {
+            // Sử dụng addProductToCartBackend để gọi API backend
+            if (window.app && window.app.addProductToCartBackend) {
+                await window.app.addProductToCartBackend(productId, quantity, true);
+                await window.app.refreshCartBadge?.();
+            } else {
+                this.showNotification('Chức năng đang được tải...', 'error');
+            }
+        } catch (error) {
+            console.error('Add to cart error:', error);
+            this.showNotification('Không thể thêm vào giỏ hàng. Vui lòng thử lại.', 'error');
+        }
+
+        // Close modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('quickViewModal'));
+        if (modal) {
+            modal.hide();
+        }
+    }
+
+    // Buy now
+    async buyNow(productId) {
+        let product = null;
+        if (this.products && this.products.length > 0) {
+            product = this.products.find(p => p.productId === productId);
+        }
+        if (!product) {
+            try {
+                const response = await fetch(`/api/products/${productId}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.code === 200 || data.code === 1000) {
+                        product = data.result;
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching product:', error);
+            }
+        }
+
+        if (!product) {
+            this.showNotification('Không tìm thấy sản phẩm!', 'error');
+            return;
+        }
+
+        // Lấy số lượng từ input trong QuickView
+        const quantityInput = document.getElementById('quantityInput');
+        const quantity = quantityInput ? (parseInt(quantityInput.value) || 1) : 1;
+
+        // Đóng modal trước khi chuyển trang
+        const modal = bootstrap.Modal.getInstance(document.getElementById('quickViewModal'));
+        if (modal) {
+            modal.hide();
+        }
+
+        // Gọi buyNowBackend để thêm vào giỏ (tick choose=true) và chuyển tới checkout
+        if (window.app && typeof window.app.buyNowBackend === 'function') {
+            try {
+                await window.app.buyNowBackend(productId, quantity);
+            } catch (error) {
+                console.error('buyNow error:', error);
+                this.showNotification('Không thể thực hiện Mua ngay. Vui lòng thử lại.', 'error');
+            }
+        } else {
+            this.showNotification('Chức năng đang được tải...', 'error');
+        }
+    }
+
+    showNotification(message, type = 'info') {
+        // Create toast notification
+        const toast = document.createElement('div');
+        toast.className = `toast align-items-center text-white bg-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} border-0`;
+        toast.setAttribute('role', 'alert');
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">${message}</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        `;
+
+        // Add to page
+        let container = document.querySelector('.toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.className = 'toast-container position-fixed top-0 end-0 p-3';
+            document.body.appendChild(container);
+        }
+        container.appendChild(toast);
+
+        // Show toast
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+
+        // Auto remove
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 5000);
+    }
 
     // Helper method to format numbers (e.g., 1000 -> 1.000)
     formatNumber(number) {
