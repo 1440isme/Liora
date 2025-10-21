@@ -54,8 +54,8 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     @Query("SELECT COUNT(r) FROM Review r WHERE r.productId = :productId")
     Long getTotalReviewCountByProductId(@Param("productId") Long productId);
     
-    // Thống kê theo rating cho sản phẩm
-    @Query("SELECT COUNT(r) FROM Review r WHERE r.productId = :productId AND r.rating = :rating AND r.isVisible = true")
+    // Thống kê theo rating cho sản phẩm (đếm tất cả review bao gồm cả ẩn)
+    @Query("SELECT COUNT(r) FROM Review r WHERE r.productId = :productId AND r.rating = :rating")
     Long getReviewCountByProductIdAndRating(@Param("productId") Long productId, @Param("rating") Integer rating);
     
     // ====== ADMIN QUERIES ======
