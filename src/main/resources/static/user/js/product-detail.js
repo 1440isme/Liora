@@ -578,7 +578,8 @@ class ReviewsManager {
     updateStars(container, rating) {
         const stars = container.querySelectorAll('i');
         const fullStars = Math.floor(rating);
-        const hasHalfStar = rating % 1 >= 0.5;
+        const decimalPart = rating % 1;
+        const hasHalfStar = decimalPart > 0;
 
         stars.forEach((star, index) => {
             star.className = 'fas fa-star';

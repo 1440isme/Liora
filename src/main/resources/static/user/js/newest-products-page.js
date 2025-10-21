@@ -455,6 +455,11 @@ class NewestProductsPageManager {
         // Add slider navigation event listeners
         this.setupSliderNavigation(product);
 
+        // Update review data after modal is shown
+        setTimeout(() => {
+            ProductRatingUtils.updateQuickViewReviewData(product.productId, 'homepageBestsellerQuickViewModal');
+        }, 200);
+
         // Clean up when modal is hidden
         document.getElementById('homepageBestsellerQuickViewModal').addEventListener('hidden.bs.modal', () => {
             const modalElement = document.getElementById('homepageBestsellerQuickViewModal');

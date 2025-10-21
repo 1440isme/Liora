@@ -579,7 +579,6 @@ function renderViewReviewProducts(products) {
                                         </svg>
                                     </div>
                                 `).join('')}
-                                <span class="ms-2 text-muted">(${existingReview.rating}/5)</span>
                             </div>
                         </div>
                         

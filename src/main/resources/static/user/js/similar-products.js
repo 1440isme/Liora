@@ -222,7 +222,8 @@ class SimilarProductsManager {
         }
 
         const fullStars = Math.floor(rating);
-        const hasHalfStar = rating % 1 >= 0.5;
+        const decimalPart = rating % 1;
+        const hasHalfStar = decimalPart > 0;
         const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
 
         let stars = '';
@@ -397,6 +398,11 @@ class SimilarProductsManager {
         // Add slider navigation event listeners
         this.setupSliderNavigation(product);
 
+        // Update review data after modal is shown
+        setTimeout(() => {
+            ProductRatingUtils.updateQuickViewReviewData(product.productId);
+        }, 200);
+
         // Remove modal from DOM when hidden
         document.getElementById('quickViewModal').addEventListener('hidden.bs.modal', function () {
             this.remove();
@@ -537,7 +543,8 @@ class SimilarProductsManager {
         }
 
         const fullStars = Math.floor(rating);
-        const hasHalfStar = rating % 1 >= 0.5;
+        const decimalPart = rating % 1;
+        const hasHalfStar = decimalPart > 0;
         const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
 
         let stars = '';
