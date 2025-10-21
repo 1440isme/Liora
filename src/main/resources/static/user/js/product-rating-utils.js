@@ -157,6 +157,74 @@ class ProductRatingUtils {
             }
         });
     }
+
+    static async updateQuickViewReviewData(productId, modalId = 'quickViewModal') {
+        console.log('Updating quick view review data for product:', productId, 'modal:', modalId);
+        
+        try {
+            // Load review statistics for this product
+            const statistics = await this.loadReviewStatistics([productId]);
+            console.log('Loaded statistics for quick view:', statistics);
+            
+            const productStats = statistics[productId.toString()];
+            if (!productStats) {
+                console.log('No stats found for product in quick view:', productId);
+                return;
+            }
+
+            const averageRating = productStats.averageRating || 0;
+            const reviewCount = productStats.totalReviews || 0;
+
+            console.log('Updating quick view rating for product', productId, ':', averageRating, 'stars,', reviewCount, 'reviews');
+
+            // Find the modal
+            const modal = document.getElementById(modalId);
+            if (!modal) {
+                console.log('Quick view modal not found:', modalId);
+                return;
+            }
+
+            // Find rating container in modal
+            const ratingContainer = modal.querySelector('.rating .stars');
+            const reviewCountSpan = modal.querySelector('.rating .review-count');
+            
+            if (ratingContainer) {
+                // Generate stars HTML using the same logic as generateStarsForModal
+                let starsHTML = '';
+                if (!averageRating || averageRating === 0) {
+                    for (let i = 0; i < 5; i++) {
+                        starsHTML += '<i class="far fa-star" style="color: #ccc !important; font-weight: 400 !important;"></i>';
+                    }
+                } else {
+                    const fullStars = Math.floor(averageRating);
+                    const decimalPart = averageRating % 1;
+                    const hasHalfStar = decimalPart > 0;
+                    const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+
+                    for (let i = 0; i < fullStars; i++) {
+                        starsHTML += '<i class="fas fa-star text-warning"></i>';
+                    }
+                    if (hasHalfStar) {
+                        starsHTML += '<i class="fas fa-star-half-alt text-warning"></i>';
+                    }
+                    for (let i = 0; i < emptyStars; i++) {
+                        starsHTML += '<i class="far fa-star" style="color: #ccc !important; font-weight: 400 !important;"></i>';
+                    }
+                }
+                
+                ratingContainer.innerHTML = starsHTML;
+                console.log('Updated rating stars in quick view');
+            }
+
+            if (reviewCountSpan) {
+                reviewCountSpan.textContent = `(${reviewCount} đánh giá)`;
+                console.log('Updated review count in quick view');
+            }
+
+        } catch (error) {
+            console.error('Error updating quick view review data:', error);
+        }
+    }
 }
 
 // Auto-load ratings for product cards on page load

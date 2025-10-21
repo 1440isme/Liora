@@ -27,6 +27,134 @@
 
     <!-- Product Detail Gallery Styles -->
     <style>
+        /* Discount info icon styling */
+        .discount-info-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            color: #666;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s ease;
+            z-index: 10;
+            text-align: center;
+            line-height: 1;
+            font-weight: bold;
+        }
+
+        .discount-info-icon:hover {
+            background: #ff6b9d;
+            color: white;
+        }
+
+        /* Fine-tune positioning */
+        .discount-info-icon {
+            transform: translate(0, 0);
+        }
+
+        /* Popup styles */
+        .discount-popup {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            padding: 16px;
+            min-width: 250px;
+            max-width: 280px;
+            border: 1px solid #e0e0e0;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+        }
+
+        .discount-popup.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .popup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .popup-code {
+            font-weight: bold;
+            color: #333;
+            font-size: 16px;
+        }
+
+        .popup-copy-icon {
+            width: 24px;
+            height: 24px;
+            background: #ff6b9d;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .popup-copy-icon:hover {
+            background: #e55a8a;
+            transform: scale(1.1);
+        }
+
+        .popup-copy-icon i {
+            color: white;
+            font-size: 12px;
+        }
+
+        .popup-description {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 12px;
+            line-height: 1.4;
+        }
+
+        .popup-expiry {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .popup-expiry-label {
+            color: #999;
+        }
+
+        .popup-expiry-date {
+            color: #333;
+            font-weight: 500;
+        }
+
+        .popup-usage {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+        }
+
+        .popup-usage-label {
+            color: #999;
+        }
+
+        .popup-usage-count {
+            color: #333;
+            font-weight: 500;
+        }
+
         /* Breadcrumb styling */
         .breadcrumb {
             background: transparent;
@@ -1505,8 +1633,27 @@
                         <div class="discount-card-right">
                             <div class="discount-header">
                                 <div class="discount-title">${discount.name}</div>
-                                <div class="discount-info-icon" title="Thông tin chi tiết">
+                                <div class="discount-info-icon">
                                     i
+                                    <div class="discount-popup">
+                                        <div class="popup-header">
+                                            <div class="popup-code">${discount.name}</div>
+                                            <div class="popup-copy-icon" onclick="copyDiscountCodeFromPopup('${discount.name}', this)">
+                                                <i class="fas fa-copy"></i>
+                                            </div>
+                                        </div>
+                                        <div class="popup-description">
+                                            ${discount.description && discount.description.trim() !== '' ? discount.description : 'Áp dụng cho đơn hàng'}
+                                        </div>
+                                        <div class="popup-expiry">
+                                            <span class="popup-expiry-label">Hạn sử dụng</span>
+                                            <span class="popup-expiry-date">${formatDate(discount.endDate)}</span>
+                                        </div>
+                                        <div class="popup-usage">
+                                            <span class="popup-usage-label">Lượt dùng</span>
+                                            <span class="popup-usage-count">${discount.userUsageLimit && discount.userUsageLimit > 0 ? discount.userUsageLimit : 'Không giới hạn'}</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             
@@ -1529,6 +1676,9 @@
 
             // Initialize slider
             initializeSlider();
+            
+            // Initialize popup hover effects
+            initializeDiscountPopups();
         }
 
         function updateCardsPerView() {
@@ -1662,6 +1812,125 @@
             }
             // Use a beautiful ticket icon for regular discounts
             return '🎫';
+        }
+
+        // Initialize popup hover effects
+        function initializeDiscountPopups() {
+            const infoIcons = document.querySelectorAll('.discount-info-icon');
+            
+            // Create popup portal if it doesn't exist
+            let portal = document.getElementById('popup-portal');
+            if (!portal) {
+                portal = document.createElement('div');
+                portal.id = 'popup-portal';
+                document.body.appendChild(portal);
+            }
+            
+            infoIcons.forEach(icon => {
+                const popup = icon.querySelector('.discount-popup');
+                let hoverTimeout;
+                
+                // Show popup on mouse enter
+                icon.addEventListener('mouseenter', () => {
+                    clearTimeout(hoverTimeout);
+                    // Hide all other popups first
+                    portal.innerHTML = '';
+                    
+                    // Get icon position
+                    const rect = icon.getBoundingClientRect();
+                    const popupClone = popup.cloneNode(true);
+                    popupClone.style.position = 'fixed';
+                    popupClone.style.top = (rect.top - 10) + 'px';
+                    popupClone.style.left = (rect.left + 30) + 'px';
+                    popupClone.style.zIndex = '9999';
+                    popupClone.classList.add('show');
+                    
+                    // Add to portal
+                    portal.appendChild(popupClone);
+                    
+                    // Add event listeners to popup clone
+                    popupClone.addEventListener('mouseenter', () => {
+                        clearTimeout(hoverTimeout);
+                    });
+                    
+                    popupClone.addEventListener('mouseleave', () => {
+                        hoverTimeout = setTimeout(() => {
+                            portal.innerHTML = '';
+                        }, 100);
+                    });
+                });
+                
+                // Hide popup on mouse leave
+                icon.addEventListener('mouseleave', () => {
+                    hoverTimeout = setTimeout(() => {
+                        portal.innerHTML = '';
+                    }, 100);
+                });
+            });
+        }
+
+        // Copy discount code from popup - keeps icon unchanged
+        function copyDiscountCodeFromPopup(code, button) {
+            navigator.clipboard.writeText(code).then(() => {
+                // Show success feedback without changing the button
+                showSimpleNotification(`Đã sao chép mã "${code}"`);
+            }).catch(err => {
+                console.error('Failed to copy discount code:', err);
+                
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = code;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                
+                // Show success feedback
+                showSimpleNotification(`Đã sao chép mã "${code}"`);
+            });
+        }
+
+        // Simple notification function
+        function showSimpleNotification(message) {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #28a745;
+                color: white;
+                padding: 12px 20px;
+                border-radius: 6px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                z-index: 10000;
+                font-size: 14px;
+                font-weight: 500;
+                opacity: 0;
+                transform: translateX(100%);
+                transition: all 0.3s ease;
+            `;
+            notification.textContent = message;
+            
+            // Add to body
+            document.body.appendChild(notification);
+            
+            // Animate in
+            setTimeout(() => {
+                notification.style.opacity = '1';
+                notification.style.transform = 'translateX(0)';
+            }, 10);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                notification.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }, 3000);
         }
 
         // Toggle product description expand/collapse

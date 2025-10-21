@@ -250,7 +250,8 @@ class BestsellerProductsManager {
         }
 
         const fullStars = Math.floor(rating);
-        const hasHalfStar = rating % 1 >= 0.5;
+        const decimalPart = rating % 1;
+        const hasHalfStar = decimalPart > 0;
         const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
 
         let stars = '';
@@ -424,6 +425,11 @@ class BestsellerProductsManager {
 
         // Add slider navigation event listeners
         this.setupSliderNavigation(product);
+
+        // Update review data after modal is shown
+        setTimeout(() => {
+            ProductRatingUtils.updateQuickViewReviewData(product.productId, 'bestsellerQuickViewModal');
+        }, 200);
 
         document.getElementById('bestsellerQuickViewModal').addEventListener('hidden.bs.modal', function () {
             this.remove();
@@ -618,7 +624,8 @@ class BestsellerProductsManager {
         }
 
         const fullStars = Math.floor(rating);
-        const hasHalfStar = rating % 1 >= 0.5;
+        const decimalPart = rating % 1;
+        const hasHalfStar = decimalPart > 0;
         const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
 
         let stars = '';
@@ -744,6 +751,9 @@ class BestsellerProductsManager {
             if (window.app && window.app.addProductToCartBackend) {
                 await window.app.addProductToCartBackend(productId, 1, true);
                 await window.app.refreshCartBadge?.();
+                if (window.cartPage && typeof window.cartPage.loadCartData === 'function') {
+                    await window.cartPage.loadCartData();
+                }
             } else {
                 this.showNotification('Chức năng đang được tải...', 'error');
             }
@@ -791,6 +801,9 @@ class BestsellerProductsManager {
             if (window.app && window.app.addProductToCartBackend) {
                 await window.app.addProductToCartBackend(productId, quantity, true);
                 await window.app.refreshCartBadge?.();
+                if (window.cartPage && typeof window.cartPage.loadCartData === 'function') {
+                    await window.cartPage.loadCartData();
+                }
             } else {
                 this.showNotification('Chức năng đang được tải...', 'error');
             }

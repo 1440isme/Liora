@@ -513,7 +513,8 @@ class LioraApp {
 
         console.log('Rating is not 0, showing stars based on rating:', rating);
         const fullStars = Math.floor(rating);
-        const hasHalfStar = rating % 1 !== 0;
+        const decimalPart = rating % 1;
+        const hasHalfStar = decimalPart > 0;
         const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
 
         return [
@@ -521,6 +522,38 @@ class LioraApp {
             ...(hasHalfStar ? ['<i class="mdi mdi-star-half"></i>'] : []),
             ...Array(emptyStars).fill('<i class="mdi mdi-star-outline"></i>')
         ].join('');
+    }
+
+    // Method riêng cho Quick View modal
+    generateStarsForModal(rating, reviewCount = 0) {
+        console.log('generateStarsForModal called with rating:', rating, 'type:', typeof rating);
+
+        // Logic đúng cho Quick View modal
+        if (!rating || rating === 0 || rating === '0' || rating === null || rating === undefined) {
+            let stars = '';
+            for (let i = 0; i < 5; i++) {
+                stars += '<i class="far fa-star" style="color: #ccc !important; font-weight: 400 !important;"></i>';
+            }
+            return stars;
+        }
+
+        console.log('Modal: Rating is not 0, showing stars based on rating:', rating);
+        const fullStars = Math.floor(rating);
+        const decimalPart = rating % 1;
+        const hasHalfStar = decimalPart > 0;
+        const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+
+        let stars = '';
+        for (let i = 0; i < fullStars; i++) {
+            stars += '<i class="fas fa-star text-warning"></i>';
+        }
+        if (hasHalfStar) {
+            stars += '<i class="fas fa-star-half-alt text-warning"></i>';
+        }
+        for (let i = 0; i < emptyStars; i++) {
+            stars += '<i class="far fa-star" style="color: #ccc !important; font-weight: 400 !important;"></i>';
+        }
+        return stars;
     }
 
     handleCategoryFilter(button) {
@@ -1609,7 +1642,7 @@ class LioraApp {
                                     <!-- Rating -->
                                     <div class="rating mb-3">
                                         <span class="stars">
-                                            ${this.renderStars(product.rating || product.averageRating || 0)}
+                                            ${this.generateStarsForModal(product.rating || product.averageRating || 0, product.reviewCount || 0)}
                                         </span>
                                         <span class="review-count ms-2">(${product.reviewCount || 0} đánh giá)</span>
                                     </div>
@@ -1683,6 +1716,11 @@ class LioraApp {
         setTimeout(() => {
             this.setupSliderNavigation(product);
         }, 100);
+
+        // Update review data after modal is shown
+        setTimeout(() => {
+            ProductRatingUtils.updateQuickViewReviewData(product.productId);
+        }, 200);
 
         // Remove modal from DOM when hidden
         document.getElementById('quickViewModal').addEventListener('hidden.bs.modal', function () {
@@ -2018,6 +2056,7 @@ class LioraApp {
             </div>
         `;
     }
+
 }
 
 // Global function for page navigation (called from HTML onclick)

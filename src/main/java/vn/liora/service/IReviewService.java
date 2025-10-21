@@ -44,6 +44,7 @@ public interface IReviewService {
     // ========== STATISTICS ==========
     Double getAverageRatingByProductId(Long productId);
     Long getReviewCountByProductId(Long productId);
+    Long getTotalReviewCountByProductId(Long productId);
     Map<String, Object> getProductReviewStatistics(Long productId);
     
     Map<String, Object> getMultipleProductsReviewStatistics(List<Long> productIds);

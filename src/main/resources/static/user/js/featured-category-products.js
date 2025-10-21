@@ -440,7 +440,8 @@ class FeaturedCategoryProductsManager {
         }
 
         const fullStars = Math.floor(rating);
-        const hasHalfStar = rating % 1 >= 0.5;
+        const decimalPart = rating % 1;
+        const hasHalfStar = decimalPart > 0;
         const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
 
         let stars = '';
@@ -793,7 +794,7 @@ class FeaturedCategoryProductsManager {
                                     <!-- Rating -->
                                     <div class="rating mb-3">
                                         <span class="stars">
-                                            ${this.renderStars(product.rating || product.averageRating || 0)}
+                                            ${this.generateStarsForModal(product.rating || product.averageRating || 0, product.reviewCount || 0)}
                                         </span>
                                         <span class="review-count ms-2">(${product.reviewCount || 0} đánh giá)</span>
                                     </div>
@@ -867,6 +868,11 @@ class FeaturedCategoryProductsManager {
         setTimeout(() => {
             this.setupSliderNavigation(product);
         }, 100);
+
+        // Update review data after modal is shown
+        setTimeout(() => {
+            ProductRatingUtils.updateQuickViewReviewData(product.productId);
+        }, 200);
 
         // Remove modal from DOM when hidden
         document.getElementById('quickViewModal').addEventListener('hidden.bs.modal', function () {
@@ -973,7 +979,8 @@ class FeaturedCategoryProductsManager {
     // Generate stars for modal
     generateStarsForModal(rating, reviewCount) {
         const fullStars = Math.floor(rating);
-        const hasHalfStar = rating % 1 >= 0.5;
+        const decimalPart = rating % 1;
+        const hasHalfStar = decimalPart > 0;
         const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
 
         let stars = '';
@@ -1197,7 +1204,8 @@ class FeaturedCategoryProductsManager {
     // Render stars for rating - chuẩn từ main.js
     renderStars(rating) {
         const fullStars = Math.floor(rating);
-        const hasHalfStar = rating % 1 >= 0.5;
+        const decimalPart = rating % 1;
+        const hasHalfStar = decimalPart > 0;
         const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
 
         let starsHTML = '';

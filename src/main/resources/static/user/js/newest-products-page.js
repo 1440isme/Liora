@@ -442,6 +442,25 @@ class NewestProductsPageManager {
         document.getElementById('quickViewModal').addEventListener('hidden.bs.modal', function () {
             this.remove();
         });
+        // Update review data after modal is shown
+        setTimeout(() => {
+            ProductRatingUtils.updateQuickViewReviewData(product.productId, 'homepageBestsellerQuickViewModal');
+        }, 200);
+
+        // Clean up when modal is hidden
+        document.getElementById('homepageBestsellerQuickViewModal').addEventListener('hidden.bs.modal', () => {
+            const modalElement = document.getElementById('homepageBestsellerQuickViewModal');
+            if (modalElement) {
+                modalElement.remove();
+            }
+            const backdrop = document.querySelector('.modal-backdrop');
+            if (backdrop) {
+                backdrop.remove();
+            }
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+        }, { once: true });
     }
 
     decrementQuantity() {
