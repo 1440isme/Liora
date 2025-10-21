@@ -1633,8 +1633,8 @@
                         <div class="discount-card-right">
                             <div class="discount-header">
                                 <div class="discount-title">${discount.name}</div>
-                                <div class="discount-info-icon">
-                                    i
+                                <div class="discount-info-icon" onclick="toggleDiscountPopup(this)">
+                                    <i class="fas fa-info"></i>
                                     <div class="discount-popup">
                                         <div class="popup-header">
                                             <div class="popup-code">${discount.name}</div>
@@ -1964,6 +1964,31 @@
                     collapsible.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 }
             });
+        });
+
+        // Function to toggle discount popup
+        function toggleDiscountPopup(iconElement) {
+            const popup = iconElement.querySelector('.discount-popup');
+            if (!popup) return;
+
+            // Close all other popups first
+            document.querySelectorAll('.discount-popup').forEach(p => {
+                if (p !== popup) {
+                    p.classList.remove('show');
+                }
+            });
+
+            // Toggle current popup
+            popup.classList.toggle('show');
+        }
+
+        // Close popup when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.discount-info-icon')) {
+                document.querySelectorAll('.discount-popup.show').forEach(popup => {
+                    popup.classList.remove('show');
+                });
+            }
         });
     </script>
 

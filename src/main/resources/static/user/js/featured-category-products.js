@@ -282,8 +282,28 @@ class FeaturedCategoryProductsManager {
 
         // Trigger rating load sau khi render xong
         setTimeout(() => {
+            console.log('🔍 Loading product ratings for featured category products...');
+            
+            // Fallback: call global loadProductRatings first
             if (window.loadProductRatings) {
+                console.log('🔍 Calling global loadProductRatings...');
                 window.loadProductRatings();
+            }
+            
+            // Also manually load ratings for this specific grid
+            const productCards = grid.querySelectorAll('.product-card');
+            console.log('🔍 Found product cards:', productCards.length);
+            
+            if (productCards.length > 0 && window.ProductRatingUtils) {
+                console.log('🔍 Calling ProductRatingUtils.loadAndUpdateProductCards...');
+                window.ProductRatingUtils.loadAndUpdateProductCards(productCards);
+            } else {
+                console.log('🔍 ProductRatingUtils not available, using fallback rating loading...');
+                console.log('🔍 ProductRatingUtils available:', !!window.ProductRatingUtils);
+                console.log('🔍 Product cards found:', productCards.length);
+                
+                // Fallback: Load ratings manually using our own logic
+                this.loadProductRatingsFallback(productCards);
             }
         }, 500);
     }
@@ -871,7 +891,11 @@ class FeaturedCategoryProductsManager {
 
         // Update review data after modal is shown
         setTimeout(() => {
-            ProductRatingUtils.updateQuickViewReviewData(product.productId);
+            if (window.ProductRatingUtils) {
+                window.ProductRatingUtils.updateQuickViewReviewData(product.productId);
+            } else {
+                console.log('ProductRatingUtils not available for quick view');
+            }
         }, 200);
 
         // Remove modal from DOM when hidden
@@ -1237,6 +1261,140 @@ class FeaturedCategoryProductsManager {
             style: 'currency',
             currency: 'VND'
         }).format(amount);
+    }
+
+    // Fallback method to load product ratings when ProductRatingUtils is not available
+    async loadProductRatingsFallback(productCards) {
+        if (!productCards || productCards.length === 0) return;
+
+        console.log('🔍 Loading ratings using fallback method for', productCards.length, 'products');
+
+        // Get product IDs
+        const productIds = Array.from(productCards).map(card => {
+            const productId = card.querySelector('.product-rating')?.dataset.productId;
+            return productId ? parseInt(productId) : null;
+        }).filter(id => id !== null);
+
+        if (productIds.length === 0) {
+            console.log('🔍 No valid product IDs found for fallback rating loading');
+            return;
+        }
+
+        try {
+            // Call the same API that ProductRatingUtils uses
+            const response = await fetch('/api/reviews/products/statistics', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(productIds)
+            });
+
+            if (response.ok) {
+                const statistics = await response.json();
+                console.log('🔍 Fallback: Loaded rating statistics:', statistics);
+
+                // Update each product card
+                productCards.forEach(card => {
+                    const ratingContainer = card.querySelector('.product-rating');
+                    const productId = ratingContainer?.dataset.productId;
+                    if (productId && statistics[productId]) {
+                        this.updateProductCardRatingFallback(card, parseInt(productId), statistics[productId]);
+                    }
+                });
+            } else {
+                console.warn('🔍 Fallback: Failed to load rating statistics:', response.status);
+            }
+        } catch (error) {
+            console.error('🔍 Fallback: Error loading rating statistics:', error);
+        }
+    }
+
+    // Update product card rating using fallback method
+    updateProductCardRatingFallback(cardElement, productId, productStats) {
+        const averageRating = productStats.averageRating || 0;
+        const reviewCount = productStats.totalReviews || 0;
+
+        console.log('🔍 Fallback: Updating rating for product', productId, ':', averageRating, 'stars,', reviewCount, 'reviews');
+
+        // Find rating container
+        const ratingContainer = cardElement.querySelector('.product-rating');
+        if (!ratingContainer) {
+            console.log('🔍 Fallback: No rating container found for product:', productId);
+            return;
+        }
+
+        // Update stars
+        const starRating = ratingContainer.querySelector('.star-rating');
+        if (starRating) {
+            starRating.innerHTML = this.createStarRatingHTML(averageRating);
+        }
+
+        // Update rating count
+        const ratingCount = ratingContainer.querySelector('.rating-count');
+        if (ratingCount) {
+            ratingCount.textContent = `(${reviewCount})`;
+        }
+    }
+
+    // Create star rating HTML for fallback method
+    createStarRatingHTML(rating) {
+        if (!rating || rating === 0) {
+            // Return empty stars
+            let stars = '';
+            for (let i = 0; i < 5; i++) {
+                stars += `
+                    <div class="star empty">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="2">
+                            <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                        </svg>
+                    </div>
+                `;
+            }
+            return stars;
+        }
+
+        const fullStars = Math.floor(rating);
+        const decimalPart = rating % 1;
+        const hasHalfStar = decimalPart > 0;
+        const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+
+        let stars = '';
+
+        // Full stars
+        for (let i = 0; i < fullStars; i++) {
+            stars += `
+                <div class="star filled">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="#ffc107" stroke="#ffc107" stroke-width="2">
+                        <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                    </svg>
+                </div>
+            `;
+        }
+
+        // Half star
+        if (hasHalfStar) {
+            stars += `
+                <div class="star half">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="#ffc107" stroke="#ffc107" stroke-width="2">
+                        <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                    </svg>
+                </div>
+            `;
+        }
+
+        // Empty stars
+        for (let i = 0; i < emptyStars; i++) {
+            stars += `
+                <div class="star empty">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="2">
+                        <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                    </svg>
+                </div>
+            `;
+        }
+
+        return stars;
     }
 }
 

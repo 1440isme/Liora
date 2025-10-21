@@ -2776,6 +2776,145 @@ header {
     transform: scale(1.1);
 }
 
+/* ========================================
+   HOMEPAGE DISCOUNT SLIDER STYLES
+   ======================================== */
+
+/* Homepage discount slider container */
+.homepage .discount-slider-container {
+    position: relative;
+    margin: 0 auto;
+    max-width: 1270px;
+    display: flex;
+    align-items: center;
+    gap: 25px;
+    margin-bottom: 0;
+    justify-content: center;
+    width: 100%;
+    overflow: hidden;
+}
+
+.homepage .discount-slider-wrapper {
+    position: relative;
+    overflow: hidden;
+    border-radius: 12px;
+    flex: 1;
+    max-width: 1120px; /* Show 3.5 cards - 3 complete + 0.5 teaser */
+    margin-bottom: 0;
+    order: 2;
+}
+
+.homepage .discount-slider {
+    display: flex;
+    transition: transform 0.5s ease;
+    gap: 1.5rem;
+    padding: 0;
+}
+
+.homepage .discount-slide-item {
+    flex: 0 0 auto;
+    width: 320px; /* Original width */
+}
+
+/* Homepage discount slider buttons */
+.homepage .slider-btn {
+    background: linear-gradient(135deg, #E8A2B0 0%, #C97089 100%);
+    border: none;
+    color: white;
+    width: 55px;
+    height: 55px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 10;
+    box-shadow: 0 4px 15px rgba(232, 162, 176, 0.4);
+    flex-shrink: 0;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.homepage .slider-btn:hover {
+    background: linear-gradient(135deg, #C97089 0%, #B85A7A 100%);
+    transform: scale(1.15);
+    box-shadow: 0 6px 20px rgba(232, 162, 176, 0.5);
+}
+
+.homepage .slider-btn:active {
+    transform: scale(1.05);
+}
+
+.homepage .slider-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    opacity: 0.6;
+}
+
+.homepage .slider-btn-prev {
+    order: 1;
+    flex-shrink: 0;
+}
+
+.homepage .slider-btn-next {
+    order: 3;
+    flex-shrink: 0;
+}
+
+/* Homepage discount slider responsive */
+@media (max-width: 1200px) {
+    .homepage .discount-slider-wrapper {
+        max-width: 1020px; /* Show 3.5 cards for medium screens */
+    }
+}
+
+@media (max-width: 992px) {
+    .homepage .discount-slider-wrapper {
+        max-width: 920px; /* Show 3.5 cards for tablets */
+    }
+}
+
+@media (max-width: 768px) {
+    .homepage .discount-slider-container {
+        gap: 15px;
+    }
+    
+    .homepage .discount-slider-wrapper {
+        max-width: 720px; /* Show 2.5 cards for mobile */
+    }
+    
+    .homepage .slider-btn {
+        width: 45px;
+        height: 45px;
+        font-size: 16px;
+    }
+    
+    .homepage .discount-slider {
+        padding: 0;
+    }
+    
+    .homepage .discount-slide-item {
+        width: 280px; /* Smaller for mobile */
+    }
+}
+
+@media (max-width: 480px) {
+    .homepage .slider-btn {
+        display: none;
+    }
+    
+    .homepage .discount-slider-wrapper {
+        max-width: 100%;
+    }
+    
+    .homepage .discount-slide-item {
+        width: 240px; /* Even smaller for small mobile */
+    }
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .banner-slider-section {

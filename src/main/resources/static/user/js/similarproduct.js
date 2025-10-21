@@ -22,6 +22,13 @@ class SimilarProductsManager {
             ratings: [],
             sort: ''
         };
+        
+        // Add caching
+        this.cache = new Map();
+        this.cacheTimeout = 180000; // 3 minutes - giảm để cache fresh hơn
+        
+        // Add request debouncing
+        this.loadTimeout = null;
 
         this.init();
     }
@@ -179,7 +186,15 @@ class SimilarProductsManager {
         console.log('🔍 Brand filters applied:', this.currentFilters.brands);
         console.log('Final filters:', this.currentFilters);
         this.currentPage = 0;
-        this.loadSimilarProducts();
+        
+        // Debounce API calls để tránh spam requests
+        if (this.loadTimeout) {
+            clearTimeout(this.loadTimeout);
+        }
+        
+        this.loadTimeout = setTimeout(() => {
+            this.loadSimilarProducts();
+        }, 300); // 300ms debounce
     }
 
     bindNavigationEvents() {
@@ -243,13 +258,27 @@ class SimilarProductsManager {
     async loadSimilarProducts() {
         if (this.isLoading) return;
 
+        // Create cache key
+        const cacheKey = `${this.productId}_${JSON.stringify(this.currentFilters)}_${this.currentPage}`;
+        
+        // Check cache first
+        const cachedData = this.getCachedData(cacheKey);
+        if (cachedData) {
+            console.log('🔍 Using cached data for similar products');
+            this.allProducts = cachedData.content;
+            this.totalPages = cachedData.totalPages;
+            this.renderSimilarProducts(this.allProducts);
+            this.renderPagination();
+            return;
+        }
+
         this.isLoading = true;
         this.showLoading();
 
         try {
-            // Build query parameters
+            // Build query parameters with timeout
             const params = new URLSearchParams();
-            params.append('size', '20');
+            params.append('size', '8'); // Giảm xuống 8 để load nhanh hơn
             params.append('page', this.currentPage.toString());
 
             // Add filters
@@ -274,7 +303,24 @@ class SimilarProductsManager {
             const url = `/api/products/${this.productId}/similar?${params.toString()}`;
             console.log('🔍 API URL:', url);
 
-            const response = await fetch(url);
+            // Add timeout to prevent hanging - giảm timeout để fail fast
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 6000); // 6 second timeout
+
+            const response = await fetch(url, {
+                signal: controller.signal,
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
             const data = await response.json();
 
             console.log('🔍 API Response:', data);
@@ -282,6 +328,14 @@ class SimilarProductsManager {
             if (data.code === 1000 && data.result && data.result.content.length > 0) {
                 this.allProducts = data.result.content;
                 this.totalPages = data.result.totalPages;
+                
+                // Cache the result
+                this.setCachedData(cacheKey, {
+                    content: this.allProducts,
+                    totalPages: this.totalPages,
+                    timestamp: Date.now()
+                });
+                
                 this.renderSimilarProducts(this.allProducts);
                 this.renderPagination();
                 console.log('🔍 Loaded products:', this.allProducts.length);
@@ -291,7 +345,15 @@ class SimilarProductsManager {
             }
         } catch (error) {
             console.error('🔍 Error loading similar products:', error);
-            this.showEmpty('Lỗi khi tải sản phẩm tương tự');
+            
+            // Handle different error types
+            if (error.name === 'AbortError') {
+                this.showEmpty('Tải sản phẩm tương tự quá lâu. Vui lòng thử lại.');
+            } else if (error.message.includes('HTTP error')) {
+                this.showEmpty('Lỗi kết nối. Vui lòng thử lại.');
+            } else {
+                this.showEmpty('Lỗi khi tải sản phẩm tương tự');
+            }
         } finally {
             this.isLoading = false;
         }
@@ -300,16 +362,23 @@ class SimilarProductsManager {
     renderSimilarProducts(products) {
         this.hideLoading();
         this.hideEmpty();
+        this.hideSkeletonLoading(); // Ẩn skeleton loading
 
         const productsHTML = products.map(product => this.createProductCard(product)).join('');
         this.gridEl.innerHTML = productsHTML;
         this.gridEl.style.display = 'grid';
+
+        // Add class để ẩn skeleton loading
+        document.body.classList.add('products-loaded');
 
         // Update results count
         const resultsCountEl = document.getElementById('resultsCount');
         if (resultsCountEl) {
             resultsCountEl.textContent = `Hiển thị ${products.length} sản phẩm`;
         }
+
+        // Load product ratings immediately - không delay để load nhanh hơn
+        this.loadProductRatingsOptimized();
     }
 
     renderPagination() {
@@ -357,12 +426,15 @@ class SimilarProductsManager {
         const statusClass = this.getProductStatusClass(productStatus);
 
         return `
-            <div class="product-card ${statusClass}">
+            <div class="product-card ${statusClass}" data-product-id="${product.productId}">
                 <div class="position-relative">
-                    <img src="${product.mainImageUrl || '/uploads/products/default.jpg'}" 
+                    <img src="${this.getMainImageUrl(product)}" 
                          class="card-img-top" 
                          alt="${product.name}"
-                         onerror="this.src='/uploads/products/default.jpg'">
+                         onerror="this.src='/user/img/default-product.jpg'"
+                         onclick="window.location.href='/product/${product.productId}?from=similar&productId=${this.productId}'"
+                         style="cursor: pointer;"
+                         loading="lazy">
                     
                     <div class="product-actions">
                         <button class="quick-view-btn" 
@@ -386,11 +458,50 @@ class SimilarProductsManager {
                         </a>
                     </p>
                     
-                    <div class="rating">
-                        <span class="stars">
-                            ${this.renderStars(product.averageRating || 0, product.ratingCount || 0)}
-                        </span>
-                        <span class="rating-count">(${product.ratingCount || 0})</span>
+                    <!-- Rating sẽ được load bởi ProductRatingUtils -->
+                    <div class="product-rating" data-product-id="${product.productId}">
+                        <div class="star-rating">
+                            <div class="star empty">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="2">
+                                    <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                                </svg>
+                            </div>
+                            <div class="star empty">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="2">
+                                    <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                                </svg>
+                            </div>
+                            <div class="star empty">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="2">
+                                    <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                                </svg>
+                            </div>
+                            <div class="star empty">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="2">
+                                    <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                                </svg>
+                            </div>
+                            <div class="star empty">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="2">
+                                    <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                                </svg>
+                            </div>
+                        </div>
+                        <span class="rating-count">(0)</span>
+                    </div>
+                    
+                    <!-- Sales Progress Bar -->
+                    <div class="sales-progress mb-3">
+                        <div class="sales-info d-flex justify-content-between align-items-center mb-1">
+                            <span class="sales-label">Đã bán</span>
+                            <span class="sales-count">${this.formatNumber(product.soldCount || 0)}</span>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar" 
+                                 style="width: ${this.calculateSalesProgress(product.soldCount || 0)}%"
+                                 role="progressbar">
+                            </div>
+                        </div>
                     </div>
                     
                     <div class="mt-auto">
@@ -415,12 +526,12 @@ class SimilarProductsManager {
 
     getProductStatus(product) {
         // 1. Kiểm tra ngừng kinh doanh (ưu tiên cao nhất)
-        if (!product.isActive) {
+        if (!product.available || !product.isActive) {
             return 'deactivated';
         }
 
         // 2. Kiểm tra hết hàng (chỉ khi sản phẩm còn active)
-        if (product.stock <= 0) {
+        if (product.stock === 0 || product.stock === null || product.stock <= 0) {
             return 'out_of_stock';
         }
 
@@ -435,6 +546,14 @@ class SimilarProductsManager {
             case 'available':
             default: return 'product-available';
         }
+    }
+
+    // Get main image URL - đồng nhất với các trang khác
+    getMainImageUrl(product) {
+        if (product.images && product.images.length > 0) {
+            return product.images[0].imageUrl || product.images[0];
+        }
+        return product.mainImageUrl || '/user/img/default-product.jpg';
     }
 
     renderStars(rating, reviewCount = 0) {
@@ -628,7 +747,14 @@ class SimilarProductsManager {
 
         // Update review data after modal is shown
         setTimeout(() => {
-            ProductRatingUtils.updateQuickViewReviewData(product.productId);
+            console.log('🔍 Updating quick view rating for product:', product.productId);
+            if (window.ProductRatingUtils) {
+                console.log('🔍 Calling ProductRatingUtils.updateQuickViewReviewData...');
+                window.ProductRatingUtils.updateQuickViewReviewData(product.productId, 'quickViewModal');
+            } else {
+                console.log('🔍 ProductRatingUtils not available for quick view, using fallback...');
+                this.loadQuickViewRatingFallback(product.productId);
+            }
         }, 200);
 
         // Remove modal from DOM when hidden
@@ -800,14 +926,39 @@ class SimilarProductsManager {
         return new Intl.NumberFormat('vi-VN').format(number);
     }
 
-    // Calculate sales progress
+    // Calculate sales progress - đồng nhất với product-detail.js
     calculateSalesProgress(soldCount) {
-        if (soldCount === 0) return 0;
-        if (soldCount < 10) return 20;
-        if (soldCount < 50) return 40;
-        if (soldCount < 100) return 60;
-        if (soldCount < 200) return 80;
-        return 100;
+        const thresholds = [
+            { max: 50, percentage: 30 },      // 0-50: 0-30%
+            { max: 100, percentage: 40 },     // 50-100: 30-40%
+            { max: 500, percentage: 55 },     // 100-500: 40-55%
+            { max: 1000, percentage: 70 },    // 500-1000: 55-70%
+            { max: 5000, percentage: 85 },    // 1000-5000: 70-85%
+            { max: 10000, percentage: 95 },   // 5000-10000: 85-95%
+            { max: Infinity, percentage: 100 } // >10000: 95-100%
+        ];
+
+        for (let i = 0; i < thresholds.length; i++) {
+            const { max, percentage } = thresholds[i];
+
+            if (soldCount <= max) {
+                // Get previous threshold percentage
+                const basePercentage = (i > 0) ? thresholds[i - 1].percentage : 0;
+
+                // Calculate progress within this threshold
+                const prevMax = (i > 0) ? thresholds[i - 1].max : 0;
+                const range = max - prevMax;
+
+                if (range > 0) {
+                    const progress = ((soldCount - prevMax) / range) * (percentage - basePercentage);
+                    return Math.min(100, Math.max(0, basePercentage + progress));
+                } else {
+                    return basePercentage;
+                }
+            }
+        }
+
+        return 100; // For very high sales
     }
 
     // Setup slider navigation
@@ -1098,6 +1249,9 @@ class SimilarProductsManager {
     }
 
     showLoading() {
+        // Hiển thị skeleton loading thay vì chỉ spinner
+        this.showSkeletonLoading();
+        
         if (this.loadingEl) {
             this.loadingEl.style.display = 'block';
         }
@@ -1108,6 +1262,9 @@ class SimilarProductsManager {
             this.gridEl.style.display = 'none';
             this.gridEl.innerHTML = '';
         }
+        
+        // Show loading message
+        console.log('🔍 Loading similar products...');
     }
 
     hideLoading() {
@@ -1133,6 +1290,286 @@ class SimilarProductsManager {
     hideEmpty() {
         if (this.emptyEl) {
             this.emptyEl.style.display = 'none';
+        }
+    }
+
+    hideSkeletonLoading() {
+        const skeletonEl = document.getElementById('skeletonLoading');
+        if (skeletonEl) {
+            skeletonEl.style.display = 'none';
+        }
+    }
+
+    showSkeletonLoading() {
+        const skeletonEl = document.getElementById('skeletonLoading');
+        if (skeletonEl) {
+            skeletonEl.style.display = 'block';
+        }
+    }
+
+    // Cache helper methods
+    getCachedData(key) {
+        const cached = this.cache.get(key);
+        if (cached && (Date.now() - cached.timestamp) < this.cacheTimeout) {
+            return cached;
+        }
+        if (cached) {
+            this.cache.delete(key); // Remove expired cache
+        }
+        return null;
+    }
+
+    setCachedData(key, data) {
+        this.cache.set(key, data);
+        
+        // Clean up old cache entries if cache gets too large
+        if (this.cache.size > 50) {
+            const keys = Array.from(this.cache.keys());
+            for (let i = 0; i < 10; i++) {
+                this.cache.delete(keys[i]);
+            }
+        }
+    }
+
+    clearCache() {
+        this.cache.clear();
+        console.log('🔍 Similar products cache cleared');
+    }
+
+    // Optimized method to load product ratings
+    loadProductRatingsOptimized() {
+        console.log('🔍 Loading product ratings for similar products (optimized)...');
+        
+        const productCards = this.gridEl.querySelectorAll('.product-card');
+        console.log('🔍 Found product cards:', productCards.length);
+        
+        if (productCards.length === 0) {
+            console.log('🔍 No product cards found, skipping rating load');
+            return;
+        }
+        
+        // Chỉ dùng một phương pháp để tránh duplicate calls
+        if (window.ProductRatingUtils) {
+            console.log('🔍 Using ProductRatingUtils for rating loading...');
+            window.ProductRatingUtils.loadAndUpdateProductCards(productCards);
+        } else {
+            console.log('🔍 ProductRatingUtils not available, using fallback...');
+            this.loadProductRatingsFallback(productCards);
+        }
+    }
+
+    // Fallback method to load product ratings when ProductRatingUtils is not available
+    async loadProductRatingsFallback(productCards) {
+        if (!productCards || productCards.length === 0) return;
+
+        console.log('🔍 Loading ratings using fallback method for', productCards.length, 'products');
+
+        // Get product IDs
+        const productIds = Array.from(productCards).map(card => {
+            const productId = card.dataset.productId;
+            return productId ? parseInt(productId) : null;
+        }).filter(id => id !== null);
+
+        if (productIds.length === 0) {
+            console.log('🔍 No valid product IDs found for fallback rating loading');
+            return;
+        }
+
+        try {
+            // Call the same API that ProductRatingUtils uses
+            const response = await fetch('/api/reviews/products/statistics', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(productIds)
+            });
+
+            if (response.ok) {
+                const statistics = await response.json();
+                console.log('🔍 Fallback: Loaded rating statistics:', statistics);
+
+                // Update each product card
+                productCards.forEach(card => {
+                    const productId = card.dataset.productId;
+                    if (productId && statistics[productId]) {
+                        this.updateProductCardRatingFallback(card, parseInt(productId), statistics[productId]);
+                    }
+                });
+            } else {
+                console.warn('🔍 Fallback: Failed to load rating statistics:', response.status);
+            }
+        } catch (error) {
+            console.error('🔍 Fallback: Error loading rating statistics:', error);
+        }
+    }
+
+    // Update product card rating using fallback method
+    updateProductCardRatingFallback(cardElement, productId, productStats) {
+        const averageRating = productStats.averageRating || 0;
+        const reviewCount = productStats.totalReviews || 0;
+
+        console.log('🔍 Fallback: Updating rating for product', productId, ':', averageRating, 'stars,', reviewCount, 'reviews');
+
+        // Find rating container
+        const ratingContainer = cardElement.querySelector('.product-rating');
+        if (!ratingContainer) {
+            console.log('🔍 Fallback: No rating container found for product:', productId);
+            return;
+        }
+
+        // Update stars
+        const starRating = ratingContainer.querySelector('.star-rating');
+        if (starRating) {
+            starRating.innerHTML = this.createStarRatingHTML(averageRating);
+        }
+
+        // Update rating count
+        const ratingCount = ratingContainer.querySelector('.rating-count');
+        if (ratingCount) {
+            ratingCount.textContent = `(${reviewCount})`;
+        }
+    }
+
+    // Create star rating HTML for fallback method
+    createStarRatingHTML(rating) {
+        if (!rating || rating === 0) {
+            // Return empty stars
+            let stars = '';
+            for (let i = 0; i < 5; i++) {
+                stars += `
+                    <div class="star empty">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="2">
+                            <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                        </svg>
+                    </div>
+                `;
+            }
+            return stars;
+        }
+
+        const fullStars = Math.floor(rating);
+        const decimalPart = rating % 1;
+        const hasHalfStar = decimalPart > 0;
+        const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+
+        let stars = '';
+
+        // Full stars
+        for (let i = 0; i < fullStars; i++) {
+            stars += `
+                <div class="star filled">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="#ffc107" stroke="#ffc107" stroke-width="2">
+                        <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                    </svg>
+                </div>
+            `;
+        }
+
+        // Half star
+        if (hasHalfStar) {
+            stars += `
+                <div class="star half">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="#ffc107" stroke="#ffc107" stroke-width="2">
+                        <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                    </svg>
+                </div>
+            `;
+        }
+
+        // Empty stars
+        for (let i = 0; i < emptyStars; i++) {
+            stars += `
+                <div class="star empty">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="2">
+                        <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
+                    </svg>
+                </div>
+            `;
+        }
+
+        return stars;
+    }
+
+    // Fallback method to load quick view rating when ProductRatingUtils is not available
+    async loadQuickViewRatingFallback(productId) {
+        console.log('🔍 Fallback: Loading quick view rating for product:', productId);
+
+        try {
+            // Call the same API that ProductRatingUtils uses
+            const response = await fetch('/api/reviews/products/statistics', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify([productId])
+            });
+
+            if (response.ok) {
+                const statistics = await response.json();
+                console.log('🔍 Fallback: Loaded quick view rating statistics:', statistics);
+
+                const productStats = statistics[productId.toString()];
+                if (productStats) {
+                    this.updateQuickViewRatingFallback(productStats);
+                }
+            } else {
+                console.warn('🔍 Fallback: Failed to load quick view rating statistics:', response.status);
+            }
+        } catch (error) {
+            console.error('🔍 Fallback: Error loading quick view rating statistics:', error);
+        }
+    }
+
+    // Update quick view rating using fallback method
+    updateQuickViewRatingFallback(productStats) {
+        const averageRating = productStats.averageRating || 0;
+        const reviewCount = productStats.totalReviews || 0;
+
+        console.log('🔍 Fallback: Updating quick view rating:', averageRating, 'stars,', reviewCount, 'reviews');
+
+        // Find the modal
+        const modal = document.getElementById('quickViewModal');
+        if (!modal) {
+            console.log('🔍 Fallback: Quick view modal not found');
+            return;
+        }
+
+        // Find rating container in modal
+        const ratingContainer = modal.querySelector('.rating .stars');
+        const reviewCountSpan = modal.querySelector('.rating .review-count, .review-count');
+
+        if (ratingContainer) {
+            // Generate stars HTML using the same logic as generateStarsForModal
+            let starsHTML = '';
+            if (!averageRating || averageRating === 0) {
+                for (let i = 0; i < 5; i++) {
+                    starsHTML += '<i class="far fa-star" style="color: #ccc !important; font-weight: 400 !important;"></i>';
+                }
+            } else {
+                const fullStars = Math.floor(averageRating);
+                const decimalPart = averageRating % 1;
+                const hasHalfStar = decimalPart > 0;
+                const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+
+                for (let i = 0; i < fullStars; i++) {
+                    starsHTML += '<i class="fas fa-star text-warning"></i>';
+                }
+                if (hasHalfStar) {
+                    starsHTML += '<i class="fas fa-star-half-alt text-warning"></i>';
+                }
+                for (let i = 0; i < emptyStars; i++) {
+                    starsHTML += '<i class="far fa-star" style="color: #ccc !important; font-weight: 400 !important;"></i>';
+                }
+            }
+
+            ratingContainer.innerHTML = starsHTML;
+            console.log('🔍 Fallback: Updated rating stars in quick view');
+        }
+
+        if (reviewCountSpan) {
+            reviewCountSpan.textContent = `(${reviewCount} đánh giá)`;
+            console.log('🔍 Fallback: Updated review count in quick view to:', reviewCount);
         }
     }
 }

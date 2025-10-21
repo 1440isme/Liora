@@ -1161,6 +1161,7 @@ public class UserProductController {
                         })
                         .collect(Collectors.toList());
                         
+            case "sold":
             case "soldcount":
             case "sold_count":
                 return products.stream()

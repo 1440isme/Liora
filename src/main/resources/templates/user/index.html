@@ -28,7 +28,7 @@
 
 </head>
 
-<body>
+<body class="homepage">
     <!-- Navigation -->
     <div th:replace="user/layout/user-header :: header"></div>
     <!-- Chatbot -->
@@ -651,8 +651,8 @@
                     <div class="discount-card-right">
                         <div class="discount-header">
                             <div class="discount-title">${discount.name}</div>
-                            <div class="discount-info-icon">
-                                i
+                            <div class="discount-info-icon" onclick="toggleDiscountPopup(this)">
+                                <i class="fas fa-info"></i>
                                 <div class="discount-popup">
                                     <div class="popup-header">
                                         <div class="popup-code">${discount.name}</div>
@@ -691,8 +691,10 @@
 
             container.innerHTML = html;
 
-            // Initialize slider
-            initializeSlider();
+            // Initialize slider with a small delay to ensure DOM is ready
+            setTimeout(() => {
+                initializeSlider();
+            }, 100);
             
             // Initialize popup hover effects
             initializeDiscountPopups();
@@ -769,7 +771,7 @@
             } else if (screenWidth < 992) {
                 cardsPerView = 2;
             } else {
-                cardsPerView = 3; // Always show 3 cards on desktop
+                cardsPerView = 3; // Show 3 cards on desktop
             }
         }
 
@@ -779,11 +781,14 @@
         }
 
         function slideDiscounts(direction) {
+            // Calculate maximum slide to show all cards
             const maxSlide = Math.max(0, totalCards - cardsPerView);
 
             if (direction === 'next') {
+                // Move forward by 1 card
                 currentSlide = Math.min(currentSlide + 1, maxSlide);
             } else {
+                // Move backward by 1 card
                 currentSlide = Math.max(currentSlide - 1, 0);
             }
 
@@ -796,13 +801,13 @@
 
         function updateSliderPosition() {
             const slider = document.getElementById('discounts-container');
-            let cardWidth = 340; // 320px card + 20px gap
+            let cardWidth = 344; // 320px card + 24px gap
             
             // Adjust card width for mobile
             if (window.innerWidth <= 768) {
-                cardWidth = 300; // 280px card + 20px gap
+                cardWidth = 320; // 280px card + 40px gap for mobile
             } else if (window.innerWidth <= 480) {
-                cardWidth = 270; // 250px card + 20px gap
+                cardWidth = 280; // 240px card + 40px gap for small mobile
             }
             
             const translateX = -(currentSlide * cardWidth);
@@ -817,8 +822,14 @@
             const nextBtn = document.querySelector('.slider-btn-next');
             const maxSlide = Math.max(0, totalCards - cardsPerView);
 
-            if (prevBtn) prevBtn.style.opacity = currentSlide === 0 ? '0.5' : '1';
-            if (nextBtn) nextBtn.style.opacity = currentSlide >= maxSlide ? '0.5' : '1';
+            if (prevBtn) {
+                prevBtn.style.opacity = currentSlide === 0 ? '0.5' : '1';
+                prevBtn.disabled = currentSlide === 0;
+            }
+            if (nextBtn) {
+                nextBtn.style.opacity = currentSlide >= maxSlide ? '0.5' : '1';
+                nextBtn.disabled = currentSlide >= maxSlide;
+            }
         }
 
         // Handle window resize
@@ -932,6 +943,31 @@
                 }, 300);
             }, 3000);
         }
+
+        // Function to toggle discount popup
+        function toggleDiscountPopup(iconElement) {
+            const popup = iconElement.querySelector('.discount-popup');
+            if (!popup) return;
+
+            // Close all other popups first
+            document.querySelectorAll('.discount-popup').forEach(p => {
+                if (p !== popup) {
+                    p.classList.remove('show');
+                }
+            });
+
+            // Toggle current popup
+            popup.classList.toggle('show');
+        }
+
+        // Close popup when clicking outside
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.discount-info-icon')) {
+                document.querySelectorAll('.discount-popup.show').forEach(popup => {
+                    popup.classList.remove('show');
+                });
+            }
+        });
     </script>
 
     <script>
