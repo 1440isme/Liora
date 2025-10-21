@@ -441,6 +441,19 @@ class NewestProductsHomepageManager {
             }
         }
 
+        // Load review statistics before creating modal
+        try {
+            const statistics = await ProductRatingUtils.loadReviewStatistics([productId]);
+            const productStats = statistics[productId.toString()];
+            if (productStats) {
+                product.averageRating = productStats.averageRating || 0;
+                product.reviewCount = productStats.totalReviews || 0;
+                console.log('Loaded rating data for modal:', product.averageRating, 'stars,', product.reviewCount, 'reviews');
+            }
+        } catch (error) {
+            console.error('Error loading rating data:', error);
+        }
+
         this.createQuickViewModal(product);
     }
 
@@ -586,7 +599,7 @@ class NewestProductsHomepageManager {
         // Update review data after modal is shown
         setTimeout(() => {
             ProductRatingUtils.updateQuickViewReviewData(product.productId, 'homepageNewestQuickViewModal');
-        }, 200);
+        }, 500);
 
         // Clean up when modal is hidden
         document.getElementById('homepageNewestQuickViewModal').addEventListener('hidden.bs.modal', () => {
