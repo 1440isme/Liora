@@ -94,6 +94,7 @@ public class DashboardServiceImpl implements IDashboardService {
                                 .customerName(customerName)
                                 .totalAmount(Optional.ofNullable(o.getTotal()).orElse(BigDecimal.ZERO))
                                 .status(o.getOrderStatus())
+                                .paymentStatus(o.getPaymentStatus())
                                 .createdAt(o.getOrderDate())
                                 .build();
                     })
@@ -179,6 +180,34 @@ public class DashboardServiceImpl implements IDashboardService {
     @Override
     public List<TopCustomerResponse> getTopCustomers(int limit) {
         return orderService.getTopSpenders(limit);
+    }
+    
+    @Override
+    public Map<String, Long> getNewCustomersByMonth() {
+        Map<String, Long> result = new LinkedHashMap<>();
+        
+        // Lấy dữ liệu 12 tháng gần nhất
+        LocalDateTime startDate = LocalDateTime.now().minusMonths(11).withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);
+        List<Object[]> data = userService.getNewCustomersByMonth(startDate);
+        
+        // Tạo map đầy đủ 12 tháng (điền 0 cho tháng không có data)
+        LocalDateTime current = LocalDateTime.now().minusMonths(11).withDayOfMonth(1);
+        for (int i = 0; i < 12; i++) {
+            String key = String.format("Tháng %d/%d", current.getMonthValue(), current.getYear());
+            result.put(key, 0L);
+            current = current.plusMonths(1);
+        }
+        
+        // Điền data thực vào
+        for (Object[] row : data) {
+            int year = ((Number) row[0]).intValue();
+            int month = ((Number) row[1]).intValue();
+            long count = ((Number) row[2]).longValue();
+            String key = String.format("Tháng %d/%d", month, year);
+            result.put(key, count);
+        }
+        
+        return result;
     }
 }
 

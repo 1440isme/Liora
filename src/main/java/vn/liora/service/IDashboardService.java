@@ -28,5 +28,7 @@ public interface IDashboardService {
     long getNewCustomersThisMonth();
     double getReturningCustomers();
     List<TopCustomerResponse> getTopCustomers(int limit);
+    
+    Map<String, Long> getNewCustomersByMonth();
 
 }

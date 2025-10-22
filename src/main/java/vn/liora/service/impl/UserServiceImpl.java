@@ -207,6 +207,11 @@ public class UserServiceImpl implements IUserService {
     public long countNewCustomersThisMonth() {
         return userRepository.countNewCustomersThisMonth();
     }
+    
+    @Override
+    public List<Object[]> getNewCustomersByMonth(java.time.LocalDateTime startDate) {
+        return userRepository.countNewCustomersByMonth(startDate);
+    }
 
     @Transactional
     public void changePassword(Long userId, ChangePasswordRequest request) {
