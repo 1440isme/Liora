@@ -26,13 +26,99 @@ class SearchResultsManager {
 
     bindEvents() {
         const sortSelect = document.getElementById('sortSelect');
-        if (sortSelect) sortSelect.addEventListener('change', () => { this.currentPage = 0; this.loadResults(); });
+        if (sortSelect) sortSelect.addEventListener('change', () => { 
+            this.currentPage = 0; 
+            this.loadResults(); 
+        });
+        
         const applyFilters = document.getElementById('applyFilters');
-        if (applyFilters) applyFilters.addEventListener('click', () => { this.currentPage = 0; this.loadResults(); });
+        if (applyFilters) applyFilters.addEventListener('click', () => { 
+            this.applyFilters(); 
+        });
+        
         document.addEventListener('change', (e) => {
             if (e.target && e.target.closest && e.target.closest('#brandFilters')) this.onBrandChange(e);
             if (e.target && String(e.target.id || '').startsWith('rating')) this.onRatingChange(e);
         });
+    }
+
+    applyFilters() {
+        console.log('applyFilters called');
+        
+        // Update filters from UI before applying
+        this.updateFiltersFromUI();
+        this.currentPage = 0;
+        this.loadResults();
+    }
+
+    updateFiltersFromUI() {
+        // Update price range filter
+        const priceRange = document.getElementById('priceRange');
+        if (priceRange && priceRange.value && priceRange.value.includes(',')) {
+            const [minPrice, maxPrice] = priceRange.value.split(',').map(Number);
+            this.currentFilters.minPrice = minPrice;
+            this.currentFilters.maxPrice = maxPrice;
+            console.log('Price filter set:', { minPrice, maxPrice });
+        } else {
+            this.currentFilters.minPrice = null;
+            this.currentFilters.maxPrice = null;
+        }
+
+        // Update brand filters
+        const brandCheckboxes = document.querySelectorAll('#brandFilters input[type="checkbox"]');
+        this.currentFilters.brands = Array.from(brandCheckboxes)
+            .filter(cb => cb.checked)
+            .map(cb => cb.value);
+        console.log('Selected brands:', this.currentFilters.brands);
+
+        // Update rating filters
+        const ratingCheckboxes = document.querySelectorAll('input[type="checkbox"][id^="rating"]');
+        this.currentFilters.ratings = Array.from(ratingCheckboxes)
+            .filter(cb => cb.checked)
+            .map(cb => parseInt(cb.value));
+        console.log('Selected ratings:', this.currentFilters.ratings);
+
+        // Update sort filter
+        const sortSelect = document.getElementById('sortSelect');
+        if (sortSelect) {
+            this.currentFilters.sort = sortSelect.value || '';
+        }
+
+        console.log('Final filters:', this.currentFilters);
+    }
+
+    clearFilters() {
+        // Reset all filters
+        this.currentFilters = {
+            minPrice: null,
+            maxPrice: null,
+            brands: [],
+            ratings: [],
+            sort: ''
+        };
+
+        // Reset UI elements
+        const priceRangeSelect = document.getElementById('priceRange');
+        if (priceRangeSelect) priceRangeSelect.value = '';
+
+        const sortSelect = document.getElementById('sortSelect');
+        if (sortSelect) sortSelect.value = '';
+
+        // Uncheck all brand checkboxes
+        const brandCheckboxes = document.querySelectorAll('#brandFilters input[type="checkbox"]');
+        brandCheckboxes.forEach(checkbox => {
+            checkbox.checked = false;
+        });
+
+        // Uncheck all rating checkboxes
+        const ratingCheckboxes = document.querySelectorAll('input[id^="rating"]');
+        ratingCheckboxes.forEach(checkbox => {
+            checkbox.checked = false;
+        });
+
+        // Reload results
+        this.currentPage = 0;
+        this.loadResults();
     }
 
     onBrandChange(e) {
@@ -57,20 +143,40 @@ class SearchResultsManager {
     async loadResults() {
         this.showLoading();
         try {
+            // Ensure filters are up to date
+            this.updateFiltersFromUI();
+            
             const sortValue = (document.getElementById('sortSelect')?.value) || '';
             const [sortBy, sortDir] = sortValue ? sortValue.split(',') : ['', ''];
             const params = new URLSearchParams({ q: this.currentQuery, page: String(this.currentPage), size: String(this.pageSize) });
             if (sortBy) params.append('sortBy', sortBy);
             if (sortDir) params.append('sortDir', sortDir);
-            if (this.currentFilters.minPrice != null && this.currentFilters.minPrice !== '') params.append('minPrice', String(this.currentFilters.minPrice));
-            if (this.currentFilters.maxPrice != null && this.currentFilters.maxPrice !== '') params.append('maxPrice', String(this.currentFilters.maxPrice));
-            if (this.currentFilters.brands.length > 0) params.append('brands', this.currentFilters.brands.join(','));
-            if (this.currentFilters.ratings.length > 0) params.append('ratings', this.currentFilters.ratings.join(','));
+            
+            // Add filters with proper validation
+            if (this.currentFilters.minPrice != null && this.currentFilters.minPrice !== '' && this.currentFilters.minPrice >= 0) {
+                params.append('minPrice', String(this.currentFilters.minPrice));
+            }
+            if (this.currentFilters.maxPrice != null && this.currentFilters.maxPrice !== '' && this.currentFilters.maxPrice > 0) {
+                params.append('maxPrice', String(this.currentFilters.maxPrice));
+            }
+            if (this.currentFilters.brands && this.currentFilters.brands.length > 0) {
+                params.append('brands', this.currentFilters.brands.join(','));
+            }
+            if (this.currentFilters.ratings && this.currentFilters.ratings.length > 0) {
+                params.append('ratings', this.currentFilters.ratings.join(','));
+            }
 
             const url = `/api/products/search?${params.toString()}`;
+            console.log('Loading search results with URL:', url);
+            console.log('Current filters:', this.currentFilters);
+            
             const res = await fetch(url);
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            if (!res.ok) {
+                console.error('Search API Error:', res.status, res.statusText);
+                throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+            }
             const data = await res.json();
+            console.log('Search API Response:', data);
 
             if (data && (data.code === 1000 || data.code === 200)) {
                 const result = data.result || {};
@@ -100,11 +206,20 @@ class SearchResultsManager {
         const grid = document.getElementById('productsGrid');
         const empty = document.getElementById('emptyState');
         if (!grid) return;
-        if (empty) empty.style.display = 'none';
+        
+        // Hide empty state
+        if (empty) {
+            empty.style.display = 'none';
+            empty.style.visibility = 'hidden';
+        }
+        
+        // Show and configure grid
         grid.style.display = 'grid';
+        grid.style.visibility = 'visible';
         grid.style.gridTemplateColumns = 'repeat(4, 1fr)';
         grid.style.gap = '0.8rem';
         grid.style.padding = '2rem 1rem';
+        
         grid.innerHTML = this.products.map(p => this.createCard(p)).join('');
 
         // Trigger rating load sau khi render xong
@@ -113,6 +228,8 @@ class SearchResultsManager {
                 window.loadProductRatings();
             }
         }, 500);
+        
+        console.log(`Rendered ${this.products.length} search results`);
     }
 
     createCard(product) {
@@ -729,7 +846,34 @@ class SearchResultsManager {
 
     showLoading() { const l = document.getElementById('loadingSpinner'); const g = document.getElementById('productsGrid'); const e = document.getElementById('emptyState'); if (l) l.style.display = 'block'; if (g) g.style.display = 'none'; if (e) e.style.display = 'none'; }
     hideLoading() { const l = document.getElementById('loadingSpinner'); const g = document.getElementById('productsGrid'); if (l) l.style.display = 'none'; if (g) g.style.display = 'block'; }
-    showEmptyState() { const l = document.getElementById('loadingSpinner'); const g = document.getElementById('productsGrid'); const e = document.getElementById('emptyState'); if (l) l.style.display = 'none'; if (g) g.style.display = 'none'; if (e) e.style.display = 'block'; this.updateResultsCount(); }
+    showEmptyState() { 
+        const l = document.getElementById('loadingSpinner'); 
+        const g = document.getElementById('productsGrid'); 
+        const e = document.getElementById('emptyState'); 
+        
+        // Hide loading spinner
+        if (l) l.style.display = 'none';
+        
+        // Hide products grid completely
+        if (g) {
+            g.style.display = 'none';
+            g.style.visibility = 'hidden';
+            g.innerHTML = ''; // Clear any existing content
+        }
+        
+        // Show empty state
+        if (e) {
+            e.style.display = 'block';
+            e.style.visibility = 'visible';
+        }
+        
+        this.updateResultsCount(); 
+        
+        // Hide pagination when no products
+        this.updatePagination();
+        
+        console.log('Empty state shown - no search results match filters');
+    }
 
     updatePagination() {
         const pagination = document.getElementById('pagination'); if (!pagination) return; if (this.totalPages <= 1) { pagination.style.display = 'none'; return; }
@@ -745,7 +889,15 @@ class SearchResultsManager {
 
     goToPage(page) { if (page < 0 || page >= this.totalPages) return; this.currentPage = page; this.loadResults(); }
 
-    updateResultsCount() { const el = document.getElementById('resultsCount'); if (!el) return; const n = this.totalElements || this.products.length || 0; el.textContent = `Hiển thị ${n} sản phẩm`; }
+    updateResultsCount() { 
+        const el = document.getElementById('resultsCount'); 
+        if (!el) return; 
+        
+        // Use totalElements for consistency with pagination
+        const n = this.totalElements || 0; 
+        el.textContent = `Hiển thị ${n} sản phẩm`; 
+        console.log(`Updated search results count: ${n} total products`);
+    }
 
     async loadBrands() {
         try {

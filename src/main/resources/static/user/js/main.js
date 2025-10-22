@@ -48,7 +48,7 @@ class LioraApp {
     }
 
     // Backend-integrated add to cart: đảm bảo tạo cart (guest/user) và thêm sản phẩm vào DB
-    async addProductToCartBackend(productId, quantity = 1, showMessage = true) {
+    async addProductToCartBackend(productId, quantity = 1, choose = false, showMessage = true) {
         try {
             // 1) Lấy/khởi tạo cart hiện tại (sẽ tạo cart guest nếu chưa có)
             const cartData = await this.apiCall('/cart/api/current', 'GET');
@@ -58,7 +58,7 @@ class LioraApp {
                 throw new Error('Missing cartId - cart may not be initialized');
             }
 
-            console.log('Adding product to cart:', { productId, quantity, cartId });
+            console.log('Adding product to cart:', { productId, quantity, cartId, choose });
 
             // 2) Gọi API thêm sản phẩm vào giỏ
             const addRaw = await this.apiCall(`/CartProduct/${cartId}`, 'POST', {
@@ -66,8 +66,40 @@ class LioraApp {
                 quantity: Number(quantity)
             });
             const addData = (addRaw && (addRaw.result || addRaw.data?.result)) ? (addRaw.result || addRaw.data.result) : addRaw;
+            
+            console.log('Add product response:', addRaw);
+            console.log('Add data:', addData);
 
-            // 3) Cập nhật badge header bằng số lượng thực tế từ server
+            // 3) Nếu choose = true, tick chọn sản phẩm này
+            if (choose && addData && addData.idCartProduct) {
+                try {
+                    console.log('Attempting to mark product as chosen:', {
+                        cartId,
+                        cartProductId: addData.idCartProduct,
+                        choose: true
+                    });
+                    
+                    // Gửi đầy đủ thông tin để tránh lỗi NULL constraint
+                    const chooseResponse = await this.apiCall(`/CartProduct/${cartId}/${addData.idCartProduct}`, 'PUT', {
+                        quantity: addData.quantity, // Gửi quantity hiện tại
+                        choose: true
+                    });
+                    
+                    console.log('Choose response:', chooseResponse);
+                    console.log('Product marked as chosen successfully:', addData.idCartProduct);
+                } catch (chooseErr) {
+                    console.error('Failed to mark product as chosen:', chooseErr);
+                    console.error('Choose error details:', {
+                        cartId,
+                        cartProductId: addData.idCartProduct,
+                        error: chooseErr.message,
+                        response: chooseErr.response
+                    });
+                    // Không throw error để không ảnh hưởng đến việc thêm vào giỏ
+                }
+            }
+
+            // 4) Cập nhật badge header bằng số lượng thực tế từ server
             try {
                 // Cập nhật số LOẠI sản phẩm: dùng endpoint count (đếm số dòng CartProduct)
                 await this.refreshCartBadge();
@@ -77,7 +109,11 @@ class LioraApp {
             }
 
             if (showMessage) {
-                this.showToast(`${quantity} x đã thêm vào giỏ hàng!`, 'success');
+                if (choose) {
+                    this.showToast(`${quantity} x đã thêm vào giỏ hàng và được chọn sẵn!`, 'success');
+                } else {
+                    this.showToast(`${quantity} x đã thêm vào giỏ hàng!`, 'success');
+                }
             }
             return addData;
         } catch (err) {
@@ -737,7 +773,7 @@ class LioraApp {
     }
 
     addToCart(productId, quantity = 1, showMessage = true) {
-        this.addProductToCartBackend(productId, quantity, showMessage).catch(() => {
+        this.addProductToCartBackend(productId, quantity, false, showMessage).catch(() => {
             this.showToast('Không thể thêm vào giỏ hàng. Vui lòng thử lại.', 'error');
         });
     }
@@ -1428,6 +1464,18 @@ class LioraApp {
             toastContainer.style.zIndex = '9999';
             document.body.appendChild(toastContainer);
         }
+        // Deduplicate: if a toast with exactly the same message is currently present, do not add another
+        try {
+            const existing = Array.from(toastContainer.querySelectorAll('.toast .toast-body'))
+                .map(el => ({ body: el, toast: el.closest('.toast') }))
+                .find(item => (item.body.textContent || '').trim() === (message || '').trim());
+            if (existing && existing.toast) {
+                // If it's already visible, just restart its timer instead of duplicating
+                const instance = bootstrap.Toast.getInstance(existing.toast) || new bootstrap.Toast(existing.toast, { delay: 4000 });
+                instance.show();
+                return;
+            }
+        } catch (_) { /* noop */ }
         const toastId = 'toast-' + Date.now();
 
         const toastHTML = `
@@ -1879,7 +1927,7 @@ class LioraApp {
         console.log('addToCartWithQuantity called with:', { productId, quantity });
 
         // Gọi backend để đảm bảo tạo cart (guest/user) và thêm sản phẩm
-        this.addProductToCartBackend(productId, quantity, true).catch(() => {
+        this.addProductToCartBackend(productId, quantity, true, true).catch(() => {
             this.showToast('Không thể thêm vào giỏ hàng. Vui lòng thử lại.', 'error');
         });
     }

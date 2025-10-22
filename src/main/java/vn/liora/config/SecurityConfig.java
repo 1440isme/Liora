@@ -96,7 +96,9 @@ public class SecurityConfig {
                                 // Chatbot API endpoints (for public access)
                                 "/api/chatbot/**",
                                 // Admin API endpoints for public content
-                                "/admin/banners/api/active"
+                                "/admin/banners/api/active",
+                                // Discount API endpoints (for public access)
+                                "/discounts/**"
                 };
         }
 

@@ -83,8 +83,100 @@ class NewestProductsPageManager {
     }
 
     applyFilters() {
+        // Update filters from UI before applying
+        this.updateFiltersFromUI();
         this.currentPage = 0;
         this.loadProducts();
+    }
+
+    clearFilters() {
+        // Reset all filters
+        this.currentFilters = {
+            search: '',
+            minPrice: null,
+            maxPrice: null,
+            brands: [],
+            ratings: [],
+            sort: ''
+        };
+
+        // Reset UI elements
+        const priceRangeSelect = document.getElementById('priceRange');
+        if (priceRangeSelect) priceRangeSelect.value = '';
+
+        const sortSelect = document.getElementById('sortSelect');
+        if (sortSelect) sortSelect.value = '';
+
+        // Uncheck all brand checkboxes
+        const brandCheckboxes = document.querySelectorAll('#brandFilters input[type="checkbox"]');
+        brandCheckboxes.forEach(checkbox => {
+            checkbox.checked = false;
+        });
+
+        // Uncheck all rating checkboxes
+        const ratingCheckboxes = document.querySelectorAll('input[id^="rating"]');
+        ratingCheckboxes.forEach(checkbox => {
+            checkbox.checked = false;
+        });
+
+        // Reload products
+        this.currentPage = 0;
+        this.loadProducts();
+    }
+
+    // Debug function to check current state
+    debugCurrentState() {
+        console.log('=== DEBUG CURRENT STATE ===');
+        console.log('Products array length:', this.products.length);
+        console.log('Total elements:', this.totalElements);
+        console.log('Current filters:', this.currentFilters);
+        
+        const grid = document.getElementById('productsGrid');
+        const emptyState = document.getElementById('emptyState');
+        const resultsCount = document.getElementById('resultsCount');
+        
+        console.log('Grid display:', grid ? grid.style.display : 'not found');
+        console.log('Grid visibility:', grid ? grid.style.visibility : 'not found');
+        console.log('Empty state display:', emptyState ? emptyState.style.display : 'not found');
+        console.log('Results count text:', resultsCount ? resultsCount.textContent : 'not found');
+        console.log('========================');
+    }
+
+    updateFiltersFromUI() {
+        // Update price range filter
+        const priceRangeSelect = document.getElementById('priceRange');
+        if (priceRangeSelect && priceRangeSelect.value) {
+            const [min, max] = priceRangeSelect.value.split(',').map(Number);
+            this.currentFilters.minPrice = isNaN(min) ? null : min;
+            this.currentFilters.maxPrice = isNaN(max) ? null : max;
+        } else {
+            this.currentFilters.minPrice = null;
+            this.currentFilters.maxPrice = null;
+        }
+
+        // Update brand filters
+        const brandCheckboxes = document.querySelectorAll('#brandFilters input[type="checkbox"]');
+        this.currentFilters.brands = [];
+        brandCheckboxes.forEach(checkbox => {
+            if (checkbox.checked) {
+                this.currentFilters.brands.push(checkbox.value);
+            }
+        });
+
+        // Update rating filters
+        const ratingCheckboxes = document.querySelectorAll('input[id^="rating"]');
+        this.currentFilters.ratings = [];
+        ratingCheckboxes.forEach(checkbox => {
+            if (checkbox.checked) {
+                this.currentFilters.ratings.push(parseInt(checkbox.value));
+            }
+        });
+
+        // Update sort filter
+        const sortSelect = document.getElementById('sortSelect');
+        if (sortSelect) {
+            this.currentFilters.sort = sortSelect.value || '';
+        }
     }
 
     async loadProducts() {
@@ -93,6 +185,9 @@ class NewestProductsPageManager {
         this.showLoading();
 
         try {
+            // Ensure filters are up to date
+            this.updateFiltersFromUI();
+            
             let sortValue = this.currentFilters.sort || '';
             if (!sortValue) {
                 const sortSelect = document.getElementById('sortSelect');
@@ -107,15 +202,31 @@ class NewestProductsPageManager {
                 sortDir: String(sortDir || 'desc')
             });
 
-            if (this.currentFilters.minPrice != null && this.currentFilters.minPrice !== '') params.append('minPrice', String(this.currentFilters.minPrice));
-            if (this.currentFilters.maxPrice != null && this.currentFilters.maxPrice !== '') params.append('maxPrice', String(this.currentFilters.maxPrice));
-            if (this.currentFilters.brands.length > 0) params.append('brands', this.currentFilters.brands.join(','));
-            if (this.currentFilters.ratings.length > 0) params.append('ratings', this.currentFilters.ratings.join(','));
+            // Add filters with proper validation
+            if (this.currentFilters.minPrice != null && this.currentFilters.minPrice !== '' && this.currentFilters.minPrice >= 0) {
+                params.append('minPrice', String(this.currentFilters.minPrice));
+            }
+            if (this.currentFilters.maxPrice != null && this.currentFilters.maxPrice !== '' && this.currentFilters.maxPrice > 0) {
+                params.append('maxPrice', String(this.currentFilters.maxPrice));
+            }
+            if (this.currentFilters.brands && this.currentFilters.brands.length > 0) {
+                params.append('brands', this.currentFilters.brands.join(','));
+            }
+            if (this.currentFilters.ratings && this.currentFilters.ratings.length > 0) {
+                params.append('ratings', this.currentFilters.ratings.join(','));
+            }
 
             const url = `/api/products/newest-advanced?${params.toString()}`;
+            console.log('Loading products with URL:', url);
+            console.log('Current filters:', this.currentFilters);
+            
             const res = await fetch(url);
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            if (!res.ok) {
+                console.error('API Error:', res.status, res.statusText);
+                throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+            }
             const data = await res.json();
+            console.log('API Response:', data);
 
             if (data && (data.code === 1000 || data.code === 200)) {
                 const result = data.result || {};
@@ -124,21 +235,6 @@ class NewestProductsPageManager {
                 this.totalElements = Array.isArray(result) ? this.products.length : (result.totalElements || this.products.length);
                 this.totalPages = Array.isArray(result) ? 1 : (result.totalPages || 1);
 
-                if (this.products.length === 0) {
-                    try {
-                        const fb = await fetch(`/api/products/newest?limit=${this.pageSize}`);
-                        if (fb.ok) {
-                            const fbData = await fb.json();
-                            if (fbData && (fbData.code === 1000 || fbData.code === 200)) {
-                                const fbResult = fbData.result || {};
-                                const fbItems = Array.isArray(fbResult) ? fbResult : (fbResult.content || []);
-                                this.products = fbItems || [];
-                                this.totalElements = this.products.length;
-                                this.totalPages = 1;
-                            }
-                        }
-                    } catch (_) { }
-                }
 
                 if (this.products.length > 0) {
                     this.renderProducts();
@@ -163,12 +259,21 @@ class NewestProductsPageManager {
         const grid = document.getElementById('productsGrid');
         const emptyState = document.getElementById('emptyState');
         if (!grid) return;
-        if (emptyState) emptyState.style.display = 'none';
+        
+        // Hide empty state
+        if (emptyState) {
+            emptyState.style.display = 'none';
+            emptyState.style.visibility = 'hidden';
+        }
+        
+        // Show and configure grid
         grid.style.display = 'grid';
+        grid.style.visibility = 'visible';
         grid.style.gridTemplateColumns = 'repeat(4, 1fr)';
         grid.style.gap = '0.8rem';
         grid.style.padding = '2rem 1rem';
 
+        // Render products
         grid.innerHTML = this.products.map((p) => this.createProductCard(p)).join('');
 
         // Trigger rating load sau khi render xong
@@ -177,6 +282,8 @@ class NewestProductsPageManager {
                 window.loadProductRatings();
             }
         }, 500);
+        
+        console.log(`Rendered ${this.products.length} products`);
     }
 
     createProductCard(product) {
@@ -588,17 +695,41 @@ class NewestProductsPageManager {
         const loading = document.getElementById('loadingSpinner');
         const grid = document.getElementById('productsGrid');
         const empty = document.getElementById('emptyState');
+        
+        // Hide loading spinner
         if (loading) loading.style.display = 'none';
-        if (grid) grid.style.display = 'none';
-        if (empty) empty.style.display = 'block';
+        
+        // Hide products grid completely
+        if (grid) {
+            grid.style.display = 'none';
+            grid.style.visibility = 'hidden';
+            grid.innerHTML = ''; // Clear any existing content
+        }
+        
+        // Show empty state
+        if (empty) {
+            empty.style.display = 'block';
+            empty.style.visibility = 'visible';
+        }
+        
+        // Update results count to show 0
         this.updateResultsCount();
+        
+        // Hide pagination when no products
+        this.updatePagination();
+        
+        console.log('Empty state shown - no products match filters');
     }
 
     updateResultsCount() {
         const resultsCount = document.getElementById('resultsCount');
         if (!resultsCount) return;
-        const n = this.totalElements || this.products.length || 0;
+        
+        // Use totalElements for consistency with pagination
+        const n = this.totalElements || 0;
         resultsCount.textContent = `Hiển thị ${n} sản phẩm`;
+        
+        console.log(`Updated results count: ${n} total products`);
     }
 
     updatePagination() {

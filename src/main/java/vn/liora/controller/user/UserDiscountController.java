@@ -18,7 +18,8 @@ import vn.liora.service.IDiscountService;
 import vn.liora.service.IOrderService;
 import vn.liora.service.impl.DiscountServiceImpl;
 import vn.liora.service.impl.OrderServiceImpl;
-
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
@@ -182,6 +183,14 @@ public class UserDiscountController {
     // ========== ORDER DISCOUNT MANAGEMENT ==========
     @PostMapping("/apply")
     public ResponseEntity<ApiResponse<Map<String, Object>>> applyDiscountByCode(@RequestBody ApplyDiscountRequest request) {
+        // Kiểm tra authentication
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getName())) {
+            ApiResponse<Map<String, Object>> response = new ApiResponse<>();
+            response.setCode(400);
+            response.setMessage("Chỉ dùng mã giảm giá khi đã đăng nhập");
+            return ResponseEntity.badRequest().body(response);
+        }
         ApiResponse<Map<String, Object>> response = new ApiResponse<>();
         try {
             // Tìm discount theo code (name)

@@ -732,9 +732,8 @@
     height: 20px;
     border-radius: 50%;
     background: #f0f0f0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: grid;
+    place-items: center;
     font-size: 12px;
     color: #666;
     cursor: pointer;
@@ -743,10 +742,28 @@
     z-index: 10;
 }
 
+.discount-info-icon i {
+    font-size: 8px !important;
+    line-height: 1 !important;
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    text-align: center !important;
+    width: auto !important;
+    height: auto !important;
+    color: inherit !important;
+}
+
 .discount-info-icon:hover {
     background: #ff6b9d;
     color: white;
 }
+
+/* Font Awesome icon will be centered by flexbox container */
 
 /* Popup styles */
 .discount-popup {

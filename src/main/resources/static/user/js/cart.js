@@ -27,8 +27,10 @@ class CartPage {
             this.handleQuantityInputChange(e);
         });
 
-        // Apply/Remove promo code
-        $('#applyPromoBtn').on('click', () => {
+        // Apply/Remove promo code - prevent duplicate event binding
+        $('#applyPromoBtn').off('click').on('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
             if (this.appliedDiscount) {
                 this.handleRemovePromo();
             } else {
@@ -101,11 +103,6 @@ class CartPage {
         $(document).on('click', '#checkoutBtn', (e) => {
             e.preventDefault();
             this.navigateToCheckout();
-        });
-
-        // Apply promo code
-        $(document).on('click', '#applyPromoBtn', () => {
-            this.handleApplyPromo();
         });
     }
 
@@ -843,10 +840,17 @@ class CartPage {
     }
 
     async handleApplyPromo() {
+        // Prevent multiple simultaneous calls
+        if (this.isApplyingPromo) {
+            return;
+        }
+        
+        this.isApplyingPromo = true;
+        
         const promoCode = $('#promoCode').val().trim();
 
         if (!promoCode) {
-            // this.showToast('Vui lòng nhập mã giảm giá', 'warning');
+            this.isApplyingPromo = false;
             return;
         }
 
@@ -889,6 +893,7 @@ class CartPage {
             this.showToast(errorMessage, 'error');
         } finally {
             this.showLoading(false);
+            this.isApplyingPromo = false;
         }
     }
 
@@ -919,6 +924,13 @@ class CartPage {
     }
 
     showToast(message, type = 'info') {
+        // Remove any existing toasts with the same message to prevent duplicates
+        $(`.toast .toast-body`).each(function() {
+            if ($(this).text().trim() === message.trim()) {
+                $(this).closest('.toast').remove();
+            }
+        });
+
         // Create toast container if not exists
         if (!$('#toast-container').length) {
             $('body').append('<div id="toast-container" class="position-fixed top-0 end-0 p-3" style="z-index: 9999;"></div>');

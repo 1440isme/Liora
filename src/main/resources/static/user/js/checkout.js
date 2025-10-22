@@ -30,18 +30,15 @@ class CheckoutPage {
             this.handlePlaceOrder();
         });
 
-        // Apply promo code
-        $('#applyPromoBtn').on('click', () => {
-            this.handleApplyPromo();
-        });
-
-        // Apply/Remove promo code
-        $('#applyPromoBtn').on('click', () => {
+        // Apply/Remove promo code (ensure single binding and prevent bubbling)
+        $('#applyPromoBtn').off('click').on('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
             if (this.appliedDiscount) {
                 this.handleRemovePromo();
-            } else {
-                this.handleApplyPromo();
+                return;
             }
+            this.handleApplyPromo();
         });
 
         // Province change -> load districts for add/edit address
@@ -600,7 +597,6 @@ class CheckoutPage {
             this.currentEditingAddressId = id;
             this.showEditAddressModal(address);
         } catch (error) {
-            this.showToast('Lỗi tải địa chỉ', 'error');
             this.showToast('Không thể tải thông tin địa chỉ', 'error');
         }
     }
@@ -631,7 +627,6 @@ class CheckoutPage {
                 this.showToast('Bạn đã xóa tất cả địa chỉ. Vui lòng thêm địa chỉ mới.', 'info');
             }
         } catch (error) {
-            this.showToast('Lỗi xóa địa chỉ', 'error');
             this.showToast('Không thể xóa địa chỉ', 'error');
         }
     }
@@ -2053,5 +2048,8 @@ class CheckoutPage {
 
 // Initialize checkout page when DOM is ready
 $(document).ready(() => {
-    window.checkoutPage = new CheckoutPage();
+    // Prevent multiple initialization
+    if (!window.checkoutPage) {
+        window.checkoutPage = new CheckoutPage();
+    }
 });
