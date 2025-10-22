@@ -947,7 +947,7 @@ class UserInfoManager {
         for (const item of items) {
             try {
                 if (window.app && typeof window.app.addProductToCartBackend === 'function') {
-                    await window.app.addProductToCartBackend(item.idProduct, item.quantity, true);
+                    await window.app.addProductToCartBackend(item.idProduct, item.quantity, true, false);
                     successCount++;
                     console.log(`Successfully added product ${item.idProduct} with quantity ${item.quantity}`);
                 }
@@ -962,7 +962,7 @@ class UserInfoManager {
         }
 
         if (successCount > 0) {
-            this.showToast(`Đã thêm ${successCount} sản phẩm vào giỏ hàng`, 'success');
+            this.showToast(`Đã thêm ${successCount} sản phẩm vào giỏ hàng và đã được chọn sẵn`, 'success');
             // Chuyển đến trang giỏ hàng sau 1.5 giây
             setTimeout(() => {
                 window.location.href = '/cart';
@@ -1191,7 +1191,7 @@ class UserInfoManager {
         for (const item of validItems) {
             try {
                 if (window.app && typeof window.app.addProductToCartBackend === 'function') {
-                    await window.app.addProductToCartBackend(item.productId, item.quantity, true);
+                    await window.app.addProductToCartBackend(item.productId, item.quantity, true, false);
                     successCount++;
                     
                     console.log(`Successfully added product ${item.productId} with quantity ${item.quantity}`);
@@ -1207,7 +1207,7 @@ class UserInfoManager {
         }
 
         if (successCount > 0) {
-            this.showToast(`Đã thêm ${successCount} sản phẩm vào giỏ hàng`, 'success');
+            this.showToast(`Đã thêm ${successCount} sản phẩm vào giỏ hàng và đã được chọn sẵn`, 'success');
             // Tự động đóng modal sau khi thêm thành công
             setTimeout(() => {
                 const modal = document.getElementById('reorderModal');

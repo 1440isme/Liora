@@ -17,6 +17,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.util.Map;
 import vn.liora.entity.User;
+import vn.liora.exception.AppException;
+import vn.liora.exception.ErrorCode;
 import vn.liora.repository.UserRepository;
 import vn.liora.service.IOrderService;
 import vn.liora.dto.request.GuestOrderAccessRequest;
@@ -46,21 +48,27 @@ public class OrderDetailController {
             }
 
             if (orderId == null) {
-                return "redirect:/home";
+                return "error/404";
             }
 
             // Lấy token từ session
             String token = (String) httpRequest.getSession().getAttribute("authToken");
             if (token == null) {
-                return "redirect:/home";
+                return "error/404";
             }
 
             // Xử lý tương tự như viewOrderDetail nhưng với token từ session
             return viewOrderDetailWithToken(orderId, token, httpRequest, model);
 
+        } catch (AppException e) {
+            if (e.getErrorCode() == ErrorCode.ORDER_NOT_FOUND) {
+                return "error/404";
+            }
+            log.error("Error in viewOrderDetailAuthenticated: {}", e.getMessage(), e);
+            return "error/404";
         } catch (Exception e) {
             log.error("Error in viewOrderDetailAuthenticated: {}", e.getMessage(), e);
-            return "redirect:/home";
+            return "error/404";
         }
     }
 
@@ -173,14 +181,14 @@ public class OrderDetailController {
 
             if (user == null) {
                 log.warn("No user found for token authentication");
-                return "redirect:/home";
+                return "error/404";
             }
 
             // Lấy thông tin đơn hàng
             var orderResponse = orderService.getOrderById(orderId);
             if (orderResponse == null || !orderResponse.getUserId().equals(user.getUserId())) {
                 log.warn("Order not found or not owned by user: {}", orderId);
-                return "redirect:/home";
+                return "error/404";
             }
 
             // Lấy danh sách sản phẩm trong đơn hàng
@@ -194,9 +202,15 @@ public class OrderDetailController {
 
             return "user/order/order-detail";
 
+        } catch (AppException e) {
+            if (e.getErrorCode() == ErrorCode.ORDER_NOT_FOUND) {
+                return "error/404";
+            }
+            log.error("Error in viewOrderDetailWithToken: {}", e.getMessage(), e);
+            return "error/404";
         } catch (Exception e) {
             log.error("Error in viewOrderDetailWithToken: {}", e.getMessage(), e);
-            return "redirect:/home";
+            return "error/404";
         }
     }
 
@@ -247,7 +261,7 @@ public class OrderDetailController {
 
                 // Không có thông tin xác thực
                 log.warn("No authentication found for order: {}", orderId);
-                return "redirect:/home";
+                return "error/404";
             }
 
             // Tiếp tục xử lý với user đã xác thực (user đã được xác định ở trên)
@@ -257,7 +271,7 @@ public class OrderDetailController {
             // Kiểm tra xem đơn hàng có thuộc về user này không
             if (orderResponse == null || !orderResponse.getUserId().equals(user.getUserId())) {
                 model.addAttribute("error", "Đơn hàng không tồn tại hoặc không thuộc về bạn");
-                return "redirect:/";
+                return "error/404";
             }
 
             // Lấy danh sách sản phẩm trong đơn hàng
@@ -270,10 +284,17 @@ public class OrderDetailController {
 
             return "user/order/order-detail";
 
+        } catch (AppException e) {
+            if (e.getErrorCode() == ErrorCode.ORDER_NOT_FOUND) {
+                return "error/404";
+            }
+            log.error("Error in viewOrderDetail: {}", e.getMessage(), e);
+            model.addAttribute("error", "Không thể tải chi tiết đơn hàng");
+            return "error/404";
         } catch (Exception e) {
             log.error("Error in viewOrderDetail: {}", e.getMessage(), e);
             model.addAttribute("error", "Không thể tải chi tiết đơn hàng");
-            return "redirect:/";
+            return "error/404";
         }
     }
 
@@ -332,13 +353,13 @@ public class OrderDetailController {
             var orderResponse = orderService.getOrderById(orderId);
             if (orderResponse == null) {
                 model.addAttribute("error", "Đơn hàng không tồn tại");
-                return "redirect:/home";
+                return "error/404";
             }
 
             // Kiểm tra email có khớp với đơn hàng không
             if (!guestEmail.equalsIgnoreCase(orderResponse.getEmail())) {
                 model.addAttribute("error", "Bạn không có quyền xem đơn hàng này");
-                return "redirect:/home";
+                return "error/404";
             }
 
             // Lấy danh sách sản phẩm trong đơn hàng
@@ -362,7 +383,7 @@ public class OrderDetailController {
         } catch (Exception e) {
             log.error("Error in handleGuestOrderAccess: {}", e.getMessage(), e);
             model.addAttribute("error", "Không thể tải chi tiết đơn hàng");
-            return "redirect:/home";
+            return "error/404";
         }
     }
 

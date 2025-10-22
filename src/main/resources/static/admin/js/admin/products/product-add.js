@@ -1,6 +1,7 @@
 // Product Add Page Manager
 class ProductAddManager {
     constructor() {
+        this.hasInvalidFiles = false;
         this.init();
     }
 
@@ -227,6 +228,13 @@ class ProductAddManager {
     // Form submission handler
     async submitForm() {
         console.log('Submit form called'); // Debug log
+        
+        // Check for invalid files first
+        if (this.hasInvalidFiles) {
+            this.showError('Vui lòng chọn file ảnh hợp lệ trước khi submit form.');
+            return;
+        }
+        
         if (!this.validateForm()) {
             console.log('Form validation failed'); // Debug log
             return;
@@ -369,6 +377,31 @@ class ProductAddManager {
             return;
         }
 
+        // Validate files before processing
+        const maxSize = 5 * 1024 * 1024; // 5MB
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+        
+        for (let file of files) {
+            // Check file size
+            if (file.size > maxSize) {
+                this.showError(`File quá lớn: ${file.name}. Kích thước tối đa là 5MB.`);
+                event.target.value = ''; // Clear input
+                this.hasInvalidFiles = true;
+                return;
+            }
+            
+            // Check file type
+            if (!allowedTypes.includes(file.type)) {
+                this.showError(`Loại file không hợp lệ: ${file.name}. Chỉ được chọn file ảnh (JPG, PNG, GIF, WebP).`);
+                event.target.value = ''; // Clear input
+                this.hasInvalidFiles = true;
+                return;
+            }
+        }
+
+        // If we reach here, all files are valid
+        this.hasInvalidFiles = false;
+
         let previewHTML = '<div class="row">';
         let processedCount = 0;
         
@@ -401,6 +434,7 @@ class ProductAddManager {
                 reader.readAsDataURL(file);
             } else {
                 console.log('Invalid file type:', file.type); // Debug log
+                this.showError(`Loại file không hợp lệ: ${file.name}. Chỉ được chọn file ảnh (JPG, PNG, GIF, WebP).`);
             }
         });
     }

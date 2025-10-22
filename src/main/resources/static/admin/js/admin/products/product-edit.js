@@ -3,6 +3,7 @@ class ProductEditManager {
     constructor() {
         this.productId = this.getProductIdFromUrl();
         this.currentProduct = null;
+        this.hasInvalidFiles = false;
         this.init();
         this.setupFormIntegration();
     }
@@ -315,6 +316,31 @@ class ProductEditManager {
             this.showNotification('Vui lòng chọn hình ảnh', 'warning');
             return;
         }
+
+        // Validate files before processing
+        const maxSize = 5 * 1024 * 1024; // 5MB
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+        
+        for (let file of files) {
+            // Check file size
+            if (file.size > maxSize) {
+                this.showNotification(`File quá lớn: ${file.name}. Kích thước tối đa là 5MB.`, 'error');
+                fileInput.value = ''; // Clear input
+                this.hasInvalidFiles = true;
+                return;
+            }
+            
+            // Check file type
+            if (!allowedTypes.includes(file.type)) {
+                this.showNotification(`Loại file không hợp lệ: ${file.name}. Chỉ được chọn file ảnh (JPG, PNG, GIF, WebP).`, 'error');
+                fileInput.value = ''; // Clear input
+                this.hasInvalidFiles = true;
+                return;
+            }
+        }
+
+        // If we reach here, all files are valid
+        this.hasInvalidFiles = false;
 
         const formData = new FormData();
         for (let i = 0; i < files.length; i++) {

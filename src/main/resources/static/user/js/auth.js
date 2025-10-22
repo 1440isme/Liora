@@ -54,6 +54,15 @@ if (typeof AuthManager === 'undefined') {
                 authForm.addEventListener('submit', (e) => this.handleAuth(e));
             }
 
+            // Forgot password form submission
+            const forgotPasswordForm = document.getElementById('forgotPasswordForm');
+            if (forgotPasswordForm) {
+                forgotPasswordForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.handleForgotPassword();
+                });
+            }
+
             // Toggle between sign in and sign up
             const authToggle = document.getElementById('authToggle');
             if (authToggle) {

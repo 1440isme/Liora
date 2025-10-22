@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import vn.liora.dto.response.ProductResponse;
+import vn.liora.exception.AppException;
+import vn.liora.exception.ErrorCode;
 import vn.liora.service.ICategoryService;
 import vn.liora.service.IProductService;
 
@@ -39,8 +41,8 @@ public class ProductViewController {
             
             return "user/categories/category-products";
         } catch (Exception e) {
-            // If category not found, redirect to home
-            return "redirect:/";
+            // If category not found, show 404
+            return "error/404";
         }
     }
 
@@ -51,8 +53,8 @@ public class ProductViewController {
             model.addAttribute("parentCategories", categoryService.getCategoryTree());
             return "user/products/bestseller-products";
         } catch (Exception e) {
-            // If error, redirect to home
-            return "redirect:/";
+            // If error, show 404
+            return "error/404";
         }
     }
 
@@ -63,8 +65,8 @@ public class ProductViewController {
             model.addAttribute("parentCategories", categoryService.getCategoryTree());
             return "user/products/newest-products";
         } catch (Exception e) {
-            // If error, redirect to home
-            return "redirect:/";
+            // If error, show 404
+            return "error/404";
         }
     }
 
@@ -74,7 +76,7 @@ public class ProductViewController {
             // Get original product info
             ProductResponse originalProduct = productService.findById(productId);
             if (originalProduct == null) {
-                return "redirect:/";
+                return "error/404";
             }
             
             model.addAttribute("originalProduct", originalProduct);
@@ -82,8 +84,8 @@ public class ProductViewController {
             
             return "user/products/similar-products";
         } catch (Exception e) {
-            // If error, redirect to home
-            return "redirect:/";
+            // If error, show 404
+            return "error/404";
         }
     }
     @GetMapping("/featured-category/{categoryId}")
@@ -106,8 +108,8 @@ public class ProductViewController {
             
             return "user/categories/featured-category-products";
         } catch (Exception e) {
-            // If category not found, redirect to home
-            return "redirect:/";
+            // If category not found, show 404
+            return "error/404";
         }
     }
 
@@ -120,7 +122,7 @@ public class ProductViewController {
         try {
             ProductResponse productResponse = productService.findById(id);
             if (productResponse == null) {
-                return "redirect:/";
+                return "error/404";
             }
             
             model.addAttribute("product", productResponse);
@@ -150,8 +152,13 @@ public class ProductViewController {
             }
             System.out.println("=== END DEBUG ===");
             return "user/products/product-detail";
+        } catch (AppException e) {
+            if (e.getErrorCode() == ErrorCode.PRODUCT_NOT_FOUND) {
+                return "error/404";
+            }
+            return "error/404";
         } catch (Exception e) {
-            return "redirect:/";
+            return "error/404";
         }
     }
 

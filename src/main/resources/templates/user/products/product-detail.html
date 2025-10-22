@@ -33,18 +33,30 @@
             height: 20px;
             border-radius: 50%;
             background: #f0f0f0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 11px;
+            display: grid;
+            place-items: center;
+            font-size: 12px;
             color: #666;
             cursor: pointer;
             position: relative;
             transition: all 0.3s ease;
             z-index: 10;
-            text-align: center;
-            line-height: 1;
-            font-weight: bold;
+        }
+
+        .discount-info-icon i {
+            font-size: 8px !important;
+            line-height: 1 !important;
+            display: block !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            position: absolute !important;
+            top: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) !important;
+            text-align: center !important;
+            width: auto !important;
+            height: auto !important;
+            color: inherit !important;
         }
 
         .discount-info-icon:hover {
@@ -52,10 +64,7 @@
             color: white;
         }
 
-        /* Fine-tune positioning */
-        .discount-info-icon {
-            transform: translate(0, 0);
-        }
+        /* Font Awesome icon will be centered by flexbox container */
 
         /* Popup styles */
         .discount-popup {
@@ -1890,46 +1899,71 @@
             });
         }
 
-        // Simple notification function
-        function showSimpleNotification(message) {
-            // Create notification element
-            const notification = document.createElement('div');
-            notification.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                background: #28a745;
-                color: white;
-                padding: 12px 20px;
-                border-radius: 6px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                z-index: 10000;
-                font-size: 14px;
-                font-weight: 500;
-                opacity: 0;
-                transform: translateX(100%);
-                transition: all 0.3s ease;
+        // Main notification function - Bootstrap Toast style
+        function showNotification(message, type = 'info') {
+            // Create toast notification
+            const toast = document.createElement('div');
+            toast.className = `toast align-items-center text-white bg-${type === 'success' ? 'success' : type === 'error' ? 'danger' : 'info'} border-0`;
+            toast.setAttribute('role', 'alert');
+            toast.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">${message}</div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
             `;
-            notification.textContent = message;
-            
-            // Add to body
-            document.body.appendChild(notification);
-            
-            // Animate in
+
+            // Add to page
+            let container = document.querySelector('.toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.className = 'toast-container position-fixed top-0 end-0 p-3';
+                document.body.appendChild(container);
+            }
+            container.appendChild(toast);
+
+            // Show toast
+            const bsToast = new bootstrap.Toast(toast);
+            bsToast.show();
+
+            // Auto remove
             setTimeout(() => {
-                notification.style.opacity = '1';
-                notification.style.transform = 'translateX(0)';
-            }, 10);
-            
-            // Remove after 3 seconds
+                if (toast.parentNode) {
+                    toast.parentNode.removeChild(toast);
+                }
+            }, 5000);
+        }
+
+        // Simple notification function - Bootstrap Toast style
+        function showSimpleNotification(message) {
+            // Create toast notification
+            const toast = document.createElement('div');
+            toast.className = 'toast align-items-center text-white bg-success border-0';
+            toast.setAttribute('role', 'alert');
+            toast.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">${message}</div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            `;
+
+            // Add to page
+            let container = document.querySelector('.toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.className = 'toast-container position-fixed top-0 end-0 p-3';
+                document.body.appendChild(container);
+            }
+            container.appendChild(toast);
+
+            // Show toast
+            const bsToast = new bootstrap.Toast(toast);
+            bsToast.show();
+
+            // Auto remove
             setTimeout(() => {
-                notification.style.opacity = '0';
-                notification.style.transform = 'translateX(100%)';
-                setTimeout(() => {
-                    if (notification.parentNode) {
-                        notification.parentNode.removeChild(notification);
-                    }
-                }, 300);
+                if (toast.parentNode) {
+                    toast.parentNode.removeChild(toast);
+                }
             }, 3000);
         }
 

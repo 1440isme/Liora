@@ -210,34 +210,80 @@ class BestsellerProductsPageManager {
 
     applyFilters() {
         console.log('applyFilters called');
+        
+        // Update filters from UI before applying
+        this.updateFiltersFromUI();
+        this.currentPage = 0;
+        this.loadProducts();
+    }
 
-        // Get filter values
+    updateFiltersFromUI() {
+        // Update price range filter
         const priceRange = document.getElementById('priceRange');
-        const ratingCheckboxes = document.querySelectorAll('input[type="checkbox"][id^="rating"]');
-
-        console.log('Price range value:', priceRange ? priceRange.value : 'not found');
-
-        // Update current filters - handle price range
         if (priceRange && priceRange.value && priceRange.value.includes(',')) {
             const [minPrice, maxPrice] = priceRange.value.split(',').map(Number);
             this.currentFilters.minPrice = minPrice;
             this.currentFilters.maxPrice = maxPrice;
             console.log('Price filter set:', { minPrice, maxPrice });
+        } else {
+            this.currentFilters.minPrice = null;
+            this.currentFilters.maxPrice = null;
         }
-        // Get selected brands (dynamic) - now using brand names instead of IDs
+
+        // Update brand filters
         const brandCheckboxes = document.querySelectorAll('#brandFilters input[type="checkbox"]');
         this.currentFilters.brands = Array.from(brandCheckboxes)
             .filter(cb => cb.checked)
-            .map(cb => cb.value); // This will be brand names now
+            .map(cb => cb.value);
         console.log('Selected brands:', this.currentFilters.brands);
 
-        // Get selected ratings
+        // Update rating filters
+        const ratingCheckboxes = document.querySelectorAll('input[type="checkbox"][id^="rating"]');
         this.currentFilters.ratings = Array.from(ratingCheckboxes)
             .filter(cb => cb.checked)
             .map(cb => parseInt(cb.value));
         console.log('Selected ratings:', this.currentFilters.ratings);
 
+        // Update sort filter
+        const sortSelect = document.getElementById('sortSelect');
+        if (sortSelect) {
+            this.currentFilters.sort = sortSelect.value || '';
+        }
+
         console.log('Final filters:', this.currentFilters);
+    }
+
+    clearFilters() {
+        // Reset all filters
+        this.currentFilters = {
+            search: '',
+            minPrice: null,
+            maxPrice: null,
+            brands: [],
+            ratings: [],
+            sort: ''
+        };
+
+        // Reset UI elements
+        const priceRangeSelect = document.getElementById('priceRange');
+        if (priceRangeSelect) priceRangeSelect.value = '';
+
+        const sortSelect = document.getElementById('sortSelect');
+        if (sortSelect) sortSelect.value = '';
+
+        // Uncheck all brand checkboxes
+        const brandCheckboxes = document.querySelectorAll('#brandFilters input[type="checkbox"]');
+        brandCheckboxes.forEach(checkbox => {
+            checkbox.checked = false;
+        });
+
+        // Uncheck all rating checkboxes
+        const ratingCheckboxes = document.querySelectorAll('input[id^="rating"]');
+        ratingCheckboxes.forEach(checkbox => {
+            checkbox.checked = false;
+        });
+
+        // Reload products
         this.currentPage = 0;
         this.loadProducts();
     }
@@ -250,17 +296,20 @@ class BestsellerProductsPageManager {
         this.showLoading();
 
         try {
+            // Ensure filters are up to date
+            this.updateFiltersFromUI();
+            
             const params = new URLSearchParams({
                 page: this.currentPage,
                 size: this.pageSize
             });
 
-            // Add filters
-            if (this.currentFilters.minPrice) {
-                params.append('minPrice', this.currentFilters.minPrice);
+            // Add filters with proper validation
+            if (this.currentFilters.minPrice != null && this.currentFilters.minPrice !== '' && this.currentFilters.minPrice >= 0) {
+                params.append('minPrice', String(this.currentFilters.minPrice));
             }
-            if (this.currentFilters.maxPrice) {
-                params.append('maxPrice', this.currentFilters.maxPrice);
+            if (this.currentFilters.maxPrice != null && this.currentFilters.maxPrice !== '' && this.currentFilters.maxPrice > 0) {
+                params.append('maxPrice', String(this.currentFilters.maxPrice));
             }
             if (this.currentFilters.brands && this.currentFilters.brands.length > 0) {
                 params.append('brands', this.currentFilters.brands.join(','));
@@ -311,31 +360,9 @@ class BestsellerProductsPageManager {
                 this.updateResultsCount();
                 this.updatePagination();
 
-                // If empty, fallback to simple best-selling endpoint
+                // Show empty state if no products match filters
                 if (this.products.length === 0) {
-                    console.log('Advanced API returned empty. Falling back to /api/products/best-selling');
-                    try {
-                        const fallbackUrl = `/api/products/best-selling?limit=${this.pageSize}`;
-                        const fbRes = await fetch(fallbackUrl);
-                        if (fbRes.ok) {
-                            const fbData = await fbRes.json();
-                            if (fbData && (fbData.code === 1000 || fbData.code === 200)) {
-                                const fbItems = Array.isArray(fbData.result) ? fbData.result : (fbData.result?.content || []);
-                                this.products = fbItems || [];
-                                this.totalElements = this.products.length;
-                                this.totalPages = 1;
-                                this.renderProducts();
-                                this.updateResultsCount();
-                                this.updatePagination();
-                            }
-                        }
-                    } catch (e) {
-                        console.log('Fallback load error:', e);
-                    }
-
-                    if (this.products.length === 0) {
-                        this.showEmptyState('Không tìm thấy sản phẩm phù hợp');
-                    }
+                    this.showEmptyState('Không tìm thấy sản phẩm phù hợp');
                 }
             } else {
                 console.log('API error:', data?.message);
@@ -366,23 +393,38 @@ class BestsellerProductsPageManager {
         const productsGrid = document.getElementById('productsGrid');
         const emptyState = document.getElementById('emptyState');
 
+        // Hide loading spinner
         if (loadingSpinner) loadingSpinner.style.display = 'none';
+        
+        // Hide products grid completely
         if (productsGrid) {
             productsGrid.style.display = 'none';
-            // Clear products grid content
-            productsGrid.innerHTML = '';
+            productsGrid.style.visibility = 'hidden';
+            productsGrid.innerHTML = ''; // Clear any existing content
         }
+        
+        // Show empty state
         if (emptyState) {
             emptyState.style.display = 'block';
-            emptyState.querySelector('h4').textContent = message;
+            emptyState.style.visibility = 'visible';
+            const titleElement = emptyState.querySelector('h4');
+            if (titleElement) {
+                titleElement.textContent = message;
+            }
         }
 
         // Update results count to 0
         this.updateResultsCount();
+        
+        // Hide pagination when no products
+        this.updatePagination();
+        
+        console.log('Empty state shown - no products match filters:', message);
     }
 
     renderProducts() {
         const productsGrid = document.getElementById('productsGrid');
+        const emptyState = document.getElementById('emptyState');
         if (!productsGrid) return;
 
         if (this.products.length === 0) {
@@ -390,9 +432,18 @@ class BestsellerProductsPageManager {
             return;
         }
 
+        // Hide empty state
+        if (emptyState) {
+            emptyState.style.display = 'none';
+            emptyState.style.visibility = 'hidden';
+        }
+
+        // Show and configure grid
+        productsGrid.style.display = 'block';
+        productsGrid.style.visibility = 'visible';
+
         const productsHTML = this.products.map(product => this.createProductCard(product)).join('');
         productsGrid.innerHTML = productsHTML;
-        productsGrid.style.display = 'block';
         
         // Trigger rating load sau khi render xong
         setTimeout(() => {
@@ -400,6 +451,8 @@ class BestsellerProductsPageManager {
                 window.loadProductRatings();
             }
         }, 500);
+        
+        console.log(`Rendered ${this.products.length} bestseller products`);
     }
 
     createProductCard(product) {
@@ -572,7 +625,10 @@ class BestsellerProductsPageManager {
     updateResultsCount() {
         const resultsCount = document.getElementById('resultsCount');
         if (resultsCount) {
-            resultsCount.textContent = `Hiển thị ${this.products.length} sản phẩm`;
+            // Use totalElements for consistency with pagination
+            const n = this.totalElements || 0;
+            resultsCount.textContent = `Hiển thị ${n} sản phẩm`;
+            console.log(`Updated results count: ${n} total products`);
         }
     }
 
