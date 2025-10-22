@@ -2,125 +2,519 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 
 <body>
-    <!-- Top Header Start -->
-    <nav class="navbar navbar-expand-lg navbar-light sticky-top custom-nav" id="main-navbar" th:fragment="header">
-        <div class="container">
-            <!-- Logo -->
-            <a class="navbar-brand fw-bold fs-3 text-dark" href="#" onclick="showPage('home')">
-                Liora ✨
-            </a>
-
-            <!-- Mobile Toggle -->
-            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <i class="fas fa-bars text-dark"></i>
-            </button>
-
-            <!-- Navigation Items -->
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <!-- Desktop Menu -->
-                <ul class="navbar-nav mx-auto d-none d-lg-flex">
-                    <li class="nav-item">
-                        <a class="nav-link nav-btn" href="#" onclick="showPage('skincare')"
-                            data-page="skincare">Skincare</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link nav-btn" href="#" onclick="showPage('makeup')" data-page="makeup">Makeup</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link nav-btn" href="#" onclick="showPage('bestsellers')"
-                            data-page="bestsellers">Bestsellers</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link nav-btn" href="#" onclick="showPage('new-arrivals')"
-                            data-page="new-arrivals">New Arrivals</a>
-                    </li>
-                </ul>
-
-                <!-- Search Bar (Desktop) -->
-                <div class="d-none d-lg-block me-3" style="width: 300px;">
-                    <div class="position-relative">
-                        <i class="fas fa-search position-absolute"
-                            style="left: 15px; top: 50%; transform: translateY(-50%); color: #6c757d;"></i>
-                        <input type="text" class="form-control search-input" placeholder="Tìm kiếm sản phẩm..."
-                            style="padding-left: 45px;">
-                    </div>
-                </div>
-
-                <!-- Desktop Icons -->
-                <div class="d-none d-lg-flex align-items-center">
-                    <button class="btn btn-link text-dark p-2 me-2 nav-icon-btn">
-                        <i class="fas fa-heart"></i>
-                    </button>
-
-                    <!-- User Account -->
-                    <div id="user-section">
-                        <!-- Will be populated by JavaScript -->
+    <!-- Header Start -->
+    <header th:fragment="header">
+        <!-- Top Header - Tầng trên -->
+        <div class="top-header">
+            <div class="container">
+                <div class="row align-items-center">
+                    <!-- Logo -->
+                    <div class="col-auto">
+                        <a class="navbar-brand" href="/" onclick="showPage('home')">
+                            <img src="/admin/images/liora-white.svg" alt="Liora" height="40" class="logo-img">
+                        </a>
                     </div>
 
-                    <button class="btn btn-link text-dark p-2 position-relative nav-icon-btn">
-                        <i class="fas fa-shopping-bag"></i>
-                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill cart-badge">
-                            0
-                        </span>
-                    </button>
-                </div>
+                    <!-- Search Bar -->
+                    <div class="col">
+                        <div class="search-container">
+                            <div class="position-relative">
+                                <i class="mdi mdi-magnify search-icon"></i>
+                                <input type="text" class="form-control search-input"
+                                    placeholder="Tìm kiếm sản phẩm, thương hiệu, ..." id="mainSearchInput">
 
-                <!-- Mobile Menu -->
-                <div class="d-lg-none mt-3">
-                    <!-- Mobile Search -->
-                    <div class="mb-3">
-                        <div class="position-relative">
-                            <i class="fas fa-search position-absolute"
-                                style="left: 15px; top: 50%; transform: translateY(-50%); color: #6c757d;"></i>
-                            <input type="text" class="form-control search-input" placeholder="Search products..."
-                                style="padding-left: 45px;">
+                                <!-- Search Results Dropdown -->
+                                <div id="searchResultsDropdown" class="search-results-dropdown">
+                                    <!-- Results list -->
+                                    <div id="searchResultsList" class="search-results-list">
+                                        <!-- Results will be populated here -->
+                                    </div>
+
+                                    <!-- View more link -->
+                                    <div class="search-results-footer">
+                                        <a href="#" id="viewMoreLink" class="view-more-link">
+                                            Xem thêm <span id="totalResultsCount">0</span> sản phẩm
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Mobile Navigation Links -->
-                    <ul class="navbar-nav">
-                        <li class="nav-item">
-                            <a class="nav-link nav-btn-mobile" href="#" onclick="showPage('skincare')"
-                                data-page="skincare">Skincare</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link nav-btn-mobile" href="#" onclick="showPage('makeup')"
-                                data-page="makeup">Makeup</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link nav-btn-mobile" href="#" onclick="showPage('bestsellers')"
-                                data-page="bestsellers">Bestsellers</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link nav-btn-mobile" href="#" onclick="showPage('new-arrivals')"
-                                data-page="new-arrivals">New Arrivals</a>
-                        </li>
-                    </ul>
+                    <!-- User & Cart -->
+                    <div class="col-auto">
+                        <div class="d-flex align-items-center gap-3">
+                            <!-- User Account -->
+                            <div id="user-section">
+                                <!-- Will be populated by JavaScript -->
+                            </div>
 
-                    <!-- Mobile User Section -->
-                    <div class="border-top border-pink-light pt-3 mt-3">
-                        <div id="mobile-user-section">
-                            <!-- Will be populated by JavaScript -->
+                            <!-- Cart -->
+                            <button class="btn btn-cart position-relative" onclick="window.location.href='/cart'">
+                                <i class="mdi mdi-shopping-outline"></i>
+                                <div class="cart-text">
+                                    <div class="cart-title">GIỎ HÀNG</div>
+                                </div>
+                                <span
+                                    class="position-absolute top-0 start-100 translate-middle badge rounded-pill cart-badge">
+                                    0
+                                </span>
+                            </button>
                         </div>
-                    </div>
-
-                    <!-- Mobile Icons -->
-                    <div class="d-flex justify-content-center gap-4 pt-3">
-                        <button class="btn btn-link text-dark nav-icon-btn">
-                            <i class="fas fa-heart fa-lg"></i>
-                        </button>
-                        <button class="btn btn-link text-dark position-relative nav-icon-btn">
-                            <i class="fas fa-shopping-bag fa-lg"></i>
-                            <span
-                                class="position-absolute top-0 start-100 translate-middle badge rounded-pill cart-badge">
-                                0
-                            </span>
-                        </button>
                     </div>
                 </div>
             </div>
         </div>
-    </nav>
+
+        <!-- Bottom Header - Tầng dưới -->
+        <div class="bottom-header" id="dynamic-bottom-header">
+            <div class="container">
+                <div class="row align-items-center">
+                    <!-- Categories Button -->
+                    <div class="col-auto">
+                        <div class="dropdown categories-dropdown">
+                            <button class="btn btn-categories" type="button" data-bs-toggle="dropdown"
+                                aria-expanded="false" id="categories-button">
+                                <i class="mdi mdi-menu"></i>
+                                <span id="categories-button-text">Danh Mục Sản Phẩm</span>
+                            </button>
+                            <div class="dropdown-menu categories-menu">
+                                <div class="container-fluid">
+                                    <div class="row">
+                                        <!-- Cột 1: Danh mục chính -->
+                                        <div class="col-md-3">
+                                            <div class="category-column">
+                                                <div class="category-list">
+                                                    <div class="category-loading">
+                                                        <i class="mdi mdi-loading"></i>
+                                                        Đang tải danh mục...
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Cột 2: Danh mục cấp 2 & 3 (trái) -->
+                                        <div class="col-md-4">
+                                            <div class="category-column">
+                                                <div class="subcategory-list">
+                                                    <div class="category-loading">
+                                                        <i class="mdi mdi-loading"></i>
+                                                        Chọn danh mục để xem...
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Cột 3: Danh mục cấp 2 & 3 (phải) -->
+                                        <div class="col-md-5">
+                                            <div class="category-column">
+                                                <div class="product-list">
+                                                    <div class="category-loading">
+                                                        <i class="mdi mdi-loading"></i>
+                                                        Chọn danh mục để xem sản phẩm...
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Main Navigation -->
+
+
+                    <!-- Dynamic Navigation Items -->
+                    <div class="col" id="main-navigation">
+                        <nav class="main-nav">
+                            <ul class="nav-list">
+                                <!-- Navigation items will be loaded dynamically -->
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Header Bottom Loading Script -->
+        <script>
+            function initHeaderBottom() {
+                try {
+                    loadHeaderNavigationContent();
+                } catch (e) {
+                    console.error('Header init error:', e);
+                }
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initHeaderBottom);
+            } else {
+                initHeaderBottom();
+            }
+
+            async function loadHeaderNavigationContent() {
+                try {
+                    const response = await fetch('/content/api/header-bottom');
+                    const data = await response.json();
+
+                    // Update navigation items
+                    if (data.navigationItems && data.navigationItems.length > 0) {
+                        const navList = document.querySelector('#main-navigation .nav-list');
+                        navList.innerHTML = '';
+
+                        // Load sub-items for each parent item
+                        for (let i = 0; i < data.navigationItems.length; i++) {
+                            const item = data.navigationItems[i];
+                            if (item.id) {
+                                try {
+                                    const subResponse = await fetch(`/content/api/header-bottom/sub-items/${item.id}`);
+                                    const subData = await subResponse.json();
+                                    item.subItems = subData || [];
+                                } catch (subError) {
+                                    console.error('Error loading sub-items for', item.title, ':', subError);
+                                    item.subItems = [];
+                                }
+                            }
+                        }
+
+                        data.navigationItems.forEach(item => {
+                            const navItem = document.createElement('li');
+                            navItem.className = 'nav-item';
+
+                            if (item.linkType === 'PARENT_CATEGORY' || item.isCategoryParent) {
+                                // Create dropdown for categories
+                                const dropdownId = `category-dropdown-${Math.random().toString(36).substr(2, 9)}`;
+                                navItem.innerHTML = `
+                                    <div class="nav-dropdown">
+                                        <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" id="${dropdownId}">
+                                            ${item.title.toUpperCase()}
+                                            <i class="mdi mdi-chevron-down dropdown-arrow"></i>
+                                        </a>
+                                        <ul class="dropdown-menu category-dropdown-menu" aria-labelledby="${dropdownId}">
+                                            <li><a class="dropdown-item" href="#">Đang tải danh mục con...</a></li>
+                                        </ul>
+                                    </div>
+                                `;
+
+                                // Load sub-categories for this category
+                                loadSubCategories(navItem, item);
+                            } else {
+                                // Create regular button for other items
+                                const navLink = document.createElement('a');
+
+                                // Determine URL based on link type
+                                let href = '#';
+                                if (item.linkType === 'EXTERNAL') {
+                                    href = item.url || '#';
+                                } else if (item.linkType === 'PAGE') {
+                                    // Normalize to /content/page/{slug}
+                                    const raw = (item.url || '').toString();
+                                    const slug = raw
+                                        .replace(/^\/content\/page\//, '')
+                                        .replace(/^\//, '');
+                                    href = slug ? `/content/page/${slug}` : '#';
+                                } else if (item.linkType === 'PAGE_LIST') {
+                                    // Normalize to /content/list/{sectionSlug}
+                                    const raw = (item.url || '').toString();
+                                    const sectionSlug = raw
+                                        .replace(/^\/content\/list\//, '')
+                                        .replace(/^\//, '');
+                                    href = sectionSlug ? `/content/list/${sectionSlug}` : '#';
+                                } else if (item.linkType === 'INTERNAL') {
+                                    href = item.url || '#';
+                                }
+
+                                navLink.href = href;
+                                navLink.className = 'nav-link nav-button';
+                                navLink.textContent = item.title.toUpperCase();
+
+                                // Add click handler - all links load in current tab
+                                navLink.addEventListener('click', function (e) {
+                                    // All links load in current tab, no special handling needed
+                                });
+
+                                navItem.appendChild(navLink);
+                            }
+
+                            navList.appendChild(navItem);
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error loading header bottom content:', error);
+                }
+            }
+
+            // Load sub-categories for a category dropdown
+            async function loadSubCategories(navItem, parentItem) {
+                try {
+                    const dropdownMenu = navItem.querySelector('.category-dropdown-menu');
+                    dropdownMenu.innerHTML = '';
+
+                    // Use sub-items from parentItem if available
+                    if (parentItem.subItems && parentItem.subItems.length > 0) {
+                        parentItem.subItems.forEach(subItem => {
+                            const li = document.createElement('li');
+                            const a = document.createElement('a');
+                            a.className = 'dropdown-item';
+
+                            // Determine URL based on link type
+                            let href = '#';
+                            if (subItem.linkType === 'EXTERNAL') {
+                                href = subItem.url || '#';
+                            } else if (subItem.linkType === 'PAGE') {
+                                // Normalize to /content/page/{slug}
+                                const raw = (subItem.url || '').toString();
+                                const slug = raw
+                                    .replace(/^\/content\/page\//, '')
+                                    .replace(/^\//, '');
+                                href = slug ? `/content/page/${slug}` : '#';
+                            } else if (subItem.linkType === 'PAGE_LIST') {
+                                // Normalize to /content/list/{sectionSlug}
+                                const raw = (subItem.url || '').toString();
+                                const sectionSlug = raw
+                                    .replace(/^\/content\/list\//, '')
+                                    .replace(/^\//, '');
+                                href = sectionSlug ? `/content/list/${sectionSlug}` : '#';
+                            } else {
+                                href = subItem.url || '#';
+                            }
+
+                            a.href = href;
+                            a.textContent = subItem.title;
+
+                            // All dropdown items load in current tab
+                            // No special click handler needed
+
+                            li.appendChild(a);
+                            dropdownMenu.appendChild(li);
+                        });
+                    } else {
+                        // Fallback: Load from API
+                        try {
+                            const response = await fetch(`/content/api/header-bottom/sub-items/${parentItem.id}`);
+                            const data = await response.json();
+
+                            if (data && data.length > 0) {
+                                data.forEach(subItem => {
+                                    const li = document.createElement('li');
+                                    const a = document.createElement('a');
+                                    a.className = 'dropdown-item';
+
+                                    // Determine URL based on link type
+                                    let href = '#';
+                                    if (subItem.linkType === 'EXTERNAL') {
+                                        href = subItem.url || '#';
+                                    } else if (subItem.linkType === 'PAGE') {
+                                        // Normalize to /content/page/{slug}
+                                        const raw = (subItem.url || '').toString();
+                                        const slug = raw
+                                            .replace(/^\/content\/page\//, '')
+                                            .replace(/^\//, '');
+                                        href = slug ? `/content/page/${slug}` : '#';
+                                    } else if (subItem.linkType === 'PAGE_LIST') {
+                                        // Normalize to /content/list/{sectionSlug}
+                                        const raw = (subItem.url || '').toString();
+                                        const sectionSlug = raw
+                                            .replace(/^\/content\/list\//, '')
+                                            .replace(/^\//, '');
+                                        href = sectionSlug ? `/content/list/${sectionSlug}` : '#';
+                                    } else {
+                                        href = subItem.url || '#';
+                                    }
+
+                                    a.href = href;
+                                    a.textContent = subItem.title;
+
+                                    // All dropdown items load in current tab
+                                    // No special click handler needed
+
+                                    li.appendChild(a);
+                                    dropdownMenu.appendChild(li);
+                                });
+                            } else {
+                                dropdownMenu.innerHTML = '<li><a class="dropdown-item" href="#">Không có danh mục con</a></li>';
+                            }
+                        } catch (apiError) {
+                            console.error('Error loading sub-items from API:', apiError);
+                            dropdownMenu.innerHTML = '<li><a class="dropdown-item" href="#">Lỗi tải danh mục</a></li>';
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error loading sub-categories:', error);
+                    const dropdownMenu = navItem.querySelector('.category-dropdown-menu');
+                    dropdownMenu.innerHTML = '<li><a class="dropdown-item" href="#">Lỗi tải danh mục</a></li>';
+                }
+            }
+        </script>
+
+        <!-- Auth Modal moved here to be available site-wide -->
+        <div class="modal fade" id="authModal" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow-lg">
+                    <div class="modal-header border-0 text-center">
+                        <h5 class="modal-title fw-bold fs-4 text-dark w-100" id="authModalTitle">Welcome Back! 💕</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body px-4 pb-4">
+                        <form id="authForm">
+                            <a class="google-btn" href="/oauth2/authorization/google">
+                                <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google">
+                                Đăng nhập với Google
+                            </a>
+
+                            <div class="divider">
+                                <span>hoặc</span>
+                            </div>
+                            <div id="signupFields" style="display: none;">
+                                <div class="mb-3">
+                                    <label class="form-label fw-medium text-dark">Email</label>
+                                    <input type="email" class="form-control rounded-pill" placeholder="Email của bạn"
+                                        id="authEmail">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-medium text-dark">Họ</label>
+                                    <input type="text" class="form-control rounded-pill" placeholder="Họ"
+                                        id="authFirstName">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-medium text-dark">Tên</label>
+                                    <input type="text" class="form-control rounded-pill" placeholder="Tên"
+                                        id="authLastName">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-medium text-dark">Username</label>
+                                <input type="username" class="form-control rounded-pill"
+                                    placeholder="Tên đăng nhập của bạn" required id="username">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-medium text-dark">Password</label>
+                                <input type="password" class="form-control rounded-pill" placeholder="Mật khẩu của bạn"
+                                    required id="password">
+                            </div>
+                            <button type="submit" class="btn btn-pink-primary w-100 fw-semibold py-3 rounded-pill mb-3"
+                                id="authSubmitBtn">Đăng nhập</button>
+                            <div class="forgot-password">
+                                <a href="#!" data-bs-toggle="modal" data-bs-target="#forgotPasswordModal">Quên mật
+                                    khẩu?</a>
+                            </div>
+                            <div class="text-center">
+                                <button type="button" class="btn btn-link text-pink-primary fw-medium"
+                                    id="authToggle">Chưa có tài khoản? Đăng ký</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Forgot Password Modal -->
+        <div class="modal fade" id="forgotPasswordModal" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow-lg">
+                    <div class="modal-header border-0 text-center">
+                        <h5 class="modal-title fw-bold fs-4 text-dark w-100">Quên mật khẩu? 🔐</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body px-4 pb-4">
+                        <form id="forgotPasswordForm">
+                            <div class="mb-3">
+                                <label class="form-label fw-medium text-dark">Email</label>
+                                <input type="email" class="form-control rounded-pill" placeholder="Nhập email của bạn"
+                                    id="forgotEmail" required>
+                            </div>
+                            <button type="submit" class="btn btn-pink-primary w-100 fw-semibold py-3 rounded-pill mb-3">
+                                Gửi email đặt lại mật khẩu
+                            </button>
+                            <div class="text-center">
+                                <button type="button" class="btn btn-link text-pink-primary fw-medium"
+                                    data-bs-dismiss="modal">
+                                    Quay lại đăng nhập
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <style>
+            /* Ensure auth modal appears above any page overlays (e.g., cart overlays) */
+            .modal {
+                z-index: 2000;
+            }
+
+            .modal-backdrop {
+                z-index: 1990;
+            }
+
+            /* Ensure forgot password modal appears at same level as auth modal */
+            #forgotPasswordModal {
+                z-index: 2000 !important;
+            }
+
+            #forgotPasswordModal .modal-backdrop {
+                z-index: 1990 !important;
+            }
+
+            /* Ensure modals stack properly when opened */
+            .modal.show {
+                z-index: 2000;
+            }
+
+            .modal-backdrop.show {
+                z-index: 1990;
+            }
+
+            /* Force forgot password modal to appear on top */
+            #forgotPasswordModal.modal {
+                z-index: 2010 !important;
+            }
+
+            #forgotPasswordModal+.modal-backdrop {
+                z-index: 2000 !important;
+            }
+
+            /* Ensure proper stacking when multiple modals are open */
+            .modal.fade.show {
+                z-index: 2010;
+            }
+
+            .modal-backdrop.fade.show {
+                z-index: 2000;
+            }
+        </style>
+
+        <!-- Ensure auth.js is available globally when header is included -->
+        <script th:src="@{/user/js/auth.js}"></script>
+        <script>
+            // Move modals to body to avoid being constrained by header's stacking context
+            (function () {
+                function moveModalsToBody() {
+                    try {
+                        // Move auth modal
+                        var authModal = document.getElementById('authModal');
+                        if (authModal && authModal.parentElement !== document.body) {
+                            document.body.appendChild(authModal);
+                        }
+
+                        // Move forgot password modal
+                        var forgotModal = document.getElementById('forgotPasswordModal');
+                        if (forgotModal && forgotModal.parentElement !== document.body) {
+                            document.body.appendChild(forgotModal);
+                        }
+                    } catch (e) { /* noop */ }
+                }
+
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', moveModalsToBody);
+                } else {
+                    moveModalsToBody();
+                }
+            })();
+        </script>
+    </header>
     <!-- Header End -->
 </body>
 

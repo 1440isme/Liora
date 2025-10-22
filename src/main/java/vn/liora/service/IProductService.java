@@ -5,6 +5,8 @@ import org.springframework.data.domain.Pageable;
 import vn.liora.dto.request.ProductCreationRequest;
 import vn.liora.dto.request.ProductUpdateRequest;
 import vn.liora.dto.response.ProductResponse;
+import vn.liora.dto.response.BrandResponse;
+import vn.liora.dto.response.TopProductResponse;
 import vn.liora.entity.Product;
 
 import java.math.BigDecimal;
@@ -25,6 +27,7 @@ public interface IProductService {
     Page<Product> findAll(Pageable pageable);
     List<Product> findAllById(Iterable<Long> ids);
     Optional<Product> findByIdOptional(Long id);
+    Product save(Product product);
 
     // ========== SEARCH ==========
     List<Product> findByNameContaining(String name);
@@ -61,7 +64,7 @@ public interface IProductService {
     // ========== RATING FILTERS ==========
     List<Product> findByRatingGreaterThanEqual(BigDecimal minRating);
     List<Product> findByRatingRange(BigDecimal minRating, BigDecimal maxRating);
-    List<Product> findHighRatedProducts(BigDecimal minRating);
+    List<Product> findProductsByMinRating(BigDecimal minRating);
 
     // ========== COMBINED FILTERS ==========
     List<Product> findActiveAvailableByBrandAndCategory(Long brandId, Long categoryId);
@@ -75,8 +78,8 @@ public interface IProductService {
 
     // ========== BUSINESS QUERIES ==========
     List<Product> findTopSellingInStockProducts(Pageable pageable);
-    List<Product> findHighRatedProducts(BigDecimal minRating, Pageable pageable);
-    List<Product> findNewestProducts(Pageable pageable);
+    List<Product> findHighRatedProductsWithPagination(BigDecimal minRating, Pageable pageable);
+    List<TopProductResponse> getTopSellingProducts(int limit);
 
     // ========== ADMIN QUERIES ==========
     Page<Product> findActiveProductsWithPagination(Pageable pageable);
@@ -96,5 +99,24 @@ public interface IProductService {
     Long countOutOfStockProducts();
     Long countByBrand(Long brandId);
     Long countByCategory(Long categoryId);
+    
+    // ========== RELATED PRODUCTS ==========
+    List<Product> findByCategoryAndIdNot(Long categoryId, Long productId);
+    
+    // ========== OPTIMIZED FRONTEND QUERIES ==========
+    // Simple APIs for frontend - fast and efficient
+    List<Product> findBestSellingProducts(Pageable pageable);
+    List<Product> findNewestProducts(Pageable pageable);
+    List<Product> findBestSellingByCategory(Long categoryId, Pageable pageable);
+    List<Product> findBestSellingByBrand(Long brandId, Pageable pageable);
+    List<BrandResponse> getBestSellingBrands();
+    List<BrandResponse> getNewestBrands();
+    
+    // Advanced APIs for dedicated pages with filtering
+    // Note: newest-advanced now uses direct controller logic like best-selling-advanced
+    
+    // ========== RATING MANAGEMENT ==========
+    void updateProductAverageRating(Long productId);
+    void updateAllProductsAverageRating();
 
 }

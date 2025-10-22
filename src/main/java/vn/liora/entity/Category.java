@@ -20,9 +20,6 @@ public class Category {
     @Column(name = "IdCategory")
     private Long categoryId;
 
-    @Column(name = "Icon")
-    private String icon;
-
     @Column(name = "Name", nullable = false, columnDefinition = "NVARCHAR(255)")
     private String name;
 
@@ -34,13 +31,25 @@ public class Category {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "IdCategoryParent") // 1 category có thể có 1 parent category
+    @JsonIgnore
     private Category parentCategory;
 
-    @OneToMany(mappedBy = "parentCategory", cascade = CascadeType.ALL, fetch = FetchType.LAZY) // 1 category có nhiều child category (con)
+    @OneToMany(mappedBy = "parentCategory", cascade = CascadeType.ALL, fetch = FetchType.LAZY) // 1 category có nhiều
+                                                                                               // child category (con)
     @JsonIgnore
     private List<Category> childCategories;
 
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnore
     private List<Product> products;
+
+    @Override
+    public String toString() {
+        return "Category{" +
+                "categoryId=" + categoryId +
+                ", name='" + name + '\'' +
+                ", isParent=" + isParent +
+                ", isActive=" + isActive +
+                '}';
+    }
 }

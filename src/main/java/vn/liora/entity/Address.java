@@ -5,8 +5,6 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import java.util.List;
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -19,20 +17,28 @@ public class Address {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "IdAddress")
     Long idAddress;
-    @Column(name = "Name", nullable = false)
+    @Column(name = "Name", nullable = false, columnDefinition = "NVARCHAR(255)")
     String name;
     @Column(name = "Phone", nullable = false)
     String phone;
-    @Column(name = "AdressDetail", nullable = false, columnDefinition = "NVARCHAR(255)")
+    @Column(name = "AddressDetail", nullable = false, columnDefinition = "NVARCHAR(255)")
     String addressDetail;
-    @Column(name = "Ward", nullable = false, columnDefinition = "NVARCHAR(255)")
-    String ward;
-    @Column(name = "Province", nullable = false, columnDefinition = "NVARCHAR(255)")
-    String province;
-    @Column(name = "IsDefault")
-    Boolean isDefault;
+    @Column(name = "ProvinceId")
+    Integer provinceId; // GHN province_id
 
-    @OneToMany(mappedBy = "address", fetch = FetchType.LAZY)
-    private List<Order> orders;
+    @Column(name = "DistrictId")
+    Integer districtId; // GHN district_id
+
+    @Column(name = "WardCode")
+    String wardCode; // GHN ward_code (string)
+
+    @Column(name = "IsDefault")
+    @Builder.Default
+    Boolean isDefault = false;
+
+    @ManyToOne
+    @JoinColumn(name = "IdUser")
+    @JsonIgnore
+    private User user;
 
 }

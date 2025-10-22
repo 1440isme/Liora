@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recent Orders</title><!DOCTYPE html>
+</head>
+<body>
+    <!-- Recent Orders Card -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between bg-white border-start border-4 border-success">
+            <h6 class="m-0 fw-bold text-success">📦 Đơn hàng gần đây</h6>
+            <a href="/admin/orders" class="btn btn-sm btn-success">Xem tất cả</a>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" width="100%" cellspacing="0">
+                    <thead>
+                    <tr>
+                        <th>Mã đơn hàng</th>
+                        <th>Khách hàng</th>
+                        <th>Tổng tiền</th>
+                        <th>Trạng thái</th>
+                        <th>Ngày tạo</th>
+                    </tr>
+                    </thead>
+
+                    <tbody>
+                    <tr th:each="order : ${recentOrders}">
+                        <td th:text="${order.id}">#12345</td>
+                        <td th:text="${order.customerName}">Nguyễn Văn A</td>
+                        <td th:text="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' ₫'">1,500,000 ₫</td>
+                        <td>
+    <span class="badge text-white px-3 py-2 rounded-pill fw-semibold"
+          th:classappend="${order.status == 'PENDING' || order.status == 'PROCESSING'} ? 'bg-warning text-dark' :
+                          (${order.status == 'SHIPPED' || order.status == 'CONFIRMED'} ? 'bg-info text-dark' :
+                          (${order.status == 'DELIVERED' || order.status == 'COMPLETED'} ? 'bg-success' :
+                          (${order.status == 'CANCELLED' || order.status == 'FAILED'} ? 'bg-danger' : 'bg-secondary')))"
+          th:text="${order.status}">
+        Đang xử lý
+    </span>
+                        </td>
+
+                        <td th:text="${#temporals.format(order.createdAt, 'dd/MM/yyyy HH:mm')}">15/12/2024 10:30</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

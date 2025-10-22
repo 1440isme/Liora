@@ -13,7 +13,6 @@ import vn.liora.enums.Role;
 import vn.liora.repository.UserRepository;
 import vn.liora.repository.RoleRepository;
 
-import java.util.HashSet;
 import java.util.Set;
 
 @Configuration
@@ -28,14 +27,10 @@ public class ApplicationInitConfig {
     ApplicationRunner applicationRunner(UserRepository userRepository, RoleRepository roleRepository) {
         return args -> {
             if (userRepository.findByUsername("admin").isEmpty()) {
+                // Chỉ tạo admin user, role đã được tạo bởi DataInitializer
                 var adminRole = roleRepository.findById(Role.ADMIN.name())
-                        .orElseGet(() -> {
-                            var r = vn.liora.entity.Role.builder()
-                                    .name(Role.ADMIN.name())
-                                    .description("Administrator")
-                                    .build();
-                            return roleRepository.save(r);
-                        });
+                        .orElseThrow(() -> new RuntimeException("ADMIN role not found. Please check DataInitializer."));
+
                 User user = User.builder()
                         .username("admin")
                         .password(passwordEncoder.encode("admin"))

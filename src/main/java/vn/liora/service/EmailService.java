@@ -1,0 +1,191 @@
+package vn.liora.service;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.stereotype.Service;
+import vn.liora.dto.response.OrderResponse;
+import vn.liora.dto.response.OrderProductResponse;
+
+import java.util.List;
+
+@Service
+public class EmailService {
+
+    @Autowired
+    private JavaMailSender mailSender;
+
+    /**
+     * Gửi email xác nhận đơn hàng cho user đã đăng nhập
+     */
+    public void sendOrderConfirmationEmail(String userEmail, String userName, OrderResponse order,
+            List<OrderProductResponse> orderProducts) {
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(userEmail);
+            message.setSubject("Xác nhận đơn hàng #" + order.getIdOrder() + " - Liora");
+
+            String content = buildOrderConfirmationContent(userName, order, orderProducts, true);
+            message.setText(content);
+
+            mailSender.send(message);
+            System.out.println("Order confirmation email sent to: " + userEmail);
+        } catch (Exception e) {
+            System.err.println("Error sending order confirmation email: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Gửi email xác nhận đơn hàng cho guest
+     */
+    public void sendGuestOrderConfirmationEmail(String guestEmail, OrderResponse order,
+            List<OrderProductResponse> orderProducts) {
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(guestEmail);
+            message.setSubject("Xác nhận đơn hàng #" + order.getIdOrder() + " - Liora");
+
+            String content = buildOrderConfirmationContent("Khách hàng", order, orderProducts, false);
+            message.setText(content);
+
+            mailSender.send(message);
+            System.out.println("Guest order confirmation email sent to: " + guestEmail);
+        } catch (Exception e) {
+            System.err.println("Error sending guest order confirmation email: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Gửi email reset password
+     */
+    public void sendPasswordResetEmail(String userEmail, String userName, String resetToken) {
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(userEmail);
+            message.setSubject("Đặt lại mật khẩu - Liora");
+
+            String content = buildPasswordResetContent(userName, resetToken);
+            message.setText(content);
+
+            mailSender.send(message);
+            System.out.println("Password reset email sent to: " + userEmail);
+        } catch (Exception e) {
+            System.err.println("Error sending password reset email: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Xây dựng nội dung email
+     */
+    private String buildOrderConfirmationContent(String customerName, OrderResponse order,
+            List<OrderProductResponse> orderProducts, boolean isRegisteredUser) {
+        StringBuilder content = new StringBuilder();
+
+        content.append("Xin chào ").append(customerName).append(",\n\n");
+        content.append("Cảm ơn bạn đã đặt hàng tại Liora! Đơn hàng của bạn đã được xác nhận.\n\n");
+
+        content.append("THÔNG TIN ĐƠN HÀNG:\n");
+        content.append("Mã đơn hàng: #").append(order.getIdOrder()).append("\n");
+        content.append("Ngày đặt: ").append(order.getOrderDate()).append("\n");
+        content.append("Trạng thái: ").append(getOrderStatusText(order.getOrderStatus())).append("\n");
+        content.append("Tổng tiền: ").append(String.format("%,.0f VNĐ", order.getTotal())).append("\n\n");
+
+        content.append("SẢN PHẨM ĐÃ ĐẶT:\n");
+        for (OrderProductResponse product : orderProducts) {
+            content.append("- ").append(product.getProductName())
+                    .append(" x").append(product.getQuantity())
+                    .append(" = ").append(String.format("%,.0f VNĐ", product.getTotalPrice())).append("\n");
+        }
+
+        content.append("\nTHÔNG TIN GIAO HÀNG:\n");
+        content.append("Họ tên: ").append(order.getName()).append("\n");
+        content.append("Số điện thoại: ").append(order.getPhone()).append("\n");
+        content.append("Email: ").append(order.getEmail()).append("\n");
+        content.append("Địa chỉ: ").append(order.getAddressDetail()).append("\n");
+        content.append("Phương thức thanh toán: ").append(getPaymentMethodText(order.getPaymentMethod()))
+                .append("\n\n");
+
+        if (isRegisteredUser) {
+            content.append("XEM CHI TIẾT ĐƠN HÀNG:\n");
+            content.append("Bạn có thể xem chi tiết đơn hàng tại: ");
+            content.append("http://localhost:8080/user/order-detail/").append(order.getIdOrder()).append("\n\n");
+        } else {
+            content.append("XEM CHI TIẾT ĐƠN HÀNG:\n");
+            content.append("Bạn có thể xem chi tiết đơn hàng tại: ");
+            content.append("http://localhost:8080/user/order-detail/access\n\n");
+            content.append("Thông tin cần thiết:\n");
+            content.append("- Mã đơn hàng: ").append(order.getIdOrder()).append("\n");
+            content.append("- Email đặt hàng: ").append(order.getEmail()).append("\n\n");
+        }
+
+        content.append("Nếu bạn có bất kỳ câu hỏi nào, vui lòng liên hệ với chúng tôi.\n\n");
+        content.append("Trân trọng,\n");
+        content.append("Đội ngũ Liora");
+
+        return content.toString();
+    }
+
+    private String getOrderStatusText(String status) {
+        switch (status) {
+            case "PENDING":
+                return "Chờ xử lý";
+            case "CONFIRMED":
+                return "Đã xác nhận";
+            case "SHIPPING":
+                return "Đang giao hàng";
+            case "DELIVERED":
+                return "Đã giao hàng";
+            case "CANCELLED":
+                return "Đã hủy";
+            default:
+                return status;
+        }
+    }
+
+    private String getPaymentMethodText(String paymentMethod) {
+        switch (paymentMethod) {
+            case "CASH":
+                return "Thanh toán khi nhận hàng";
+            case "BANK_TRANSFER":
+                return "Chuyển khoản ngân hàng";
+            case "CREDIT_CARD":
+                return "Thẻ tín dụng";
+            default:
+                return paymentMethod;
+        }
+    }
+
+    /**
+     * Xây dựng nội dung email reset password
+     */
+    private String buildPasswordResetContent(String userName, String resetToken) {
+        StringBuilder content = new StringBuilder();
+
+        content.append("Xin chào ").append(userName).append(",\n\n");
+        content.append("Bạn đã yêu cầu đặt lại mật khẩu cho tài khoản Liora của mình.\n\n");
+
+        content.append("ĐỂ ĐẶT LẠI MẬT KHẨU:\n");
+        content.append("1. Click vào link bên dưới\n");
+        content.append("2. Nhập mật khẩu mới\n");
+        content.append("3. Xác nhận mật khẩu mới\n\n");
+
+        content.append("LINK ĐẶT LẠI MẬT KHẨU:\n");
+        content.append("http://localhost:8080/reset-password\n\n");
+        content.append("MÃ XÁC NHẬN:\n");
+        content.append(resetToken).append("\n\n");
+        content.append("LƯU Ý: Mã xác nhận chỉ có hiệu lực trong 1 giờ và chỉ sử dụng được 1 lần.\n\n");
+
+        content.append("LƯU Ý QUAN TRỌNG:\n");
+        content.append("- Link này chỉ có hiệu lực trong 1 giờ\n");
+        content.append("- Nếu bạn không yêu cầu đặt lại mật khẩu, hãy bỏ qua email này\n");
+        content.append("- Để bảo mật, không chia sẻ link này với ai khác\n\n");
+
+        content.append("Nếu bạn gặp vấn đề, hãy liên hệ với chúng tôi.\n\n");
+        content.append("Trân trọng,\nĐội ngũ Liora");
+
+        return content.toString();
+    }
+}

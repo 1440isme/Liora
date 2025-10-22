@@ -43,9 +43,14 @@ public class BrandServiceImpl implements IBrandService {
 
     @Override
     public void deleteById(Long id) {
-        if (!brandRepository.existsById(id)) {
-            throw new AppException(ErrorCode.BRAND_NOT_FOUND);
+        Brand brand = brandRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.BRAND_NOT_FOUND));
+        
+        // Kiểm tra xem thương hiệu có sản phẩm nào đang sử dụng không
+        if (productRepository.countByBrand(id) > 0) {
+            throw new AppException(ErrorCode.BRAND_HAS_PRODUCTS);
         }
+        
         brandRepository.deleteById(id);
     }
 
@@ -136,8 +141,13 @@ public class BrandServiceImpl implements IBrandService {
     }
 
     @Override
-    public List<Brand> findInactiveBrands() {
-        return brandRepository.findByIsActiveFalse();
+    public Page<Brand> findActiveBrands(Pageable pageable) {
+        return brandRepository.findByIsActiveTrue(pageable);
+    }
+
+    @Override
+    public Page<Brand> findInactiveBrands(Pageable pageable) {
+        return brandRepository.findByIsActiveFalse(pageable);
     }
 
     @Override

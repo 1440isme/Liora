@@ -20,33 +20,34 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "IdUser")
-     Long userId;
+    Long userId;
     @Column(name = "Username", nullable = false, unique = true)
-     String username;
+    String username;
     @Column(name = "Password", nullable = false)
-     String password;
-    @Column(name = "Email", nullable = false)
-     String email;
+    String password;
+    @Column(name = "Email", nullable = false, unique = true)
+    String email;
     @Column(name = "Phone")
-     String phone;
-    @Column(name = "Firstname",nullable = false, columnDefinition = "NVARCHAR(100)")
-     String firstname ;
-    @Column(name = "Lastname",nullable = false, columnDefinition = "NVARCHAR(100)")
-     String lastname ;
+    String phone;
+    @Column(name = "Firstname", nullable = false, columnDefinition = "NVARCHAR(100)")
+    String firstname;
+    @Column(name = "Lastname", nullable = false, columnDefinition = "NVARCHAR(100)")
+    String lastname;
     @Column(name = "DoB")
-     LocalDate dob;
+    LocalDate dob;
     @Column(name = "Gender")
-     Boolean gender;
+    Boolean gender;
     @Column(name = "Avatar")
-     String avatar;
+    String avatar;
     @Column(name = "Active")
-     Boolean active;
+    Boolean active;
     @Column(name = "CreatedDate")
-     LocalDate createdDate;
+    LocalDate createdDate;
 
     @ManyToMany
     @JoinTable(name = "User_Role")
     Set<Role> roles;
+
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnore
     private Cart cart;
@@ -54,5 +55,9 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnore
     private List<Order> orders;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
+    private List<Address> addresses;
 
 }

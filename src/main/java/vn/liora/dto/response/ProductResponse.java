@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -34,4 +35,8 @@ public class ProductResponse {
     private BigDecimal averageRating;
     private Integer ratingCount;
     private Boolean isActive;
+
+    // Image fields
+    private String mainImageUrl;
+    private List<String> imageUrls;
 }

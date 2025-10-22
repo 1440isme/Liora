@@ -14,11 +14,11 @@ public interface CategoryMapper {
     @Mapping(target = "parentCategory", ignore = true)
     Category toCategory(CategoryCreationRequest request);
     
-    @Mapping(target = "parentCategoryId", source = "parentCategory.categoryId")
+    @Mapping(target = "parentCategoryId", source = "parentCategory.categoryId", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(target = "children", ignore = true)
     CategoryResponse toCategoryResponse(Category category);
     
     @Mapping(target = "name", source = "name", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    @Mapping(target = "icon", source = "icon", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "isParent", source = "isParent", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "isActive", source = "isActive", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "parentCategory", ignore = true)

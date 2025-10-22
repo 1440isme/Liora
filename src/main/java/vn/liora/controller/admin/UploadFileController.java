@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import vn.liora.dto.request.ApiResponse;
@@ -23,6 +24,7 @@ import java.util.*;
 @RestController
 @RequestMapping("/admin/api/upload")
 @CrossOrigin(origins = "*")
+@PreAuthorize("hasAuthority('product.manage_images')")
 public class UploadFileController {
 
     @Autowired
@@ -54,8 +56,14 @@ public class UploadFileController {
     public ResponseEntity<ApiResponse<Map<String, String>>> uploadBrandImage(
             @RequestParam("file") MultipartFile file) {
         try {
+            System.out.println("=== UPLOAD BRAND IMAGE START ===");
+            System.out.println("File name: " + file.getOriginalFilename());
+            System.out.println("File size: " + file.getSize() + " bytes");
+            System.out.println("Content type: " + file.getContentType());
+
             // Validation
             if (!validateFile(file)) {
+                System.err.println("File validation failed");
                 return ResponseEntity.badRequest()
                         .body(ApiResponse.error("File không hợp lệ hoặc quá lớn"));
             }
@@ -127,6 +135,11 @@ public class UploadFileController {
                         Image image = new Image();
                         image.setImageUrl("/uploads/" + relativePath);
                         image.setProduct(product);
+
+                        // Set displayOrder dựa trên số ảnh hiện tại của sản phẩm
+                        Long currentImageCount = imageRepository.countByProductProductId(productId);
+                        image.setDisplayOrder(currentImageCount.intValue()); // 0, 1, 2, 3...
+
                         imageRepository.save(image);
                     }
                 }
@@ -223,6 +236,7 @@ public class UploadFileController {
      * Xóa ảnh
      */
     @DeleteMapping("/{filename}")
+    @PreAuthorize("hasAuthority('product.manage_images')")
     public ResponseEntity<ApiResponse<String>> deleteImage(@PathVariable String filename) {
         try {
             // Tìm và xóa ảnh trong database

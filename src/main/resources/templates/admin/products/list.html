@@ -26,7 +26,7 @@
                             <h4 class="card-title card-title-dash">Bộ lọc</h4>
                             <form method="get" action="/admin/products">
                                 <div class="row">
-                                    <div class="col-md-3">
+                                    <div class="col" style="flex: 0 0 28%;">
                                         <label for="search" class="form-label">Tìm kiếm</label>
                                         <input type="text" class="form-control" id="search" name="search"
                                             th:value="${param.search}" placeholder="Tên sản phẩm, SKU...">
@@ -51,24 +51,24 @@
                                             </option>
                                         </select>
                                     </div>
-                                    <div class="col-md-2">
+                                    <div class="col" style="flex: 0 0 11%;">
                                         <label for="status" class="form-label">Trạng thái</label>
                                         <select class="form-select" id="status" name="status">
-                                            <option value="">Tất cả trạng thái</option>
-                                            <option value="ACTIVE" th:selected="${param.status == 'ACTIVE'}">Hoạt động
-                                            </option>
-                                            <option value="INACTIVE" th:selected="${param.status == 'INACTIVE'}">Ngừng
-                                                bán
-                                            </option>
-                                            <option value="OUT_OF_STOCK"
-                                                th:selected="${param.status == 'OUT_OF_STOCK'}">Hết
-                                                hàng</option>
+                                            <option value="">Tất cả</option>
+                                            <option value="ACTIVE">Hoạt động</option>
+                                            <option value="INACTIVE">Tạm dừng</option>
                                         </select>
                                     </div>
-                                    <div class="col-md-3 d-flex align-items-end">
-                                        <button type="submit" class="btn btn-primary text-white me-2"><i
-                                                class="mdi mdi-magnify"></i> Tìm kiếm</button>
-                                        <a href="/admin/products" class="btn btn-otline-dark"><i
+                                    <div class="col" style="flex: 0 0 11%;">
+                                        <label for="stockStatus" class="form-label">Tồn kho</label>
+                                        <select class="form-select" id="stockStatus" name="stockStatus">
+                                            <option value="">Tất cả</option>
+                                            <option value="IN_STOCK">Còn hàng</option>
+                                            <option value="OUT_OF_STOCK">Hết hàng</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2 d-flex align-items-end">
+                                        <a href="/admin/products" class="btn btn-outline-dark"><i
                                                 class="mdi mdi-close"></i> Xóa bộ lọc</a>
                                     </div>
                                 </div>
@@ -82,13 +82,14 @@
                             <div th:replace="admin/products/components/product-table"></div>
                         </div>
                     </div>
-                    <div th:replace="admin/layout/admin-footer"></div>
                 </div>
+                <div th:replace="admin/layout/admin-footer"></div>
             </div>
         </div>
+    </div>
 
-        <div th:replace="admin/fragments/admin-scripts :: admin-scripts"></div>
-        <script src="/admin/js/admin/products.js"></script>
+    <div th:replace="admin/fragments/admin-scripts :: admin-scripts"></div>
+    <script src="/admin/js/admin/products/product-table.js"></script>
 </body>
 
 </html>
