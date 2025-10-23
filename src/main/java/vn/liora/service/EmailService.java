@@ -1,6 +1,7 @@
 package vn.liora.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
@@ -14,6 +15,9 @@ public class EmailService {
 
     @Autowired
     private JavaMailSender mailSender;
+
+    @Value("${APP_URL:http://localhost:8080}")
+    private String appUrl;
 
     /**
      * Gửi email xác nhận đơn hàng cho user đã đăng nhập
@@ -111,11 +115,11 @@ public class EmailService {
         if (isRegisteredUser) {
             content.append("XEM CHI TIẾT ĐƠN HÀNG:\n");
             content.append("Bạn có thể xem chi tiết đơn hàng tại: ");
-            content.append("http://localhost:8080/user/order-detail/").append(order.getIdOrder()).append("\n\n");
+            content.append(appUrl).append("/user/order-detail/").append(order.getIdOrder()).append("\n\n");
         } else {
             content.append("XEM CHI TIẾT ĐƠN HÀNG:\n");
             content.append("Bạn có thể xem chi tiết đơn hàng tại: ");
-            content.append("http://localhost:8080/user/order-detail/access\n\n");
+            content.append(appUrl).append("/user/order-detail/access\n\n");
             content.append("Thông tin cần thiết:\n");
             content.append("- Mã đơn hàng: ").append(order.getIdOrder()).append("\n");
             content.append("- Email đặt hàng: ").append(order.getEmail()).append("\n\n");
@@ -173,7 +177,7 @@ public class EmailService {
         content.append("3. Xác nhận mật khẩu mới\n\n");
 
         content.append("LINK ĐẶT LẠI MẬT KHẨU:\n");
-        content.append("http://localhost:8080/reset-password\n\n");
+        content.append(appUrl).append("/reset-password\n\n");
         content.append("MÃ XÁC NHẬN:\n");
         content.append(resetToken).append("\n\n");
         content.append("LƯU Ý: Mã xác nhận chỉ có hiệu lực trong 1 giờ và chỉ sử dụng được 1 lần.\n\n");
