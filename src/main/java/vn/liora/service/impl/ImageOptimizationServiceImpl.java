@@ -24,6 +24,12 @@ public class ImageOptimizationServiceImpl implements IImageOptimizationService {
     @Override
     public String optimizeImage(MultipartFile file, Path outputPath, int maxWidth, int maxHeight, float quality)
             throws IOException {
+        System.out.println("=== ImageOptimizationService.optimizeImage ===");
+        System.out.println("File: " + file.getOriginalFilename());
+        System.out.println("Output path: " + outputPath.toString());
+        System.out.println("Max size: " + maxWidth + "x" + maxHeight);
+        System.out.println("Quality: " + quality);
+
         if (!isValidImageFile(file)) {
             throw new IllegalArgumentException("File không phải là ảnh hợp lệ");
         }
@@ -32,6 +38,8 @@ public class ImageOptimizationServiceImpl implements IImageOptimizationService {
         if (originalImage == null) {
             throw new IOException("Không thể đọc file ảnh");
         }
+
+        System.out.println("Original image size: " + originalImage.getWidth() + "x" + originalImage.getHeight());
 
         // Tính toán kích thước mới
         Dimension newSize = calculateNewSize(originalImage.getWidth(), originalImage.getHeight(), maxWidth, maxHeight);
@@ -158,20 +166,36 @@ public class ImageOptimizationServiceImpl implements IImageOptimizationService {
 
     private void saveWithQuality(BufferedImage image, Path outputPath, String formatName, float quality)
             throws IOException {
+        // Đảm bảo thư mục tồn tại
+        Files.createDirectories(outputPath.getParent());
+
         Iterator<ImageWriter> writers = ImageIO.getImageWritersByFormatName(formatName);
         if (!writers.hasNext()) {
+            // Fallback: lưu ảnh đơn giản nếu không có writer
             ImageIO.write(image, formatName, outputPath.toFile());
             return;
         }
 
         ImageWriter writer = writers.next();
         ImageWriteParam param = writer.getDefaultWriteParam();
-        param.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
-        param.setCompressionQuality(quality);
+
+        // Kiểm tra xem có hỗ trợ compression không
+        if (param.canWriteCompressed()) {
+            param.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+            param.setCompressionQuality(quality);
+        }
 
         try (ImageOutputStream ios = ImageIO.createImageOutputStream(outputPath.toFile())) {
-            writer.setOutput(ios);
-            writer.write(null, new javax.imageio.IIOImage(image, null, null), param);
+            if (ios != null) {
+                writer.setOutput(ios);
+                writer.write(null, new javax.imageio.IIOImage(image, null, null), param);
+            } else {
+                // Fallback nếu không tạo được ImageOutputStream
+                ImageIO.write(image, formatName, outputPath.toFile());
+            }
+        } catch (Exception e) {
+            // Fallback nếu có lỗi
+            ImageIO.write(image, formatName, outputPath.toFile());
         } finally {
             writer.dispose();
         }
@@ -187,12 +211,24 @@ public class ImageOptimizationServiceImpl implements IImageOptimizationService {
 
         ImageWriter writer = writers.next();
         ImageWriteParam param = writer.getDefaultWriteParam();
-        param.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
-        param.setCompressionQuality(quality);
+
+        // Kiểm tra xem có hỗ trợ compression không
+        if (param.canWriteCompressed()) {
+            param.setCompressionMode(ImageWriteParam.MODE_EXPLICIT);
+            param.setCompressionQuality(quality);
+        }
 
         try (ImageOutputStream ios = ImageIO.createImageOutputStream(baos)) {
-            writer.setOutput(ios);
-            writer.write(null, new javax.imageio.IIOImage(image, null, null), param);
+            if (ios != null) {
+                writer.setOutput(ios);
+                writer.write(null, new javax.imageio.IIOImage(image, null, null), param);
+            } else {
+                // Fallback nếu không tạo được ImageOutputStream
+                ImageIO.write(image, formatName, baos);
+            }
+        } catch (Exception e) {
+            // Fallback nếu có lỗi
+            ImageIO.write(image, formatName, baos);
         } finally {
             writer.dispose();
         }
