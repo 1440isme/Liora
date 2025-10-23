@@ -660,8 +660,11 @@ class ReviewsManager {
         // Fallback avatar với chữ cái đầu
         avatarHTML += `<div class="review-avatar-text" style="${hasValidAvatar ? 'display: none;' : ''}">${userInitial}</div>`;
 
+        // Kiểm tra xem review có bị ẩn không
+        const isHidden = review.isVisible === false;
+        
         return `
-            <div class="review-item">
+            <div class="review-item ${isHidden ? 'review-hidden' : ''}">
                 <div class="review-header">
                     <div class="review-avatar">
                         ${avatarHTML}
@@ -677,7 +680,10 @@ class ReviewsManager {
                     </div>
                 </div>
                 <div class="review-content">
-                    ${review.content || 'Không có nội dung đánh giá.'}
+                    ${isHidden ? 
+                        '<div class="review-hidden-content"><i class="fas fa-eye-slash me-2"></i>Nội dung đánh giá đã bị ẩn</div>' : 
+                        (review.content || 'Không có nội dung đánh giá.')
+                    }
                 </div>
             </div>
         `;

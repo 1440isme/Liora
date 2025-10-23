@@ -31,6 +31,11 @@ public interface IReviewService {
     Page<ReviewResponse> findVisibleReviewsByProductId(Long productId, Pageable pageable);
     Page<ReviewResponse> findVisibleReviewsByProductIdWithRating(Long productId, Integer rating, Pageable pageable);
     
+    // Methods to get all reviews (including hidden) for display with hidden content
+    List<ReviewResponse> findReviewsByProductId(Long productId);
+    Page<ReviewResponse> findReviewsByProductId(Long productId, Pageable pageable);
+    Page<ReviewResponse> findReviewsByProductIdWithRating(Long productId, Integer rating, Pageable pageable);
+    
     // ========== BY USER ==========
     List<ReviewResponse> findByUserId(Long userId);
     Page<ReviewResponse> findByUserId(Long userId, Pageable pageable);

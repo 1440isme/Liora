@@ -316,8 +316,11 @@ class ReviewManager {
 
     // Render a single review card
     static renderReviewCard(review) {
+        // Kiểm tra xem review có bị ẩn không
+        const isHidden = review.isVisible === false;
+        
         return `
-            <div class="review-card">
+            <div class="review-card ${isHidden ? 'review-hidden' : ''}">
                 <div class="d-flex align-items-center mb-3">
                     <img src="${review.customerAvatar}" alt="${review.customerName}" class="review-avatar me-3">
                     <div>
@@ -330,7 +333,12 @@ class ReviewManager {
                 </div>
                 
                 <h6 class="fw-semibold mb-2">${review.title}</h6>
-                <p class="review-text mb-3">"${review.comment}"</p>
+                <div class="review-text mb-3">
+                    ${isHidden ? 
+                        '<div class="review-hidden-content"><i class="fas fa-eye-slash me-2"></i>Nội dung đánh giá đã bị ẩn</div>' : 
+                        `"${review.comment}"`
+                    }
+                </div>
                 
                 <div class="d-flex justify-content-between align-items-center text-small">
                     <span class="review-product text-muted">${review.productName}</span>
