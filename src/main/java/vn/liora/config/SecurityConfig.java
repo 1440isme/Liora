@@ -98,7 +98,9 @@ public class SecurityConfig {
                                 // Admin API endpoints for public content
                                 "/admin/banners/api/active",
                                 // Discount API endpoints (for public access)
-                                "/discounts/**"
+                                "/discounts/**",
+                                // Debug endpoints (for troubleshooting)
+                                "/debug/**"
                 };
         }
 
