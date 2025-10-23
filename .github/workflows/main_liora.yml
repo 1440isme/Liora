@@ -27,11 +27,18 @@ jobs:
       - name: Build with Maven
         run: mvn clean install
 
+      - name: Create deployment package
+        run: |
+          mkdir -p deployment
+          cp target/*.jar deployment/
+          cp -r uploads deployment/  # Copy uploads directory
+          cp -r src/main/resources/static deployment/  # Copy static resources
+
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: java-app
-          path: '${{ github.workspace }}/target/*.jar'
+          path: '${{ github.workspace }}/deployment'
 
   deploy:
     runs-on: ubuntu-latest
@@ -49,5 +56,5 @@ jobs:
         with:
           app-name: 'liora'
           slot-name: 'Production'
-          package: '*.jar'
+          package: '.'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_F03850EE7CCB4EC69DC616AB3E8164E8 }}
