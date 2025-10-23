@@ -118,6 +118,7 @@ public class SecurityConfig {
                                                 .requestMatchers(getAllPublicEndpoints()).permitAll()
                                                 .requestMatchers("/info").authenticated()
                                                 .requestMatchers("/users/myInfo").authenticated()
+                                                .requestMatchers("/users/uploadAvatar").authenticated()
 
                                                 .requestMatchers("/admin/**").authenticated()
                                                 .requestMatchers("/admin/api/**").authenticated()

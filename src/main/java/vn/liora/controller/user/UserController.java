@@ -6,6 +6,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.http.MediaType;
+import org.springframework.http.HttpStatus;
 import vn.liora.dto.request.ApiResponse;
 import vn.liora.dto.request.UserCreationRequest;
 import vn.liora.dto.request.UserUpdateRequest;
@@ -22,10 +25,17 @@ import vn.liora.mapper.UserMapper;
 import vn.liora.service.IOrderService;
 import vn.liora.service.IUserService;
 import vn.liora.service.IAuthenticationService;
+import vn.liora.service.IDirectoryStructureService;
+import vn.liora.service.IStorageService;
+import vn.liora.service.IImageOptimizationService;
 
 import com.nimbusds.jose.JOSEException;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 @RestController
 @RequestMapping("/users")
@@ -37,6 +47,9 @@ public class UserController {
     private final IOrderService orderService;
     private final IUserService userService;
     private final IAuthenticationService authenticationService;
+    private final IDirectoryStructureService directoryStructureService;
+    private final IStorageService storageService;
+    private final IImageOptimizationService imageOptimizationService;
 
     @GetMapping("/myInfo")
     public ResponseEntity<ApiResponse<UserResponse>> getMyInfo() {
@@ -387,6 +400,76 @@ public class UserController {
             throw e;
         } catch (Exception e) {
             throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        }
+    }
+
+    /**
+     * Upload avatar cho user
+     */
+    @PostMapping(value = "/uploadAvatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<Map<String, String>>> uploadAvatar(@RequestParam("file") MultipartFile file) {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || !authentication.isAuthenticated()) {
+                throw new AppException(ErrorCode.UNAUTHENTICATED);
+            }
+
+            User currentUser = findUserByPrincipal(authentication);
+            if (currentUser == null) {
+                throw new AppException(ErrorCode.USER_NOT_FOUND);
+            }
+
+            // Validate file
+            if (file == null || file.isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body(ApiResponse.error("Vui lòng chọn file ảnh"));
+            }
+
+            if (file.getContentType() == null || !file.getContentType().startsWith("image/")) {
+                return ResponseEntity.badRequest()
+                        .body(ApiResponse.error("File phải là ảnh"));
+            }
+
+            if (file.getSize() > 5 * 1024 * 1024) { // 5MB
+                return ResponseEntity.badRequest()
+                        .body(ApiResponse.error("Kích thước file không được vượt quá 5MB"));
+            }
+
+            // Generate unique filename
+            String originalFilename = file.getOriginalFilename();
+            String extension = originalFilename != null && originalFilename.contains(".")
+                    ? originalFilename.substring(originalFilename.lastIndexOf("."))
+                    : ".jpg";
+            String filename = System.currentTimeMillis() + "_" + currentUser.getUserId() + extension;
+
+            // Create path
+            String relativePath = directoryStructureService.createFullPath("users", filename, false);
+            Path mainImagePath = Paths.get(storageService.getStorageLocation(), relativePath);
+
+            // Optimize image
+            imageOptimizationService.optimizeImage(file, mainImagePath, 400, 400, 0.9f);
+
+            // Update user avatar in database
+            String avatarUrl = "/uploads/" + relativePath;
+            currentUser.setAvatar(avatarUrl);
+            userRepository.save(currentUser);
+
+            Map<String, String> result = new HashMap<>();
+            result.put("avatarUrl", avatarUrl);
+            result.put("filename", filename);
+
+            ApiResponse<Map<String, String>> response = new ApiResponse<>();
+            response.setResult(result);
+            response.setMessage("Upload avatar thành công");
+            response.setCode(1000);
+
+            return ResponseEntity.ok(response);
+
+        } catch (AppException e) {
+            throw e;
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error("Lỗi khi upload avatar: " + e.getMessage()));
         }
     }
 }
