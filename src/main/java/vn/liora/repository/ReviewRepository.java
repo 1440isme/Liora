@@ -58,6 +58,9 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     @Query("SELECT COUNT(r) FROM Review r WHERE r.productId = :productId AND r.rating = :rating")
     Long getReviewCountByProductIdAndRating(@Param("productId") Long productId, @Param("rating") Integer rating);
     
+    // ====== METHODS TO GET ALL REVIEWS (INCLUDING HIDDEN) ======
+    Page<Review> findByProductIdAndRating(Long productId, Integer rating, Pageable pageable);
+    
     // ====== ADMIN QUERIES ======
     // Tìm tất cả review (bao gồm cả ẩn) - không có ORDER BY để tránh conflict
     List<Review> findAll();

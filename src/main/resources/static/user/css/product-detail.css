@@ -1243,6 +1243,29 @@
     margin-bottom: 12px;
 }
 
+/* Hidden Review Styles */
+.review-item.review-hidden {
+    background-color: #ffffff;
+    border-radius: 8px;
+    margin: 8px 0;
+    padding: 16px;
+}
+
+.review-hidden-content {
+    color: #6c757d;
+    font-style: italic;
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    background-color: #fff3cd;
+    border-radius: 6px;
+    border: 1px solid #ffeaa7;
+}
+
+.review-hidden-content i {
+    color: #856404;
+}
+
 /* Review actions đã được bỏ */
 
 /* Pagination */

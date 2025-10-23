@@ -585,7 +585,10 @@ function renderViewReviewProducts(products) {
                         <div class="mb-3">
                             <label class="form-label fw-medium">Nhận xét:</label>
                             <div class="review-content p-3 bg-light rounded">
-                                ${existingReview.content || '<em class="text-muted">Không có nhận xét</em>'}
+                                ${existingReview.isVisible === false ? 
+                                    '<div class="review-hidden-content"><i class="fas fa-eye-slash me-2"></i>Nội dung đánh giá đã bị ẩn</div>' : 
+                                    (existingReview.content || '<em class="text-muted">Không có nhận xét</em>')
+                                }
                             </div>
                         </div>
                         
