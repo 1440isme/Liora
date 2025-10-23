@@ -12,7 +12,6 @@ import vn.liora.entity.User;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Long> {
@@ -127,4 +126,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
         ORDER BY SUM(o.total) DESC
         """)
     List<TopCustomerResponse> findTopSpenders(Pageable pageable);
+    
+    // ======================== DISCOUNT USAGE TRACKING ========================
+    @Query("SELECT COUNT(o) FROM Order o WHERE o.user.userId = :userId AND o.discount.discountId = :discountId")
+    Long countOrdersByUserAndDiscount(@Param("userId") Long userId, @Param("discountId") Long discountId);
 }
