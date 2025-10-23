@@ -24,8 +24,11 @@ jobs:
           java-version: '21'
           distribution: 'microsoft'
 
+      - name: Clear Maven cache
+        run: mvn dependency:purge-local-repository -DmanualInclude="org.springframework:spring-core"
+
       - name: Build with Maven
-        run: mvn clean install
+        run: mvn clean install -U
 
       - name: Create deployment package
         run: |
@@ -33,6 +36,14 @@ jobs:
           cp target/*.jar deployment/
           cp -r uploads deployment/  # Copy uploads directory
           cp -r src/main/resources/static deployment/  # Copy static resources
+          
+          # Debug: List files in deployment
+          echo "=== Deployment package contents ==="
+          ls -la deployment/
+          echo "=== JAR file info ==="
+          ls -la deployment/*.jar
+          echo "=== Uploads directory ==="
+          ls -la deployment/uploads/
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
