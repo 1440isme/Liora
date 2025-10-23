@@ -856,11 +856,11 @@ class UserInfoManager {
 
             // Lấy thông tin trạng thái sản phẩm hiện tại
             const enrichedItems = await this.enrichOrderItemsWithCurrentStatus(orderItems, token);
-            
+
             // Phân loại sản phẩm
             const validItems = [];
             const invalidItems = [];
-            
+
             enrichedItems.forEach(item => {
                 const productStatus = this.getProductStatus(item);
                 if (productStatus === 'available') {
@@ -869,22 +869,22 @@ class UserInfoManager {
                     invalidItems.push(item);
                 }
             });
-            
+
             console.log('Valid items:', validItems.length, 'Invalid items:', invalidItems.length);
-            
+
             // Nếu tất cả sản phẩm đều hợp lệ
             if (validItems.length === enrichedItems.length && validItems.length > 0) {
                 // Thêm tất cả vào giỏ hàng và chuyển đến cart
                 await this.addItemsToCartDirectly(validItems);
                 return;
             }
-            
+
             // Nếu tất cả sản phẩm đều không hợp lệ
             if (invalidItems.length === enrichedItems.length) {
                 this.showError('Tất cả sản phẩm trong đơn hàng đều không hợp lệ (hết hàng hoặc ngừng kinh doanh)');
                 return;
             }
-            
+
             // Nếu có cả sản phẩm hợp lệ và không hợp lệ, hiển thị modal
             console.log('About to show reorder modal with mixed items');
             this.showReorderModal(enrichedItems);
@@ -902,7 +902,7 @@ class UserInfoManager {
 
     async enrichOrderItemsWithCurrentStatus(orderItems, token) {
         const enrichedItems = [];
-        
+
         for (const item of orderItems) {
             try {
                 // Gọi API lấy thông tin sản phẩm hiện tại
@@ -917,7 +917,7 @@ class UserInfoManager {
                 if (productResponse.ok) {
                     const productData = await productResponse.json();
                     const product = productData.result;
-                    
+
                     // Kết hợp thông tin từ order và thông tin sản phẩm hiện tại
                     enrichedItems.push({
                         ...item,
@@ -935,7 +935,7 @@ class UserInfoManager {
                 enrichedItems.push(item);
             }
         }
-        
+
         return enrichedItems;
     }
 
@@ -1033,10 +1033,10 @@ class UserInfoManager {
 
     showReorderModal(orderItems) {
         console.log('showReorderModal called with items:', orderItems);
-        
+
         // Lưu orderItems để sử dụng trong addAllValidItemsToCart
         this.lastOrderItems = orderItems;
-        
+
         // Tạo modal HTML
         const modalHTML = `
             <div class="modal fade" id="reorderModal" tabindex="-1" aria-labelledby="reorderModalLabel" aria-hidden="true">
@@ -1053,11 +1053,11 @@ class UserInfoManager {
                             
                             <div class="reorder-items-list">
                                         ${orderItems.map((item, index) => {
-                                            // Sử dụng logic giống như trong cart.js
-                                            const productStatus = this.getProductStatus(item);
-                                            const isProductValid = productStatus === 'available';
-                                    
-                                    return `
+            // Sử dụng logic giống như trong cart.js
+            const productStatus = this.getProductStatus(item);
+            const isProductValid = productStatus === 'available';
+
+            return `
                                         <div class="card mb-3 ${!isProductValid ? 'opacity-50' : ''}" id="reorder-item-${index}">
                                             <div class="card-body">
                                                 <div class="row align-items-center">
@@ -1084,7 +1084,7 @@ class UserInfoManager {
                                             </div>
                                         </div>
                                     `;
-                                }).join('')}
+        }).join('')}
                             </div>
                         </div>
                         <div class="modal-footer">
@@ -1111,7 +1111,7 @@ class UserInfoManager {
         // Hiển thị modal
         const modalElement = document.getElementById('reorderModal');
         console.log('Modal element found:', modalElement);
-        
+
         if (modalElement) {
             // Kiểm tra Bootstrap có sẵn không
             if (typeof bootstrap !== 'undefined') {
@@ -1126,7 +1126,7 @@ class UserInfoManager {
                 modalElement.classList.add('show');
                 modalElement.setAttribute('aria-modal', 'true');
                 modalElement.setAttribute('role', 'dialog');
-                
+
                 // Thêm backdrop
                 const backdrop = document.createElement('div');
                 backdrop.className = 'modal-backdrop fade show';
@@ -1148,13 +1148,13 @@ class UserInfoManager {
 
         // Xử lý đóng modal
         modalElement.addEventListener('hidden.bs.modal', closeModal);
-        
+
         // Thêm event listener cho nút đóng
         const closeButtons = modalElement.querySelectorAll('[data-bs-dismiss="modal"], .btn-close');
         closeButtons.forEach(button => {
             button.addEventListener('click', closeModal);
         });
-        
+
         // Thêm event listener cho backdrop
         modalElement.addEventListener('click', (e) => {
             if (e.target === modalElement) {
@@ -1167,7 +1167,7 @@ class UserInfoManager {
         // Lấy tất cả sản phẩm hợp lệ từ lastOrderItems
         const orderItems = this.lastOrderItems || [];
         const validItems = [];
-        
+
         orderItems.forEach((item, index) => {
             const productStatus = this.getProductStatus(item);
             if (productStatus === 'available') {
@@ -1193,7 +1193,7 @@ class UserInfoManager {
                 if (window.app && typeof window.app.addProductToCartBackend === 'function') {
                     await window.app.addProductToCartBackend(item.productId, item.quantity, true, false);
                     successCount++;
-                    
+
                     console.log(`Successfully added product ${item.productId} with quantity ${item.quantity}`);
                 }
             } catch (error) {
@@ -1316,7 +1316,7 @@ class UserInfoManager {
         try {
             if (window.app && typeof window.app.addProductToCartBackend === 'function') {
                 await window.app.addProductToCartBackend(productId, quantity, true);
-                
+
                 // Ẩn item đã thêm thành công
                 const failedItemsList = document.querySelector('.failed-items-list');
                 const itemCard = failedItemsList.children[index];
@@ -2417,7 +2417,7 @@ class UserInfoManager {
             const formData = new FormData();
             formData.append('file', file);
 
-            const response = await fetch('/admin/api/upload/users/avatar', {
+            const response = await fetch('/users/uploadAvatar', {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}` },
                 body: formData
@@ -2429,7 +2429,7 @@ class UserInfoManager {
             }
 
             const data = await response.json();
-            const avatarUrl = data?.result?.avatarUrl || data?.data?.result?.avatarUrl;
+            const avatarUrl = data?.result?.avatarUrl;
             if (!avatarUrl) throw new Error('Không nhận được URL avatar');
 
             // Update UI immediately
@@ -2438,16 +2438,8 @@ class UserInfoManager {
                 avatarImg.style.opacity = '1';
             }
 
-            // Persist to profile
-            await this.updateUserInfo({
-                avatar: avatarUrl,
-                firstname: this.currentUser.firstname || '',
-                lastname: this.currentUser.lastname || '',
-                email: this.currentUser.email || '',
-                phone: this.currentUser.phone || null,
-                dob: this.currentUser.dob || null,
-                gender: this.currentUser.gender
-            });
+            // Update current user object
+            this.currentUser.avatar = avatarUrl;
 
             this.showToast('Cập nhật avatar thành công!', 'success');
         } catch (e) {
