@@ -186,7 +186,7 @@ class ProductRatingUtils {
 
             // Find rating container in modal
             const ratingContainer = modal.querySelector('.rating .stars');
-            const reviewCountSpan = modal.querySelector('.rating .review-count, .review-count');
+            const reviewCountSpan = modal.querySelector('.rating .review-count') || modal.querySelector('.review-count');
             
             console.log('Found rating container:', ratingContainer);
             console.log('Found review count span:', reviewCountSpan);
