@@ -126,4 +126,39 @@ public class DebugController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result);
         }
     }
+
+    @GetMapping("/images/check-directory")
+    public ResponseEntity<Map<String, Object>> checkDirectory(@RequestParam String directoryPath) {
+        Map<String, Object> result = new HashMap<>();
+
+        try {
+            Path path = Paths.get(storageLocation, directoryPath);
+
+            result.put("directoryPath", path.toString());
+            result.put("exists", Files.exists(path));
+            result.put("isDirectory", Files.isDirectory(path));
+            result.put("isReadable", Files.isReadable(path));
+
+            if (Files.exists(path) && Files.isDirectory(path)) {
+                try {
+                    result.put("files", Files.list(path)
+                            .map(Path::getFileName)
+                            .map(Path::toString)
+                            .limit(10)
+                            .toList());
+                    result.put("fileCount", Files.list(path).count());
+                } catch (Exception e) {
+                    result.put("listError", e.getMessage());
+                }
+            }
+
+            result.put("status", "success");
+            return ResponseEntity.ok(result);
+
+        } catch (Exception e) {
+            result.put("status", "error");
+            result.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result);
+        }
+    }
 }
