@@ -1202,20 +1202,15 @@ public class UserProductController {
     public ResponseEntity<ApiResponse<List<BrandResponse>>> getSearchBrands(@RequestParam(required = false) String q) {
         ApiResponse<List<BrandResponse>> response = new ApiResponse<>();
         try {
+            // Sử dụng cùng logic với API search chính
             List<Product> allProducts = productService.findAll();
             System.out.println("Total products for brands: " + allProducts.size());
             
-            // Filter products by search query if provided
+            // Filter products by search query if provided - ĐỒNG BỘ với API search chính
             List<Product> filteredProducts = allProducts;
             if (q != null && !q.trim().isEmpty()) {
-                String searchQuery = q.toLowerCase().trim();
-                filteredProducts = allProducts.stream()
-                        .filter(product -> 
-                            product.getName().toLowerCase().contains(searchQuery) ||
-                            product.getDescription().toLowerCase().contains(searchQuery) ||
-                            product.getCategory().getName().toLowerCase().contains(searchQuery)
-                        )
-                        .toList();
+                // Sử dụng cùng logic với API search chính (findByNameContaining)
+                filteredProducts = productService.findByNameContaining(q.trim());
                 System.out.println("Filtered products for query '" + q + "': " + filteredProducts.size());
             }
             
