@@ -90,7 +90,7 @@ public class SecurityConfig {
                                 // Product API endpoints (for public access)
                                 "/api/products/best-selling", "/api/products/newest", "/api/products/**",
                                 // Review API endpoints (for public access)
-                                "/api/reviews/product/**",
+                                "/api/reviews/product/**", "/api/reviews/products/statistics",
                                 // GHN API endpoints (for checkout and shipping)
                                 "/api/ghn/**",
                                 // Chatbot API endpoints (for public access)

@@ -66,7 +66,7 @@ class LioraApp {
                 quantity: Number(quantity)
             });
             const addData = (addRaw && (addRaw.result || addRaw.data?.result)) ? (addRaw.result || addRaw.data.result) : addRaw;
-            
+
             console.log('Add product response:', addRaw);
             console.log('Add data:', addData);
 
@@ -78,13 +78,13 @@ class LioraApp {
                         cartProductId: addData.idCartProduct,
                         choose: true
                     });
-                    
+
                     // Gửi đầy đủ thông tin để tránh lỗi NULL constraint
                     const chooseResponse = await this.apiCall(`/CartProduct/${cartId}/${addData.idCartProduct}`, 'PUT', {
                         quantity: addData.quantity, // Gửi quantity hiện tại
                         choose: true
                     });
-                    
+
                     console.log('Choose response:', chooseResponse);
                     console.log('Product marked as chosen successfully:', addData.idCartProduct);
                 } catch (chooseErr) {
@@ -193,6 +193,11 @@ class LioraApp {
         document.addEventListener('user:logout', () => {
             this.currentUser = null;
             this.updateUserDisplay();
+
+            // Reload product ratings after logout to ensure they are visible
+            setTimeout(() => {
+                this.reloadProductRatings();
+            }, 1000);
         });
     }
 
@@ -334,6 +339,9 @@ class LioraApp {
         if (targetPage) {
             targetPage.classList.add('active');
             this.loadPageContent(pageName);
+
+            // Reload product ratings when page is shown
+            this.reloadProductRatings();
         }
 
         this.currentPage = pageName;
@@ -364,6 +372,139 @@ class LioraApp {
             case 'new-arrivals':
                 this.loadCategoryPage(pageElement, 'new-arrivals', 'New Arrivals', 'Be the first to try our latest K-beauty discoveries');
                 break;
+        }
+    }
+
+    reloadProductRatings() {
+        // Delay để đảm bảo DOM đã được render xong
+        setTimeout(() => {
+            console.log('🔄 Reloading product ratings after page switch...');
+
+            // Tìm tất cả product cards trên trang hiện tại
+            const productCards = document.querySelectorAll('.product-card, .card.product-card');
+            console.log('🔄 Found', productCards.length, 'product cards to reload ratings for');
+
+            if (productCards.length > 0) {
+                // Sử dụng ProductRatingUtils nếu có
+                if (window.ProductRatingUtils && typeof ProductRatingUtils.loadAndUpdateProductCards === 'function') {
+                    console.log('🔄 Using ProductRatingUtils to reload ratings...');
+                    ProductRatingUtils.loadAndUpdateProductCards(productCards);
+                } else if (window.loadProductRatings && typeof window.loadProductRatings === 'function') {
+                    console.log('🔄 Using global loadProductRatings function...');
+                    window.loadProductRatings();
+                } else {
+                    console.log('🔄 ProductRatingUtils not available, skipping rating reload');
+                }
+            }
+
+            // Reload ratings cho các trang cụ thể có manager riêng
+            this.reloadSpecificPageRatings();
+        }, 500);
+    }
+
+    reloadSpecificPageRatings() {
+        // Reload ratings cho bestseller products homepage
+        if (window.bestsellerProductsHomepageManager) {
+            if (typeof window.bestsellerProductsHomepageManager.loadProductRatings === 'function') {
+                console.log('🔄 Reloading bestseller products homepage ratings...');
+                window.bestsellerProductsHomepageManager.loadProductRatings();
+            } else if (typeof window.bestsellerProductsHomepageManager.renderBestsellerProducts === 'function') {
+                console.log('🔄 Re-rendering bestseller products homepage...');
+                // Trigger re-render which will reload ratings
+                const products = window.bestsellerProductsHomepageManager.products || [];
+                if (products.length > 0) {
+                    window.bestsellerProductsHomepageManager.renderBestsellerProducts(products);
+                }
+            }
+        }
+
+        // Reload ratings cho newest products homepage
+        if (window.newestProductsHomepageManager) {
+            if (typeof window.newestProductsHomepageManager.loadProductRatings === 'function') {
+                console.log('🔄 Reloading newest products homepage ratings...');
+                window.newestProductsHomepageManager.loadProductRatings();
+            } else if (typeof window.newestProductsHomepageManager.renderNewestProducts === 'function') {
+                console.log('🔄 Re-rendering newest products homepage...');
+                // Trigger re-render which will reload ratings
+                const products = window.newestProductsHomepageManager.products || [];
+                if (products.length > 0) {
+                    window.newestProductsHomepageManager.renderNewestProducts();
+                }
+            }
+        }
+
+        // Reload ratings cho featured category products
+        if (window.featuredCategoryProductsManager) {
+            if (typeof window.featuredCategoryProductsManager.loadProductRatings === 'function') {
+                console.log('🔄 Reloading featured category products ratings...');
+                window.featuredCategoryProductsManager.loadProductRatings();
+            } else if (typeof window.featuredCategoryProductsManager.renderProducts === 'function') {
+                console.log('🔄 Re-rendering featured category products...');
+                window.featuredCategoryProductsManager.renderProducts();
+            }
+        }
+
+        // Reload ratings cho brand products
+        if (window.brandProductsManager) {
+            if (typeof window.brandProductsManager.loadProductRatings === 'function') {
+                console.log('🔄 Reloading brand products ratings...');
+                window.brandProductsManager.loadProductRatings();
+            } else if (typeof window.brandProductsManager.renderProducts === 'function') {
+                console.log('🔄 Re-rendering brand products...');
+                window.brandProductsManager.renderProducts();
+            }
+        }
+
+        // Reload ratings cho category products
+        if (window.categoryProductsManager) {
+            if (typeof window.categoryProductsManager.loadProductRatings === 'function') {
+                console.log('🔄 Reloading category products ratings...');
+                window.categoryProductsManager.loadProductRatings();
+            } else if (typeof window.categoryProductsManager.renderProducts === 'function') {
+                console.log('🔄 Re-rendering category products...');
+                window.categoryProductsManager.renderProducts();
+            }
+        }
+
+        // Reload ratings cho search results
+        if (window.searchResultsManager) {
+            if (typeof window.searchResultsManager.loadProductRatings === 'function') {
+                console.log('🔄 Reloading search results ratings...');
+                window.searchResultsManager.loadProductRatings();
+            } else if (typeof window.searchResultsManager.renderResults === 'function') {
+                console.log('🔄 Re-rendering search results...');
+                window.searchResultsManager.renderResults();
+            }
+        }
+
+        // Reload ratings cho newest products page
+        if (window.newestProductsPageManager) {
+            if (typeof window.newestProductsPageManager.loadProductRatings === 'function') {
+                console.log('🔄 Reloading newest products page ratings...');
+                window.newestProductsPageManager.loadProductRatings();
+            } else if (typeof window.newestProductsPageManager.renderProducts === 'function') {
+                console.log('🔄 Re-rendering newest products page...');
+                window.newestProductsPageManager.renderProducts();
+            }
+        }
+
+        // Reload ratings cho bestseller products page
+        if (window.bestsellerProductsPageManager) {
+            if (typeof window.bestsellerProductsPageManager.loadProductRatings === 'function') {
+                console.log('🔄 Reloading bestseller products page ratings...');
+                window.bestsellerProductsPageManager.loadProductRatings();
+            } else if (typeof window.bestsellerProductsPageManager.renderProducts === 'function') {
+                console.log('🔄 Re-rendering bestseller products page...');
+                window.bestsellerProductsPageManager.renderProducts();
+            }
+        }
+
+        // Reload ratings cho similar products
+        if (window.similarProductsManager) {
+            if (typeof window.similarProductsManager.loadProductRatingsOptimized === 'function') {
+                console.log('🔄 Reloading similar products ratings...');
+                window.similarProductsManager.loadProductRatingsOptimized();
+            }
         }
     }
 
@@ -2136,7 +2277,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 0);
 });
 
-
+// Global function to reload product ratings (for external use)
+window.reloadProductRatings = function () {
+    if (app && typeof app.reloadProductRatings === 'function') {
+        app.reloadProductRatings();
+    } else {
+        console.warn('App not initialized or reloadProductRatings method not available');
+    }
+};
 
 // Export for use in other scripts
 window.LioraApp = LioraApp;
