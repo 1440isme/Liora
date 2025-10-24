@@ -20,21 +20,21 @@
 
     <div class="card-body">
         <div class="table-responsive">
-            <table class="table table-bordered align-middle" width="100%" cellspacing="0">
+            <table class="table table-bordered table-hover align-middle" width="100%" cellspacing="0">
                 <thead class="table-light">
                 <tr>
-                    <th>ID</th>
+                    <th style="width: 80px;" class="text-center">Mã sản phẩm</th>
                     <th>Tên sản phẩm</th>
-                    <th>Danh mục</th>
-                    <th>Đã bán</th>
-                    <th>Doanh thu</th>
-                    <th>Đánh giá</th>
+                    <th style="width: 180px;">Danh mục</th>
+                    <th style="width: 150px;" class="text-center">Đã bán</th>
+                    <th style="width: 200px;">Doanh thu</th>
+                    <th style="width: 120px;" class="text-center">Đánh giá</th>
                 </tr>
                 </thead>
                 <tbody>
-                <tr th:each="product : ${topProducts}">
-                    <!-- ID -->
-                    <td><span class="badge bg-secondary" th:text="'#' + ${product.id}">#1001</span></td>
+                <tr th:each="product : ${topProducts}" th:if="${product.soldQuantity > 0}">
+                    <!-- Mã sản phẩm -->
+                    <td class="text-center"><span class="text-dark" th:text="${product.id}">1001</span></td>
 
                     <!-- Tên -->
                     <td><div class="fw-bold" th:text="${product.name}">Tên sản phẩm</div></td>
@@ -43,13 +43,13 @@
                     <td th:text="${product.categoryName}">Danh mục</td>
 
                     <!-- Đã bán -->
-                    <td><span class="badge bg-success" th:text="${product.soldQuantity}">150</span></td>
+                    <td class="text-center"><span class="text-success fw-semibold" th:text="${product.soldQuantity}">150</span></td>
 
                     <!-- Doanh thu -->
                     <td th:text="${#numbers.formatDecimal(product.revenue, 0, 'COMMA', 0, 'POINT')} + ' ₫'">2,500,000 ₫</td>
 
                     <!-- Đánh giá -->
-                    <td>
+                    <td class="text-center">
                         <small class="text-muted"
                                th:text="${#numbers.formatDecimal(product.rating, 1, 'COMMA', 1, 'POINT')} + '/5'">
                             4.5/5
@@ -59,6 +59,9 @@
 
                 <tr th:if="${#lists.isEmpty(topProducts)}">
                     <td colspan="6" class="text-center text-muted">Không có dữ liệu sản phẩm bán chạy</td>
+                </tr>
+                <tr th:if="${!#lists.isEmpty(topProducts) and topProducts.?[soldQuantity > 0].isEmpty()}">
+                    <td colspan="6" class="text-center text-muted">Chưa có sản phẩm nào được bán</td>
                 </tr>
                 </tbody>
             </table>
@@ -80,21 +83,21 @@
 
     <div class="card-body">
         <div class="table-responsive">
-            <table class="table table-bordered align-middle" width="100%" cellspacing="0">
+            <table class="table table-bordered table-hover align-middle" width="100%" cellspacing="0">
                 <thead class="table-light">
                 <tr>
-                    <th>ID</th>
+                    <th style="width: 80px;" class="text-center">Mã sản phẩm</th>
                     <th>Tên sản phẩm</th>
                     <th>Danh mục</th>
-                    <th>Tồn kho</th>
-                    <th>Trạng thái</th>
+                    <th style="width: 120px;" class="text-center">Tồn kho</th>
+                    <th style="width: 120px;" class="text-center">Trạng thái</th>
                 </tr>
                 </thead>
                 <tbody>
                 <tr th:each="item : ${lowStockProducts}">
-                    <!-- ID -->
-                    <td>
-                        <span class="badge bg-secondary" th:text="'#' + ${item.productId}">#2001</span>
+                    <!-- Mã sản phẩm -->
+                    <td class="text-center">
+                        <span class="text-dark" th:text="${item.productId}">2001</span>
                     </td>
 
                     <!-- Tên sản phẩm -->
@@ -106,12 +109,12 @@
                     <td th:text="${item.categoryName}">Danh mục</td>
 
                     <!-- Tồn kho -->
-                    <td th:text="${item.stock} + ' sản phẩm'">5 sản phẩm</td>
+                    <td class="text-center" th:text="${item.stock} + ' sản phẩm'">5 sản phẩm</td>
 
                     <!-- Trạng thái -->
-                    <td>
-                        <span th:if="${item.isActive}" class="badge bg-success">Hoạt động</span>
-                        <span th:if="${!item.isActive}" class="badge bg-secondary">Ngừng</span>
+                    <td class="text-center">
+                        <span th:if="${item.isActive}" class="text-success fw-semibold">Hoạt động</span>
+                        <span th:if="${!item.isActive}" class="text-secondary fw-semibold">Ngừng</span>
                     </td>
                 </tr>
 
