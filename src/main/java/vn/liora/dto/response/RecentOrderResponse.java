@@ -16,5 +16,6 @@ public class RecentOrderResponse {
     String customerName;
     BigDecimal totalAmount;
     String status;
+    String paymentStatus;
     LocalDateTime createdAt;
 }

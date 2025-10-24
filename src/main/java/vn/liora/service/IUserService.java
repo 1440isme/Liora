@@ -48,6 +48,8 @@ public interface IUserService {
     Optional<User> findByUsername(String username);
 
     long countNewCustomersThisMonth();
+    
+    List<Object[]> getNewCustomersByMonth(java.time.LocalDateTime startDate);
 
     // Change password
     void changePassword(Long userId, ChangePasswordRequest request);

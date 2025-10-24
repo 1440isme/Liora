@@ -4,7 +4,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import vn.liora.dto.request.ApplyDiscountRequest;
 import vn.liora.dto.request.DiscountCreationRequest;
 import vn.liora.dto.request.DiscountUpdateRequest;
 import vn.liora.dto.response.DiscountResponse;
@@ -331,9 +330,19 @@ public class DiscountServiceImpl implements IDiscountService {
     
     @Override
     public boolean hasReachedUserUsageLimit(Long discountId, Long userId) {
-        // This would need to be implemented based on your usage tracking logic
-        // For now, return false as a placeholder
-        return false;
+        Discount discount = discountRepository.findById(discountId)
+                .orElseThrow(() -> new AppException(ErrorCode.DISCOUNT_NOT_FOUND));
+        
+        // If no user usage limit is set, user can use unlimited times
+        if (discount.getUserUsageLimit() == null) {
+            return false;
+        }
+        
+        // Count how many times this user has used this discount
+        Long userUsageCount = orderRepository.countOrdersByUserAndDiscount(userId, discountId);
+        
+        // Check if user has reached their usage limit
+        return userUsageCount >= discount.getUserUsageLimit();
     }
     
     // ========== STATISTICS ==========
@@ -354,8 +363,7 @@ public class DiscountServiceImpl implements IDiscountService {
 
     @Override
     public Long getUsageCountByUser(Long discountId, Long userId) {
-        // This would need to be implemented based on your usage tracking logic
-        return 0L;
+        return orderRepository.countOrdersByUserAndDiscount(userId, discountId);
     }
     
     @Override
