@@ -6,6 +6,60 @@
     border-top: 1px solid #e9ecef;
 }
 
+/* Sales Progress Bar - đồng bộ với bestseller */
+.similar-products-section .product-card .sales-progress {
+    margin-bottom: 1rem;
+}
+
+.similar-products-section .product-card .sales-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    font-size: 0.8rem;
+}
+
+.similar-products-section .product-card .sales-label {
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.similar-products-section .product-card .sales-count {
+    color: #E8A2B0;
+    font-weight: 600;
+}
+
+.similar-products-section .product-card .progress {
+    height: 6px;
+    background-color: #f1f1f1;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.similar-products-section .product-card .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #E8A2B0 0%, #d18a9a 100%);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+    position: relative;
+}
+
+.similar-products-section .product-card .progress-bar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
 /* Product Related Wrap */
 .product-related-wrap {
     background: #ffffff;

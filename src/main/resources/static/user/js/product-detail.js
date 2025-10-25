@@ -5,11 +5,21 @@
 
 class ProductDetailManager {
     constructor() {
-        this.productId = this.getProductIdFromUrl();
+        this.productId = null;
         this.product = null;
         this.quantity = 1;
         this.maxStock = parseInt(document.getElementById('quantityInput')?.getAttribute('max') || '10');
 
+        // Delay initialization để đảm bảo DOM đã load xong
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => this.initialize());
+        } else {
+            this.initialize();
+        }
+    }
+
+    initialize() {
+        this.productId = this.getProductIdFromUrl();
         this.init();
     }
 
@@ -22,8 +32,25 @@ class ProductDetailManager {
 
     getProductIdFromUrl() {
         const path = window.location.pathname;
+        console.log('🔍 [DEBUG] Current path:', path);
         const matches = path.match(/\/products\/(\d+)/);
-        return matches ? parseInt(matches[1]) : null;
+        let productId = matches ? parseInt(matches[1]) : null;
+        
+        // Fallback: lấy từ hidden input nếu URL không có productId
+        if (!productId) {
+            const productIdInput = document.getElementById('productId');
+            console.log('🔍 [DEBUG] Hidden input element:', productIdInput);
+            if (productIdInput) {
+                console.log('🔍 [DEBUG] Hidden input value:', productIdInput.value);
+                productId = parseInt(productIdInput.value);
+                console.log('🔍 [DEBUG] Fallback: lấy productId từ hidden input:', productId);
+            } else {
+                console.warn('⚠️ [WARNING] Không tìm thấy hidden input productId');
+            }
+        }
+        
+        console.log('🔍 [DEBUG] Final productId:', productId);
+        return productId;
     }
 
     bindEvents() {
@@ -270,13 +297,22 @@ class ProductDetailManager {
     // Related Products
     async loadRelatedProducts() {
         try {
-            const response = await fetch(`/api/products/similar/${this.productId}`);
+            // Kiểm tra productId trước khi gọi API
+            if (!this.productId || this.productId === 'null' || this.productId === null) {
+                console.warn('⚠️ [WARNING] ProductId không hợp lệ, bỏ qua load related products:', this.productId);
+                return;
+            }
+            
+            console.log('🔍 [DEBUG] Loading related products cho productId:', this.productId);
+            const response = await fetch(`/api/products/${this.productId}/similar`);
             if (response.ok) {
                 const products = await response.json();
                 this.renderRelatedProducts(products);
+            } else {
+                console.warn('⚠️ [WARNING] API response không OK:', response.status, response.statusText);
             }
         } catch (error) {
-            console.error('Error loading related products:', error);
+            console.error('❌ [ERROR] Error loading related products:', error);
         }
     }
 

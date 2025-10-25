@@ -1045,6 +1045,7 @@
     <!-- Include Similar Products Section -->
     <div th:replace="user/products/fragments/_similar-products :: similarProductsSection"></div>
 
+
     <!-- Footer -->
     <div th:replace="~{user/layout/user-footer :: footer}"></div>
 
@@ -2026,7 +2027,7 @@
         });
     </script>
 
-    <!-- Hidden input để lấy product ID -->
+    <!-- Hidden input cho Similar Products -->
     <input type="hidden" id="productId" th:value="${product.productId}" />
 
     <!-- Include CSS -->
@@ -2034,6 +2035,8 @@
 
     <!-- Include JavaScript -->
     <script th:src="@{/user/js/similar-products.js}"></script>
+    <script th:src="@{/user/js/product-rating-utils.js}"></script>
+
 </body>
 
 </html>
