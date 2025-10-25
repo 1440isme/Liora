@@ -446,23 +446,18 @@
             // Load categories for mobile menu (multi-level)
             async function loadMobileCategories(categoryHeader) {
                 try {
-                    console.log('Loading mobile categories...');
                     const response = await fetch('/api/header/categories/api');
                     const data = await response.json();
-
-                    console.log('Categories API response:', data);
 
                     const submenu = categoryHeader.querySelector('.mobile-nav-submenu');
                     if (submenu && data.result && data.result.length > 0) {
                         submenu.innerHTML = '';
 
-                        console.log('Processing categories:', data.result);
                         data.result.forEach(category => {
                             const categoryElement = createMobileCategoryElement(category, 1);
                             submenu.appendChild(categoryElement);
                         });
                     } else {
-                        console.warn('No categories found in API response');
                         submenu.innerHTML = '<div class="mobile-submenu-empty">Không có danh mục sản phẩm</div>';
                     }
                 } catch (error) {
@@ -481,14 +476,6 @@
 
                 const hasChildren = category.children && category.children.length > 0;
                 const categoryId = `mobile-category-${category.categoryId}-${Math.random().toString(36).substr(2, 9)}`;
-
-                // Debug logging
-                console.log('Creating category element:', {
-                    name: category.name,
-                    categoryId: category.categoryId,
-                    hasChildren: hasChildren,
-                    level: level
-                });
 
                 if (hasChildren) {
                     // Category with children - expandable
