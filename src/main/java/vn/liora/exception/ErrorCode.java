@@ -11,7 +11,7 @@ import org.springframework.http.HttpStatusCode;
 @AllArgsConstructor
 public enum ErrorCode {
         UNCATEGORIZED_EXCEPTION(9999, "Lỗi không xác định", HttpStatus.INTERNAL_SERVER_ERROR),
-        
+
         // Binh: 1001 - 1999
         INVALID_KEY(1001, "Khóa thông báo không hợp lệ", HttpStatus.BAD_REQUEST),
         USER_EXISTED(1002, "Người dùng đã tồn tại", HttpStatus.BAD_REQUEST),
@@ -31,7 +31,7 @@ public enum ErrorCode {
         NEW_PASSWORD_SAME_AS_CURRENT(1016, "Mật khẩu mới phải khác mật khẩu hiện tại", HttpStatus.BAD_REQUEST),
         INVALID_OTP(1017, "Mã OTP không hợp lệ hoặc đã hết hạn", HttpStatus.BAD_REQUEST),
         OTP_LIMIT_EXCEEDED(1018, "Bạn đã gửi quá nhiều mã OTP trong ngày", HttpStatus.BAD_REQUEST),
-        
+
         // Dai: 2000 - 2999
         BRAND_EXISTED(400, "Thương hiệu đã tồn tại", HttpStatus.BAD_REQUEST),
         BRAND_NOT_FOUND(404, "Không tìm thấy thương hiệu", HttpStatus.NOT_FOUND),
@@ -40,9 +40,11 @@ public enum ErrorCode {
         // Category errors
         CATEGORY_NOT_FOUND(404, "Không tìm thấy danh mục", HttpStatus.NOT_FOUND),
         CATEGORY_EXISTED(400, "Danh mục đã tồn tại", HttpStatus.BAD_REQUEST),
-        CATEGORY_PARENT_INACTIVE(400, "Không thể kích hoạt danh mục vì danh mục cha đang bị vô hiệu hóa", HttpStatus.BAD_REQUEST),
+        CATEGORY_PARENT_INACTIVE(400, "Không thể kích hoạt danh mục vì danh mục cha đang bị vô hiệu hóa",
+                        HttpStatus.BAD_REQUEST),
         CATEGORY_CIRCULAR_REFERENCE(400, "Danh mục không thể là danh mục cha của chính nó", HttpStatus.BAD_REQUEST),
-        CATEGORY_INVALID_PARENT_LOGIC(400, "Danh mục có danh mục cha không thể là danh mục cha", HttpStatus.BAD_REQUEST),
+        CATEGORY_INVALID_PARENT_LOGIC(400, "Danh mục có danh mục cha không thể là danh mục cha",
+                        HttpStatus.BAD_REQUEST),
         CATEGORY_HAS_PRODUCTS(400, "Không thể xóa danh mục đã có sản phẩm", HttpStatus.BAD_REQUEST),
 
         // Product errors
@@ -69,17 +71,18 @@ public enum ErrorCode {
         PRODUCT_STOCK_TOO_HIGH(400, "Số lượng sản phẩm không được vượt quá 999,999", HttpStatus.BAD_REQUEST),
         PRODUCT_SOLD_COUNT_INVALID(400, "Số lượng đã bán không thể âm", HttpStatus.BAD_REQUEST),
         PRODUCT_SOLD_COUNT_TOO_HIGH(400, "Số lượng đã bán không được vượt quá 999,999", HttpStatus.BAD_REQUEST),
-        
+
         // Image errors
         IMAGE_NOT_FOUND(404, "Không tìm thấy hình ảnh", HttpStatus.NOT_FOUND),
         INVALID_FILE_TYPE(400, "Loại file không hợp lệ", HttpStatus.BAD_REQUEST),
         TOO_MANY_IMAGES(400, "Quá nhiều hình ảnh cho sản phẩm này", HttpStatus.BAD_REQUEST),
         UPLOAD_FAILED(500, "Tải lên thất bại", HttpStatus.INTERNAL_SERVER_ERROR),
         IMAGE_NOT_BELONG_TO_PRODUCT(400, "Hình ảnh không thuộc về sản phẩm này", HttpStatus.BAD_REQUEST),
-        
+
         // Hanh: 3000 - 3999
         ADDRESS_NOT_FOUND(3000, "Không tìm thấy địa chỉ", HttpStatus.NOT_FOUND),
-        CANNOT_DELETE_DEFAULT_ADDRESS(3001, "Không thể xóa địa chỉ mặc định khi còn địa chỉ khác", HttpStatus.BAD_REQUEST),
+        CANNOT_DELETE_DEFAULT_ADDRESS(3001, "Không thể xóa địa chỉ mặc định khi còn địa chỉ khác",
+                        HttpStatus.BAD_REQUEST),
         DEFAULT_ADDRESS_NOT_FOUND(3002, "Không tìm thấy địa chỉ mặc định", HttpStatus.NOT_FOUND),
         CART_NOT_FOUND(3003, "Không tìm thấy giỏ hàng", HttpStatus.NOT_FOUND),
         CART_PRODUCT_NOT_FOUND(3004, "Không tìm thấy sản phẩm trong giỏ hàng", HttpStatus.NOT_FOUND),
@@ -95,7 +98,7 @@ public enum ErrorCode {
         VALIDATION_QUANTITY_MIN_ONE(3014, "Số lượng phải ít nhất là 1", HttpStatus.BAD_REQUEST),
         NO_SELECTED_PRODUCT(400, "Không có sản phẩm nào được chọn", HttpStatus.BAD_REQUEST),
         CANNOT_REMOVE_DEFAULT_ADDRESS(400, "Không thể xóa địa chỉ mặc định", HttpStatus.BAD_REQUEST),
-        
+
         // Khoi: 4000 - 4999 (Review & Discount)
         REVIEW_NOT_FOUND(400, "Không tìm thấy đánh giá", HttpStatus.NOT_FOUND),
         REVIEW_NOT_ALLOWED(401, "Người dùng không được phép đánh giá sản phẩm này", HttpStatus.BAD_REQUEST),
@@ -114,10 +117,15 @@ public enum ErrorCode {
         VALIDATION_DESCRIPTION_TOO_LONG(400, "Mô tả không được vượt quá 500 ký tự", HttpStatus.BAD_REQUEST),
         VALIDATION_DISCOUNT_VALUE_POSITIVE(400, "Giá trị giảm giá phải là số dương", HttpStatus.BAD_REQUEST),
         VALIDATION_MIN_ORDER_VALUE_POSITIVE(400, "Giá trị đơn hàng tối thiểu phải là số dương", HttpStatus.BAD_REQUEST),
-        VALIDATION_MAX_DISCOUNT_AMOUNT_POSITIVE(400, "Số tiền giảm giá tối đa phải là số dương", HttpStatus.BAD_REQUEST),
+        VALIDATION_MAX_DISCOUNT_AMOUNT_POSITIVE(400, "Số tiền giảm giá tối đa phải là số dương",
+                        HttpStatus.BAD_REQUEST),
         VALIDATION_USAGE_LIMIT_NON_NEGATIVE(400, "Giới hạn sử dụng phải không âm", HttpStatus.BAD_REQUEST),
-        VALIDATION_USER_USAGE_LIMIT_NON_NEGATIVE(400, "Giới hạn sử dụng của người dùng phải không âm", HttpStatus.BAD_REQUEST),
+        VALIDATION_USER_USAGE_LIMIT_NON_NEGATIVE(400, "Giới hạn sử dụng của người dùng phải không âm",
+                        HttpStatus.BAD_REQUEST),
         DISCOUNT_REQUIRES_LOGIN(400, "Chỉ dùng mã giảm giá khi đã đăng nhập", HttpStatus.BAD_REQUEST),
+
+        // Payment errors
+        PAYMENT_CREATION_FAILED(5000, "Không thể tạo thanh toán", HttpStatus.INTERNAL_SERVER_ERROR),
         ;
 
         private int code;

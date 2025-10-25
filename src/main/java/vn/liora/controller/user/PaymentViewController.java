@@ -21,12 +21,16 @@ public class PaymentViewController {
             @RequestParam(name = "orderId", required = false) String orderId,
             @RequestParam(name = "bank", required = false) String bank,
             @RequestParam(name = "amount", required = false) String amount,
+            @RequestParam(name = "message", required = false) String message,
+            @RequestParam(name = "transId", required = false) String transId,
             Model model) {
         model.addAttribute("code", code);
         model.addAttribute("orderRef", orderRef);
         model.addAttribute("orderId", orderId);
         model.addAttribute("bank", bank);
         model.addAttribute("amount", amount);
+        model.addAttribute("message", message);
+        model.addAttribute("transId", transId);
         return "user/payment/payment-result";
     }
 }
