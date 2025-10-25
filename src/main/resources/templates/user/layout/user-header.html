@@ -7,7 +7,8 @@
         <!-- Top Header - Tầng trên -->
         <div class="top-header">
             <div class="container">
-                <div class="row align-items-center">
+                <!-- Desktop Layout -->
+                <div class="row align-items-center d-none d-lg-flex">
                     <!-- Logo -->
                     <div class="col-auto">
                         <a class="navbar-brand" href="/" onclick="showPage('home')">
@@ -45,7 +46,7 @@
                     <div class="col-auto">
                         <div class="d-flex align-items-center gap-3">
                             <!-- User Account -->
-                            <div id="user-section">
+                            <div id="desktop-user-section">
                                 <!-- Will be populated by JavaScript -->
                             </div>
 
@@ -63,11 +64,79 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Mobile Layout - Tầng 1: Hamburger, Logo, Login, Cart -->
+                <div class="row align-items-center d-lg-none">
+                    <!-- Mobile Menu Toggle -->
+                    <div class="col-auto">
+                        <button class="btn btn-mobile-menu" type="button" id="mobileMenuToggle">
+                            <i class="mdi mdi-menu" style="font-size: 30px"></i>
+                        </button>
+                    </div>
+
+                    <!-- Logo -->
+                    <div class="col-auto">
+                        <a class="navbar-brand" href="/" onclick="showPage('home')">
+                            <img src="/admin/images/liora-white.svg" alt="Liora" height="35" class="logo-img">
+                        </a>
+                    </div>
+
+                    <!-- Spacer -->
+                    <div class="col"></div>
+
+                    <!-- User & Cart -->
+                    <div class="col-auto">
+                        <div class="d-flex align-items-center gap-2">
+                            <!-- User Account - Icon only -->
+                            <div id="mobile-user-section">
+                                <!-- Will be populated by JavaScript -->
+                            </div>
+
+                            <!-- Cart - Icon only -->
+                            <button class="btn btn-cart-mobile position-relative"
+                                onclick="window.location.href='/cart'">
+                                <i class="mdi mdi-shopping-outline me-3" style="font-size: 30px"></i>
+                                <span
+                                    class="position-absolute top-30 start-100 translate-middle badge rounded-pill cart-badge">
+                                    0
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mobile Layout - Tầng 2: Search Bar -->
+                <div class="row d-lg-none mt-0">
+                    <div class="col-12">
+                        <div class="search-container">
+                            <div class="position-relative">
+                                <i class="mdi mdi-magnify search-icon"></i>
+                                <input type="text" class="form-control search-input"
+                                    placeholder="Tìm kiếm sản phẩm, thương hiệu, ..." id="mobileSearchInput">
+
+                                <!-- Search Results Dropdown -->
+                                <div id="mobileSearchResultsDropdown" class="search-results-dropdown">
+                                    <!-- Results list -->
+                                    <div id="mobileSearchResultsList" class="search-results-list">
+                                        <!-- Results will be populated here -->
+                                    </div>
+
+                                    <!-- View more link -->
+                                    <div class="search-results-footer">
+                                        <a href="#" id="mobileViewMoreLink" class="view-more-link">
+                                            Xem thêm <span id="mobileTotalResultsCount">0</span> sản phẩm
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Bottom Header - Tầng dưới -->
-        <div class="bottom-header" id="dynamic-bottom-header">
+        <!-- Bottom Header - Tầng dưới (Desktop only) -->
+        <div class="bottom-header d-none d-lg-block" id="dynamic-bottom-header">
             <div class="container">
                 <div class="row align-items-center">
                     <!-- Categories Button -->
@@ -76,7 +145,7 @@
                             <button class="btn btn-categories" type="button" data-bs-toggle="dropdown"
                                 aria-expanded="false" id="categories-button">
                                 <i class="mdi mdi-menu"></i>
-                                <span id="categories-button-text">Danh Mục Sản Phẩm</span>
+                                <span id="categories-button-text" class="d-none d-sm-inline">Danh Mục Sản Phẩm</span>
                             </button>
                             <div class="dropdown-menu categories-menu">
                                 <div class="container-fluid">
@@ -122,11 +191,8 @@
                         </div>
                     </div>
 
-                    <!-- Main Navigation -->
-
-
-                    <!-- Dynamic Navigation Items -->
-                    <div class="col" id="main-navigation">
+                    <!-- Main Navigation - Hidden on mobile -->
+                    <div class="col d-none d-lg-block" id="main-navigation">
                         <nav class="main-nav">
                             <ul class="nav-list">
                                 <!-- Navigation items will be loaded dynamically -->
@@ -134,6 +200,45 @@
                         </nav>
                     </div>
                 </div>
+
+            </div>
+        </div>
+
+        <!-- Mobile Menu Overlay -->
+        <div class="mobile-menu-overlay" id="mobileMenuOverlay">
+            <div class="mobile-menu-container">
+                <!-- Mobile Menu Header -->
+                <div class="mobile-menu-header">
+                    <div class="mobile-menu-title">
+                        <i class="mdi mdi-menu"></i>
+                        <span>Menu</span>
+                    </div>
+                    <button class="btn btn-close-mobile-menu" type="button" id="closeMobileMenu">
+                        <i class="mdi mdi-close"></i>
+                    </button>
+                </div>
+
+                <!-- Account Section -->
+                <div class="mobile-account-section" id="mobile-menu-account-section">
+                    <div class="mobile-account-info">
+                        <i class="mdi mdi-account-circle"></i>
+                        <div class="mobile-account-text">
+                            <div class="mobile-account-title">TÀI KHOẢN</div>
+                            <a href="#" class="mobile-account-link" data-bs-toggle="modal" data-bs-target="#authModal">
+                                Đăng nhập / Đăng ký
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation Items -->
+                <nav class="mobile-nav" id="mobile-navigation-section">
+                    <ul class="mobile-nav-list" id="mobile-navigation">
+                        <!-- Mobile navigation items will be loaded dynamically -->
+                    </ul>
+                </nav>
+
+
             </div>
         </div>
 
@@ -161,7 +266,11 @@
                     // Update navigation items
                     if (data.navigationItems && data.navigationItems.length > 0) {
                         const navList = document.querySelector('#main-navigation .nav-list');
+                        const mobileNavList = document.querySelector('#mobile-navigation');
+
+                        // Clear both lists
                         navList.innerHTML = '';
+                        mobileNavList.innerHTML = '';
 
                         // Load sub-items for each parent item
                         for (let i = 0; i < data.navigationItems.length; i++) {
@@ -178,12 +287,15 @@
                             }
                         }
 
+                        // Process all items in order from API
                         data.navigationItems.forEach(item => {
+                            // Create desktop navigation item
                             const navItem = document.createElement('li');
                             navItem.className = 'nav-item';
 
+                            // Check if this is a category item
                             if (item.linkType === 'PARENT_CATEGORY' || item.isCategoryParent) {
-                                // Create dropdown for categories
+                                // Create dropdown for categories (desktop)
                                 const dropdownId = `category-dropdown-${Math.random().toString(36).substr(2, 9)}`;
                                 navItem.innerHTML = `
                                     <div class="nav-dropdown">
@@ -200,10 +312,7 @@
                                 // Load sub-categories for this category
                                 loadSubCategories(navItem, item);
                             } else {
-                                // Create regular button for other items
-                                const navLink = document.createElement('a');
-
-                                // Determine URL based on link type
+                                // Create regular button for non-category items
                                 let href = '#';
                                 if (item.linkType === 'EXTERNAL') {
                                     href = item.url || '#';
@@ -225,23 +334,238 @@
                                     href = item.url || '#';
                                 }
 
-                                navLink.href = href;
-                                navLink.className = 'nav-link nav-button';
-                                navLink.textContent = item.title.toUpperCase();
-
-                                // Add click handler - all links load in current tab
-                                navLink.addEventListener('click', function (e) {
-                                    // All links load in current tab, no special handling needed
-                                });
-
-                                navItem.appendChild(navLink);
+                                navItem.innerHTML = `
+                                    <a href="${href}" class="nav-link nav-button">
+                                        ${item.title.toUpperCase()}
+                                    </a>
+                                `;
                             }
 
                             navList.appendChild(navItem);
                         });
+
+
+
+                        // Add additional mobile menu items
+                        addAdditionalMobileMenuItems(mobileNavList, data);
                     }
                 } catch (error) {
                     console.error('Error loading header bottom content:', error);
+                }
+            }
+
+            // Add additional mobile menu items from data
+            function addAdditionalMobileMenuItems(mobileNavList, data) {
+                // Add "DANH MỤC SẢN PHẨM" expandable menu
+                const categoryHeader = document.createElement('li');
+                categoryHeader.className = 'mobile-nav-item';
+                categoryHeader.innerHTML = `
+                    <div class="mobile-nav-category-container">
+                        <a href="#" class="mobile-nav-link mobile-nav-category" data-bs-toggle="collapse" data-bs-target="#mobile-categories-menu" aria-expanded="false">
+                            <span>DANH MỤC SẢN PHẨM</span>
+                            <i class="mdi mdi-plus mobile-nav-toggle"></i>
+                        </a>
+                        <div class="collapse mobile-nav-submenu" id="mobile-categories-menu">
+                            <div class="mobile-submenu-loading">
+                                <i class="mdi mdi-loading mdi-spin"></i>
+                                <span>Đang tải danh mục...</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                mobileNavList.appendChild(categoryHeader);
+
+                // Load categories for mobile menu
+                loadMobileCategories(categoryHeader);
+
+                // Add all navigation items from data to mobile menu
+                if (data.navigationItems && data.navigationItems.length > 0) {
+                    data.navigationItems.forEach(item => {
+                        const mobileNavItem = document.createElement('li');
+                        mobileNavItem.className = 'mobile-nav-item';
+
+                        // Determine URL based on link type
+                        let href = '#';
+                        if (item.linkType === 'EXTERNAL') {
+                            href = item.url || '#';
+                        } else if (item.linkType === 'PAGE') {
+                            // Normalize to /content/page/{slug}
+                            const raw = (item.url || '').toString();
+                            const slug = raw
+                                .replace(/^\/content\/page\//, '')
+                                .replace(/^\//, '');
+                            href = slug ? `/content/page/${slug}` : '#';
+                        } else if (item.linkType === 'PAGE_LIST') {
+                            // Normalize to /content/list/{sectionSlug}
+                            const raw = (item.url || '').toString();
+                            const sectionSlug = raw
+                                .replace(/^\/content\/list\//, '')
+                                .replace(/^\//, '');
+                            href = sectionSlug ? `/content/list/${sectionSlug}` : '#';
+                        } else if (item.linkType === 'INTERNAL') {
+                            href = item.url || '#';
+                        }
+
+                        const mobileNavLink = document.createElement('a');
+                        mobileNavLink.href = href;
+
+                        if (item.linkType === 'PARENT_CATEGORY' || item.isCategoryParent) {
+                            // Category items with expandable submenu
+                            mobileNavItem.innerHTML = `
+                                <div class="mobile-nav-category-container">
+                                    <a href="#" class="mobile-nav-link mobile-nav-category" data-bs-toggle="collapse" data-bs-target="#mobile-submenu-${item.id}" aria-expanded="false">
+                                        <span>${item.title.toUpperCase()}</span>
+                                        <i class="mdi mdi-plus mobile-nav-toggle"></i>
+                                    </a>
+                                    <div class="collapse mobile-nav-submenu" id="mobile-submenu-${item.id}">
+                                        <div class="mobile-submenu-loading">
+                                            <i class="mdi mdi-loading mdi-spin"></i>
+                                            <span>Đang tải...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+
+                            // Load sub-items for this category
+                            loadMobileSubItems(mobileNavItem, item);
+                        } else {
+                            // Regular items with arrow icon
+                            mobileNavLink.className = 'mobile-nav-link mobile-nav-regular';
+                            mobileNavLink.innerHTML = `
+                                <span>${item.title.toUpperCase()}</span>
+                                <i class="mdi mdi-chevron-right"></i>
+                            `;
+                            mobileNavItem.appendChild(mobileNavLink);
+                        }
+
+                        mobileNavList.appendChild(mobileNavItem);
+                    });
+                }
+            }
+
+            // Load categories for mobile menu (multi-level)
+            async function loadMobileCategories(categoryHeader) {
+                try {
+                    console.log('Loading mobile categories...');
+                    const response = await fetch('/api/header/categories/api');
+                    const data = await response.json();
+
+                    console.log('Categories API response:', data);
+
+                    const submenu = categoryHeader.querySelector('.mobile-nav-submenu');
+                    if (submenu && data.result && data.result.length > 0) {
+                        submenu.innerHTML = '';
+
+                        console.log('Processing categories:', data.result);
+                        data.result.forEach(category => {
+                            const categoryElement = createMobileCategoryElement(category, 1);
+                            submenu.appendChild(categoryElement);
+                        });
+                    } else {
+                        console.warn('No categories found in API response');
+                        submenu.innerHTML = '<div class="mobile-submenu-empty">Không có danh mục sản phẩm</div>';
+                    }
+                } catch (error) {
+                    console.error('Error loading mobile categories:', error);
+                    const submenu = categoryHeader.querySelector('.mobile-nav-submenu');
+                    if (submenu) {
+                        submenu.innerHTML = '<div class="mobile-submenu-error">Lỗi tải danh mục sản phẩm</div>';
+                    }
+                }
+            }
+
+            // Create mobile category element with multi-level support
+            function createMobileCategoryElement(category, level) {
+                const categoryElement = document.createElement('div');
+                categoryElement.className = `mobile-submenu-item mobile-category-level-${level}`;
+
+                const hasChildren = category.children && category.children.length > 0;
+                const categoryId = `mobile-category-${category.categoryId}-${Math.random().toString(36).substr(2, 9)}`;
+
+                // Debug logging
+                console.log('Creating category element:', {
+                    name: category.name,
+                    categoryId: category.categoryId,
+                    hasChildren: hasChildren,
+                    level: level
+                });
+
+                if (hasChildren) {
+                    // Category with children - expandable
+                    categoryElement.innerHTML = `
+                        <div class="mobile-category-container">
+                            <a href="#" class="mobile-submenu-link mobile-category-toggle" data-bs-toggle="collapse" data-bs-target="#${categoryId}" aria-expanded="false">
+                                <span>${category.name}</span>
+                                <i class="mdi mdi-plus mobile-category-icon"></i>
+                            </a>
+                            <div class="collapse mobile-category-submenu" id="${categoryId}">
+                                <div class="mobile-category-children">
+                                    ${category.children.map(child => createMobileCategoryElement(child, level + 1).outerHTML).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    // Leaf category - direct link
+                    const categoryUrl = `/product/view/category/${category.categoryId}`;
+                    categoryElement.innerHTML = `
+                        <a href="${categoryUrl}" class="mobile-submenu-link mobile-category-link">
+                            <span>${category.name}</span>
+                            <i class="mdi mdi-chevron-right"></i>
+                        </a>
+                    `;
+                }
+
+                return categoryElement;
+            }
+
+            // Load sub-items for mobile menu
+            async function loadMobileSubItems(mobileNavItem, categoryItem) {
+                try {
+                    const subResponse = await fetch(`/content/api/header-bottom/sub-items/${categoryItem.id}`);
+                    const subData = await subResponse.json();
+
+                    const submenu = mobileNavItem.querySelector('.mobile-nav-submenu');
+                    if (submenu && subData && subData.length > 0) {
+                        submenu.innerHTML = '';
+
+                        subData.forEach(subItem => {
+                            const subItemElement = document.createElement('div');
+                            subItemElement.className = 'mobile-submenu-item';
+
+                            let subHref = '#';
+                            if (subItem.linkType === 'EXTERNAL') {
+                                subHref = subItem.url || '#';
+                            } else if (subItem.linkType === 'PAGE') {
+                                const raw = (subItem.url || '').toString();
+                                const slug = raw.replace(/^\/content\/page\//, '').replace(/^\//, '');
+                                subHref = slug ? `/content/page/${slug}` : '#';
+                            } else if (subItem.linkType === 'PAGE_LIST') {
+                                const raw = (subItem.url || '').toString();
+                                const sectionSlug = raw.replace(/^\/content\/list\//, '').replace(/^\//, '');
+                                subHref = sectionSlug ? `/content/list/${sectionSlug}` : '#';
+                            } else if (subItem.linkType === 'INTERNAL') {
+                                subHref = subItem.url || '#';
+                            }
+
+                            subItemElement.innerHTML = `
+                                <a href="${subHref}" class="mobile-submenu-link">
+                                    <span>${subItem.title}</span>
+                                    <i class="mdi mdi-chevron-right"></i>
+                                </a>
+                            `;
+
+                            submenu.appendChild(subItemElement);
+                        });
+                    } else {
+                        submenu.innerHTML = '<div class="mobile-submenu-empty">Không có danh mục con</div>';
+                    }
+                } catch (error) {
+                    console.error('Error loading mobile sub-items:', error);
+                    const submenu = mobileNavItem.querySelector('.mobile-nav-submenu');
+                    if (submenu) {
+                        submenu.innerHTML = '<div class="mobile-submenu-error">Lỗi tải danh mục con</div>';
+                    }
                 }
             }
 
@@ -488,6 +812,60 @@
 
         <!-- Ensure auth.js is available globally when header is included -->
         <script th:src="@{/user/js/auth.js}"></script>
+
+        <!-- Mobile Search Handler -->
+        <script>
+            // Sync mobile search with desktop search
+            document.addEventListener('DOMContentLoaded', function () {
+                const desktopSearchInput = document.getElementById('mainSearchInput');
+                const mobileSearchInput = document.getElementById('mobileSearchInput');
+
+                if (desktopSearchInput && mobileSearchInput) {
+                    // Sync mobile search with desktop search
+                    mobileSearchInput.addEventListener('input', function () {
+                        desktopSearchInput.value = this.value;
+                        desktopSearchInput.dispatchEvent(new Event('input'));
+                    });
+
+                    // Sync desktop search with mobile search
+                    desktopSearchInput.addEventListener('input', function () {
+                        mobileSearchInput.value = this.value;
+                        mobileSearchInput.dispatchEvent(new Event('input'));
+                    });
+                }
+            });
+        </script>
+
+        <!-- Mobile Menu Overlay Handler -->
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+                const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
+                const closeMobileMenu = document.getElementById('closeMobileMenu');
+
+                if (mobileMenuToggle && mobileMenuOverlay && closeMobileMenu) {
+                    // Open mobile menu
+                    mobileMenuToggle.addEventListener('click', function () {
+                        mobileMenuOverlay.classList.add('show');
+                        document.body.style.overflow = 'hidden'; // Prevent body scroll
+                    });
+
+                    // Close mobile menu
+                    closeMobileMenu.addEventListener('click', function () {
+                        mobileMenuOverlay.classList.remove('show');
+                        document.body.style.overflow = ''; // Restore body scroll
+                    });
+
+                    // Close mobile menu when clicking overlay
+                    mobileMenuOverlay.addEventListener('click', function (e) {
+                        if (e.target === mobileMenuOverlay) {
+                            mobileMenuOverlay.classList.remove('show');
+                            document.body.style.overflow = ''; // Restore body scroll
+                        }
+                    });
+                }
+            });
+        </script>
         <script>
             // Move modals to body to avoid being constrained by header's stacking context
             (function () {
@@ -514,8 +892,11 @@
                 }
             })();
         </script>
+
     </header>
     <!-- Header End -->
 </body>
+
+</html>
 
 </html>

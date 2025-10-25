@@ -1517,8 +1517,9 @@ class LioraApp {
     }
 
     updateUserDisplay() {
-        const userSection = document.getElementById('user-section');
+        const userSection = document.getElementById('desktop-user-section');
         const mobileUserSection = document.getElementById('mobile-user-section');
+        const mobileMenuAccountSection = document.getElementById('mobile-menu-account-section');
 
         if (this.currentUser) {
             const displayName = this.currentUser.name || this.currentUser.username || 'User';
@@ -1543,18 +1544,44 @@ class LioraApp {
             `;
 
             const mobileUserHTML = `
-                <div class="text-dark fw-medium mb-2">Hi, ${displayName}! 💕</div>
-                <button class="btn btn-outline-pink w-100 rounded-pill mb-2" href="/info" onclick="app.openUserInfo()">
-                    <i class="mdi mdi-account me-2"></i>Thông tin cá nhân
-                </button>
-                ${isAdmin ? '<a class="btn btn-outline-pink w-100 rounded-pill mb-2" href="/admin"><i class="mdi mdi-cog me-2"></i>Trang quản trị</a>' : ''}
-                <button class="btn btn-outline-pink w-100 rounded-pill" href="/home" onclick="app.signOut()">
-                    <i class="mdi mdi-logout me-2"></i>Đăng xuất
-                </button>
+                <a href="#" class="btn-user-mobile" onclick="toggleMobileMenu()">
+                    <i class="mdi mdi-account-circle"></i>
+                </a>
+            `;
+
+            const mobileMenuAccountHTML = `
+                <div class="mobile-account-info">
+                    <i class="mdi mdi-account-circle"></i>
+                    <div class="mobile-account-text">
+                        <div class="mobile-account-title">TÀI KHOẢN</div>
+                        <div class="mobile-account-user-name">${displayName}</div>
+                    </div>
+                </div>
+                <div class="mobile-account-actions">
+                    <a href="/info" class="mobile-account-action" onclick="app.openUserInfo()">
+                        <i class="mdi mdi-account"></i>
+                        <span>Thông tin cá nhân</span>
+                    </a>
+                    ${isAdmin ? '<a href="/admin" class="mobile-account-action"><i class="mdi mdi-cog"></i><span>Trang quản trị</span></a>' : ''}
+                    <a href="#" class="mobile-account-action" onclick="app.signOut()">
+                        <i class="mdi mdi-logout"></i>
+                        <span>Đăng xuất</span>
+                    </a>
+                </div>
             `;
 
             if (userSection) userSection.innerHTML = userHTML;
             if (mobileUserSection) mobileUserSection.innerHTML = mobileUserHTML;
+            if (mobileMenuAccountSection) mobileMenuAccountSection.innerHTML = mobileMenuAccountHTML;
+
+            // Show user actions in mobile menu when logged in
+            const mobileUserActions = document.getElementById('mobile-user-actions');
+            const mobileNavigationSection = document.getElementById('mobile-navigation-section');
+
+            if (mobileUserActions && mobileNavigationSection) {
+                mobileUserActions.style.display = 'block';
+                mobileNavigationSection.style.display = 'none';
+            }
         } else {
             const userHTML = `
                 <button class="btn btn-user" data-bs-toggle="modal" data-bs-target="#authModal">
@@ -1564,13 +1591,44 @@ class LioraApp {
             `;
 
             const mobileUserHTML = `
-                <button class="btn btn-pink-primary w-100 rounded-pill" data-bs-toggle="modal" data-bs-target="#authModal">
-                    Sign In / Sign Up
+                <button class="btn-user-mobile" data-bs-toggle="modal" data-bs-target="#authModal">
+                    <i class="mdi mdi-account-circle"></i>
                 </button>
+            `;
+
+            const mobileMenuAccountHTML = `
+                <div class="mobile-account-info">
+                    <i class="mdi mdi-account-circle"></i>
+                    <div class="mobile-account-text">
+                        <div class="mobile-account-title">TÀI KHOẢN</div>
+                        <a href="#" class="mobile-account-link" data-bs-toggle="modal" data-bs-target="#authModal">
+                            Đăng nhập / Đăng ký
+                        </a>
+                    </div>
+                </div>
             `;
 
             if (userSection) userSection.innerHTML = userHTML;
             if (mobileUserSection) mobileUserSection.innerHTML = mobileUserHTML;
+            if (mobileMenuAccountSection) mobileMenuAccountSection.innerHTML = mobileMenuAccountHTML;
+
+            // Hide user actions in mobile menu when not logged in
+            const mobileUserActions = document.getElementById('mobile-user-actions');
+            const mobileNavigationSection = document.getElementById('mobile-navigation-section');
+
+            if (mobileUserActions && mobileNavigationSection) {
+                mobileUserActions.style.display = 'none';
+                mobileNavigationSection.style.display = 'block';
+            }
+        }
+    }
+
+    // Toggle mobile menu function
+    toggleMobileMenu() {
+        const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
+        if (mobileMenuOverlay) {
+            mobileMenuOverlay.classList.add('show');
+            document.body.style.overflow = 'hidden';
         }
     }
 
@@ -2681,3 +2739,12 @@ class DiscountSlider {
 
 // Export for use in other scripts
 window.DiscountSlider = DiscountSlider;
+
+// Global functions for HTML onclick handlers
+function toggleMobileMenu() {
+    const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
+    if (mobileMenuOverlay) {
+        mobileMenuOverlay.classList.add('show');
+        document.body.style.overflow = 'hidden';
+    }
+}
