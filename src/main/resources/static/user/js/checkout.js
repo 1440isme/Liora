@@ -101,14 +101,14 @@ class CheckoutPage {
         $(document).on('keypress', '.quantity-input', (e) => {
             if (e.which === 13) { // Enter key
                 e.preventDefault();
-                console.log('Checkout Enter pressed, validating...', e.target.value);
-                this.handleQuantityInputChange(e);
+                console.log('Checkout Enter pressed, saving quantity...', e.target.value);
+                // Blur input để trigger validation và save
+                $(e.target).blur();
             }
         });
 
         // Xử lý khi ra khỏi ô input (blur event)
         $(document).on('blur', '.quantity-input', (e) => {
-            console.log('Checkout blur event, validating...', e.target.value);
             this.handleQuantityInputChange(e);
         });
 
@@ -131,9 +131,10 @@ class CheckoutPage {
             this.cartId = cartResponse.cartId;
 
             if (this.cartId) {
-                // Lấy danh sách sản phẩm đã chọn
+                // Lấy danh sách sản phẩm đã chọn từ cart
                 const selectedItemsResponse = await this.apiCall(`/CartProduct/${this.cartId}/selected-products`, 'GET');
                 this.selectedItems = selectedItemsResponse;
+                
                 this.renderSelectedItems();
                 this.updateOrderSummary();
             } else {
@@ -1273,7 +1274,7 @@ class CheckoutPage {
             container.html(`
                 <div class="text-center py-3">
                     <i class="fas fa-shopping-cart fa-2x text-muted mb-2"></i>
-                    <p class="text-muted mb-2 small">Bạn chưa chọn sản phẩm nào</p>
+                    <p class="text-muted mb-2 small"> Chưa có sản phẩm nào hợp lệ </p>
                     <a href="/cart" class="btn btn-outline-primary btn-sm">
                         <i class="fas fa-arrow-left me-1"></i>
                         Quay lại giỏ hàng
@@ -1290,7 +1291,7 @@ class CheckoutPage {
     }
 
     createSelectedItemHTML(item) {
-        const productStatus = this.getProductStatus(item);
+        const productStatus = CartUtils.getProductStatus(item);
         const isDisabled = productStatus !== 'available';
 
         return `
@@ -1305,7 +1306,7 @@ class CheckoutPage {
                             <i class="fas fa-trash-alt"></i>
                         </button>
                     </div>
-                    ${this.getProductStatusTag(productStatus)}
+                    ${CartUtils.getProductStatusTag(productStatus)}
                     <div class="item-footer">
                         <span class="item-price">${this.formatCurrency(item.totalPrice)}</span>
                         <div class="quantity-controls">
@@ -1323,59 +1324,43 @@ class CheckoutPage {
         `;
     }
 
-    getProductStatus(item) {
-        // Kiểm tra trạng thái sản phẩm - ngừng kinh doanh trước
-        if (!item.available || !item.isActive) {
-            return 'deactivated';
-        }
-        if (item.stock <= 0) {
-            return 'out_of_stock';
-        }
-        return 'available';
-    }
+    async updateOrderSummary() {
+        try {
+            // ✅ Gọi API để lấy tổng tiền từ backend
+            const totalResponse = await this.apiCall(`/cart/api/${this.cartId}/total`, 'GET');
+            const subtotal = totalResponse || 0;
 
-    getProductStatusTag(status) {
-        switch (status) {
-            case 'deactivated':
-                return '<span class="product-status-tag status-deactivated">Ngừng kinh doanh</span>';
-            case 'out_of_stock':
-                return '<span class="product-status-tag status-out-of-stock">Hết hàng</span>';
-            default:
-                return '';
-        }
-    }
+            // ✅ FIX: Tính lại discount amount nếu có discount được áp dụng
+            let discountAmount = 0;
+            if (this.appliedDiscount) {
+                discountAmount = this.appliedDiscount.discountAmount || 0;
+                this.recalculateDiscountAmount(subtotal);
+            }
 
-    updateOrderSummary() {
-        const subtotal = this.selectedItems.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0);
+            const total = subtotal + this.shippingFee - discountAmount;
 
-        // ✅ FIX: Tính lại discount amount nếu có discount được áp dụng
-        let discountAmount = 0;
-        if (this.appliedDiscount) {
-            // Sử dụng discount amount hiện tại, sẽ được cập nhật bởi recalculateDiscountAmount
-            discountAmount = this.appliedDiscount.discountAmount || 0;
+            $('#summary-subtotal').text(this.formatCurrency(subtotal));
+            $('#summary-shipping').text(this.shippingFee === 0 ? '0đ' : this.formatCurrency(this.shippingFee));
+            $('#summary-total').text(this.formatCurrency(total));
 
-            // Tính lại discount amount với subtotal mới (async)
-            this.recalculateDiscountAmount(subtotal);
-        }
-
-        const total = subtotal + this.shippingFee - discountAmount;
-
-        $('#summary-subtotal').text(this.formatCurrency(subtotal));
-        $('#summary-shipping').text(this.shippingFee === 0 ? '0đ' : this.formatCurrency(this.shippingFee));
-        $('#summary-total').text(this.formatCurrency(total));
-
-        // Luôn hiển thị dòng giảm giá
-        if (!$('#discount-row').length) {
-            // Thêm dòng giảm giá vào summary (luôn hiển thị)
-            $('#summary-shipping').parent().after(`
-                <div class="summary-row" id="discount-row">
-                    <span>Giảm giá:</span>
-                    <span class="fw-medium text-success">-${this.formatCurrency(discountAmount)}</span>
-                </div>
-            `);
-        } else {
-            // Cập nhật số tiền giảm giá
-            $('#discount-row .fw-medium').text(`-${this.formatCurrency(discountAmount)}`);
+            // Luôn hiển thị dòng giảm giá
+            if (!$('#discount-row').length) {
+                // Thêm dòng giảm giá vào summary (luôn hiển thị)
+                $('#summary-shipping').parent().after(`
+                    <div class="summary-row" id="discount-row">
+                        <span>Giảm giá:</span>
+                        <span class="fw-medium text-success">-${this.formatCurrency(discountAmount)}</span>
+                    </div>
+                `);
+            } else {
+                // Cập nhật số tiền giảm giá
+                $('#discount-row .fw-medium').text(`-${this.formatCurrency(discountAmount)}`);
+            }
+        } catch (error) {
+            console.error('Error updating order summary:', error);
+            // Fallback: Hiển thị 0 nếu API lỗi
+            $('#summary-subtotal').text(this.formatCurrency(0));
+            $('#summary-total').text(this.formatCurrency(0));
         }
     }
 
@@ -1478,9 +1463,12 @@ class CheckoutPage {
         try {
             this.showLoading(true);
 
+            // ✅ Gọi API để lấy subtotal
+            const orderTotal = await this.calculateSubtotalForDiscount();
+
             const response = await this.apiCall('/discounts/apply', 'POST', {
                 discountCode: promoCode,
-                orderTotal: this.calculateSubtotalForDiscount()  // ✅ Chỉ gửi subtotal
+                orderTotal: orderTotal  // ✅ Chỉ gửi subtotal
             });
 
             // Xử lý response đúng cách
@@ -1515,14 +1503,21 @@ class CheckoutPage {
         }
     }
 
-    // Tạo function riêng để tính subtotal cho API
-    calculateSubtotalForDiscount() {
-        return this.selectedItems.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0);
+    // ✅ Gọi API để lấy subtotal cho discount
+    async calculateSubtotalForDiscount() {
+        try {
+            const totalResponse = await this.apiCall(`/cart/api/${this.cartId}/total`, 'GET');
+            return totalResponse || 0;
+        } catch (error) {
+            console.error('Error getting subtotal for discount:', error);
+            return 0;
+        }
     }
 
     handleRemovePromo() {
         this.appliedDiscount = null;
         this.updateOrderSummary();
+        
         this.showToast('Đã gỡ mã giảm giá', 'info');
 
         // ✅ SỬA: Reset UI về trạng thái ban đầu
@@ -1536,8 +1531,9 @@ class CheckoutPage {
             return;
         }
 
-        // Validate all products before checkout
-        if (!this.validateAllProducts()) {
+        // Validate all products before checkout (with server revalidation)
+        const isValid = await this.validateAllProducts();
+        if (!isValid) {
             return;
         }
 
@@ -1578,6 +1574,7 @@ class CheckoutPage {
 
             // Nếu không phải VNPAY hoặc VNPAY thất bại, chuyển đến trang thành công
             this.showToast('Đặt hàng thành công!', 'success');
+            
             setTimeout(() => {
                 this.redirectToOrderDetail(response.idOrder);
             }, 1500);
@@ -1605,25 +1602,15 @@ class CheckoutPage {
         }
     }
 
-    validateAllProducts() {
-        // Kiểm tra tất cả sản phẩm đã chọn
-        for (const item of this.selectedItems) {
-            const status = this.getProductStatus(item);
+    async validateAllProducts() {
+        // Validate products - không cập nhật lại danh sách vì checkout là ảo
+        const result = await CartUtils.validateSelectedProducts(
+            this.cartId,
+            this.showToast.bind(this),
+            null
+        );
 
-            // Nếu sản phẩm không hợp lệ (hết hàng hoặc ngừng kinh doanh)
-            if (status !== 'available') {
-                this.showToast('Đơn hàng có sản phẩm không hợp lệ', 'error');
-                return false;
-            }
-
-            // Kiểm tra số lượng có vượt quá tồn kho không
-            if (item.quantity > item.stock) {
-                this.showToast('Đơn hàng có sản phẩm không hợp lệ', 'error');
-                return false;
-            }
-        }
-
-        return true;
+        return result;
     }
 
     validateCheckoutForm() {
@@ -1697,27 +1684,6 @@ class CheckoutPage {
             ? rawNotes.trim()
             : 'Không có ghi chú';
 
-        // Order data validation
-
-        // Validation: Kiểm tra các field required
-        if (!fullName || fullName.trim() === '') {
-            this.showToast('Vui lòng nhập họ và tên', 'warning');
-            return null;
-        }
-        if (!phone || phone.trim() === '') {
-            this.showToast('Vui lòng nhập số điện thoại', 'warning');
-            return null;
-        }
-        if (!fullAddress || fullAddress.trim() === '') {
-            this.showToast('Vui lòng nhập địa chỉ', 'warning');
-            return null;
-        }
-        if (!paymentMethod) {
-            this.showToast('Vui lòng chọn phương thức thanh toán', 'warning');
-            return null;
-        }
-        // Ghi chú có thể null, không cần validation
-
         // Chuẩn hoá dữ liệu địa chỉ cần cho BE tính phí GHN
         let districtId = districtIdRaw ? parseInt(districtIdRaw, 10) : null;
         let provinceId = province ? parseInt(province, 10) : null;
@@ -1748,66 +1714,24 @@ class CheckoutPage {
         return orderData;
     }
 
-    calculateOrderTotal() {
-        const subtotal = this.selectedItems.reduce((sum, item) => sum + parseFloat(item.totalPrice), 0);
-        return subtotal + this.shippingFee - this.discount;
-    }
-
     // ========== CART ITEM HANDLERS ==========
 
     async handleQuantityChange(e) {
-        const button = $(e.target).closest('.quantity-btn');
-        const action = button.data('action');
-        const input = button.siblings('.quantity-input');
-        const cartItem = button.closest('.cart-item');
-        const cartProductId = cartItem.data('cart-product-id');
-
-        let newQuantity = parseInt(input.val()) || 1;
-        const maxStock = parseInt(input.attr('max')) || 99; // Đã được tính min với 99
-
-        if (action === 'increase') {
-            if (newQuantity < maxStock) {
-                newQuantity = newQuantity + 1;
-            } else {
-                newQuantity = maxStock;
-                this.showToast(`Bạn chỉ được phép mua tối đa ${maxStock} sản phẩm`, 'warning');
-            }
-        } else if (action === 'decrease') {
-            if (newQuantity > 1) {
-                newQuantity = newQuantity - 1;
-            } else {
-                this.showToast(`Số lượng tối thiểu là 1 sản phẩm`, 'warning');
-            }
-        }
-
-        input.val(newQuantity);
-        await this.updateCartProductQuantity(cartProductId, newQuantity);
+        await CartUtils.handleQuantityChange(
+            e,
+            this.updateCartProductQuantity.bind(this),
+            this.showToast.bind(this),
+            this.updateOrderSummary.bind(this) // Callback để cập nhật tổng tiền sau khi thay đổi
+        );
     }
 
     async handleQuantityInputChange(e) {
-        const input = $(e.target);
-        const cartItem = input.closest('.cart-item');
-        const cartProductId = cartItem.data('cart-product-id');
-        const maxStock = parseInt(input.attr('max')) || 99; // Đã được tính min với 99
-        let newQuantity = parseInt(input.val()) || 1;
-
-        console.log('Checkout input validation:', { newQuantity, maxStock, inputVal: input.val(), cartProductId });
-
-        // Force validation ngay lập tức
-        if (newQuantity < 1) {
-            newQuantity = 1;
-            input.val(newQuantity);
-            this.showToast(`Số lượng tối thiểu là 1 sản phẩm`, 'warning');
-            console.log('Set to minimum: 1');
-            await this.updateCartProductQuantity(cartProductId, newQuantity);
-        } else if (newQuantity > maxStock) {
-            // Tự động cập nhật về max stock
-            newQuantity = maxStock;
-            input.val(newQuantity);
-            this.showToast(`Bạn chỉ được phép mua tối đa ${maxStock} sản phẩm`, 'warning');
-            console.log('Set to maximum:', maxStock);
-            await this.updateCartProductQuantity(cartProductId, newQuantity);
-        }
+        await CartUtils.handleQuantityInputChange(
+            e, 
+            this.updateCartProductQuantity.bind(this), 
+            this.showToast.bind(this),
+            this.updateOrderSummary.bind(this) // Callback để cập nhật tổng tiền sau khi thay đổi
+        );
     }
 
     async handleRemoveItem(e) {
@@ -1815,7 +1739,7 @@ class CheckoutPage {
         const cartProductId = cartItem.data('cart-product-id');
         const productName = cartItem.find('.item-title').text();
 
-        this.showConfirmDialog(
+        CartUtils.showConfirmDialog(
             'Bỏ chọn sản phẩm',
             `Bạn có chắc chắn muốn bỏ chọn "${productName}"?`,
             async () => {
@@ -1893,12 +1817,7 @@ class CheckoutPage {
         }, 100);
     }
 
-    showConfirmDialog(title, message, onConfirm) {
-        if (confirm(`${title}\n\n${message}`)) {
-            onConfirm();
-        }
-    }
-
+    // ========== Use CartUtils for common functions ==========
     enableCheckoutButton() {
         const checkoutBtn = $('button[type="submit"][form="checkoutForm"]');
         checkoutBtn.prop('disabled', false).css({
@@ -1938,94 +1857,37 @@ class CheckoutPage {
     }
 
     showLoading(show) {
-        if (show) {
-            $('body').append('<div id="loadingOverlay" class="loading-overlay"><div class="spinner-border text-primary" role="status"></div></div>');
-        } else {
-            $('#loadingOverlay').remove();
-        }
+        CartUtils.showLoading(show);
     }
 
     showToast(message, type = 'info') {
-        // Simple toast implementation
-        const toastClass = {
-            'success': 'alert-success',
-            'error': 'alert-danger',
-            'warning': 'alert-warning',
-            'info': 'alert-info'
-        }[type] || 'alert-info';
-
-        const toast = $(`
-            <div class="alert ${toastClass} alert-dismissible fade show position-fixed" 
-                 style="top: 20px; right: 20px; z-index: 9999; min-width: 300px;">
-                ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        `);
-
-        $('body').append(toast);
-
-        // Auto remove after 5 seconds
-        setTimeout(() => {
-            toast.alert('close');
-        }, 5000);
+        CartUtils.showToast(message, type);
     }
 
     formatCurrency(amount) {
-        return new Intl.NumberFormat('vi-VN', {
-            style: 'currency',
-            currency: 'VND'
-        }).format(amount);
+        return CartUtils.formatCurrency(amount);
+    }
+
+    // ========== HELPER METHODS ==========
+    
+    /**
+     * Tính subtotal từ selectedItems
+     */
+    calculateSubtotalFromSelectedItems() {
+        if (!this.selectedItems || this.selectedItems.length === 0) {
+            return 0;
+        }
+        
+        return this.selectedItems.reduce((total, item) => {
+            // Sử dụng totalPrice nếu có, nếu không thì tính từ productPrice * quantity
+            const itemTotal = item.totalPrice || (item.productPrice * item.quantity);
+            return total + itemTotal;
+        }, 0);
     }
 
     // ========== API HELPER METHODS ==========
-
     async apiCall(url, method = 'GET', data = null) {
-        const token = localStorage.getItem('access_token');
-        const headers = {
-            'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
-        };
-
-        // Thêm Authorization header nếu có token
-        if (token) {
-            headers['Authorization'] = `Bearer ${token}`;
-        }
-
-        const options = {
-            method: method,
-            headers: headers
-        };
-
-        if (data && (method === 'POST' || method === 'PUT')) {
-            options.body = JSON.stringify(data);
-        }
-
-        const response = await fetch(url, options);
-
-        if (!response.ok) {
-            // Kiểm tra content-type trước khi parse JSON
-            const contentType = response.headers.get('content-type');
-            if (contentType && contentType.includes('application/json')) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-            } else {
-                // Nếu không phải JSON (có thể là HTML trang login), throw error với status
-                throw new Error(`HTTP error! status: ${response.status} - Server returned non-JSON response`);
-            }
-        }
-
-        // Với DELETE request, response có thể là empty body
-        if (method === 'DELETE') {
-            return { success: true };
-        }
-
-        // Kiểm tra content-type trước khi parse JSON
-        const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
-            return await response.json();
-        } else {
-            throw new Error('Server returned non-JSON response');
-        }
+        return CartUtils.apiCall(url, method, data);
     }
 
     navigateToCart(event) {

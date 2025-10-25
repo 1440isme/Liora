@@ -92,6 +92,7 @@ public enum ErrorCode {
         VALIDATION_PHONE_INVALID_LENGTH(3013, "Số điện thoại phải có đúng 10 chữ số", HttpStatus.BAD_REQUEST),
         VALIDATION_QUANTITY_MIN_ONE(3014, "Số lượng phải ít nhất là 1", HttpStatus.BAD_REQUEST),
         NO_SELECTED_PRODUCT(400, "Không có sản phẩm nào được chọn", HttpStatus.BAD_REQUEST),
+        NO_VALID_PRODUCT(400, "Không có sản phẩm hợp lệ để đặt hàng (sản phẩm phải available, isActive và có đủ stock)", HttpStatus.BAD_REQUEST),
         CANNOT_REMOVE_DEFAULT_ADDRESS(400, "Không thể xóa địa chỉ mặc định", HttpStatus.BAD_REQUEST),
         
         // Khoi: 4000 - 4999 (Review & Discount)

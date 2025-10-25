@@ -145,8 +145,14 @@ public class CartProductServiceImpl implements ICartProductService {
         // Sử dụng query tối ưu để tránh N+1 problem
         List<CartProduct> selectedProducts = cartProductRepository.findByCartAndChooseTrueWithProduct(cart);
 
-        // Map sang DTO và set image URL in one pass
+        // ✅ Filter chỉ lấy sản phẩm hợp lệ (available=true, isActive=true)
         return selectedProducts.stream()
+                .filter(cartProduct -> {
+                    Product product = cartProduct.getProduct();
+                    return product != null 
+                        && Boolean.TRUE.equals(product.getAvailable()) 
+                        && Boolean.TRUE.equals(product.getIsActive());
+                })
                 .map(cartProduct -> {
                     CartProductResponse response = cartProductMapper.toCartProductResponse(cartProduct);
                     response.setMainImageUrl(getMainImageUrl(cartProduct.getProduct()));
@@ -157,11 +163,9 @@ public class CartProductServiceImpl implements ICartProductService {
 
     @Override
     public double getCartTotal(Long cartId) {
-        Cart cart = cartRepository.findById(cartId)
-                .orElseThrow(() -> new AppException(ErrorCode.CART_NOT_FOUND));
-
-        // Sử dụng query tối ưu thay vì load tất cả CartProduct
-        BigDecimal total = cartProductRepository.getCartTotalAmount(cart);
+        // ✅ Sử dụng getSelectedProductsTotal để chỉ tính những sản phẩm hợp lệ
+        // (choose=true, available=true, isActive=true)
+        BigDecimal total = this.getSelectedProductsTotal(cartId);
         return total != null ? total.doubleValue() : 0.0;
     }
 
@@ -211,7 +215,15 @@ public class CartProductServiceImpl implements ICartProductService {
         Cart cart = cartRepository.findById(cartId)
                 .orElseThrow(() -> new AppException(ErrorCode.CART_NOT_FOUND));
         List<CartProduct> cartProducts = cartProductRepository.findByCartAndChooseTrue(cart);
+        
+        // ✅ Filter chỉ tính tiền cho sản phẩm hợp lệ (available=true, isActive=true)
         return cartProducts.stream()
+                .filter(cartProduct -> {
+                    Product product = cartProduct.getProduct();
+                    return product != null 
+                        && Boolean.TRUE.equals(product.getAvailable()) 
+                        && Boolean.TRUE.equals(product.getIsActive());
+                })
                 .map(CartProduct::getTotalPrice)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }

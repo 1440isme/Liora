@@ -76,6 +76,21 @@ public class OrderServiceImpl implements IOrderService {
                 throw new AppException(ErrorCode.NO_SELECTED_PRODUCT);
             }
 
+            // ✅ Lọc chỉ lấy sản phẩm hợp lệ (available=true, isActive=true, stock đủ)
+            List<CartProduct> validProducts = selected.stream()
+                    .filter(cp -> {
+                        Product product = cp.getProduct();
+                        return product != null 
+                            && Boolean.TRUE.equals(product.getAvailable()) 
+                            && Boolean.TRUE.equals(product.getIsActive())
+                            && product.getStock() != null && cp.getQuantity() <= product.getStock();
+                    })
+                    .collect(Collectors.toList());
+
+            if (validProducts.isEmpty()) {
+                throw new AppException(ErrorCode.NO_VALID_PRODUCT);
+            }
+
             Order order = orderMapper.toOrder(request);
             order.setUser(user); // user có thể null khi guest; các thao tác phía dưới phải null-safe
             order.setOrderDate(LocalDateTime.now());
@@ -93,7 +108,8 @@ public class OrderServiceImpl implements IOrderService {
                 order.setProvinceId(request.getProvinceId());
             }
 
-            List<OrderProduct> orderProducts = selected.stream()
+            // ✅ Sử dụng validProducts thay vì selected
+            List<OrderProduct> orderProducts = validProducts.stream()
                     .map(cp -> {
                         OrderProduct op = orderProductMapper.toOrderProduct(cp);
                         op.setOrder(order);
@@ -194,7 +210,8 @@ public class OrderServiceImpl implements IOrderService {
                 }
             }
 
-            cartProductRepository.deleteAll(selected);
+            // ✅ Chỉ xóa các sản phẩm hợp lệ đã tạo order
+            cartProductRepository.deleteAll(validProducts);
 
             // Tạo vận đơn GHN ngay khi đặt hàng nếu không dùng VNPAY (COD)
             try {
