@@ -6,7 +6,6 @@ class ProductRatingUtils {
             return {};
         }
 
-        console.log('Loading review statistics for product IDs:', productIds);
 
         try {
             const response = await fetch('/api/reviews/products/statistics', {
@@ -17,11 +16,9 @@ class ProductRatingUtils {
                 body: JSON.stringify(productIds)
             });
 
-            console.log('API response status:', response.status);
 
             if (response.ok) {
                 const data = await response.json();
-                console.log('API response data:', data);
                 return data;
             } else {
                 const errorText = await response.text();
@@ -37,7 +34,7 @@ class ProductRatingUtils {
     static createStarRatingHTML(averageRating, reviewCount) {
         const rating = averageRating || 0;
         const count = reviewCount || 0;
-        
+
         let starsHTML = '';
         for (let i = 1; i <= 5; i++) {
             if (i <= Math.floor(rating)) {
@@ -90,14 +87,11 @@ class ProductRatingUtils {
         const averageRating = productStats.averageRating || 0;
         const reviewCount = productStats.totalReviews || 0;
 
-        console.log('Updating rating for product', productId, ':', averageRating, 'stars,', reviewCount, 'reviews');
 
         // Tìm rating container
         let ratingContainer = cardElement.querySelector('.product-rating');
-        console.log('Found rating container:', ratingContainer);
-        
+
         if (!ratingContainer) {
-            console.log('No rating container found, creating new one');
             // Tạo rating container mới
             const cardBody = cardElement.querySelector('.card-body');
             if (cardBody) {
@@ -106,14 +100,12 @@ class ProductRatingUtils {
                     ratingContainer = document.createElement('div');
                     ratingContainer.className = 'product-rating mb-2';
                     title.insertAdjacentElement('afterend', ratingContainer);
-                    console.log('Created new rating container');
                 }
             }
         }
 
         if (ratingContainer) {
             const newHTML = this.createStarRatingHTML(averageRating, reviewCount);
-            console.log('Updating rating HTML:', newHTML);
             ratingContainer.innerHTML = newHTML;
         } else {
             console.error('Could not find or create rating container for product:', productId);
@@ -123,74 +115,61 @@ class ProductRatingUtils {
     static async loadAndUpdateProductCards(productCards) {
         if (!productCards || productCards.length === 0) return;
 
-        console.log('Loading ratings for', productCards.length, 'product cards');
 
         // Lấy danh sách product IDs
         const productIds = Array.from(productCards).map(card => {
-            const productId = card.dataset.productId || 
-                            card.querySelector('[data-product-id]')?.dataset.productId ||
-                            card.querySelector('a[href*="/product/"]')?.href.match(/\/product\/(\d+)/)?.[1];
-            console.log('Product ID detected:', productId, 'from card:', card);
+            const productId = card.dataset.productId ||
+                card.querySelector('[data-product-id]')?.dataset.productId ||
+                card.querySelector('a[href*="/product/"]')?.href.match(/\/product\/(\d+)/)?.[1];
             return productId ? parseInt(productId) : null;
         }).filter(id => id !== null);
 
-        console.log('Product IDs to load:', productIds);
 
         if (productIds.length === 0) {
-            console.log('No valid product IDs found');
             return;
         }
 
         // Load review statistics
         const statistics = await this.loadReviewStatistics(productIds);
-        console.log('Loaded statistics:', statistics);
 
         // Update each card
         productCards.forEach(card => {
-            const productId = card.dataset.productId || 
-                            card.querySelector('[data-product-id]')?.dataset.productId ||
-                            card.querySelector('a[href*="/product/"]')?.href.match(/\/product\/(\d+)/)?.[1];
-            
+            const productId = card.dataset.productId ||
+                card.querySelector('[data-product-id]')?.dataset.productId ||
+                card.querySelector('a[href*="/product/"]')?.href.match(/\/product\/(\d+)/)?.[1];
+
             if (productId) {
-                console.log('Updating rating for product:', productId);
                 this.updateProductCardRating(card, parseInt(productId), statistics);
             }
         });
     }
 
     static async updateQuickViewReviewData(productId, modalId = 'quickViewModal') {
-        console.log('Updating quick view review data for product:', productId, 'modal:', modalId);
-        
+
         try {
             // Load review statistics for this product
             const statistics = await this.loadReviewStatistics([productId]);
-            console.log('Loaded statistics for quick view:', statistics);
-            
+
             const productStats = statistics[productId.toString()];
             if (!productStats) {
-                console.log('No stats found for product in quick view:', productId);
                 return;
             }
 
             const averageRating = productStats.averageRating || 0;
             const reviewCount = productStats.totalReviews || 0;
 
-            console.log('Updating quick view rating for product', productId, ':', averageRating, 'stars,', reviewCount, 'reviews');
 
             // Find the modal
             const modal = document.getElementById(modalId);
             if (!modal) {
-                console.log('Quick view modal not found:', modalId);
                 return;
             }
 
             // Find rating container in modal
             const ratingContainer = modal.querySelector('.rating .stars');
             const reviewCountSpan = modal.querySelector('.rating .review-count') || modal.querySelector('.review-count');
-            
-            console.log('Found rating container:', ratingContainer);
-            console.log('Found review count span:', reviewCountSpan);
-            
+
+
             if (ratingContainer) {
                 // Generate stars HTML using the same logic as generateStarsForModal
                 let starsHTML = '';
@@ -214,16 +193,13 @@ class ProductRatingUtils {
                         starsHTML += '<i class="far fa-star" style="color: #ccc !important; font-weight: 400 !important;"></i>';
                     }
                 }
-                
+
                 ratingContainer.innerHTML = starsHTML;
-                console.log('Updated rating stars in quick view');
             }
 
             if (reviewCountSpan) {
                 reviewCountSpan.textContent = `(${reviewCount} đánh giá)`;
-                console.log('Updated review count in quick view to:', reviewCount);
             } else {
-                console.log('Review count span not found in modal');
             }
 
         } catch (error) {
@@ -233,39 +209,34 @@ class ProductRatingUtils {
 }
 
 // Auto-load ratings for product cards on page load
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('ProductRatingUtils: DOM loaded, starting auto-load...');
-    
+document.addEventListener('DOMContentLoaded', function () {
+
     // Delay để đảm bảo các script khác đã load xong
-    setTimeout(function() {
+    setTimeout(function () {
         loadExistingProductCards();
         setupMutationObserver();
     }, 1000);
 });
 
 function loadExistingProductCards() {
-    console.log('ProductRatingUtils: Loading existing product cards...');
     const productCards = document.querySelectorAll('.product-card, .card.product-card');
-    console.log('ProductRatingUtils: Found', productCards.length, 'existing product cards');
-    
+
     if (productCards.length > 0) {
         ProductRatingUtils.loadAndUpdateProductCards(productCards);
     }
 }
 
 function setupMutationObserver() {
-    console.log('ProductRatingUtils: Setting up mutation observer...');
-    
+
     // Observer để load ratings cho product cards được thêm động
-    const observer = new MutationObserver(function(mutations) {
-        mutations.forEach(function(mutation) {
-            mutation.addedNodes.forEach(function(node) {
+    const observer = new MutationObserver(function (mutations) {
+        mutations.forEach(function (mutation) {
+            mutation.addedNodes.forEach(function (node) {
                 if (node.nodeType === 1) { // Element node
-                    const newProductCards = node.querySelectorAll ? 
+                    const newProductCards = node.querySelectorAll ?
                         node.querySelectorAll('.product-card, .card.product-card') : [];
-                    
+
                     if (newProductCards.length > 0) {
-                        console.log('ProductRatingUtils: Found', newProductCards.length, 'new product cards');
                         ProductRatingUtils.loadAndUpdateProductCards(newProductCards);
                     }
                 }

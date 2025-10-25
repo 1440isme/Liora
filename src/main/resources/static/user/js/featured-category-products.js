@@ -238,7 +238,6 @@ class FeaturedCategoryProductsManager {
 
                 this.showLoading(false);
             } else {
-                console.log('API error:', data.message);
                 this.showLoading(false);
                 this.showEmptyState('Không tìm thấy sản phẩm');
             }
@@ -258,7 +257,6 @@ class FeaturedCategoryProductsManager {
         const emptyState = document.getElementById('emptyState');
 
         if (!grid) {
-            console.log('Grid element not found');
             return;
         }
 
@@ -282,26 +280,19 @@ class FeaturedCategoryProductsManager {
 
         // Trigger rating load sau khi render xong
         setTimeout(() => {
-            console.log('🔍 Loading product ratings for featured category products...');
-            
+
             // Fallback: call global loadProductRatings first
             if (window.loadProductRatings) {
-                console.log('🔍 Calling global loadProductRatings...');
                 window.loadProductRatings();
             }
-            
+
             // Also manually load ratings for this specific grid
             const productCards = grid.querySelectorAll('.product-card');
-            console.log('🔍 Found product cards:', productCards.length);
-            
+
             if (productCards.length > 0 && window.ProductRatingUtils) {
-                console.log('🔍 Calling ProductRatingUtils.loadAndUpdateProductCards...');
                 window.ProductRatingUtils.loadAndUpdateProductCards(productCards);
             } else {
-                console.log('🔍 ProductRatingUtils not available, using fallback rating loading...');
-                console.log('🔍 ProductRatingUtils available:', !!window.ProductRatingUtils);
-                console.log('🔍 Product cards found:', productCards.length);
-                
+
                 // Fallback: Load ratings manually using our own logic
                 this.loadProductRatingsFallback(productCards);
             }
@@ -743,7 +734,6 @@ class FeaturedCategoryProductsManager {
                     product.images = data.result || [];
                 }
             } catch (error) {
-                console.log('Could not load product images:', error);
                 product.images = [];
             }
         }
@@ -755,7 +745,6 @@ class FeaturedCategoryProductsManager {
             if (productStats) {
                 product.averageRating = productStats.averageRating || 0;
                 product.reviewCount = productStats.totalReviews || 0;
-                console.log('Loaded rating data for modal:', product.averageRating, 'stars,', product.reviewCount, 'reviews');
             }
         } catch (error) {
             console.error('Error loading rating data:', error);
@@ -1271,7 +1260,6 @@ class FeaturedCategoryProductsManager {
     async loadProductRatingsFallback(productCards) {
         if (!productCards || productCards.length === 0) return;
 
-        console.log('🔍 Loading ratings using fallback method for', productCards.length, 'products');
 
         // Get product IDs
         const productIds = Array.from(productCards).map(card => {
@@ -1280,7 +1268,6 @@ class FeaturedCategoryProductsManager {
         }).filter(id => id !== null);
 
         if (productIds.length === 0) {
-            console.log('🔍 No valid product IDs found for fallback rating loading');
             return;
         }
 
@@ -1296,7 +1283,6 @@ class FeaturedCategoryProductsManager {
 
             if (response.ok) {
                 const statistics = await response.json();
-                console.log('🔍 Fallback: Loaded rating statistics:', statistics);
 
                 // Update each product card
                 productCards.forEach(card => {
@@ -1319,12 +1305,10 @@ class FeaturedCategoryProductsManager {
         const averageRating = productStats.averageRating || 0;
         const reviewCount = productStats.totalReviews || 0;
 
-        console.log('🔍 Fallback: Updating rating for product', productId, ':', averageRating, 'stars,', reviewCount, 'reviews');
 
         // Find rating container
         const ratingContainer = cardElement.querySelector('.product-rating');
         if (!ratingContainer) {
-            console.log('🔍 Fallback: No rating container found for product:', productId);
             return;
         }
 

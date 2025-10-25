@@ -37,15 +37,12 @@ class BestsellerProductsHomepageManager {
         try {
             this.showLoading();
 
-            console.log('Loading bestseller products...');
             const response = await fetch('/api/products/best-selling?limit=8');
             const data = await response.json();
 
-            console.log('API Response:', data);
 
             if (data.code === 1000 && data.result && data.result.length > 0) {
                 this.allProducts = data.result;
-                console.log('Loaded products:', this.allProducts);
                 this.renderBestsellerProducts(this.allProducts);
 
                 this.gridEl.addEventListener('scroll', () => this.updateNavigationButtons());
@@ -83,7 +80,7 @@ class BestsellerProductsHomepageManager {
         if (this.loadingEl) this.loadingEl.style.display = 'none';
         if (this.emptyEl) this.emptyEl.style.display = 'none';
         if (this.gridEl) this.gridEl.style.display = 'flex';
-        
+
         // Trigger rating load sau khi render xong
         setTimeout(() => {
             if (window.loadProductRatings) {
@@ -298,7 +295,6 @@ class BestsellerProductsHomepageManager {
             return;
         }
 
-        console.log('Showing navigation buttons - more than 4 products');
         if (navigationContainer) {
             navigationContainer.classList.remove('hidden');
         }
@@ -310,25 +306,12 @@ class BestsellerProductsHomepageManager {
         const isAtStart = scrollLeft <= 1;
         const isAtEnd = scrollLeft >= (maxScrollLeft - 1);
 
-        console.log('Bestseller navigation buttons update:', {
-            scrollLeft,
-            maxScrollLeft,
-            scrollWidth: this.gridEl.scrollWidth,
-            clientWidth: this.gridEl.clientWidth,
-            productsLength: this.allProducts.length,
-            isAtStart,
-            isAtEnd,
-            prevBtnExists: !!this.prevBtn,
-            nextBtnExists: !!this.nextBtn
-        });
 
         if (this.prevBtn) {
             this.prevBtn.disabled = isAtStart;
-            console.log('Bestseller prev button disabled:', isAtStart);
         }
         if (this.nextBtn) {
             this.nextBtn.disabled = isAtEnd;
-            console.log('Bestseller next button disabled:', isAtEnd);
         }
     }
 

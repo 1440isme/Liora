@@ -29,6 +29,8 @@ public enum ErrorCode {
         TOKEN_EXPIRED(1014, "Token đã hết hạn", HttpStatus.BAD_REQUEST),
         INVALID_PASSWORD(1015, "Mật khẩu hiện tại không đúng", HttpStatus.BAD_REQUEST),
         NEW_PASSWORD_SAME_AS_CURRENT(1016, "Mật khẩu mới phải khác mật khẩu hiện tại", HttpStatus.BAD_REQUEST),
+        INVALID_OTP(1017, "Mã OTP không hợp lệ hoặc đã hết hạn", HttpStatus.BAD_REQUEST),
+        OTP_LIMIT_EXCEEDED(1018, "Bạn đã gửi quá nhiều mã OTP trong ngày", HttpStatus.BAD_REQUEST),
         
         // Dai: 2000 - 2999
         BRAND_EXISTED(400, "Thương hiệu đã tồn tại", HttpStatus.BAD_REQUEST),

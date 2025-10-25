@@ -130,30 +130,37 @@
 
 /* Hide scrollbar but keep functionality */
 #similarProductsGrid {
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
+    -ms-overflow-style: none;
+    /* IE and Edge */
 }
 
 #similarProductsGrid::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Opera */
+    display: none;
+    /* Chrome, Safari, Opera */
 }
 
 /* Product cards in carousel */
 #similarProductsGrid .product-card {
-    flex: 0 0 280px; /* Same width as category/brand products */
+    flex: 0 0 280px;
+    /* Same width as category/brand products */
     max-width: 280px;
-    min-height: 420px; /* Increased height for better harmony */
+    min-height: 420px;
+    /* Increased height for better harmony */
 }
 
 /* Container to control viewport - show exactly 4 cards */
 .product-related-wrap {
     position: relative;
-    overflow: hidden; /* Hide the 5th card */
+    overflow: hidden;
+    /* Hide the 5th card */
 }
 
 /* Ensure exactly 4 cards are visible */
 #similarProductsGrid {
-    width: calc(4 * 280px + 3 * 1.5rem); /* 4 cards + 3 gaps = 1202px */
+    width: calc(4 * 280px + 3 * 1.5rem);
+    /* 4 cards + 3 gaps = 1202px */
     max-width: 100%;
 }
 
@@ -490,16 +497,16 @@
     .modal-dialog {
         margin: 1rem;
     }
-    
+
     .main-image-container img {
         height: 200px;
     }
-    
+
     .thumbnail-img {
         height: 40px;
         width: 40px;
     }
-    
+
     .slider-nav {
         width: 35px;
         height: 35px;

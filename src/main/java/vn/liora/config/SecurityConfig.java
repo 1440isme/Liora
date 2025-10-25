@@ -79,8 +79,10 @@ public class SecurityConfig {
                                 "/css/**", "/js/**", "/images/**", "/fonts/**", "/vendors/**", "/webjars/**",
                                 // Upload endpoints (for file uploads)
                                 "/uploads/**",
-                                // User registration endpoint (for public access)
-                                "/users",
+                                // User registration endpoints (for public access)
+                                "/users", "/users/send-registration-otp", "/users/verify-registration-otp",
+                                "/users/register-with-otp", "/users/send-password-reset-otp",
+                                "/users/verify-password-reset-otp",
                                 // Cart API endpoints (for guests and users)
                                 "/cart/api/**", "/CartProduct/**",
                                 // Order API endpoints (for guests and users)

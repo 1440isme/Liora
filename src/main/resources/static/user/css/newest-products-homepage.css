@@ -324,7 +324,7 @@
 #homepageNewestQuickViewModal .modal-content {
     border: none;
     border-radius: 8px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
     font-family: 'Gilroy', 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
@@ -631,16 +631,16 @@
     .newest-products-homepage-section .modal-dialog {
         margin: 1rem;
     }
-    
+
     .newest-products-homepage-section .main-image-container img {
         height: 200px;
     }
-    
+
     .newest-products-homepage-section .thumbnail-img {
         height: 40px;
         width: 40px;
     }
-    
+
     .newest-products-homepage-section .slider-nav {
         width: 35px;
         height: 35px;
@@ -653,7 +653,7 @@
         max-width: calc(4 * 260px + 3 * 1.5rem) !important;
         width: calc(4 * 260px + 3 * 1.5rem) !important;
     }
-    
+
     .newest-products-homepage-section .product-card {
         flex: 0 0 260px !important;
         max-width: 260px !important;
@@ -665,7 +665,7 @@
         max-width: calc(4 * 240px + 3 * 1.5rem) !important;
         width: calc(4 * 240px + 3 * 1.5rem) !important;
     }
-    
+
     .newest-products-homepage-section .product-card {
         flex: 0 0 240px !important;
         max-width: 240px !important;
@@ -678,27 +678,27 @@
         gap: 1rem;
         text-align: center;
     }
-    
+
     .newest-products-homepage-section .section-title {
         font-size: 1.25rem;
     }
-    
+
     .newest-products-homepage-section .navigation-buttons {
         position: static;
         transform: none;
         justify-content: center;
     }
-    
+
     .newest-products-homepage-section #homepageNewestProductsGrid {
         max-width: calc(3 * 200px + 2 * 1.5rem) !important;
         width: calc(3 * 200px + 2 * 1.5rem) !important;
     }
-    
+
     .newest-products-homepage-section .product-card {
         flex: 0 0 200px !important;
         max-width: 200px !important;
     }
-    
+
     .newest-products-homepage-section .product-image {
         height: 180px;
     }
@@ -708,17 +708,17 @@
     .newest-products-homepage-section {
         padding: 1.5rem 0;
     }
-    
+
     .newest-products-homepage-section #homepageNewestProductsGrid {
         max-width: calc(2 * 180px + 1 * 1.5rem) !important;
         width: calc(2 * 180px + 1 * 1.5rem) !important;
     }
-    
+
     .newest-products-homepage-section .product-card {
         flex: 0 0 180px !important;
         max-width: 180px !important;
     }
-    
+
     .newest-products-homepage-section .product-image {
         height: 160px;
     }

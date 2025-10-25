@@ -704,6 +704,21 @@
                                 <input type="password" class="form-control rounded-pill" placeholder="Mật khẩu của bạn"
                                     required id="password">
                             </div>
+                            <!-- OTP Field (hidden by default) -->
+                            <div class="mb-3" id="otpField" style="display: none;">
+                                <label class="form-label fw-medium text-dark">Mã xác thực</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control rounded-pill" placeholder="Nhập mã 6 chữ số"
+                                        id="otpCode" maxlength="6">
+                                    <button type="button" class="btn btn-outline-pink-primary rounded-pill"
+                                        id="sendOtpBtn">
+                                        Gửi mã
+                                    </button>
+                                </div>
+                                <div class="form-text text-muted">
+                                    Mã xác thực đã được gửi đến email của bạn
+                                </div>
+                            </div>
                             <button type="submit" class="btn btn-pink-primary w-100 fw-semibold py-3 rounded-pill mb-3"
                                 id="authSubmitBtn">Đăng nhập</button>
                             <div class="forgot-password">
