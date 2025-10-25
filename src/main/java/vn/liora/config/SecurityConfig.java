@@ -51,8 +51,7 @@ public class SecurityConfig {
                                 // Authentication endpoints
                                 "/auth/token", "/auth/introspect", "/auth/logout", "/auth/refresh",
                                 "/auth/force-refresh",
-                                "/api/auth/forgot-password", "/api/auth/reset-password", "/api/auth/validate-token",
-                                "/reset-password", "/admin/login", "/login",
+                                "/admin/login", "/login",
                                 // OAuth2 endpoints
                                 "/oauth2/**", "/login/oauth2/**", "/authenticate", "/auth/google/**",
                                 // Public user pages
@@ -82,7 +81,7 @@ public class SecurityConfig {
                                 // User registration endpoints (for public access)
                                 "/users", "/users/send-registration-otp", "/users/verify-registration-otp",
                                 "/users/register-with-otp", "/users/send-password-reset-otp",
-                                "/users/verify-password-reset-otp",
+                                "/users/verify-password-reset-otp", "/users/reset-password-with-otp",
                                 // Cart API endpoints (for guests and users)
                                 "/cart/api/**", "/CartProduct/**",
                                 // Order API endpoints (for guests and users)

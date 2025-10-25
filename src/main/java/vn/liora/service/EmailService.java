@@ -63,26 +63,6 @@ public class EmailService {
     }
 
     /**
-     * Gửi email reset password
-     */
-    public void sendPasswordResetEmail(String userEmail, String userName, String resetToken) {
-        try {
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setTo(userEmail);
-            message.setSubject("Đặt lại mật khẩu - Liora");
-
-            String content = buildPasswordResetContent(userName, resetToken);
-            message.setText(content);
-
-            mailSender.send(message);
-            System.out.println("Password reset email sent to: " + userEmail);
-        } catch (Exception e) {
-            System.err.println("Error sending password reset email: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
-
-    /**
      * Xây dựng nội dung email
      */
     private String buildOrderConfirmationContent(String customerName, OrderResponse order,
@@ -213,37 +193,6 @@ public class EmailService {
             otp.append(random.nextInt(10));
         }
         return otp.toString();
-    }
-
-    /**
-     * Xây dựng nội dung email reset password
-     */
-    private String buildPasswordResetContent(String userName, String resetToken) {
-        StringBuilder content = new StringBuilder();
-
-        content.append("Xin chào ").append(userName).append(",\n\n");
-        content.append("Bạn đã yêu cầu đặt lại mật khẩu cho tài khoản Liora của mình.\n\n");
-
-        content.append("ĐỂ ĐẶT LẠI MẬT KHẨU:\n");
-        content.append("1. Click vào link bên dưới\n");
-        content.append("2. Nhập mật khẩu mới\n");
-        content.append("3. Xác nhận mật khẩu mới\n\n");
-
-        content.append("LINK ĐẶT LẠI MẬT KHẨU:\n");
-        content.append(appUrl).append("/reset-password\n\n");
-        content.append("MÃ XÁC NHẬN:\n");
-        content.append(resetToken).append("\n\n");
-        content.append("LƯU Ý: Mã xác nhận chỉ có hiệu lực trong 1 giờ và chỉ sử dụng được 1 lần.\n\n");
-
-        content.append("LƯU Ý QUAN TRỌNG:\n");
-        content.append("- Link này chỉ có hiệu lực trong 1 giờ\n");
-        content.append("- Nếu bạn không yêu cầu đặt lại mật khẩu, hãy bỏ qua email này\n");
-        content.append("- Để bảo mật, không chia sẻ link này với ai khác\n\n");
-
-        content.append("Nếu bạn gặp vấn đề, hãy liên hệ với chúng tôi.\n\n");
-        content.append("Trân trọng,\nĐội ngũ Liora");
-
-        return content.toString();
     }
 
     /**

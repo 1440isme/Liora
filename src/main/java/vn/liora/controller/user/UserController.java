@@ -16,6 +16,7 @@ import vn.liora.dto.request.ChangePasswordRequest;
 import vn.liora.dto.request.SendOtpRequest;
 import vn.liora.dto.request.VerifyOtpRequest;
 import vn.liora.dto.request.RegistrationWithOtpRequest;
+import vn.liora.dto.request.ResetPasswordWithOtpRequest;
 import vn.liora.dto.response.UserResponse;
 import vn.liora.dto.response.OrderResponse;
 import vn.liora.dto.response.OrderProductResponse;
@@ -32,6 +33,7 @@ import vn.liora.service.IDirectoryStructureService;
 import vn.liora.service.IStorageService;
 import vn.liora.service.IImageOptimizationService;
 import vn.liora.service.EmailService;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.nimbusds.jose.JOSEException;
 import java.math.BigDecimal;
@@ -56,6 +58,7 @@ public class UserController {
     private final IStorageService storageService;
     private final IImageOptimizationService imageOptimizationService;
     private final EmailService emailService;
+    private final PasswordEncoder passwordEncoder;
 
     // Lưu trữ OTP tạm thời trong memory (có thể thay bằng Redis trong production)
     private final Map<String, OtpData> otpStorage = new ConcurrentHashMap<>();
@@ -658,6 +661,38 @@ public class UserController {
 
             ApiResponse<Object> response = new ApiResponse<>();
             response.setMessage("Xác thực OTP thành công");
+            response.setCode(1000);
+
+            return ResponseEntity.ok(response);
+        } catch (AppException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        }
+    }
+
+    /**
+     * API reset password với OTP
+     */
+    @PostMapping("/reset-password-with-otp")
+    public ResponseEntity<ApiResponse<Object>> resetPasswordWithOtp(
+            @Valid @RequestBody ResetPasswordWithOtpRequest request) {
+        try {
+            // Kiểm tra mật khẩu xác nhận
+            if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+                throw new AppException(ErrorCode.PASSWORD_NOT_MATCH);
+            }
+
+            // Tìm user
+            User user = userRepository.findByEmail(request.getEmail())
+                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+            // Cập nhật mật khẩu
+            user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+            userRepository.save(user);
+
+            ApiResponse<Object> response = new ApiResponse<>();
+            response.setMessage("Đặt lại mật khẩu thành công");
             response.setCode(1000);
 
             return ResponseEntity.ok(response);
