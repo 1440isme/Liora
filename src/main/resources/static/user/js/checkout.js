@@ -41,6 +41,7 @@ class CheckoutPage {
             this.handleApplyPromo();
         });
 
+
         // Province change -> load districts for add/edit address
         $(document).on('change', '#addrProvince', (e) => {
             const provinceId = parseInt(e.target.value, 10);
@@ -121,8 +122,6 @@ class CheckoutPage {
 
     async loadCheckoutData() {
         try {
-            this.showLoading(true);
-
             // Load user info first
             await this.loadUserInfo();
 
@@ -143,8 +142,6 @@ class CheckoutPage {
         } catch (error) {
             this.showToast('Không thể tải thông tin thanh toán', 'error');
             this.showEmptyCheckout();
-        } finally {
-            this.showLoading(false);
         }
     }
 
@@ -1295,7 +1292,7 @@ class CheckoutPage {
         const isDisabled = productStatus !== 'available';
 
         return `
-            <div class="cart-item ${isDisabled ? 'disabled' : ''}" data-cart-product-id="${item.idCartProduct}" data-unit-price="${item.productPrice || 0}">
+            <div class="cart-item ${isDisabled ? 'disabled' : ''}" data-cart-product-id="${item.idCartProduct}" data-unit-price="${item.productPrice || 0}" data-stock="${item.stock || 0}">
                 <div class="cart-item-image">
                     <img src="${item.mainImageUrl || 'https://placehold.co/300x300'}" alt="${item.productName}">
                 </div>
@@ -1326,9 +1323,8 @@ class CheckoutPage {
 
     async updateOrderSummary() {
         try {
-            // ✅ Gọi API để lấy tổng tiền từ backend
-            const totalResponse = await this.apiCall(`/cart/api/${this.cartId}/total`, 'GET');
-            const subtotal = totalResponse || 0;
+            // ✅ Sử dụng hàm tính subtotal chung
+            const subtotal = await this.calculateSubtotal();
 
             // ✅ FIX: Tính lại discount amount nếu có discount được áp dụng
             let discountAmount = 0;
@@ -1463,8 +1459,8 @@ class CheckoutPage {
         try {
             this.showLoading(true);
 
-            // ✅ Gọi API để lấy subtotal
-            const orderTotal = await this.calculateSubtotalForDiscount();
+            // ✅ Sử dụng hàm tính subtotal chung
+            const orderTotal = await this.calculateSubtotal();
 
             const response = await this.apiCall('/discounts/apply', 'POST', {
                 discountCode: promoCode,
@@ -1503,15 +1499,22 @@ class CheckoutPage {
         }
     }
 
-    // ✅ Gọi API để lấy subtotal cho discount
-    async calculateSubtotalForDiscount() {
+    // ✅ Hàm tính subtotal chung - ưu tiên API, fallback về local calculation
+    async calculateSubtotal() {
         try {
-            const totalResponse = await this.apiCall(`/cart/api/${this.cartId}/total`, 'GET');
-            return totalResponse || 0;
+            // Thử lấy từ API trước
+            if (this.cartId) {
+                const totalResponse = await this.apiCall(`/cart/api/${this.cartId}/total`, 'GET');
+                if (totalResponse) {
+                    return totalResponse;
+                }
+            }
         } catch (error) {
-            console.error('Error getting subtotal for discount:', error);
-            return 0;
+            console.warn('API subtotal failed, using local calculation:', error);
         }
+        
+        // Fallback: tính từ selectedItems
+        return this.calculateSubtotalFromSelectedItems();
     }
 
     handleRemovePromo() {
@@ -1863,6 +1866,7 @@ class CheckoutPage {
     showToast(message, type = 'info') {
         CartUtils.showToast(message, type);
     }
+
 
     formatCurrency(amount) {
         return CartUtils.formatCurrency(amount);

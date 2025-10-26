@@ -198,7 +198,7 @@ public class PaymentServiceImpl implements PaymentService {
 
         if ("00".equals(responseCode)) {
             order.setPaymentStatus("PAID");
-            order.setOrderStatus("PAID");
+            order.setOrderStatus("CONFIRMED");
 
             // Auto create GHN shipping order sau khi thanh toán thành công
             try {

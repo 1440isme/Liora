@@ -192,7 +192,7 @@ class BestsellerProductsHomepageManager {
                                         data-product-name="${productName}"
                                         data-product-price="${currentPrice}"
                                         title="Thêm vào giỏ"
-                                        onclick="event.preventDefault(); event.stopPropagation(); if(window.app && window.app.addProductToCartBackend) { window.app.addProductToCartBackend(${productId}, 1, true).then(() => window.app.refreshCartBadge?.()).catch(() => alert('Không thể thêm vào giỏ hàng')); } else { alert('Chức năng đang được tải...'); }">
+                                        onclick="event.preventDefault(); event.stopPropagation(); if(window.app && window.app.addProductToCartBackend) { window.app.addProductToCartBackend(${productId}, 1, false).then(() => window.app.refreshCartBadge?.()).catch(() => alert('Không thể thêm vào giỏ hàng')); } else { alert('Chức năng đang được tải...'); }">
                                     <i class="fas fa-shopping-cart"></i>
                                 </button>
                             </div>
@@ -336,7 +336,7 @@ class BestsellerProductsHomepageManager {
         try {
             // Sử dụng addProductToCartBackend để gọi API backend
             if (window.app && window.app.addProductToCartBackend) {
-                await window.app.addProductToCartBackend(productId, 1, true);
+                await window.app.addProductToCartBackend(productId, 1, false);
                 await window.app.refreshCartBadge?.();
             } else {
                 this.showNotification('Chức năng đang được tải...', 'error');
@@ -817,7 +817,7 @@ class BestsellerProductsHomepageManager {
         try {
             // Sử dụng addProductToCartBackend để gọi API backend
             if (window.app && window.app.addProductToCartBackend) {
-                await window.app.addProductToCartBackend(productId, quantity, true);
+                await window.app.addProductToCartBackend(productId, quantity, false);
                 await window.app.refreshCartBadge?.();
             } else {
                 this.showNotification('Chức năng đang được tải...', 'error');

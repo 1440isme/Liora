@@ -321,7 +321,7 @@ class SearchResultsManager {
     async addToCart(productId, productName, price) {
         try {
             if (window.app && typeof window.app.addProductToCartBackend === 'function') {
-                await window.app.addProductToCartBackend(productId, 1, true);
+                await window.app.addProductToCartBackend(productId, 1, false);
                 await window.app.refreshCartBadge?.();
                 return;
             }
@@ -685,7 +685,7 @@ class SearchResultsManager {
         try {
             // Sử dụng addProductToCartBackend để gọi API backend
             if (window.app && window.app.addProductToCartBackend) {
-                await window.app.addProductToCartBackend(productId, quantity, true);
+                await window.app.addProductToCartBackend(productId, quantity, false);
                 await window.app.refreshCartBadge?.();
             } else {
                 this.showNotification('Chức năng đang được tải...', 'error');
@@ -835,7 +835,7 @@ class SearchResultsManager {
         const quantity = i ? (parseInt(i.value || '1', 10) || 1) : 1;
         try {
             if (window.app && typeof window.app.addProductToCartBackend === 'function') {
-                await window.app.addProductToCartBackend(productId, quantity, true);
+                await window.app.addProductToCartBackend(productId, quantity, false);
                 await window.app.refreshCartBadge?.();
             } else { alert('Chức năng đang được tải...'); }
         } catch (e) { console.error('add to cart error', e); alert('Không thể thêm vào giỏ hàng. Vui lòng thử lại.'); }

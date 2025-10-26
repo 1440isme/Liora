@@ -388,7 +388,7 @@ class NewestProductsPageManager {
     async addToCart(productId, productName, price) {
         try {
             if (window.app && typeof window.app.addProductToCartBackend === 'function') {
-                await window.app.addProductToCartBackend(productId, 1, true);
+                await window.app.addProductToCartBackend(productId, 1, false);
                 await window.app.refreshCartBadge?.();
                 return;
             }
@@ -658,7 +658,7 @@ class NewestProductsPageManager {
         
         try {
             if (window.app && typeof window.app.addProductToCartBackend === 'function') {
-                await window.app.addProductToCartBackend(productId, quantity, true);
+                await window.app.addProductToCartBackend(productId, quantity, false);
                 await window.app.refreshCartBadge?.();
             } else {
                 alert('Chức năng đang được tải...');

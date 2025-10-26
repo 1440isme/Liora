@@ -66,16 +66,14 @@
                         </small>
                     </td>
                     <td>
-                        <span class="badge" th:classappend="${order.status == 'PENDING'} ? 'bg-warning' : 
-                                             (${order.status == 'CONFIRMED'} ? 'bg-info' : 
-                                             (${order.status == 'SHIPPED'} ? 'bg-primary' : 
-                                             (${order.status == 'DELIVERED'} ? 'bg-success' : 
-                                             (${order.status == 'CANCELLED'} ? 'bg-danger' : 'bg-secondary'))))"
-                            th:text="${order.status == 'PENDING'} ? 'Chờ xử lý' : 
-                                       (${order.status == 'CONFIRMED'} ? 'Đã xác nhận' : 
-                                       (${order.status == 'SHIPPED'} ? 'Đang giao' : 
-                                       (${order.status == 'DELIVERED'} ? 'Đã giao' : 
-                                       (${order.status == 'CANCELLED'} ? 'Đã hủy' : 'Trả hàng'))))">Chờ xử lý</span>
+                        <span class="badge" th:classappend="${order.orderStatus == 'PENDING'} ? 'bg-warning' : 
+                                             (${order.orderStatus == 'CONFIRMED'} ? 'bg-info' : 
+                                             (${order.orderStatus == 'COMPLETED'} ? 'bg-success' : 
+                                             (${order.orderStatus == 'CANCELLED'} ? 'bg-danger' : 'bg-secondary')))"
+                            th:text="${order.orderStatus == 'PENDING'} ? 'Chờ xử lý' : 
+                                       (${order.orderStatus == 'CONFIRMED'} ? 'Đã xác nhận' : 
+                                       (${order.orderStatus == 'COMPLETED'} ? 'Hoàn tất' : 
+                                       (${order.orderStatus == 'CANCELLED'} ? 'Đã hủy' : 'Không xác định')))">Chờ xử lý</span>
                     </td>
                     <td>
                         <span class="badge" th:classappend="${order.paymentStatus == 'PAID'} ? 'bg-success' : 
@@ -102,7 +100,7 @@
                             </button>
                             <button type="button" class="btn btn-sm btn-danger"
                                 th:onclick="'cancelOrder(' + ${order.id} + ')'"
-                                th:if="${order.status != 'CANCELLED' and order.status != 'DELIVERED'}"
+                                th:if="${order.orderStatus == 'PENDING'}"
                                 title="Hủy đơn hàng">
                                 <i class="fas fa-times"></i>
                             </button>
@@ -168,8 +166,7 @@
                             <select class="form-select" id="newStatus" name="status" required>
                                 <option value="PENDING">Chờ xử lý</option>
                                 <option value="CONFIRMED">Đã xác nhận</option>
-                                <option value="SHIPPED">Đang giao</option>
-                                <option value="DELIVERED">Đã giao</option>
+                                <option value="COMPLETED">Hoàn tất</option>
                                 <option value="CANCELLED">Đã hủy</option>
                             </select>
                         </div>
