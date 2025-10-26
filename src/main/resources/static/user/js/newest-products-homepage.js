@@ -564,7 +564,7 @@ class NewestProductsHomepageManager {
         setTimeout(() => {
             const backdrop = document.querySelector('.modal-backdrop');
             if (backdrop) {
-                backdrop.style.zIndex = '9998';
+                backdrop.style.setProperty('z-index', '9998', 'important');
                 backdrop.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
             }
         }, 10);

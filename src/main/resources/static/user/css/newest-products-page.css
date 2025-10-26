@@ -445,6 +445,15 @@ body #productsGrid .product-card .card-title {
 }
 
 /* Quick View Modal Styles */
+#quickViewModal {
+    z-index: 9999 !important;
+}
+
+#quickViewModal .modal-backdrop {
+    z-index: 9998 !important;
+    background-color: rgba(0, 0, 0, 0.5) !important;
+}
+
 #quickViewModal .modal-dialog {
     max-width: 900px;
 }
