@@ -163,7 +163,7 @@ class ReviewDetailManager {
             const orderCode = review.orderCode || `#${review.orderId}`;
             const orderLink = `<a href="/admin/orders/detail/${review.orderId}" class="text-decoration-none fw-bold text-primary" title="Xem chi tiết đơn hàng">${orderCode}</a>`;
             $('#orderCode').html(orderLink);
-            
+
             $('#orderDate').text(review.orderDate ? this.formatDateTime(new Date(review.orderDate)) : 'N/A');
             $('#orderUserId').text(review.userId || 'N/A');
         } else {
@@ -171,6 +171,9 @@ class ReviewDetailManager {
             $('#orderDate').text('N/A');
             $('#orderUserId').text('N/A');
         }
+
+        // Render customer media (images and videos)
+        this.renderCustomerMedia(review);
     }
 
     // Cập nhật method getAnonymousText để hiển thị "Có" hoặc "Không"
@@ -354,6 +357,79 @@ class ReviewDetailManager {
             $('.alert').fadeOut();
         }, 5000);
     }
+
+    // Render customer media (images and videos)
+    renderCustomerMedia(review) {
+        const hasImages = review.images && review.images.length > 0;
+        const hasVideos = review.videos && review.videos.length > 0;
+
+        // Show media section only if there are images or videos
+        if (hasImages || hasVideos) {
+            $('#customerMediaSection').show();
+
+            // Render images
+            if (hasImages) {
+                this.renderCustomerImages(review.images);
+            }
+
+            // Render videos
+            if (hasVideos) {
+                this.renderCustomerVideos(review.videos);
+            }
+        } else {
+            $('#customerMediaSection').hide();
+        }
+    }
+
+    // Render customer images
+    renderCustomerImages(images) {
+        $('#customerImagesSection').show();
+
+        const imagesContainer = $('#customerImagesContainer');
+        imagesContainer.empty();
+
+        images.forEach((imageUrl, index) => {
+            const imageHtml = `
+                <div class="col-md-6 col-lg-4 mb-3">
+                    <div class="customer-media-item">
+                        <img src="${imageUrl}"
+                             alt="Ảnh từ khách hàng ${index + 1}"
+                             class="img-fluid rounded cursor-pointer"
+                             style="width: 100%; height: 200px; object-fit: cover; border: 2px solid #e3e6f0;"
+                             onclick="openImageModal('${imageUrl}', 'Ảnh từ khách hàng ${index + 1}')"
+                             title="Click để xem ảnh lớn">
+                    </div>
+                </div>
+            `;
+            imagesContainer.append(imageHtml);
+        });
+    }
+
+    // Render customer videos
+    renderCustomerVideos(videos) {
+        $('#customerVideosSection').show();
+
+        const videosContainer = $('#customerVideosContainer');
+        videosContainer.empty();
+
+        videos.forEach((videoUrl, index) => {
+            const videoHtml = `
+                <div class="col-md-6 col-lg-4 mb-3">
+                    <div class="customer-media-item">
+                        <video controls
+                               class="img-fluid rounded"
+                               style="width: 100%; height: 200px; object-fit: cover; border: 2px solid #e3e6f0;">
+                            <source src="${videoUrl}" type="video/mp4">
+                            <source src="${videoUrl}" type="video/webm">
+                            <source src="${videoUrl}" type="video/quicktime">
+                            Trình duyệt của bạn không hỗ trợ video.
+                        </video>
+                    </div>
+                </div>
+            `;
+            videosContainer.append(videoHtml);
+        });
+    }
 }
 
 // Initialize when document is ready
@@ -365,5 +441,21 @@ $(document).ready(function() {
 function saveReviewVisibility() {
     if (window.reviewDetailManager) {
         window.reviewDetailManager.saveReviewVisibility();
+    }
+}
+
+// Open image modal function
+function openImageModal(imageSrc, imageAlt) {
+    const modal = document.getElementById('imagePreviewModal');
+    const modalImg = document.getElementById('imagePreview');
+    const modalTitle = document.getElementById('imagePreviewModalLabel');
+
+    if (modal && modalImg && modalTitle) {
+        modalImg.src = imageSrc;
+        modalImg.alt = imageAlt;
+        modalTitle.innerHTML = `<i class="mdi mdi-image me-2"></i>${imageAlt}`;
+
+        const bsModal = new bootstrap.Modal(modal);
+        bsModal.show();
     }
 }

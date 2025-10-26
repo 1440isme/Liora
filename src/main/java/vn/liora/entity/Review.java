@@ -51,6 +51,13 @@ public class Review {
     @Column(name = "IdProduct", nullable = false)
     private Long productId;
 
+    // ========== NEW FIELDS FOR SEPARATE MEDIA STORAGE ==========
+    @Column(name = "ImagePaths", columnDefinition = "NVARCHAR(MAX)", nullable = true)
+    private String imagePaths; // JSON string of image URLs
+
+    @Column(name = "VideoPaths", columnDefinition = "NVARCHAR(MAX)", nullable = true)
+    private String videoPaths; // JSON string of video URLs
+
     // ========== RELATIONSHIPS ==========
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "IdOrderProduct", nullable = false)

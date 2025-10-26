@@ -6,24 +6,30 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 public class ReviewCreationRequest {
-    
+
     // Chỉ cần orderProductId, các thông tin khác sẽ được lấy từ OrderProduct
     @NotNull(message = "OrderProduct ID is required")
     private Long orderProductId;
 
-    @Size(max = 1000, message = "Content must not exceed 1000 characters")
+    @Size(max = 10000, message = "Content must not exceed 10000 characters")
     private String content;
-    
+
     @NotNull(message = "Rating is required")
     @Min(value = 1, message = "Rating must be at least 1")
     @Max(value = 5, message = "Rating must be at most 5")
     private Integer rating;
-    
+
     @Builder.Default
     private Boolean anonymous = false;
+
+    // Media fields
+    private List<String> imagePaths; // List of uploaded image URLs
+    private List<String> videoPaths; // List of uploaded video URLs
 }

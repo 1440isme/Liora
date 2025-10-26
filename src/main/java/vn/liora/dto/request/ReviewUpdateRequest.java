@@ -6,19 +6,25 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
 public class ReviewUpdateRequest {
 
-    @Size(max = 1000, message = "Content must not exceed 1000 characters")
+    @Size(max = 10000, message = "Content must not exceed 10000 characters")
     private String content;
-    
+
     @NotNull(message = "Rating is required")
     @Min(value = 1, message = "Rating must be at least 1")
     @Max(value = 5, message = "Rating must be at most 5")
     private Integer rating;
-    
+
     private Boolean anonymous;
+
+    // Media fields
+    private List<String> imagePaths; // List of uploaded image URLs
+    private List<String> videoPaths; // List of uploaded video URLs
 }

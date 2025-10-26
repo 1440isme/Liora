@@ -82,7 +82,7 @@
                                                 <label class="info-label">Tên sản phẩm:</label>
                                                 <div class="info-value" id="productName">Đang tải...</div>
                                             </div>
-                                            
+
                                             <!-- Mã sản phẩm và Giá sản phẩm ngang hàng -->
                                             <div class="row mb-4"> <!-- Tăng margin-bottom -->
                                                 <div class="col-md-6">
@@ -98,7 +98,7 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                            
+
                                             <!-- Thương hiệu và Danh mục ngang hàng -->
                                             <div class="row mb-3"> <!-- Tăng margin-bottom -->
                                                 <div class="col-md-6">
@@ -117,6 +117,35 @@
                                             <!-- Thêm khoảng trống để cân bằng chiều cao -->
                                             <div class="flex-grow-1"></div>
                                         </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Customer Media Section -->
+                        <div class="card card-rounded mb-4" id="customerMediaSection" style="display: none;">
+                            <div class="card-body">
+                                <h4 class="card-title card-title-dash mb-4">
+                                    <i class="mdi mdi-image-multiple me-2"></i>Media từ khách hàng
+                                </h4>
+
+                                <!-- Customer Images -->
+                                <div id="customerImagesSection" style="display: none;">
+                                    <h6 class="mb-3">
+                                        <i class="mdi mdi-image me-2"></i>Ảnh từ khách hàng
+                                    </h6>
+                                    <div class="row" id="customerImagesContainer">
+                                        <!-- Customer images will be loaded here -->
+                                    </div>
+                                </div>
+
+                                <!-- Customer Videos -->
+                                <div id="customerVideosSection" style="display: none;">
+                                    <h6 class="mb-3">
+                                        <i class="mdi mdi-video me-2"></i>Video từ khách hàng
+                                    </h6>
+                                    <div class="row" id="customerVideosContainer">
+                                        <!-- Customer videos will be loaded here -->
                                     </div>
                                 </div>
                             </div>
@@ -253,6 +282,28 @@
                 </button>
                 <button type="button" class="btn btn-primary" onclick="saveReviewVisibility()">
                     <i class="mdi mdi-content-save me-2"></i>Lưu thay đổi
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Image Preview Modal -->
+<div class="modal fade" id="imagePreviewModal" tabindex="-1" aria-labelledby="imagePreviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="imagePreviewModalLabel">
+                    <i class="mdi mdi-image me-2"></i>Xem ảnh từ khách hàng
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="imagePreview" src="" alt="Preview" class="img-fluid rounded">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="mdi mdi-close me-1"></i>Đóng
                 </button>
             </div>
         </div>
