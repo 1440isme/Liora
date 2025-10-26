@@ -31,6 +31,18 @@ class BestsellerProductsHomepageManager {
         if (this.nextBtn) {
             this.nextBtn.addEventListener('click', () => this.scrollRight());
         }
+
+        // Add window resize listener
+        window.addEventListener('resize', () => {
+            // Debounce resize events
+            clearTimeout(this.resizeTimeout);
+            this.resizeTimeout = setTimeout(() => {
+                this.updateNavigationButtons();
+            }, 250);
+        });
+
+        // Add touch support for mobile
+        this.setupTouchSupport();
     }
 
     async loadBestsellerProducts() {
@@ -248,7 +260,7 @@ class BestsellerProductsHomepageManager {
 
     scrollLeft() {
         if (this.gridEl) {
-            const cardWidth = 280 + 24; // card width + gap
+            const cardWidth = this.getCardWidth();
             this.gridEl.scrollBy({
                 left: -cardWidth,
                 behavior: 'smooth'
@@ -263,7 +275,7 @@ class BestsellerProductsHomepageManager {
 
     scrollRight() {
         if (this.gridEl) {
-            const cardWidth = 280 + 24; // card width + gap
+            const cardWidth = this.getCardWidth();
             this.gridEl.scrollBy({
                 left: cardWidth,
                 behavior: 'smooth'
@@ -274,6 +286,78 @@ class BestsellerProductsHomepageManager {
                 this.updateNavigationButtons();
             }, 300);
         }
+    }
+
+    getCardWidth() {
+        const screenWidth = window.innerWidth;
+        let cardWidth = 280; // Default desktop
+        let gap = 24; // Default gap
+
+        if (screenWidth < 480) {
+            cardWidth = 160;
+            gap = 12;
+        } else if (screenWidth < 576) {
+            cardWidth = 180;
+            gap = 16;
+        } else if (screenWidth < 768) {
+            cardWidth = 200;
+            gap = 24;
+        } else if (screenWidth < 1200) {
+            cardWidth = 220;
+            gap = 12;
+        } else if (screenWidth < 1300) {
+            cardWidth = 230;
+            gap = 12;
+        } else if (screenWidth < 1400) {
+            cardWidth = 250;
+            gap = 16;
+        }
+
+        return cardWidth + gap;
+    }
+
+    setupTouchSupport() {
+        if (!this.gridEl) return;
+
+        let touchStartX = 0;
+        let touchEndX = 0;
+        let isDragging = false;
+
+        const handleTouchStart = (e) => {
+            touchStartX = e.touches[0].clientX;
+            isDragging = true;
+        };
+
+        const handleTouchMove = (e) => {
+            if (!isDragging) return;
+            e.preventDefault(); // Prevent scrolling while dragging
+        };
+
+        const handleTouchEnd = (e) => {
+            if (!isDragging) return;
+            touchEndX = e.changedTouches[0].clientX;
+            handleSwipe();
+            isDragging = false;
+        };
+
+        const handleSwipe = () => {
+            const swipeThreshold = 50; // Minimum distance for a swipe
+            const swipeDistance = touchEndX - touchStartX;
+            
+            if (Math.abs(swipeDistance) > swipeThreshold) {
+                if (swipeDistance > 0) {
+                    // Swipe right - go to previous slide
+                    this.scrollLeft();
+                } else {
+                    // Swipe left - go to next slide
+                    this.scrollRight();
+                }
+            }
+        };
+
+        this.gridEl.addEventListener('touchstart', handleTouchStart, { passive: false });
+        this.gridEl.addEventListener('touchmove', handleTouchMove, { passive: false });
+        this.gridEl.addEventListener('touchend', handleTouchEnd, { passive: false });
     }
 
     updateNavigationButtons() {

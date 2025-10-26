@@ -39,41 +39,21 @@ class ProductRatingUtils {
         for (let i = 1; i <= 5; i++) {
             if (i <= Math.floor(rating)) {
                 // Full star
-                starsHTML += `
-                    <div class="star filled">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="#ffc107" stroke="#ffc107" stroke-width="2">
-                            <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
-                        </svg>
-                    </div>
-                `;
+                starsHTML += `<i class="fas fa-star" style="color: #ffc107 !important;"></i>`;
             } else if (i === Math.ceil(rating) && rating % 1 !== 0) {
                 // Half star
-                starsHTML += `
-                    <div class="star half">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="#ffc107" stroke="#ffc107" stroke-width="2">
-                            <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
-                        </svg>
-                    </div>
-                `;
+                starsHTML += `<i class="fas fa-star-half-alt" style="color: #ffc107 !important;"></i>`;
             } else {
                 // Empty star
-                starsHTML += `
-                    <div class="star empty">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="2">
-                            <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"></polygon>
-                        </svg>
-                    </div>
-                `;
+                starsHTML += `<i class="far fa-star" style="color: #ccc !important; font-weight: 400 !important;"></i>`;
             }
         }
 
         return `
-            <div class="product-rating">
-                <div class="star-rating">
-                    ${starsHTML}
-                </div>
-                <span class="rating-count">(${count})</span>
-            </div>
+            <span class="stars">
+                ${starsHTML}
+            </span>
+            <span class="rating-count">(${count})</span>
         `;
     }
 
@@ -88,9 +68,10 @@ class ProductRatingUtils {
         const reviewCount = productStats.totalReviews || 0;
 
 
-        // Tìm rating container
-        let ratingContainer = cardElement.querySelector('.product-rating');
-
+        // Tìm rating container - tìm cả .product-rating và .rating
+        let ratingContainer = cardElement.querySelector('.product-rating') || cardElement.querySelector('.rating');
+        console.log('Found rating container:', ratingContainer);
+        
         if (!ratingContainer) {
             // Tạo rating container mới
             const cardBody = cardElement.querySelector('.card-body');

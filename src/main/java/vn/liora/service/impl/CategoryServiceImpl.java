@@ -266,6 +266,7 @@ public class CategoryServiceImpl implements ICategoryService {
     }
 
     @Override
+    @org.springframework.transaction.annotation.Transactional
     public void activateCategory(Long id) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
@@ -293,11 +294,17 @@ public class CategoryServiceImpl implements ICategoryService {
             activateCategory(child.getCategoryId()); // Recursive activate
         }
 
+        // Chỉ activate products khi cả brand và category đều active
         List<Product> products = productRepository.findByCategoryCategoryId(id);
         for (Product product : products) {
-            product.setIsActive(true);
-            product.setUpdatedDate(LocalDateTime.now());
-            productRepository.save(product);
+            // Kiểm tra brand có active không
+            if (product.getBrand() != null 
+                    && product.getBrand().getIsActive() != null 
+                    && product.getBrand().getIsActive()) {
+                product.setIsActive(true);
+                product.setUpdatedDate(LocalDateTime.now());
+                productRepository.save(product);
+            }
         }
     }
 

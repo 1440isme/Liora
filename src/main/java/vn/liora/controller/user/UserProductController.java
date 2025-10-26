@@ -1633,33 +1633,48 @@ public class UserProductController {
             return combineTwoLists(level1, level2, 8);
         }
         
-        // Level 3: Cùng category (không cần cùng price range)
+        // Level 3: Cùng category + price range ±100% (range rộng hơn)
         List<Product> level3 = allProducts.stream()
                 .filter(product -> !product.getProductId().equals(excludeId))
                 .filter(product -> product.getAvailable()) // Chỉ lấy sản phẩm available
-                .filter(product -> product.getCategory().getCategoryId().equals(originalProduct.getCategoryId()))
+                .filter(product -> {
+                    // Cùng category
+                    if (!product.getCategory().getCategoryId().equals(originalProduct.getCategoryId())) {
+                        return false;
+                    }
+                    
+                    // Price range ±100% (range rộng hơn cho level 3)
+                    return isInPriceRange(product.getPrice(), originalProduct.getPrice(), 1.0);
+                })
                 .toList();
         
-        System.out.println("📊 Level 3 (category only): " + level3.size() + " products");
+        System.out.println("📊 Level 3 (category + price ±100%): " + level3.size() + " products");
         
         if (level1.size() + level2.size() + level3.size() >= 4) {
             System.out.println("✅ Using Level 1 + Level 2 + Level 3 results");
             return combineThreeLists(level1, level2, level3, 8);
         }
         
-        // Level 4: Cùng brand (fallback cuối cùng)
+        // Level 4: Cùng brand + price range ±150% (fallback cuối cùng)
         List<Product> level4 = allProducts.stream()
                 .filter(product -> !product.getProductId().equals(excludeId))
                 .filter(product -> product.getAvailable()) // Chỉ lấy sản phẩm available
                 .filter(product -> {
+                    // Cùng brand
                     if (originalProduct.getBrandId() != null && product.getBrand() != null) {
-                        return product.getBrand().getBrandId().equals(originalProduct.getBrandId());
+                        if (!product.getBrand().getBrandId().equals(originalProduct.getBrandId())) {
+                            return false;
+                        }
+                    } else {
+                        return false;
                     }
-                    return false;
+                    
+                    // Price range ±150% (range rất rộng cho level 4)
+                    return isInPriceRange(product.getPrice(), originalProduct.getPrice(), 1.5);
                 })
                 .toList();
         
-        System.out.println("📊 Level 4 (brand only): " + level4.size() + " products");
+        System.out.println("📊 Level 4 (brand + price ±150%): " + level4.size() + " products");
         System.out.println("✅ Using all levels combined");
         return combineFourLists(level1, level2, level3, level4, 8);
     }
@@ -1679,17 +1694,17 @@ public class UserProductController {
     
     /**
      * Tính dynamic price range dựa trên giá sản phẩm
-     * - Sản phẩm rẻ (< 100k): ±50% (range rộng hơn)
-     * - Sản phẩm trung bình (100k-1M): ±30% 
-     * - Sản phẩm đắt (> 1M): ±20% (range hẹp hơn)
+     * - Sản phẩm rẻ (< 200k): ±50% (range rộng hơn)
+     * - Sản phẩm trung bình (200k-1M): ±40% 
+     * - Sản phẩm đắt (> 1M): ±30% (range hẹp hơn)
      */
     private double getDynamicPriceRange(BigDecimal price) {
-        if (price.compareTo(BigDecimal.valueOf(100000)) < 0) {
-            return 0.5; // ±50% for cheap items
+        if (price.compareTo(BigDecimal.valueOf(200000)) < 0) {
+            return 0.5; // ±50% for cheap items (< 200k)
         } else if (price.compareTo(BigDecimal.valueOf(1000000)) < 0) {
-            return 0.3; // ±30% for medium items  
+            return 0.4; // ±40% for medium items (200k-1M)
         } else {
-            return 0.2; // ±20% for expensive items
+            return 0.3; // ±30% for expensive items (> 1M)
         }
     }
     

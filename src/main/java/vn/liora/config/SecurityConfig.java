@@ -84,6 +84,8 @@ public class SecurityConfig {
                                 "/users/verify-password-reset-otp", "/users/reset-password-with-otp",
                                 // Cart API endpoints (for guests and users)
                                 "/cart/api/**", "/CartProduct/**",
+                                // Recently Viewed API endpoints (for guests and users)
+                                "/api/recently-viewed/**",
                                 // Order API endpoints (for guests and users)
                                 "/order/**",
                                 // Content API endpoints (for public content)
@@ -135,6 +137,12 @@ public class SecurityConfig {
                                                                 .decoder(customJwtDecoder)
                                                                 .jwtAuthenticationConverter(
                                                                                 jwtAuthenticationConverter()))
+                                                // Cho phép OAuth2 Resource Server xử lý ngay cả khi endpoint là permitAll
+                                                // để có thể đọc JWT token từ cookie và set authentication
+                                                .authenticationEntryPoint(customAuthenticationEntryPoint)
+                                                .accessDeniedHandler(customAccessDeniedHandler))
+                                // Đảm bảo OAuth2 Resource Server filter chạy trước khi check authorization
+                                .exceptionHandling(ex -> ex
                                                 .authenticationEntryPoint(customAuthenticationEntryPoint)
                                                 .accessDeniedHandler(customAccessDeniedHandler))
                                 .csrf(AbstractHttpConfigurer::disable)

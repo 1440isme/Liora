@@ -6,6 +6,60 @@
     border-top: 1px solid #e9ecef;
 }
 
+/* Sales Progress Bar - đồng bộ với bestseller */
+.similar-products-section .product-card .sales-progress {
+    margin-bottom: 1rem;
+}
+
+.similar-products-section .product-card .sales-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    font-size: 0.8rem;
+}
+
+.similar-products-section .product-card .sales-label {
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.similar-products-section .product-card .sales-count {
+    color: #E8A2B0;
+    font-weight: 600;
+}
+
+.similar-products-section .product-card .progress {
+    height: 6px;
+    background-color: #f1f1f1;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.similar-products-section .product-card .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #E8A2B0 0%, #d18a9a 100%);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+    position: relative;
+}
+
+.similar-products-section .product-card .progress-bar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
 /* Product Related Wrap */
 .product-related-wrap {
     background: #ffffff;
@@ -117,7 +171,8 @@
 }
 
 /* Product Grid - Horizontal carousel */
-#similarProductsGrid {
+#similarProductsGrid,
+#recentlyViewedGrid {
     display: flex;
     gap: 1.5rem;
     overflow-x: auto;
@@ -129,22 +184,21 @@
 }
 
 /* Hide scrollbar but keep functionality */
-#similarProductsGrid {
-    scrollbar-width: none;
-    /* Firefox */
-    -ms-overflow-style: none;
-    /* IE and Edge */
+#similarProductsGrid,
+#recentlyViewedGrid {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
 }
 
-#similarProductsGrid::-webkit-scrollbar {
-    display: none;
-    /* Chrome, Safari, Opera */
+#similarProductsGrid::-webkit-scrollbar,
+#recentlyViewedGrid::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
 }
 
 /* Product cards in carousel */
-#similarProductsGrid .product-card {
-    flex: 0 0 280px;
-    /* Same width as category/brand products */
+#similarProductsGrid .product-card,
+#recentlyViewedGrid .product-card {
+    flex: 0 0 280px; /* Same width as category/brand products */
     max-width: 280px;
     min-height: 420px;
     /* Increased height for better harmony */
@@ -158,18 +212,20 @@
 }
 
 /* Ensure exactly 4 cards are visible */
-#similarProductsGrid {
-    width: calc(4 * 280px + 3 * 1.5rem);
-    /* 4 cards + 3 gaps = 1202px */
+#similarProductsGrid,
+#recentlyViewedGrid {
+    width: calc(4 * 280px + 3 * 1.5rem); /* 4 cards + 3 gaps = 1202px */
     max-width: 100%;
 }
 
-#similarProductsGrid .product-card {
+#similarProductsGrid .product-card,
+#recentlyViewedGrid .product-card {
     scroll-snap-align: start;
 }
 
 /* Product Card Styles - Use same styling as category/brand products */
-#similarProductsGrid .product-card {
+#similarProductsGrid .product-card,
+#recentlyViewedGrid .product-card {
     background: white;
     border: 1px solid var(--border-pink-light);
     border-radius: 8px;
@@ -178,18 +234,22 @@
     overflow: hidden;
     height: 100%;
     display: flex;
+    opacity: 1 !important;
+    filter: none !important;
     flex-direction: column;
     position: relative;
     font-family: 'Gilroy', 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
-#similarProductsGrid .product-card:hover {
+#similarProductsGrid .product-card:hover,
+#recentlyViewedGrid .product-card:hover {
     transform: translateY(-4px);
     box-shadow: 0 8px 25px rgba(232, 162, 176, 0.15);
     border-color: var(--pink-primary);
 }
 
-#similarProductsGrid .product-card .card-img-top {
+#similarProductsGrid .product-card .card-img-top,
+#recentlyViewedGrid .product-card .card-img-top {
     height: 200px;
     max-width: 85%;
     object-fit: contain;
@@ -197,13 +257,19 @@
     padding: 15px;
     display: block;
     transition: transform 0.3s ease;
+    opacity: 1 !important;
+    filter: none !important;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
 }
 
-#similarProductsGrid .product-card:hover .card-img-top {
+#similarProductsGrid .product-card:hover .card-img-top,
+#recentlyViewedGrid .product-card:hover .card-img-top {
     transform: scale(1.05);
 }
 
-#similarProductsGrid .product-card .card-body {
+#similarProductsGrid .product-card .card-body,
+#recentlyViewedGrid .product-card .card-body {
     padding: 1rem;
     flex: 1;
     display: flex;
@@ -211,7 +277,8 @@
     justify-content: space-between;
 }
 
-#similarProductsGrid .product-card .card-title {
+#similarProductsGrid .product-card .card-title,
+#recentlyViewedGrid .product-card .card-title {
     font-size: 0.9rem;
     font-weight: 600;
     color: var(--text-dark);
@@ -219,18 +286,21 @@
     margin-bottom: 0.3rem;
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
     font-family: 'Gilroy', 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
-#similarProductsGrid .product-card .card-title a {
+#similarProductsGrid .product-card .card-title a,
+#recentlyViewedGrid .product-card .card-title a {
     color: inherit;
     text-decoration: none;
     transition: color 0.3s ease;
 }
 
-#similarProductsGrid .product-card .card-title a:hover {
+#similarProductsGrid .product-card .card-title a:hover,
+#recentlyViewedGrid .product-card .card-title a:hover {
     color: #e8a2b0;
 }
 
@@ -511,4 +581,27 @@
         width: 35px;
         height: 35px;
     }
+}
+
+/* Product Image Link Styles */
+#similarProductsGrid .product-image-link,
+#recentlyViewedGrid .product-image-link {
+    display: block;
+    text-decoration: none;
+    transition: transform 0.3s ease;
+}
+
+#similarProductsGrid .product-image-link:hover,
+#recentlyViewedGrid .product-image-link:hover {
+    transform: scale(1.02);
+}
+
+#similarProductsGrid .product-image-link .card-img-top,
+#recentlyViewedGrid .product-image-link .card-img-top {
+    transition: transform 0.3s ease;
+}
+
+#similarProductsGrid .product-image-link:hover .card-img-top,
+#recentlyViewedGrid .product-image-link:hover .card-img-top {
+    transform: scale(1.05);
 }

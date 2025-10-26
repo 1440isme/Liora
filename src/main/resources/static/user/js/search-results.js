@@ -239,8 +239,14 @@ class SearchResultsManager {
         const brandId = product.brandId || '';
         const price = product.price || 0;
         const imageUrl = product.mainImageUrl || '/user/img/default-product.jpg';
+        
+        // Get product status and apply appropriate styling
+        const productStatus = this.getProductStatus(product);
+        const statusClass = this.getProductStatusClass(productStatus);
+        const isAvailable = productStatus === 'available';
+        
         return `
-            <div class="product-card">
+            <div class="product-card ${statusClass}" data-product-id="${productId}">
                 <div class="position-relative">
                     <img src="${imageUrl}" class="card-img-top" alt="${name}" onerror="this.src='/user/img/default-product.jpg'"
                          style="cursor:pointer" onclick="window.location.href='/product/${productId}?from=search'">
@@ -303,8 +309,10 @@ class SearchResultsManager {
                     
                     <div class="mt-auto d-flex justify-content-between align-items-center">
                         <span class="current-price">${this.formatPrice(price)}</span>
-                        <button class="add-to-cart-icon" title="Thêm vào giỏ"
-                            onclick="event.preventDefault(); event.stopPropagation(); window.searchResultsManager.addToCart(${productId}, '${name.replace(/'/g, "\\'")}', ${price})">
+                        <button class="add-to-cart-icon ${!isAvailable ? 'disabled' : ''}" 
+                                title="${productStatus === 'out_of_stock' ? 'Hết hàng' : productStatus === 'deactivated' ? 'Ngừng kinh doanh' : 'Thêm vào giỏ'}"
+                                ${!isAvailable ? 'disabled' : ''}
+                                onclick="event.preventDefault(); event.stopPropagation(); ${isAvailable ? `window.searchResultsManager.addToCart(${productId}, '${name.replace(/'/g, "\\'")}', ${price})` : ''}">
                             <i class="fas fa-shopping-cart"></i>
                         </button>
                     </div>
@@ -538,10 +546,35 @@ class SearchResultsManager {
 
     getProductStatus(product) {
         if (!product) return 'out_of_stock';
-        if (product.deactivated || product.isActive === false) return 'deactivated';
-        if (product.available === false) return 'out_of_stock';
-        if (typeof product.stock === 'number' && product.stock <= 0) return 'out_of_stock';
+        
+        // 1. Kiểm tra ngừng kinh doanh (ưu tiên cao nhất)
+        // Bao gồm: sản phẩm bị ngừng, category bị ngừng, hoặc brand bị ngừng
+        // (Khi category/brand bị ngừng, tất cả sản phẩm thuộc sẽ có isActive = false)
+        if (product.deactivated || product.isActive === false) {
+            return 'deactivated';
+        }
+        
+        // 2. Kiểm tra hết hàng (chỉ khi sản phẩm còn active)
+        if (product.available === false) {
+            return 'out_of_stock';
+        }
+        if (typeof product.stock === 'number' && product.stock <= 0) {
+            return 'out_of_stock';
+        }
+        
+        // 3. Còn hàng (isActive = true và stock > 0)
         return 'available';
+    }
+    
+    getProductStatusClass(status) {
+        switch (status) {
+            case 'deactivated':
+                return 'product-deactivated';
+            case 'out_of_stock':
+                return 'product-out-of-stock';
+            default:
+                return '';
+        }
     }
 
     getProductStatusBadge(product) {
