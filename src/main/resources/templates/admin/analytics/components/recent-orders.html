@@ -57,7 +57,7 @@
                           (${order.paymentStatus == 'FAILED' || order.paymentStatus == 'CANCELLED'} ? 'text-danger' : 'text-secondary')))"
           th:text="${order.paymentStatus == 'PAID'} ? 'Đã thanh toán' :
                    (${order.paymentStatus == 'PENDING'} ? 'Chờ thanh toán' :
-                   (${order.paymentStatus == 'REFUNDED'} ? 'Đã hoàn tiền' :
+                   (${order.paymentStatus == 'REFUNDED'} ? 'Hoàn tiền' :
                    (${order.paymentStatus == 'FAILED'} ? 'Thất bại' :
                    (${order.paymentStatus == 'CANCELLED'} ? 'Đã hủy' : ${order.paymentStatus}))))">
         Chờ thanh toán

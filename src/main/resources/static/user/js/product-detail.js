@@ -227,7 +227,7 @@ class ProductDetailManager {
 
         try {
             if (window.app && typeof window.app.addProductToCartBackend === 'function') {
-                await window.app.addProductToCartBackend(this.productId, quantity, true);
+                await window.app.addProductToCartBackend(this.productId, quantity, false);
                 await window.app.refreshCartBadge?.();
             } else {
                 this.showNotification('Không thể thêm vào giỏ hàng. Vui lòng thử lại.', 'error');

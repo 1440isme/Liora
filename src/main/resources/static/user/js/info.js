@@ -786,6 +786,7 @@ class UserInfoManager {
     getOrderStatusClass(status) {
         const statusMap = {
             'PENDING': 'status-pending',
+            'CONFIRMED': 'status-confirmed',
             'COMPLETED': 'status-completed',
             'CANCELLED': 'status-cancelled'
         };
@@ -795,6 +796,7 @@ class UserInfoManager {
     getOrderStatusText(status) {
         const statusMap = {
             'PENDING': 'Chờ xử lý',
+            'CONFIRMED': 'Đã xác nhận',
             'COMPLETED': 'Hoàn tất',
             'CANCELLED': 'Đã hủy'
         };

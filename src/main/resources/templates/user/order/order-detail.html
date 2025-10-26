@@ -212,12 +212,14 @@
                                                 th:classappend="${order.paymentStatus == 'PENDING'} ? 'status-pending' : 
                                                                             (${order.paymentStatus == 'PAID'} ? 'status-completed' : 
                                                                             (${order.paymentStatus == 'CANCELLED'} ? 'status-cancelled' : 
-                                                                            (${order.paymentStatus == 'FAILED'} ? 'status-failed' : 'status-pending')))">
+                                                                            (${order.paymentStatus == 'FAILED'} ? 'status-failed' : 
+                                                                            (${order.paymentStatus == 'REFUNDED'} ? 'status-refunded' : 'status-pending'))))">
                                                 <span th:switch="${order.paymentStatus}">
                                                     <span th:case="'PENDING'">Chờ thanh toán</span>
                                                     <span th:case="'PAID'">Đã thanh toán</span>
                                                     <span th:case="'CANCELLED'">Đã hủy</span>
                                                     <span th:case="'FAILED'">Thanh toán thất bại</span>
+                                                    <span th:case="'REFUNDED'">Hoàn tiền</span>
                                                     <span th:case="*" th:text="${order.paymentStatus}"></span>
                                                 </span>
                                             </span>

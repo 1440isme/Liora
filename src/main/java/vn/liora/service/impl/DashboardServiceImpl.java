@@ -38,7 +38,7 @@ public class DashboardServiceImpl implements IDashboardService {
     @Override
     public long getTotalOrders() {
         return orderService.getOrdersByOrderStatus("COMPLETED").size() + orderService.getOrdersByOrderStatus("PENDING").size() +
-               orderService.getOrdersByOrderStatus("CANCELLED").size();
+               orderService.getOrdersByOrderStatus("CONFIRMED").size() + orderService.getOrdersByOrderStatus("CANCELLED").size();
     }
 
     @Override

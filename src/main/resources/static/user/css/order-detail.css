@@ -200,6 +200,12 @@
     border: 1px solid rgba(255, 193, 7, 0.3);
 }
 
+.status-confirmed {
+    background: rgba(59, 130, 246, 0.1);
+    color: #1d4ed8;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
 .status-processing {
     background: rgba(232, 162, 176, 0.2);
     color: #333333;
@@ -228,6 +234,12 @@
     background: rgba(239, 68, 68, 0.1);
     color: #dc2626;
     border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.status-refunded {
+    background: rgba(59, 130, 246, 0.1);
+    color: #1d4ed8;
+    border: 1px solid rgba(59, 130, 246, 0.3);
 }
 
 /* Font Awesome and MDI Icons Color - Pink Theme */
@@ -527,6 +539,12 @@ i[class*="mdi-"] {
     border: 1px solid rgba(255, 193, 7, 0.3);
 }
 
+.status-confirmed {
+    background: rgba(59, 130, 246, 0.1);
+    color: #1d4ed8;
+    border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
 .status-processing {
     background: rgba(232, 162, 176, 0.2);
     color: #333333;
@@ -555,6 +573,12 @@ i[class*="mdi-"] {
     background: rgba(239, 68, 68, 0.1);
     color: #dc2626;
     border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.status-refunded {
+    background: rgba(59, 130, 246, 0.1);
+    color: #1d4ed8;
+    border: 1px solid rgba(59, 130, 246, 0.3);
 }
 
 /* Font Awesome and MDI Icons Color - Pink Theme */
@@ -791,6 +815,12 @@ i[class*="mdi-"] {
     background: rgba(220, 38, 38, 0.1);
     color: #b91c1c;
     border: 1px solid rgba(220, 38, 38, 0.3);
+}
+
+.status-refunded {
+    background: rgba(59, 130, 246, 0.1);
+    color: #1d4ed8;
+    border: 1px solid rgba(59, 130, 246, 0.3);
 }
 
 /* Ensure MDI icons have correct font-family */

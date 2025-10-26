@@ -8,10 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 // removed unused imports
 
 
-import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.temporal.IsoFields;
 import java.util.ArrayList;
 
 import org.springframework.data.domain.PageRequest;
@@ -41,7 +38,6 @@ import vn.liora.repository.DiscountRepository;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -76,6 +72,21 @@ public class OrderServiceImpl implements IOrderService {
                 throw new AppException(ErrorCode.NO_SELECTED_PRODUCT);
             }
 
+            // ✅ Lọc chỉ lấy sản phẩm hợp lệ (available=true, isActive=true, stock đủ)
+            List<CartProduct> validProducts = selected.stream()
+                    .filter(cp -> {
+                        Product product = cp.getProduct();
+                        return product != null 
+                            && Boolean.TRUE.equals(product.getAvailable()) 
+                            && Boolean.TRUE.equals(product.getIsActive())
+                            && product.getStock() != null && cp.getQuantity() <= product.getStock();
+                    })
+                    .collect(Collectors.toList());
+
+            if (validProducts.isEmpty()) {
+                throw new AppException(ErrorCode.NO_VALID_PRODUCT);
+            }
+
             Order order = orderMapper.toOrder(request);
             order.setUser(user); // user có thể null khi guest; các thao tác phía dưới phải null-safe
             order.setOrderDate(LocalDateTime.now());
@@ -93,7 +104,8 @@ public class OrderServiceImpl implements IOrderService {
                 order.setProvinceId(request.getProvinceId());
             }
 
-            List<OrderProduct> orderProducts = selected.stream()
+            // ✅ Sử dụng validProducts thay vì selected
+            List<OrderProduct> orderProducts = validProducts.stream()
                     .map(cp -> {
                         OrderProduct op = orderProductMapper.toOrderProduct(cp);
                         op.setOrder(order);
@@ -194,7 +206,8 @@ public class OrderServiceImpl implements IOrderService {
                 }
             }
 
-            cartProductRepository.deleteAll(selected);
+            // ✅ Chỉ xóa các sản phẩm hợp lệ đã tạo order
+            cartProductRepository.deleteAll(validProducts);
 
             // Tạo vận đơn GHN ngay khi đặt hàng nếu không dùng VNPAY (COD)
             try {
@@ -329,21 +342,27 @@ public class OrderServiceImpl implements IOrderService {
         Order order = orderRepository.findById(idOrder)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
 
-        // ✅ HOÀN LẠI DISCOUNT NẾU CHUYỂN THÀNH CANCELLED
-        if ("CANCELLED".equals(request.getOrderStatus()) && order.getDiscount() != null) {
-            try {
-                Discount discount = order.getDiscount();
-                // Giảm usage count của discount
-                if (discount.getUsedCount() > 0) {
-                    discount.setUsedCount(discount.getUsedCount() - 1);
-                    discountRepository.save(discount);
-                    log.info("Rolled back discount usage for discount {} (order {} cancelled by admin)", 
-                            discount.getDiscountId(), idOrder);
+        // ✅ HOÀN LẠI DISCOUNT VÀ STOCK NẾU CHUYỂN THÀNH CANCELLED
+        if ("CANCELLED".equals(request.getOrderStatus())) {
+            // Hoàn lại discount nếu có
+            if (order.getDiscount() != null) {
+                try {
+                    Discount discount = order.getDiscount();
+                    // Giảm usage count của discount
+                    if (discount.getUsedCount() > 0) {
+                        discount.setUsedCount(discount.getUsedCount() - 1);
+                        discountRepository.save(discount);
+                        log.info("Rolled back discount usage for discount {} (order {} cancelled by admin)", 
+                                discount.getDiscountId(), idOrder);
+                    }
+                } catch (Exception e) {
+                    log.warn("Failed to rollback discount usage for order {}: {}", idOrder, e.getMessage());
+                    // Không throw exception để không ảnh hưởng đến việc cập nhật trạng thái đơn hàng
                 }
-            } catch (Exception e) {
-                log.warn("Failed to rollback discount usage for order {}: {}", idOrder, e.getMessage());
-                // Không throw exception để không ảnh hưởng đến việc cập nhật trạng thái đơn hàng
             }
+            
+            // Hoàn lại stock cho các sản phẩm trong đơn hàng bị hủy
+            restoreStockForOrder(order);
         }
 
         // Lưu trạng thái hiện tại
@@ -365,21 +384,26 @@ public class OrderServiceImpl implements IOrderService {
             // Cập nhật sold count = số lượng sản phẩm trong đơn hàng khi hoàn tất
             updateSoldCountForOrder(order, true);
         } else {
-            // Tất cả các trạng thái khác (PENDING, CANCELLED): sold count = 0
-            if ("COMPLETED".equals(currentOrderStatus)) {
-                updateSoldCountForOrder(order, false);
-            }
-            
             // Cập nhật trạng thái thanh toán cho các trường hợp khác
             if ("CANCELLED".equals(newOrderStatus)) {
                 // Nếu đơn hàng bị hủy và đã thanh toán, chuyển thành "Đã hoàn tiền"
                 if ("PAID".equals(currentPaymentStatus)) {
                     order.setPaymentStatus("REFUNDED");
                 }
-            } else if ("PENDING".equals(newOrderStatus)) {
-                // Nếu đơn hàng từ COMPLETED chuyển về PENDING và đã hoàn tiền, chuyển về "Đã thanh toán"
+                
+                // Nếu chuyển từ COMPLETED về CANCELLED, cần giảm sold count
+                if ("COMPLETED".equals(currentOrderStatus)) {
+                    updateSoldCountForOrder(order, false);
+                }
+            } else if ("PENDING".equals(newOrderStatus) || "CONFIRMED".equals(newOrderStatus)) {
+                // Nếu đơn hàng từ COMPLETED chuyển về PENDING/CONFIRMED và đã hoàn tiền, chuyển về "Đã thanh toán"
                 if ("REFUNDED".equals(currentPaymentStatus) && "COMPLETED".equals(currentOrderStatus)) {
                     order.setPaymentStatus("PAID");
+                }
+                
+                // Nếu chuyển từ COMPLETED về PENDING/CONFIRMED, cần giảm sold count
+                if ("COMPLETED".equals(currentOrderStatus)) {
+                    updateSoldCountForOrder(order, false);
                 }
             }
         }
@@ -595,6 +619,9 @@ public class OrderServiceImpl implements IOrderService {
         order.setOrderStatus("CANCELLED");
 
         orderRepository.save(order);
+
+        // ✅ HOÀN LẠI STOCK CHO CÁC SẢN PHẨM TRONG ĐƠN HÀNG BỊ HỦY
+        restoreStockForOrder(order);
 
         log.info("Order {} cancelled by user {}", orderId, userId);
     }

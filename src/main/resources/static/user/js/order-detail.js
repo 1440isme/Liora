@@ -198,7 +198,7 @@ class OrderDetailManager {
         for (const item of items) {
             try {
                 if (window.app && typeof window.app.addProductToCartBackend === 'function') {
-                    await window.app.addProductToCartBackend(item.idProduct, item.quantity, false);
+                    await window.app.addProductToCartBackend(item.idProduct, item.quantity, true, false);
                     successCount++;
                     console.log(`Successfully added product ${item.idProduct} with quantity ${item.quantity}`);
                 }
@@ -441,7 +441,7 @@ class OrderDetailManager {
         for (const item of validItems) {
             try {
                 if (window.app && typeof window.app.addProductToCartBackend === 'function') {
-                    await window.app.addProductToCartBackend(item.productId, item.quantity, true);
+                    await window.app.addProductToCartBackend(item.productId, item.quantity, true, false);
                     successCount++;
                     
                     console.log(`Successfully added product ${item.productId} with quantity ${item.quantity}`);
