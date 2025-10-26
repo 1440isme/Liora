@@ -130,11 +130,11 @@ class NewestProductsPageManager {
         console.log('Products array length:', this.products.length);
         console.log('Total elements:', this.totalElements);
         console.log('Current filters:', this.currentFilters);
-        
+
         const grid = document.getElementById('productsGrid');
         const emptyState = document.getElementById('emptyState');
         const resultsCount = document.getElementById('resultsCount');
-        
+
         console.log('Grid display:', grid ? grid.style.display : 'not found');
         console.log('Grid visibility:', grid ? grid.style.visibility : 'not found');
         console.log('Empty state display:', emptyState ? emptyState.style.display : 'not found');
@@ -187,7 +187,7 @@ class NewestProductsPageManager {
         try {
             // Ensure filters are up to date
             this.updateFiltersFromUI();
-            
+
             let sortValue = this.currentFilters.sort || '';
             if (!sortValue) {
                 const sortSelect = document.getElementById('sortSelect');
@@ -219,7 +219,7 @@ class NewestProductsPageManager {
             const url = `/api/products/newest-advanced?${params.toString()}`;
             console.log('Loading products with URL:', url);
             console.log('Current filters:', this.currentFilters);
-            
+
             const res = await fetch(url);
             if (!res.ok) {
                 console.error('API Error:', res.status, res.statusText);
@@ -259,13 +259,13 @@ class NewestProductsPageManager {
         const grid = document.getElementById('productsGrid');
         const emptyState = document.getElementById('emptyState');
         if (!grid) return;
-        
+
         // Hide empty state
         if (emptyState) {
             emptyState.style.display = 'none';
             emptyState.style.visibility = 'hidden';
         }
-        
+
         // Show and configure grid
         grid.style.display = 'grid';
         grid.style.visibility = 'visible';
@@ -282,7 +282,7 @@ class NewestProductsPageManager {
                 window.loadProductRatings();
             }
         }, 500);
-        
+
         console.log(`Rendered ${this.products.length} products`);
     }
 
@@ -552,8 +552,21 @@ class NewestProductsPageManager {
         document.body.insertAdjacentHTML('beforeend', modalHTML);
 
         // Show modal
-        const modal = new bootstrap.Modal(document.getElementById('quickViewModal'));
+        const modal = new bootstrap.Modal(document.getElementById('quickViewModal'), {
+            backdrop: true,
+            keyboard: true,
+            focus: true
+        });
         modal.show();
+
+        // Ensure backdrop has proper z-index
+        setTimeout(() => {
+            const backdrop = document.querySelector('.modal-backdrop');
+            if (backdrop) {
+                backdrop.style.setProperty('z-index', '9998', 'important');
+                backdrop.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+            }
+        }, 10);
 
         // Add slider navigation event listeners
         this.setupSliderNavigation(product);
@@ -633,13 +646,13 @@ class NewestProductsPageManager {
     async buyNow(productId) {
         const input = document.getElementById('quantityInput');
         const quantity = input ? (parseInt(input.value || '1', 10) || 1) : 1;
-        
+
         // Close modal
         const modal = bootstrap.Modal.getInstance(document.getElementById('quickViewModal'));
         if (modal) {
             modal.hide();
         }
-        
+
         if (window.app && typeof window.app.buyNowBackend === 'function') {
             try {
                 await window.app.buyNowBackend(productId, quantity);
@@ -655,7 +668,7 @@ class NewestProductsPageManager {
     async addToCartWithQuantity(productId) {
         const input = document.getElementById('quantityInput');
         const quantity = input ? (parseInt(input.value || '1', 10) || 1) : 1;
-        
+
         try {
             if (window.app && typeof window.app.addProductToCartBackend === 'function') {
                 await window.app.addProductToCartBackend(productId, quantity, true);
@@ -695,25 +708,25 @@ class NewestProductsPageManager {
         const loading = document.getElementById('loadingSpinner');
         const grid = document.getElementById('productsGrid');
         const empty = document.getElementById('emptyState');
-        
+
         // Hide loading spinner
         if (loading) loading.style.display = 'none';
-        
+
         // Hide products grid completely
         if (grid) {
             grid.style.display = 'none';
             grid.style.visibility = 'hidden';
             grid.innerHTML = ''; // Clear any existing content
         }
-        
+
         // Show empty state
         if (empty) {
             empty.style.display = 'block';
             empty.style.visibility = 'visible';
-            
+
             // Kiểm tra xem có filter nào đang được áp dụng không
             const hasFilters = this.hasActiveFilters();
-            
+
             if (hasFilters) {
                 // Hiển thị với nút "Xóa bộ lọc"
                 empty.innerHTML = `
@@ -733,13 +746,13 @@ class NewestProductsPageManager {
                 `;
             }
         }
-        
+
         // Update results count to show 0
         this.updateResultsCount();
-        
+
         // Hide pagination when no products
         this.updatePagination();
-        
+
         console.log('Empty state shown - no products match filters');
     }
 
@@ -756,11 +769,11 @@ class NewestProductsPageManager {
     updateResultsCount() {
         const resultsCount = document.getElementById('resultsCount');
         if (!resultsCount) return;
-        
+
         // Use totalElements for consistency with pagination
         const n = this.totalElements || 0;
         resultsCount.textContent = `Hiển thị ${n} sản phẩm`;
-        
+
         console.log(`Updated results count: ${n} total products`);
     }
 

@@ -408,17 +408,28 @@ class FeaturedCategoryProductsManager {
     }
 
     getProductStatus(product) {
-        if (!product.isActive) {
+        if (!product) return 'available';
+
+        // 1. Kiểm tra ngừng kinh doanh (ưu tiên cao nhất)
+        // Bao gồm: sản phẩm bị ngừng, category bị ngừng, hoặc brand bị ngừng
+        // (Khi category/brand bị ngừng, tất cả sản phẩm thuộc sẽ có isActive = false)
+        if (product.deactivated || product.isActive === false) {
             return 'deactivated';
         }
-        if (product.stock <= 0) {
+
+        // 2. Kiểm tra hết hàng (chỉ khi sản phẩm còn active)
+        if (product.available === false) {
             return 'out_of_stock';
         }
+        if (typeof product.stock === 'number' && product.stock <= 0) {
+            return 'out_of_stock';
+        }
+
+        // 3. Còn hàng (isActive = true và stock > 0)
         return 'available';
     }
 
-    getProductStatusClass(product) {
-        const status = this.getProductStatus(product);
+    getProductStatusClass(status) {
         switch (status) {
             case 'deactivated':
                 return 'product-deactivated';
@@ -426,7 +437,7 @@ class FeaturedCategoryProductsManager {
                 return 'product-out-of-stock';
             case 'available':
             default:
-                return 'product-available';
+                return ''; // Không thêm class gì cho sản phẩm available
         }
     }
 
@@ -655,10 +666,10 @@ class FeaturedCategoryProductsManager {
         if (grid) grid.style.display = 'none';
         if (emptyState) {
             emptyState.style.display = 'block';
-            
+
             // Kiểm tra xem có filter nào đang được áp dụng không
             const hasFilters = this.hasActiveFilters();
-            
+
             if (hasFilters) {
                 // Hiển thị với nút "Xóa bộ lọc"
                 emptyState.innerHTML = `
@@ -839,9 +850,9 @@ class FeaturedCategoryProductsManager {
         }
 
         const modalHTML = `
-            <div class="modal fade" id="quickViewModal" tabindex="-1" aria-labelledby="quickViewModalLabel" aria-hidden="true">
+            <div class="modal fade" id="quickViewModal" tabindex="-1" aria-labelledby="quickViewModalLabel" aria-hidden="true" style="z-index: 9999 !important;">
                 <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content">
+                    <div class="modal-content" style="position: relative; z-index: 10000 !important;">
                         <div class="modal-header border-0">
                             <h5 class="modal-title" id="quickViewModalLabel">Xem nhanh sản phẩm</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -959,9 +970,22 @@ class FeaturedCategoryProductsManager {
         // Add modal to body
         document.body.insertAdjacentHTML('beforeend', modalHTML);
 
-        // Show modal
-        const modal = new bootstrap.Modal(document.getElementById('quickViewModal'));
+        // Show modal with proper backdrop
+        const modal = new bootstrap.Modal(document.getElementById('quickViewModal'), {
+            backdrop: true,
+            keyboard: true,
+            focus: true
+        });
         modal.show();
+
+        // Ensure backdrop has proper z-index
+        setTimeout(() => {
+            const backdrop = document.querySelector('.modal-backdrop');
+            if (backdrop) {
+                backdrop.style.setProperty('z-index', '9998', 'important');
+                backdrop.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+            }
+        }, 10);
 
         // Add slider navigation event listeners after modal is shown
         setTimeout(() => {

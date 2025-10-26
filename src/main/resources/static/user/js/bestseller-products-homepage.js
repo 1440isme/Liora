@@ -343,7 +343,7 @@ class BestsellerProductsHomepageManager {
         const handleSwipe = () => {
             const swipeThreshold = 50; // Minimum distance for a swipe
             const swipeDistance = touchEndX - touchStartX;
-            
+
             if (Math.abs(swipeDistance) > swipeThreshold) {
                 if (swipeDistance > 0) {
                     // Swipe right - go to previous slide
@@ -568,7 +568,7 @@ class BestsellerProductsHomepageManager {
         setTimeout(() => {
             const backdrop = document.querySelector('.modal-backdrop');
             if (backdrop) {
-                backdrop.style.zIndex = '9998';
+                backdrop.style.setProperty('z-index', '9998', 'important');
                 backdrop.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
             }
         }, 10);

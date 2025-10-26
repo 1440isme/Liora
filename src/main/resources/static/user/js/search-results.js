@@ -26,16 +26,16 @@ class SearchResultsManager {
 
     bindEvents() {
         const sortSelect = document.getElementById('sortSelect');
-        if (sortSelect) sortSelect.addEventListener('change', () => { 
-            this.currentPage = 0; 
-            this.loadResults(); 
+        if (sortSelect) sortSelect.addEventListener('change', () => {
+            this.currentPage = 0;
+            this.loadResults();
         });
-        
+
         const applyFilters = document.getElementById('applyFilters');
-        if (applyFilters) applyFilters.addEventListener('click', () => { 
-            this.applyFilters(); 
+        if (applyFilters) applyFilters.addEventListener('click', () => {
+            this.applyFilters();
         });
-        
+
         document.addEventListener('change', (e) => {
             if (e.target && e.target.closest && e.target.closest('#brandFilters')) this.onBrandChange(e);
             if (e.target && String(e.target.id || '').startsWith('rating')) this.onRatingChange(e);
@@ -44,7 +44,7 @@ class SearchResultsManager {
 
     applyFilters() {
         console.log('applyFilters called');
-        
+
         // Update filters from UI before applying
         this.updateFiltersFromUI();
         this.currentPage = 0;
@@ -145,13 +145,13 @@ class SearchResultsManager {
         try {
             // Ensure filters are up to date
             this.updateFiltersFromUI();
-            
+
             const sortValue = (document.getElementById('sortSelect')?.value) || '';
             const [sortBy, sortDir] = sortValue ? sortValue.split(',') : ['', ''];
             const params = new URLSearchParams({ q: this.currentQuery, page: String(this.currentPage), size: String(this.pageSize) });
             if (sortBy) params.append('sortBy', sortBy);
             if (sortDir) params.append('sortDir', sortDir);
-            
+
             // Add filters with proper validation
             if (this.currentFilters.minPrice != null && this.currentFilters.minPrice !== '' && this.currentFilters.minPrice >= 0) {
                 params.append('minPrice', String(this.currentFilters.minPrice));
@@ -169,7 +169,7 @@ class SearchResultsManager {
             const url = `/api/products/search?${params.toString()}`;
             console.log('Loading search results with URL:', url);
             console.log('Current filters:', this.currentFilters);
-            
+
             const res = await fetch(url);
             if (!res.ok) {
                 console.error('Search API Error:', res.status, res.statusText);
@@ -206,20 +206,20 @@ class SearchResultsManager {
         const grid = document.getElementById('productsGrid');
         const empty = document.getElementById('emptyState');
         if (!grid) return;
-        
+
         // Hide empty state
         if (empty) {
             empty.style.display = 'none';
             empty.style.visibility = 'hidden';
         }
-        
+
         // Show and configure grid
         grid.style.display = 'grid';
         grid.style.visibility = 'visible';
         grid.style.gridTemplateColumns = 'repeat(4, 1fr)';
         grid.style.gap = '0.8rem';
         grid.style.padding = '2rem 1rem';
-        
+
         grid.innerHTML = this.products.map(p => this.createCard(p)).join('');
 
         // Trigger rating load sau khi render xong
@@ -228,7 +228,7 @@ class SearchResultsManager {
                 window.loadProductRatings();
             }
         }, 500);
-        
+
         console.log(`Rendered ${this.products.length} search results`);
     }
 
@@ -239,12 +239,12 @@ class SearchResultsManager {
         const brandId = product.brandId || '';
         const price = product.price || 0;
         const imageUrl = product.mainImageUrl || '/user/img/default-product.jpg';
-        
+
         // Get product status and apply appropriate styling
         const productStatus = this.getProductStatus(product);
         const statusClass = this.getProductStatusClass(productStatus);
         const isAvailable = productStatus === 'available';
-        
+
         return `
             <div class="product-card ${statusClass}" data-product-id="${productId}">
                 <div class="position-relative">
@@ -367,9 +367,9 @@ class SearchResultsManager {
         }
 
         const modalHTML = `
-            <div class="modal fade" id="quickViewModal" tabindex="-1" aria-labelledby="quickViewModalLabel" aria-hidden="true">
+            <div class="modal fade" id="quickViewModal" tabindex="-1" aria-labelledby="quickViewModalLabel" aria-hidden="true" style="z-index: 9999 !important;">
                 <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content">
+                    <div class="modal-content" style="position: relative; z-index: 10000 !important;">
                         <div class="modal-header border-0">
                             <h5 class="modal-title" id="quickViewModalLabel">Xem nhanh sản phẩm</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -486,36 +486,35 @@ class SearchResultsManager {
         // Add modal to body
         document.body.insertAdjacentHTML('beforeend', modalHTML);
 
-        // Show modal
-        const modal = new bootstrap.Modal(document.getElementById('quickViewModal'));
+        // Show modal with proper backdrop
+        const modal = new bootstrap.Modal(document.getElementById('quickViewModal'), {
+            backdrop: true,
+            keyboard: true,
+            focus: true
+        });
         modal.show();
+
+        // Ensure backdrop has proper z-index
+        setTimeout(() => {
+            const backdrop = document.querySelector('.modal-backdrop');
+            if (backdrop) {
+                backdrop.style.setProperty('z-index', '9998', 'important');
+                backdrop.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+            }
+        }, 10);
 
         // Add slider navigation event listeners
         this.setupSliderNavigation(product);
+
+        // Update review data after modal is shown
+        setTimeout(() => {
+            ProductRatingUtils.updateQuickViewReviewData(product.productId);
+        }, 200);
 
         // Remove modal from DOM when hidden
         document.getElementById('quickViewModal').addEventListener('hidden.bs.modal', function () {
             this.remove();
         });
-        // Update review data after modal is shown
-        setTimeout(() => {
-            ProductRatingUtils.updateQuickViewReviewData(product.productId, 'homepageBestsellerQuickViewModal');
-        }, 200);
-
-        // Clean up when modal is hidden
-        document.getElementById('homepageBestsellerQuickViewModal').addEventListener('hidden.bs.modal', () => {
-            const modalElement = document.getElementById('homepageBestsellerQuickViewModal');
-            if (modalElement) {
-                modalElement.remove();
-            }
-            const backdrop = document.querySelector('.modal-backdrop');
-            if (backdrop) {
-                backdrop.remove();
-            }
-            document.body.classList.remove('modal-open');
-            document.body.style.overflow = '';
-            document.body.style.paddingRight = '';
-        }, { once: true });
     }
 
     // Helpers for Quick View
@@ -546,14 +545,14 @@ class SearchResultsManager {
 
     getProductStatus(product) {
         if (!product) return 'out_of_stock';
-        
+
         // 1. Kiểm tra ngừng kinh doanh (ưu tiên cao nhất)
         // Bao gồm: sản phẩm bị ngừng, category bị ngừng, hoặc brand bị ngừng
         // (Khi category/brand bị ngừng, tất cả sản phẩm thuộc sẽ có isActive = false)
         if (product.deactivated || product.isActive === false) {
             return 'deactivated';
         }
-        
+
         // 2. Kiểm tra hết hàng (chỉ khi sản phẩm còn active)
         if (product.available === false) {
             return 'out_of_stock';
@@ -561,11 +560,11 @@ class SearchResultsManager {
         if (typeof product.stock === 'number' && product.stock <= 0) {
             return 'out_of_stock';
         }
-        
+
         // 3. Còn hàng (isActive = true và stock > 0)
         return 'available';
     }
-    
+
     getProductStatusClass(status) {
         switch (status) {
             case 'deactivated':
@@ -879,32 +878,32 @@ class SearchResultsManager {
 
     showLoading() { const l = document.getElementById('loadingSpinner'); const g = document.getElementById('productsGrid'); const e = document.getElementById('emptyState'); if (l) l.style.display = 'block'; if (g) g.style.display = 'none'; if (e) e.style.display = 'none'; }
     hideLoading() { const l = document.getElementById('loadingSpinner'); const g = document.getElementById('productsGrid'); if (l) l.style.display = 'none'; if (g) g.style.display = 'block'; }
-    showEmptyState() { 
-        const l = document.getElementById('loadingSpinner'); 
-        const g = document.getElementById('productsGrid'); 
-        const e = document.getElementById('emptyState'); 
-        
+    showEmptyState() {
+        const l = document.getElementById('loadingSpinner');
+        const g = document.getElementById('productsGrid');
+        const e = document.getElementById('emptyState');
+
         // Hide loading spinner
         if (l) l.style.display = 'none';
-        
+
         // Hide products grid completely
         if (g) {
             g.style.display = 'none';
             g.style.visibility = 'hidden';
             g.innerHTML = ''; // Clear any existing content
         }
-        
+
         // Show empty state
         if (e) {
             e.style.display = 'block';
             e.style.visibility = 'visible';
         }
-        
-        this.updateResultsCount(); 
-        
+
+        this.updateResultsCount();
+
         // Hide pagination when no products
         this.updatePagination();
-        
+
         console.log('Empty state shown - no search results match filters');
     }
 
@@ -922,13 +921,13 @@ class SearchResultsManager {
 
     goToPage(page) { if (page < 0 || page >= this.totalPages) return; this.currentPage = page; this.loadResults(); }
 
-    updateResultsCount() { 
-        const el = document.getElementById('resultsCount'); 
-        if (!el) return; 
-        
+    updateResultsCount() {
+        const el = document.getElementById('resultsCount');
+        if (!el) return;
+
         // Use totalElements for consistency with pagination
-        const n = this.totalElements || 0; 
-        el.textContent = `Hiển thị ${n} sản phẩm`; 
+        const n = this.totalElements || 0;
+        el.textContent = `Hiển thị ${n} sản phẩm`;
         console.log(`Updated search results count: ${n} total products`);
     }
 
