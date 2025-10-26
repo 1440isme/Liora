@@ -1045,6 +1045,8 @@
     <!-- Include Similar Products Section -->
     <div th:replace="user/products/fragments/_similar-products :: similarProductsSection"></div>
 
+    <!-- Include Recently Viewed Section -->
+    <div th:replace="user/products/fragments/_recently-viewed-homepage :: recentlyViewedHomepageSection"></div>
 
     <!-- Footer -->
     <div th:replace="~{user/layout/user-footer :: footer}"></div>
@@ -1056,6 +1058,7 @@
     <script th:src="@{/user/js/main.js}"></script>
     <script th:src="@{/user/js/products.js}"></script>
     <script th:src="@{/user/js/product-detail.js}"></script>
+    <script th:src="@{/user/js/recently-viewed-manager.js}"></script>
 
     <script>
         // Gallery Functions with Debug
@@ -1339,6 +1342,46 @@
         }
 
         // Initialize product detail page with detailed debugging
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔍 [DEBUG] Product detail page loaded');
+            
+            // Initialize RecentlyViewedManager
+            if (!window.recentlyViewedManager) {
+                console.log('🔍 [DEBUG] Initializing RecentlyViewedManager...');
+                window.recentlyViewedManager = new RecentlyViewedManager();
+            }
+            
+            // Track product view FIRST (before rendering)
+            const productId = /*[[${product.productId}]]*/ null;
+            const productName = /*[[${product.name}]]*/ '';
+            const productPrice = /*[[${product.price}]]*/ 0;
+            const mainImageUrl = /*[[${product.mainImageUrl}]]*/ '';
+            
+            console.log('🔍 [DEBUG] Product data:', { productId, productName, productPrice, mainImageUrl });
+            
+            if (productId && window.recentlyViewedManager) {
+                console.log('🔍 [DEBUG] Tracking product view FIRST...');
+                
+                const productData = {
+                    name: productName,
+                    price: productPrice,
+                    mainImageUrl: mainImageUrl
+                };
+                
+                window.recentlyViewedManager.trackProductView(productId, productData);
+            } else {
+                console.warn('⚠️ [WARNING] Cannot track product view:', { 
+                    productId, 
+                    hasManager: !!window.recentlyViewedManager 
+                });
+            }
+            
+            // Render recently viewed products AFTER tracking
+            if (window.recentlyViewedManager) {
+                console.log('🔍 [DEBUG] Rendering recently viewed products AFTER tracking...');
+                window.recentlyViewedManager.renderRecentlyViewed('recentlyViewedGrid', 6);
+            }
+        });
         document.addEventListener('DOMContentLoaded', function () {
             console.log('=== PRODUCT DETAIL PAGE DEBUG START ===');
             console.log('Product detail page loaded');
@@ -2024,6 +2067,41 @@
                     popup.classList.remove('show');
                 });
             }
+        });
+
+        // Track product view for recently viewed
+        document.addEventListener('DOMContentLoaded', function() {
+            try {
+                const productId = document.getElementById('productId')?.value;
+                if (productId && window.recentlyViewedManager) {
+                    console.log('🔍 [DEBUG] Tracking product view for productId:', productId);
+                    window.recentlyViewedManager.trackProductView(productId);
+                }
+            } catch (error) {
+                console.error('❌ [ERROR] Error tracking product view:', error);
+            }
+            
+            // Initialize recently viewed section
+            function initRecentlyViewed() {
+                if (window.recentlyViewedManager) {
+                    console.log('🔍 [DEBUG] Initializing recently viewed section...');
+                    // Render recently viewed section
+                    window.recentlyViewedManager.renderRecentlyViewed('recentlyViewedGrid', 6);
+                    
+                    // Setup auto-refresh every 30 seconds
+                    setInterval(() => {
+                        if (window.recentlyViewedManager) {
+                            window.recentlyViewedManager.renderRecentlyViewed('recentlyViewedGrid', 6);
+                        }
+                    }, 30000);
+                } else {
+                    console.log('🔍 [DEBUG] Waiting for recentlyViewedManager...');
+                    // Retry after 100ms
+                    setTimeout(initRecentlyViewed, 100);
+                }
+            }
+            
+            initRecentlyViewed();
         });
     </script>
 

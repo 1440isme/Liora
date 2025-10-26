@@ -148,10 +148,12 @@ class SimilarProductsManager {
         return `
             <div class="product-card ${statusClass}" data-product-id="${product.productId}">
                 <div class="position-relative">
-                    <img src="${product.mainImageUrl || '/user/img/default-product.jpg'}" 
-                         class="card-img-top" 
-                         alt="${product.name}"
-                         onerror="this.src='/user/img/default-product.jpg'">
+                    <a href="/product/${product.productId}?from=similar&productId=${this.productId}" class="product-image-link">
+                        <img src="${product.mainImageUrl || '/user/img/default-product.jpg'}" 
+                             class="card-img-top" 
+                             alt="${product.name}"
+                             onerror="this.src='/user/img/default-product.jpg'">
+                    </a>
                     
                     <div class="product-actions">
                         <button class="quick-view-btn" 
