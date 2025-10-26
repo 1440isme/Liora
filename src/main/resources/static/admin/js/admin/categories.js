@@ -115,6 +115,28 @@ class CategoriesManager {
             }
         });
 
+        // Double click to toggle expand/collapse
+        document.addEventListener('dblclick', (e) => {
+            // Tránh toggle khi double click vào các nút action hoặc link
+            if (e.target.closest('.btn-group') || e.target.closest('a') || e.target.closest('.expand-btn')) {
+                return;
+            }
+
+            // Kiểm tra xem có phải double click vào hàng danh mục không
+            const categoryRow = e.target.closest('.category-row');
+            if (categoryRow) {
+                const categoryId = categoryRow.dataset.categoryId;
+                const expandBtn = categoryRow.querySelector('.expand-btn');
+                
+                // Chỉ toggle nếu danh mục có nút expand (có con)
+                if (expandBtn) {
+                    this.toggleCategory(categoryId);
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+            }
+        });
+
         // Handle isParent checkbox change
         const isParentCheckbox = document.getElementById('isParent');
         if (isParentCheckbox) {
@@ -242,9 +264,11 @@ class CategoriesManager {
         const treeSymbol = getTreeSymbol(level, isLast);
         const fullPrefix = parentPrefix + treeSymbol;
         const hasChildren = category.children && category.children.length > 0;
+        // Đánh dấu các hàng con (level > 0) là collapsed ban đầu
+        const collapsedClass = level > 0 ? 'collapsed' : '';
         
         return `
-            <tr class="category-row" data-level="${level}" data-category-id="${category.categoryId}">
+            <tr class="category-row ${collapsedClass}" data-level="${level}" data-category-id="${category.categoryId}">
                 <td>
                     <div class="d-flex align-items-center">
                         <span class="tree-prefix me-2 text-muted" style="font-family: monospace; font-size: 14px;">${fullPrefix}</span>
@@ -256,7 +280,11 @@ class CategoriesManager {
                                 '<span class="me-3"></span>'
                             }
                             <i class="mdi ${category.isParent ? 'mdi-folder' : 'mdi-file-document'} me-2 text-primary"></i>
-                            <strong class="${level > 0 ? 'text-secondary' : ''}">${category.name}</strong>
+                            <strong class="category-name ${level > 0 ? 'text-secondary' : ''}" 
+                                    style="cursor: ${hasChildren ? 'pointer' : 'default'}; user-select: none;"
+                                    data-category-id="${category.categoryId}"
+                                    data-has-children="${hasChildren}"
+                                    title="${hasChildren ? 'Double click để mở/đóng' : ''}">${category.name}</strong>
                         </div>
                     </div>
                 </td>
@@ -1336,26 +1364,49 @@ class CategoriesManager {
     // Expand/Collapse functions
     expandAll() {
         console.log('Expanding all categories...');
-        const expandButtons = document.querySelectorAll('.expand-btn');
-        expandButtons.forEach(btn => {
-            const categoryId = btn.dataset.categoryId;
-            const categoryRow = document.querySelector(`tr[data-category-id="${categoryId}"]`);
-            if (categoryRow && !btn.classList.contains('expanded')) {
-                this.toggleCategory(categoryId, true);
+        // Xóa class collapsed từ tất cả các hàng con
+        const childRows = document.querySelectorAll('.category-row[data-level]');
+        childRows.forEach(row => {
+            const level = parseInt(row.dataset.level);
+            if (level > 0) {
+                row.classList.remove('collapsed');
             }
         });
+        
+        // Đánh dấu tất cả các nút expand là expanded
+        const expandButtons = document.querySelectorAll('.expand-btn');
+        expandButtons.forEach(btn => {
+            btn.classList.add('expanded');
+            const expandIcon = btn.querySelector('.expand-icon');
+            if (expandIcon) {
+                expandIcon.style.transform = 'rotate(90deg)';
+            }
+        });
+        
         this.showNotification('Đã mở rộng tất cả danh mục', 'success');
     }
 
     collapseAll() {
         console.log('Collapsing all categories...');
-        const expandButtons = document.querySelectorAll('.expand-btn');
-        expandButtons.forEach(btn => {
-            const categoryId = btn.dataset.categoryId;
-            if (btn.classList.contains('expanded')) {
-                this.toggleCategory(categoryId, false);
+        // Thu gọn tất cả các hàng con (level > 0)
+        const childRows = document.querySelectorAll('.category-row[data-level]');
+        childRows.forEach(row => {
+            const level = parseInt(row.dataset.level);
+            if (level > 0) {
+                row.classList.add('collapsed');
             }
         });
+        
+        // Reset tất cả các nút expand về trạng thái chưa expanded
+        const expandButtons = document.querySelectorAll('.expand-btn');
+        expandButtons.forEach(btn => {
+            btn.classList.remove('expanded');
+            const expandIcon = btn.querySelector('.expand-icon');
+            if (expandIcon) {
+                expandIcon.style.transform = 'rotate(0deg)';
+            }
+        });
+        
         this.showNotification('Đã thu gọn tất cả danh mục', 'success');
     }
 
@@ -1390,11 +1441,11 @@ class CategoriesManager {
         
         while (nextRow && nextRow.classList.contains('category-row')) {
             const nextLevel = parseInt(nextRow.dataset.level);
+            // Dừng khi gặp hàng cùng level hoặc level cao hơn
             if (nextLevel <= level) break;
             
-            if (nextLevel === level + 1) {
-                nextRow.classList.remove('collapsed');
-            }
+            // Hiển thị tất cả các hàng con (level > level hiện tại)
+            nextRow.classList.remove('collapsed');
             nextRow = nextRow.nextElementSibling;
         }
     }
@@ -1408,9 +1459,25 @@ class CategoriesManager {
         
         while (nextRow && nextRow.classList.contains('category-row')) {
             const nextLevel = parseInt(nextRow.dataset.level);
+            // Dừng khi gặp hàng cùng level hoặc level cao hơn
             if (nextLevel <= level) break;
             
+            // Ẩn tất cả các hàng con
             nextRow.classList.add('collapsed');
+            
+            // Nếu hàng này có nút expand và đang expanded, thu gọn nó trước
+            const expandBtn = nextRow.querySelector('.expand-btn');
+            if (expandBtn && expandBtn.classList.contains('expanded')) {
+                const childCategoryId = expandBtn.dataset.categoryId;
+                // Đệ quy thu gọn các con của nó
+                this.hideCategoryChildren(childCategoryId);
+                expandBtn.classList.remove('expanded');
+                const expandIcon = expandBtn.querySelector('.expand-icon');
+                if (expandIcon) {
+                    expandIcon.style.transform = 'rotate(0deg)';
+                }
+            }
+            
             nextRow = nextRow.nextElementSibling;
         }
     }

@@ -29,7 +29,9 @@ class ProductFormManager {
                 data.result.forEach(category => {
                     const option = document.createElement('option');
                     option.value = category.categoryId;
-                    option.textContent = category.name;
+                    // Hiển thị rõ ràng nếu category inactive
+                    option.textContent = category.name + (category.isActive === false ? ' (Tạm dừng)' : '');
+                    option.style.color = category.isActive === false ? '#999' : '';
                     categorySelect.appendChild(option);
                 });
             }
@@ -51,7 +53,9 @@ class ProductFormManager {
                 data.result.forEach(brand => {
                     const option = document.createElement('option');
                     option.value = brand.brandId;
-                    option.textContent = brand.name;
+                    // Hiển thị rõ ràng nếu brand inactive
+                    option.textContent = brand.name + (brand.isActive === false ? ' (Tạm dừng)' : '');
+                    option.style.color = brand.isActive === false ? '#999' : '';
                     brandSelect.appendChild(option);
                 });
             }
