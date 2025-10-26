@@ -264,7 +264,8 @@ class FeaturedCategoryProductsManager {
             grid.style.display = 'none';
             grid.innerHTML = '';
             if (emptyState) {
-                emptyState.style.display = 'block';
+                // Gọi showEmptyState để hiển thị đúng UI với nút xóa filter nếu có
+                this.showEmptyState('Không tìm thấy sản phẩm');
             }
             return;
         }
@@ -654,12 +655,88 @@ class FeaturedCategoryProductsManager {
         if (grid) grid.style.display = 'none';
         if (emptyState) {
             emptyState.style.display = 'block';
-            emptyState.innerHTML = `
-                <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
-                <h4>Không tìm thấy sản phẩm</h4>
-                <p class="text-muted">${message}</p>
-            `;
+            
+            // Kiểm tra xem có filter nào đang được áp dụng không
+            const hasFilters = this.hasActiveFilters();
+            
+            if (hasFilters) {
+                // Hiển thị với nút "Xóa bộ lọc"
+                emptyState.innerHTML = `
+                    <i class="fas fa-filter fa-3x text-muted mb-3"></i>
+                    <h4>Không tìm thấy sản phẩm phù hợp</h4>
+                    <p class="text-muted">Thử thay đổi bộ lọc hoặc chọn khoảng giá khác</p>
+                    <button class="btn btn-outline-primary" onclick="window.featuredCategoryProductsManager.clearFilters()">
+                        <i class="fas fa-times me-2"></i>Xóa bộ lọc
+                    </button>
+                `;
+            } else {
+                // Hiển thị bình thường không có nút
+                emptyState.innerHTML = `
+                    <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+                    <h4>Không tìm thấy sản phẩm</h4>
+                    <p class="text-muted">${message}</p>
+                `;
+            }
         }
+    }
+
+    // Kiểm tra xem có filter nào đang được áp dụng không
+    hasActiveFilters() {
+        return !!(
+            this.currentFilters.minPrice ||
+            this.currentFilters.maxPrice ||
+            (this.currentFilters.brands && this.currentFilters.brands.length > 0) ||
+            (this.currentFilters.categories && this.currentFilters.categories.length > 0) ||
+            (this.currentFilters.ratings && this.currentFilters.ratings.length > 0)
+        );
+    }
+
+    // Xóa tất cả các filter
+    clearFilters() {
+        // Reset filters
+        this.currentFilters = {
+            search: '',
+            minPrice: null,
+            maxPrice: null,
+            brands: [],
+            categories: [],
+            ratings: [],
+            sort: ''
+        };
+
+        // Reset UI elements
+        const priceRangeSelect = document.getElementById('priceRange');
+        if (priceRangeSelect) {
+            priceRangeSelect.value = '';
+        }
+
+        // Uncheck all brand checkboxes
+        const brandCheckboxes = document.querySelectorAll('#brandFilters input[type="checkbox"]');
+        brandCheckboxes.forEach(checkbox => {
+            checkbox.checked = false;
+        });
+
+        // Uncheck all category checkboxes
+        const categoryCheckboxes = document.querySelectorAll('#categoryFilters input[type="checkbox"]');
+        categoryCheckboxes.forEach(checkbox => {
+            checkbox.checked = false;
+        });
+
+        // Uncheck all rating checkboxes
+        const ratingCheckboxes = document.querySelectorAll('#ratingFilters input[type="checkbox"]');
+        ratingCheckboxes.forEach(checkbox => {
+            checkbox.checked = false;
+        });
+
+        // Reset sort
+        const sortSelect = document.getElementById('sortSelect');
+        if (sortSelect) {
+            sortSelect.value = '';
+        }
+
+        // Reset page and reload products
+        this.currentPage = 0;
+        this.loadProducts();
     }
 
     updateResultsInfo() {
