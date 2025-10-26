@@ -26,7 +26,9 @@ import vn.liora.service.IImageService;
 import vn.liora.service.IProductService;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import org.springframework.format.annotation.DateTimeFormat;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -134,6 +136,9 @@ public class AdminProductController {
             @RequestParam(required = false) BigDecimal maxPrice,
             @RequestParam(required = false) Integer minStock,
             @RequestParam(required = false) Integer maxStock,
+            @RequestParam(required = false) String dateFilter,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             @RequestParam(required = false) String sortBy,
             Pageable pageable) {
         ApiResponse<Page<ProductResponse>> response = new ApiResponse<>();
@@ -228,6 +233,54 @@ public class AdminProductController {
             if (categoryId != null) {
                 filteredProducts = filteredProducts.stream()
                     .filter(product -> product.getCategory().getCategoryId().equals(categoryId))
+                    .toList();
+            }
+
+            // Lọc theo thời gian tạo (createdDate)
+            if (dateFilter != null && !dateFilter.isEmpty() || startDate != null || endDate != null) {
+                filteredProducts = filteredProducts.stream()
+                    .filter(product -> {
+                        if (product.getCreatedDate() == null) {
+                            return false;
+                        }
+                        
+                        LocalDate productDate = product.getCreatedDate().toLocalDate();
+                        LocalDate filterStartDate = startDate;
+                        LocalDate filterEndDate = endDate;
+                        
+                        // Nếu có dateFilter preset nhưng chưa có startDate/endDate, tính toán từ preset
+                        if (dateFilter != null && !dateFilter.isEmpty() && (filterStartDate == null || filterEndDate == null)) {
+                            LocalDate today = LocalDate.now();
+                            switch (dateFilter) {
+                                case "TODAY":
+                                    filterStartDate = today;
+                                    filterEndDate = today;
+                                    break;
+                                case "THIS_WEEK":
+                                    filterStartDate = today.minusDays(today.getDayOfWeek().getValue() - 1);
+                                    filterEndDate = today;
+                                    break;
+                                case "THIS_MONTH":
+                                    filterStartDate = today.withDayOfMonth(1);
+                                    filterEndDate = today;
+                                    break;
+                                case "THIS_YEAR":
+                                    filterStartDate = today.withDayOfYear(1);
+                                    filterEndDate = today;
+                                    break;
+                            }
+                        }
+                        
+                        // Filter logic
+                        if (filterStartDate != null && productDate.isBefore(filterStartDate)) {
+                            return false;
+                        }
+                        if (filterEndDate != null && productDate.isAfter(filterEndDate)) {
+                            return false;
+                        }
+                        
+                        return true;
+                    })
                     .toList();
             }
 

@@ -16,7 +16,7 @@
                         <div class="btn-wrapper">
                             <a href="/admin/products/add" class="btn btn-primary text-white me-2"><i
                                     class="mdi mdi-plus"></i> Thêm sản phẩm</a>
-                            <button type="button" class="btn btn-otline-dark"><i class="mdi mdi-file-excel"></i> Xuất
+                            <button type="button" id="exportExcelBtn" class="btn btn-otline-dark"><i class="mdi mdi-file-excel"></i> Xuất
                                 Excel</button>
                         </div>
                     </div>
@@ -72,6 +72,30 @@
                                                 class="mdi mdi-close"></i> Xóa bộ lọc</a>
                                     </div>
                                 </div>
+                                <div class="row mt-3">
+                                    <div class="col-md-3">
+                                        <label for="dateFilter" class="form-label">Thời gian tạo</label>
+                                        <select class="form-select" id="dateFilter" name="dateFilter">
+                                            <option value="">Tất cả</option>
+                                            <option value="TODAY">Hôm nay</option>
+                                            <option value="THIS_WEEK">Tuần này</option>
+                                            <option value="THIS_MONTH">Tháng này</option>
+                                            <option value="THIS_YEAR">Năm nay</option>
+                                            <option value="CUSTOM">Tùy chỉnh</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-2" id="startDateContainer" style="display: none;">
+                                        <label for="startDate" class="form-label">Từ ngày</label>
+                                        <input type="date" class="form-control" id="startDate" name="startDate">
+                                    </div>
+                                    <div class="col-md-2" id="endDateContainer" style="display: none;">
+                                        <label for="endDate" class="form-label">Đến ngày</label>
+                                        <input type="date" class="form-control" id="endDate" name="endDate">
+                                    </div>
+                                    <div class="col-md-2 d-flex align-items-end">
+                                        <button type="submit" class="btn btn-primary"><i class="mdi mdi-filter"></i> Áp dụng</button>
+                                    </div>
+                                </div>
                             </form>
                         </div>
                     </div>
@@ -90,6 +114,72 @@
 
     <div th:replace="admin/fragments/admin-scripts :: admin-scripts"></div>
     <script src="/admin/js/admin/products/product-table.js"></script>
+    <script>
+        // Date filter handling
+        document.addEventListener('DOMContentLoaded', function() {
+            const dateFilter = document.getElementById('dateFilter');
+            const startDateContainer = document.getElementById('startDateContainer');
+            const endDateContainer = document.getElementById('endDateContainer');
+            const startDate = document.getElementById('startDate');
+            const endDate = document.getElementById('endDate');
+            
+            // Show/hide custom date inputs
+            dateFilter.addEventListener('change', function() {
+                if (this.value === 'CUSTOM') {
+                    startDateContainer.style.display = 'block';
+                    endDateContainer.style.display = 'block';
+                } else {
+                    startDateContainer.style.display = 'none';
+                    endDateContainer.style.display = 'none';
+                    
+                    // Auto-fill dates for presets
+                    const today = new Date();
+                    let start = new Date();
+                    let end = new Date();
+                    
+                    switch(this.value) {
+                        case 'TODAY':
+                            start.setHours(0, 0, 0, 0);
+                            end.setHours(23, 59, 59, 999);
+                            break;
+                        case 'THIS_WEEK':
+                            const dayOfWeek = today.getDay();
+                            const diff = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1); // Monday
+                            start = new Date(today.setDate(diff));
+                            start.setHours(0, 0, 0, 0);
+                            end = new Date();
+                            end.setHours(23, 59, 59, 999);
+                            break;
+                        case 'THIS_MONTH':
+                            start = new Date(today.getFullYear(), today.getMonth(), 1);
+                            start.setHours(0, 0, 0, 0);
+                            end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+                            end.setHours(23, 59, 59, 999);
+                            break;
+                        case 'THIS_YEAR':
+                            start = new Date(today.getFullYear(), 0, 1);
+                            start.setHours(0, 0, 0, 0);
+                            end = new Date(today.getFullYear(), 11, 31);
+                            end.setHours(23, 59, 59, 999);
+                            break;
+                        default:
+                            startDate.value = '';
+                            endDate.value = '';
+                            return;
+                    }
+                    
+                    // Format dates for input
+                    startDate.value = start.toISOString().split('T')[0];
+                    endDate.value = end.toISOString().split('T')[0];
+                }
+            });
+            
+            // Trigger change on load if value exists
+            if (dateFilter.value) {
+                dateFilter.dispatchEvent(new Event('change'));
+            }
+        });
+    </script>
 </body>
 
 </html>

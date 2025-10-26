@@ -166,17 +166,24 @@ public class BrandServiceImpl implements IBrandService {
     }
 
     @Override
+    @org.springframework.transaction.annotation.Transactional
     public void activateBrand(Long id) {
         Brand brand = brandRepository.findById(id)
             .orElseThrow(() -> new AppException(ErrorCode.BRAND_NOT_FOUND));
         brand.setIsActive(true);
         brandRepository.save(brand);
 
+        // Chỉ activate products khi cả brand và category đều active
         List<Product> products = productRepository.findByBrandBrandId(id);
         for (Product product : products) {
-            product.setIsActive(true);
-            product.setUpdatedDate(LocalDateTime.now());
-            productRepository.save(product);
+            // Kiểm tra category có active không
+            if (product.getCategory() != null 
+                    && product.getCategory().getIsActive() != null 
+                    && product.getCategory().getIsActive()) {
+                product.setIsActive(true);
+                product.setUpdatedDate(LocalDateTime.now());
+                productRepository.save(product);
+            }
         }
     }
 }

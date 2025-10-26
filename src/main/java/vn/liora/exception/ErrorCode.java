@@ -63,6 +63,8 @@ public enum ErrorCode {
         PRODUCT_STOCK_INVALID(400, "Số lượng sản phẩm không thể âm", HttpStatus.BAD_REQUEST),
         PRODUCT_BRAND_REQUIRED(400, "Thương hiệu sản phẩm là bắt buộc", HttpStatus.BAD_REQUEST),
         PRODUCT_CATEGORY_REQUIRED(400, "Danh mục sản phẩm là bắt buộc", HttpStatus.BAD_REQUEST),
+        PRODUCT_CATEGORY_INACTIVE(400, "Không thể kích hoạt sản phẩm vì danh mục đang tạm dừng hoạt động", HttpStatus.BAD_REQUEST),
+        PRODUCT_BRAND_INACTIVE(400, "Không thể kích hoạt sản phẩm vì thương hiệu đang tạm dừng hoạt động", HttpStatus.BAD_REQUEST),
         PRODUCT_RATING_INVALID(400, "Đánh giá sản phẩm phải từ 0.0 đến 5.0", HttpStatus.BAD_REQUEST),
         PRODUCT_STOCK_TOO_HIGH(400, "Số lượng sản phẩm không được vượt quá 999,999", HttpStatus.BAD_REQUEST),
         PRODUCT_SOLD_COUNT_INVALID(400, "Số lượng đã bán không thể âm", HttpStatus.BAD_REQUEST),

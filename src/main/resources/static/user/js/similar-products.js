@@ -14,6 +14,7 @@ class SimilarProductsManager {
         this.productsPerPage = 4;
         this.allProducts = [];
         this.isAddingToCart = false;
+        this.ratingLoaded = false;
 
         this.init();
     }
@@ -122,6 +123,22 @@ class SimilarProductsManager {
 
         const productsHTML = products.map(product => this.createProductCard(product)).join('');
         this.gridEl.innerHTML = productsHTML;
+
+        // Load rating data sau khi render xong (chỉ load một lần)
+        if (!this.ratingLoaded) {
+            this.ratingLoaded = true;
+            setTimeout(() => {
+                console.log('🔍 [DEBUG] Loading rating data cho similar products (one time only)...');
+                
+                if (window.ProductRatingUtils && typeof window.ProductRatingUtils.loadAndUpdateProductCards === 'function') {
+                    const productCards = this.gridEl.querySelectorAll('.product-card');
+                    console.log('🔍 [DEBUG] Found', productCards.length, 'product cards to update');
+                    window.ProductRatingUtils.loadAndUpdateProductCards(productCards);
+                } else {
+                    console.warn('⚠️ [WARNING] ProductRatingUtils not found!');
+                }
+            }, 500);
+        }
     }
 
     createProductCard(product) {
@@ -129,12 +146,14 @@ class SimilarProductsManager {
         const statusClass = this.getProductStatusClass(productStatus);
 
         return `
-            <div class="product-card ${statusClass}">
+            <div class="product-card ${statusClass}" data-product-id="${product.productId}">
                 <div class="position-relative">
-                    <img src="${product.mainImageUrl || '/user/img/default-product.jpg'}" 
-                         class="card-img-top" 
-                         alt="${product.name}"
-                         onerror="this.src='/user/img/default-product.jpg'">
+                    <a href="/product/${product.productId}?from=similar&productId=${this.productId}" class="product-image-link">
+                        <img src="${product.mainImageUrl || '/user/img/default-product.jpg'}" 
+                             class="card-img-top" 
+                             alt="${product.name}"
+                             onerror="this.src='/user/img/default-product.jpg'">
+                    </a>
                     
                     <div class="product-actions">
                         <button class="quick-view-btn" 
@@ -160,12 +179,26 @@ class SimilarProductsManager {
                     
                     <div class="rating">
                         <span class="stars">
-                            ${this.renderStars(product.averageRating || 0, product.ratingCount || 0)}
+                            ${this.renderStars(product.averageRating || 0, product.reviewCount || product.ratingCount || 0)}
                         </span>
-                        <span class="rating-count">(${product.ratingCount || 0})</span>
+                        <span class="rating-count">(${product.reviewCount || product.ratingCount || 0})</span>
                     </div>
                     
                     <div class="mt-auto">
+                        <!-- Sales Progress Bar -->
+                        <div class="sales-progress mb-3">
+                            <div class="sales-info d-flex justify-content-between align-items-center mb-1">
+                                <span class="sales-label">Đã bán</span>
+                                <span class="sales-count">${this.formatNumber(product.soldCount || 0)}</span>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar" 
+                                     style="width: ${this.calculateSalesProgress(product.soldCount || 0)}%"
+                                     role="progressbar">
+                                </div>
+                            </div>
+                        </div>
+                        
                         <div class="price-section d-flex justify-content-between align-items-center">
                             <span class="current-price">
                                 ${this.formatPrice(product.price)}
@@ -326,9 +359,9 @@ class SimilarProductsManager {
                                     <!-- Rating -->
                                     <div class="rating mb-3">
                                         <span class="stars">
-                                            ${this.generateStarsForModal(product.averageRating || 0, product.ratingCount || 0)}
+                                            ${this.generateStarsForModal(product.averageRating || 0, product.reviewCount || product.ratingCount || 0)}
                                         </span>
-                                        <span class="review-count ms-2">(${product.ratingCount || 0} đánh giá)</span>
+                                        <span class="review-count ms-2">(${product.reviewCount || product.ratingCount || 0} đánh giá)</span>
                                     </div>
                                     
                                     <!-- Sales Progress -->
@@ -1063,4 +1096,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
         }
     }, 500); // Wait 500ms for app to be ready
+
+    // Add utility functions for progress bar
+    window.similarProductsManager.calculateSalesProgress = function(soldCount) {
+        // Define different thresholds for progress calculation - optimized for better visual appeal
+        const thresholds = [
+            { max: 50, percentage: 30 },     // 0-50: 0-30% (tăng từ 20%)
+            { max: 100, percentage: 40 },    // 50-100: 30-40%
+            { max: 500, percentage: 55 },   // 100-500: 40-55%
+            { max: 1000, percentage: 70 },   // 500-1000: 55-70%
+            { max: 5000, percentage: 85 },   // 1000-5000: 70-85%
+            { max: 10000, percentage: 95 },  // 5000-10000: 85-95%
+            { max: Infinity, percentage: 100 } // >10000: 95-100%
+        ];
+
+        for (const threshold of thresholds) {
+            if (soldCount <= threshold.max) {
+                // Get previous threshold percentage
+                const prevThreshold = thresholds[thresholds.indexOf(threshold) - 1];
+                const basePercentage = prevThreshold ? prevThreshold.percentage : 0;
+
+                // Calculate progress within this threshold
+                const prevMax = prevThreshold ? prevThreshold.max : 0;
+                const range = threshold.max - prevMax;
+                const progress = ((soldCount - prevMax) / range) * (threshold.percentage - basePercentage);
+
+                return Math.min(100, basePercentage + progress);
+            }
+        }
+
+        return 100; // For very high sales
+    };
+
+    window.similarProductsManager.formatNumber = function(number) {
+        return new Intl.NumberFormat('vi-VN').format(number);
+    };
 });
