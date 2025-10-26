@@ -82,6 +82,12 @@ if (typeof AuthManager === 'undefined') {
                     this.resetForm();
                 });
                 authModal.addEventListener('hidden.bs.modal', () => this.resetForm());
+
+                // Thêm event listener cho nút gửi OTP
+                const sendOtpBtn = document.getElementById('sendOtpBtn');
+                if (sendOtpBtn) {
+                    sendOtpBtn.addEventListener('click', () => this.handleSendOtp());
+                }
             }
         }
 
@@ -94,12 +100,15 @@ if (typeof AuthManager === 'undefined') {
             const emailInput = document.getElementById('authEmail');
             const firstNameInput = document.getElementById('authFirstName');
             const lastNameInput = document.getElementById('authLastName');
+            const otpCodeInput = document.getElementById('otpCode');
+            const otpField = document.getElementById('otpField');
 
             const username = usernameInput ? usernameInput.value.trim() : '';
             const password = passwordInput ? passwordInput.value : '';
             const email = emailInput ? emailInput.value.trim() : '';
             const firstname = firstNameInput ? firstNameInput.value.trim() : '';
             const lastname = lastNameInput ? lastNameInput.value.trim() : '';
+            const otpCode = otpCodeInput ? otpCodeInput.value.trim() : '';
 
             // Basic validation
             if (!username || !password) {
@@ -121,13 +130,31 @@ if (typeof AuthManager === 'undefined') {
                     this.showError('Vui lòng nhập họ và tên');
                     return;
                 }
+
+                // Kiểm tra OTP nếu đang ở bước xác thực
+                if (otpField && otpField.style.display !== 'none') {
+                    if (!otpCode || otpCode.length !== 6) {
+                        this.showError('Vui lòng nhập mã xác thực 6 chữ số');
+                        return;
+                    }
+                }
             }
 
             try {
                 this.setLoadingState(submitBtn, true);
 
                 if (this.isSignUp) {
-                    await this.signUp({ username, password, email, firstname, lastname });
+                    // Kiểm tra xem đã gửi OTP chưa
+                    if (otpField && otpField.style.display !== 'none') {
+                        // Bước 2: Xác thực OTP và đăng ký
+                        await this.signUpWithOtp({ username, password, email, firstname, lastname, otpCode });
+                    } else {
+                        // Bước 1: Gửi OTP
+                        await this.sendRegistrationOtp(email);
+                        this.showOtpField();
+                        this.showSuccess('Mã xác thực đã được gửi đến email của bạn. Vui lòng kiểm tra và nhập mã để hoàn tất đăng ký.');
+                        return;
+                    }
                 } else {
                     await this.signIn(username, password);
                 }
@@ -165,62 +192,158 @@ if (typeof AuthManager === 'undefined') {
             }
         }
 
-        async signUp({ username, password, email, firstname, lastname }) {
-            const payload = {
-                username,
-                password,
-                email,
-                phone: null,
-                firstname,
-                lastname,
-                dob: null,
-                gender: null,
-                active: true,
-                avatar: null
-            };
-
-            const res = await fetch('/users', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            if (!res.ok) {
-                let msg = 'Không thể tạo tài khoản';
-                try { const err = await res.json(); msg = err.message || msg; } catch (_) { }
-                throw new Error(msg);
-            }
-
-            // Sử dụng token từ response đăng ký thay vì gọi signIn
-            const data = await res.json();
-            const result = data?.result;
-            const token = result?.token;
-
-            if (!token) {
-                throw new Error('Không nhận được token sau khi đăng ký');
-            }
-
-            // Lưu token và thông tin user
-            localStorage.setItem('access_token', token);
+        async sendRegistrationOtp(email) {
             try {
-                document.cookie = `access_token=${token}; path=/; SameSite=Lax`;
-            } catch (_) { }
-            localStorage.setItem('authenticated', 'true');
+                const res = await fetch('/users/send-registration-otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email })
+                });
 
-            // Decode token để lấy thông tin user
-            const tokenPayload = this.parseJwt(token);
-            const roles = this.extractRolesFromPayload(tokenPayload);
-            const displayName = tokenPayload?.name || tokenPayload?.fullName || username;
-            const isAdmin = roles.includes('ADMIN') || roles.includes('ROLE_ADMIN');
+                if (!res.ok) {
+                    let msg = 'Không thể gửi mã OTP';
+                    try {
+                        const err = await res.json();
+                        // Xử lý các mã lỗi cụ thể
+                        if (err.code === 1010) {
+                            msg = 'Email đã được sử dụng cho tài khoản khác';
+                        } else if (err.code === 1018) {
+                            msg = 'Bạn đã gửi quá nhiều mã OTP. Vui lòng đợi 5 phút';
+                        } else if (err.code === 1001) {
+                            msg = 'Email không hợp lệ';
+                        } else {
+                            msg = err.message || 'Không thể gửi mã OTP';
+                        }
+                    } catch (parseError) {
+                        console.error('Error parsing response:', parseError);
+                        msg = `Lỗi kết nối: ${res.status}`;
+                    }
+                    throw new Error(msg);
+                }
 
-            this.currentUser = {
-                username: result?.user?.username || username,
-                displayName,
-                roles,
-                isAdmin,
-                token
-            };
+                const data = await res.json();
+                return data;
+            } catch (error) {
+                console.error('sendRegistrationOtp error:', error);
+                throw error;
+            }
+        }
 
-            return this.currentUser;
+        async verifyRegistrationOtp(email, otpCode) {
+            try {
+                const res = await fetch('/users/verify-registration-otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, otpCode })
+                });
+
+                if (!res.ok) {
+                    let msg = 'Mã OTP không hợp lệ';
+                    try {
+                        const err = await res.json();
+                        // Xử lý các mã lỗi cụ thể
+                        if (err.code === 1017) {
+                            msg = 'Mã OTP không đúng hoặc đã hết hạn';
+                        } else if (err.code === 1003) {
+                            msg = 'Email không tồn tại trong hệ thống';
+                        } else {
+                            msg = err.message || 'Mã OTP không hợp lệ';
+                        }
+                    } catch (parseError) {
+                        console.error('Error parsing response:', parseError);
+                        msg = `Lỗi kết nối: ${res.status}`;
+                    }
+                    throw new Error(msg);
+                }
+
+                const data = await res.json();
+                return data;
+            } catch (error) {
+                console.error('verifyRegistrationOtp error:', error);
+                throw error;
+            }
+        }
+
+        async signUpWithOtp({ username, password, email, firstname, lastname, otpCode }) {
+            try {
+                const payload = {
+                    username,
+                    password,
+                    email,
+                    phone: null,
+                    firstname,
+                    lastname,
+                    dob: null,
+                    gender: null,
+                    active: true,
+                    avatar: null,
+                    otpCode
+                };
+
+                const res = await fetch('/users/register-with-otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!res.ok) {
+                    let msg = 'Không thể tạo tài khoản';
+                    try {
+                        const err = await res.json();
+                        // Xử lý các mã lỗi cụ thể
+                        if (err.code === 1017) {
+                            msg = 'Mã OTP không đúng hoặc đã hết hạn';
+                        } else if (err.code === 1010) {
+                            msg = 'Email đã được sử dụng cho tài khoản khác';
+                        } else if (err.code === 1002) {
+                            msg = 'Tên đăng nhập đã tồn tại';
+                        } else if (err.code === 1001) {
+                            msg = 'Thông tin không hợp lệ';
+                        } else {
+                            msg = err.message || 'Không thể tạo tài khoản';
+                        }
+                    } catch (parseError) {
+                        console.error('Error parsing response:', parseError);
+                        msg = `Lỗi kết nối: ${res.status}`;
+                    }
+                    throw new Error(msg);
+                }
+
+                // Sử dụng token từ response đăng ký thay vì gọi signIn
+                const data = await res.json();
+                const result = data?.result;
+                const token = result?.token;
+
+                if (!token) {
+                    throw new Error('Không nhận được token sau khi đăng ký');
+                }
+
+                // Lưu token và thông tin user
+                localStorage.setItem('access_token', token);
+                try {
+                    document.cookie = `access_token=${token}; path=/; SameSite=Lax`;
+                } catch (_) { }
+                localStorage.setItem('authenticated', 'true');
+
+                // Decode token để lấy thông tin user
+                const tokenPayload = this.parseJwt(token);
+                const roles = this.extractRolesFromPayload(tokenPayload);
+                const displayName = tokenPayload?.name || tokenPayload?.fullName || username;
+                const isAdmin = roles.includes('ADMIN') || roles.includes('ROLE_ADMIN');
+
+                this.currentUser = {
+                    username: result?.user?.username || username,
+                    displayName,
+                    roles,
+                    isAdmin,
+                    token
+                };
+
+                return this.currentUser;
+            } catch (error) {
+                console.error('signUpWithOtp error:', error);
+                throw error;
+            }
         }
 
         async signIn(username, password) {
@@ -238,7 +361,20 @@ if (typeof AuthManager === 'undefined') {
                     let msg = 'Đăng nhập thất bại';
                     try {
                         const err = await response.json();
-                        msg = err.message || msg;
+                        // Xử lý các mã lỗi cụ thể
+                        if (err.code === 1001) {
+                            msg = 'Sai tên đăng nhập hoặc mật khẩu';
+                        } else if (err.code === 1003) {
+                            msg = 'Tài khoản không tồn tại';
+                        } else if (err.code === 1011) {
+                            msg = 'Tài khoản đã bị khóa';
+                        } else if (err.code === 1007) {
+                            msg = 'Chưa đăng nhập';
+                        } else if (err.code === 1015) {
+                            msg = 'Mật khẩu không đúng';
+                        } else {
+                            msg = err.message || 'Đăng nhập thất bại';
+                        }
                     } catch (_) { }
                     throw new Error(msg);
                 }
@@ -387,6 +523,7 @@ if (typeof AuthManager === 'undefined') {
             } else {
                 modalTitle.textContent = 'Welcome Back! 💕';
                 signupFields.style.display = 'none';
+                this.hideOtpField();
                 submitBtn.textContent = 'Đăng nhập';
                 toggleBtn.textContent = "Chưa có tài khoản? Đăng ký";
             }
@@ -399,8 +536,51 @@ if (typeof AuthManager === 'undefined') {
             }
 
             this.isSignUp = false;
+            this.hideOtpField();
             this.updateAuthModal();
             this.clearError();
+        }
+
+        showOtpField() {
+            const otpField = document.getElementById('otpField');
+            const submitBtn = document.getElementById('authSubmitBtn');
+            if (otpField) {
+                otpField.style.display = 'block';
+            }
+            if (submitBtn) {
+                submitBtn.textContent = 'Hoàn tất đăng ký';
+            }
+        }
+
+        hideOtpField() {
+            const otpField = document.getElementById('otpField');
+            const submitBtn = document.getElementById('authSubmitBtn');
+            if (otpField) {
+                otpField.style.display = 'none';
+            }
+            if (submitBtn) {
+                submitBtn.textContent = this.isSignUp ? 'Đăng ký' : 'Đăng nhập';
+            }
+        }
+
+        async handleSendOtp() {
+            const emailInput = document.getElementById('authEmail');
+            const sendOtpBtn = document.getElementById('sendOtpBtn');
+
+            if (!emailInput || !emailInput.value.trim()) {
+                this.showError('Vui lòng nhập email trước khi gửi mã OTP');
+                return;
+            }
+
+            try {
+                this.setLoadingState(sendOtpBtn, true);
+                await this.sendRegistrationOtp(emailInput.value.trim());
+                this.showSuccess('Mã OTP mới đã được gửi đến email của bạn');
+            } catch (error) {
+                this.showError(error.message);
+            } finally {
+                this.setLoadingState(sendOtpBtn, false);
+            }
         }
 
         setLoadingState(button, loading) {
@@ -443,6 +623,33 @@ if (typeof AuthManager === 'undefined') {
             }
         }
 
+        showSuccess(message) {
+            // Remove any existing error
+            this.clearError();
+
+            // Create success element
+            const successDiv = document.createElement('div');
+            successDiv.className = 'alert alert-success mt-3 auth-success';
+            successDiv.innerHTML = `
+            <i class="fas fa-check-circle me-2"></i>
+            ${message}
+        `;
+
+            // Add to form
+            const form = document.getElementById('authForm');
+            form.appendChild(successDiv);
+
+            // Auto-remove after 5 seconds
+            setTimeout(() => this.clearSuccess(), 5000);
+        }
+
+        clearSuccess() {
+            const existingSuccess = document.querySelector('.auth-success');
+            if (existingSuccess) {
+                existingSuccess.remove();
+            }
+        }
+
         isValidEmail(email) {
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             return emailRegex.test(email);
@@ -469,7 +676,6 @@ if (typeof AuthManager === 'undefined') {
                     const rolesChanged = JSON.stringify(serverRoles.sort()) !== JSON.stringify(currentRoles.sort());
 
                     if (rolesChanged) {
-                        console.log('User roles have changed, refreshing token...');
                         await this.forceRefreshToken();
                     }
                 }
@@ -482,7 +688,6 @@ if (typeof AuthManager === 'undefined') {
             if (!this.currentUser || !this.currentUser.username || this.isRefreshing) return;
 
             this.isRefreshing = true;
-            console.log('Force refreshing token for user:', this.currentUser.username);
 
             try {
                 const response = await fetch('/auth/force-refresh', {
@@ -500,7 +705,6 @@ if (typeof AuthManager === 'undefined') {
                     const newToken = data.result?.token;
 
                     if (newToken) {
-                        console.log('New token received:', newToken.substring(0, 50) + '...');
 
                         // Update token
                         localStorage.setItem('access_token', newToken);
@@ -510,9 +714,6 @@ if (typeof AuthManager === 'undefined') {
                         const roles = this.extractRolesFromPayload(payload);
                         const isAdmin = roles.includes('ADMIN') || roles.includes('ROLE_ADMIN') || roles.includes('MANAGER') || roles.includes('ROLE_MANAGER');
 
-                        console.log('New roles extracted:', roles);
-                        console.log('Is admin:', isAdmin);
-
                         this.currentUser = {
                             ...this.currentUser,
                             roles,
@@ -520,8 +721,6 @@ if (typeof AuthManager === 'undefined') {
                         };
 
                         localStorage.setItem('liora_user', JSON.stringify(this.currentUser));
-
-                        console.log('Token refreshed successfully with new roles:', roles);
 
                         // Small delay to ensure token is properly updated
                         await new Promise(resolve => setTimeout(resolve, 100));
@@ -650,8 +849,6 @@ if (typeof AuthManager === 'undefined') {
             }
         }
 
-
-
         // Get current user info
         getCurrentUser() {
             return this.currentUser;
@@ -729,11 +926,9 @@ if (typeof AuthManager === 'undefined') {
             });
         }
 
-        // Forgot Password
+        // Forgot Password - Send OTP
         async handleForgotPassword() {
             const email = document.getElementById('forgotEmail').value;
-
-            console.log('Forgot password clicked, email:', email);
 
             if (!email) {
                 this.showToast('Vui lòng nhập email', 'warning');
@@ -741,8 +936,7 @@ if (typeof AuthManager === 'undefined') {
             }
 
             try {
-                console.log('Sending forgot password request...');
-                const response = await fetch('/api/auth/forgot-password', {
+                const response = await fetch('/users/send-password-reset-otp', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -750,23 +944,272 @@ if (typeof AuthManager === 'undefined') {
                     body: JSON.stringify({ email: email })
                 });
 
-                console.log('Response status:', response.status);
                 const data = await response.json();
-                console.log('Response data:', data);
 
                 if (data.code === 1000) {
-                    this.showToast('Email đặt lại mật khẩu đã được gửi! Vui lòng kiểm tra hộp thư.', 'success');
-                    // Close forgot password modal
+                    this.showToast('Mã OTP đã được gửi đến email của bạn! Vui lòng kiểm tra hộp thư.', 'success');
+                    // Close forgot password modal and show OTP verification modal
                     const forgotModal = bootstrap.Modal.getInstance(document.getElementById('forgotPasswordModal'));
                     if (forgotModal) {
                         forgotModal.hide();
                     }
+                    // Show OTP verification modal
+                    this.showOtpVerificationModal(email);
                 } else {
                     this.showToast(data.message || 'Có lỗi xảy ra', 'error');
                 }
             } catch (error) {
-                console.error('Forgot password error:', error);
-                this.showToast('Có lỗi xảy ra khi gửi email', 'error');
+                this.showToast('Có lỗi xảy ra khi gửi OTP', 'error');
+            }
+        }
+
+        // Show OTP verification modal for password reset
+        showOtpVerificationModal(email) {
+            // Remove existing modal if it exists
+            const existingModal = document.getElementById('otpVerificationModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+
+            // Create new OTP verification modal
+            const modalHtml = `
+                <div class="modal fade" id="otpVerificationModal" tabindex="-1" data-email="${email}">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content border-0 shadow-lg">
+                            <div class="modal-header border-0 text-center">
+                                <h5 class="modal-title fw-bold fs-4 text-dark w-100">Xác thực OTP 🔐</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body px-4 pb-4">
+                                <form id="otpVerificationForm">
+                                    <div class="mb-3">
+                                        <label class="form-label fw-medium text-dark">Mã OTP <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control rounded-pill" placeholder="Nhập mã 6 chữ số"
+                                            id="resetOtpCode" maxlength="6" required pattern="[0-9]{6}" 
+                                            title="Mã OTP phải có đúng 6 chữ số">
+                                        <div class="form-text text-muted">
+                                            Mã OTP đã được gửi đến: <strong>${email}</strong>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-medium text-dark">Mật khẩu mới <span class="text-danger">*</span></label>
+                                        <input type="password" class="form-control rounded-pill" placeholder="Nhập mật khẩu mới"
+                                            id="newPassword" required minlength="6" maxlength="20">
+                                        <div class="form-text text-muted">Mật khẩu phải có từ 6 đến 20 ký tự</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-medium text-dark">Xác nhận mật khẩu <span class="text-danger">*</span></label>
+                                        <input type="password" class="form-control rounded-pill" placeholder="Nhập lại mật khẩu mới"
+                                            id="confirmPassword" required minlength="6" maxlength="20">
+                                    </div>
+                                    <button type="submit" class="btn btn-pink-primary w-100 fw-semibold py-3 rounded-pill mb-3">
+                                        Đặt lại mật khẩu
+                                    </button>
+                                    <div class="text-center">
+                                        <button type="button" class="btn btn-link text-pink-primary fw-medium" id="resendOtpBtn">
+                                            Gửi lại mã OTP
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+            // Show the modal
+            const otpModal = new bootstrap.Modal(document.getElementById('otpVerificationModal'));
+            otpModal.show();
+
+            // Focus on OTP input after modal is shown
+            setTimeout(() => {
+                const otpInput = document.getElementById('resetOtpCode');
+                if (otpInput) {
+                    otpInput.focus();
+                }
+            }, 500);
+
+            // Bind events
+            this.bindOtpVerificationEvents();
+        }
+
+        // Bind OTP verification events
+        bindOtpVerificationEvents() {
+            const otpForm = document.getElementById('otpVerificationForm');
+            const resendBtn = document.getElementById('resendOtpBtn');
+
+            if (otpForm) {
+                // Remove existing event listeners to avoid duplicates
+                otpForm.removeEventListener('submit', this.handleOtpVerification);
+                otpForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.handleOtpVerification();
+                });
+            }
+
+            if (resendBtn) {
+                // Remove existing event listeners to avoid duplicates
+                resendBtn.removeEventListener('click', this.resendPasswordResetOtp);
+                resendBtn.addEventListener('click', () => {
+                    this.resendPasswordResetOtp();
+                });
+            }
+
+            // Add input event listeners for real-time validation
+            const otpInput = document.getElementById('resetOtpCode');
+            if (otpInput) {
+                otpInput.addEventListener('input', (e) => {
+                    // Only allow numbers
+                    e.target.value = e.target.value.replace(/[^0-9]/g, '');
+                    // Limit to 6 digits
+                    if (e.target.value.length > 6) {
+                        e.target.value = e.target.value.slice(0, 6);
+                    }
+                });
+            }
+        }
+
+        // Handle OTP verification for password reset
+        async handleOtpVerification() {
+            const otpModal = document.getElementById('otpVerificationModal');
+            const email = otpModal ? otpModal.getAttribute('data-email') : null;
+            const otpCodeElement = document.getElementById('resetOtpCode');
+            const newPasswordElement = document.getElementById('newPassword');
+            const confirmPasswordElement = document.getElementById('confirmPassword');
+
+            const otpCode = otpCodeElement ? otpCodeElement.value.trim() : '';
+            const newPassword = newPasswordElement ? newPasswordElement.value.trim() : '';
+            const confirmPassword = confirmPasswordElement ? confirmPasswordElement.value.trim() : '';
+
+            if (!email) {
+                this.showToast('Không tìm thấy email, vui lòng thử lại', 'error');
+                return;
+            }
+
+            if (!otpCode) {
+                this.showToast('Vui lòng nhập mã OTP', 'warning');
+                if (otpCodeElement) otpCodeElement.focus();
+                return;
+            }
+
+            if (otpCode.length !== 6) {
+                this.showToast('Mã OTP phải có đúng 6 chữ số', 'warning');
+                if (otpCodeElement) otpCodeElement.focus();
+                return;
+            }
+
+            if (!newPassword) {
+                this.showToast('Vui lòng nhập mật khẩu mới', 'warning');
+                if (newPasswordElement) newPasswordElement.focus();
+                return;
+            }
+
+            if (!confirmPassword) {
+                this.showToast('Vui lòng xác nhận mật khẩu', 'warning');
+                if (confirmPasswordElement) confirmPasswordElement.focus();
+                return;
+            }
+
+            if (newPassword !== confirmPassword) {
+                this.showToast('Mật khẩu xác nhận không khớp', 'warning');
+                if (confirmPasswordElement) confirmPasswordElement.focus();
+                return;
+            }
+
+            if (newPassword.length < 6) {
+                this.showToast('Mật khẩu phải có ít nhất 6 ký tự', 'warning');
+                if (newPasswordElement) newPasswordElement.focus();
+                return;
+            }
+
+            if (newPassword.length > 20) {
+                this.showToast('Mật khẩu không được quá 20 ký tự', 'warning');
+                if (newPasswordElement) newPasswordElement.focus();
+                return;
+            }
+
+            try {
+                // First verify OTP
+                const verifyResponse = await fetch('/users/verify-password-reset-otp', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        otpCode: otpCode
+                    })
+                });
+
+                const verifyData = await verifyResponse.json();
+
+                if (verifyData.code === 1000) {
+                    // OTP verified, now reset password
+                    const resetResponse = await fetch('/users/reset-password-with-otp', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            email: email,
+                            newPassword: newPassword,
+                            confirmPassword: confirmPassword
+                        })
+                    });
+
+                    const resetData = await resetResponse.json();
+
+                    if (resetData.code === 1000) {
+                        this.showToast('Đặt lại mật khẩu thành công! Bạn có thể đăng nhập với mật khẩu mới.', 'success');
+                        // Close OTP modal
+                        const otpModal = bootstrap.Modal.getInstance(document.getElementById('otpVerificationModal'));
+                        if (otpModal) {
+                            otpModal.hide();
+                        }
+                        // Redirect to login
+                        setTimeout(() => {
+                            window.location.href = '/login';
+                        }, 2000);
+                    } else {
+                        this.showToast(resetData.message || 'Có lỗi xảy ra khi đặt lại mật khẩu', 'error');
+                    }
+                } else {
+                    this.showToast(verifyData.message || 'Mã OTP không hợp lệ', 'error');
+                }
+            } catch (error) {
+                this.showToast('Có lỗi xảy ra khi xác thực OTP', 'error');
+            }
+        }
+
+        // Resend password reset OTP
+        async resendPasswordResetOtp() {
+            const otpModal = document.getElementById('otpVerificationModal');
+            const email = otpModal ? otpModal.getAttribute('data-email') : null;
+
+            if (!email) {
+                this.showToast('Không tìm thấy email, vui lòng thử lại', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/users/send-password-reset-otp', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email: email })
+                });
+
+                const data = await response.json();
+
+                if (data.code === 1000) {
+                    this.showToast('Mã OTP mới đã được gửi!', 'success');
+                } else {
+                    this.showToast(data.message || 'Có lỗi xảy ra', 'error');
+                }
+            } catch (error) {
+                this.showToast('Có lỗi xảy ra khi gửi lại OTP', 'error');
             }
         }
 

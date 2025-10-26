@@ -9,6 +9,7 @@ import vn.liora.dto.response.OrderResponse;
 import vn.liora.dto.response.OrderProductResponse;
 
 import java.util.List;
+import java.util.Random;
 
 @Service
 public class EmailService {
@@ -57,26 +58,6 @@ public class EmailService {
             System.out.println("Guest order confirmation email sent to: " + guestEmail);
         } catch (Exception e) {
             System.err.println("Error sending guest order confirmation email: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * Gửi email reset password
-     */
-    public void sendPasswordResetEmail(String userEmail, String userName, String resetToken) {
-        try {
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setTo(userEmail);
-            message.setSubject("Đặt lại mật khẩu - Liora");
-
-            String content = buildPasswordResetContent(userName, resetToken);
-            message.setText(content);
-
-            mailSender.send(message);
-            System.out.println("Password reset email sent to: " + userEmail);
-        } catch (Exception e) {
-            System.err.println("Error sending password reset email: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -163,29 +144,104 @@ public class EmailService {
     }
 
     /**
-     * Xây dựng nội dung email reset password
+     * Gửi email OTP đăng ký
      */
-    private String buildPasswordResetContent(String userName, String resetToken) {
+    public void sendRegistrationOtpEmail(String userEmail, String otpCode) {
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(userEmail);
+            message.setSubject("Xác thực email đăng ký - Liora");
+
+            String content = buildRegistrationOtpContent(otpCode);
+            message.setText(content);
+
+            mailSender.send(message);
+            System.out.println("Registration OTP email sent to: " + userEmail);
+        } catch (Exception e) {
+            System.err.println("Error sending registration OTP email: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Gửi email OTP reset password
+     */
+    public void sendPasswordResetOtpEmail(String userEmail, String otpCode) {
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(userEmail);
+            message.setSubject("Mã xác thực đặt lại mật khẩu - Liora");
+
+            String content = buildPasswordResetOtpContent(otpCode);
+            message.setText(content);
+
+            mailSender.send(message);
+            System.out.println("Password reset OTP email sent to: " + userEmail);
+        } catch (Exception e) {
+            System.err.println("Error sending password reset OTP email: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Tạo mã OTP ngẫu nhiên 6 chữ số
+     */
+    public String generateOtpCode() {
+        Random random = new Random();
+        StringBuilder otp = new StringBuilder();
+        for (int i = 0; i < 6; i++) {
+            otp.append(random.nextInt(10));
+        }
+        return otp.toString();
+    }
+
+    /**
+     * Xây dựng nội dung email OTP đăng ký
+     */
+    private String buildRegistrationOtpContent(String otpCode) {
         StringBuilder content = new StringBuilder();
 
-        content.append("Xin chào ").append(userName).append(",\n\n");
+        content.append("Xin chào,\n\n");
+        content.append("Cảm ơn bạn đã đăng ký tài khoản tại Liora!\n\n");
+
+        content.append("ĐỂ HOÀN TẤT ĐĂNG KÝ:\n");
+        content.append("Vui lòng nhập mã xác thực sau để xác nhận email của bạn:\n\n");
+
+        content.append("MÃ XÁC THỰC:\n");
+        content.append(otpCode).append("\n\n");
+
+        content.append("LƯU Ý QUAN TRỌNG:\n");
+        content.append("- Mã xác thực có hiệu lực trong 10 phút\n");
+        content.append("- Mã chỉ sử dụng được 1 lần\n");
+        content.append("- Nếu bạn không đăng ký tài khoản, hãy bỏ qua email này\n");
+        content.append("- Để bảo mật, không chia sẻ mã này với ai khác\n\n");
+
+        content.append("Nếu bạn gặp vấn đề, hãy liên hệ với chúng tôi.\n\n");
+        content.append("Trân trọng,\nĐội ngũ Liora");
+
+        return content.toString();
+    }
+
+    /**
+     * Xây dựng nội dung email OTP reset password
+     */
+    private String buildPasswordResetOtpContent(String otpCode) {
+        StringBuilder content = new StringBuilder();
+
+        content.append("Xin chào,\n\n");
         content.append("Bạn đã yêu cầu đặt lại mật khẩu cho tài khoản Liora của mình.\n\n");
 
         content.append("ĐỂ ĐẶT LẠI MẬT KHẨU:\n");
-        content.append("1. Click vào link bên dưới\n");
-        content.append("2. Nhập mật khẩu mới\n");
-        content.append("3. Xác nhận mật khẩu mới\n\n");
+        content.append("Vui lòng nhập mã xác thực sau:\n\n");
 
-        content.append("LINK ĐẶT LẠI MẬT KHẨU:\n");
-        content.append(appUrl).append("/reset-password\n\n");
-        content.append("MÃ XÁC NHẬN:\n");
-        content.append(resetToken).append("\n\n");
-        content.append("LƯU Ý: Mã xác nhận chỉ có hiệu lực trong 1 giờ và chỉ sử dụng được 1 lần.\n\n");
+        content.append("MÃ XÁC THỰC:\n");
+        content.append(otpCode).append("\n\n");
 
         content.append("LƯU Ý QUAN TRỌNG:\n");
-        content.append("- Link này chỉ có hiệu lực trong 1 giờ\n");
+        content.append("- Mã xác thực có hiệu lực trong 10 phút\n");
+        content.append("- Mã chỉ sử dụng được 1 lần\n");
         content.append("- Nếu bạn không yêu cầu đặt lại mật khẩu, hãy bỏ qua email này\n");
-        content.append("- Để bảo mật, không chia sẻ link này với ai khác\n\n");
+        content.append("- Để bảo mật, không chia sẻ mã này với ai khác\n\n");
 
         content.append("Nếu bạn gặp vấn đề, hãy liên hệ với chúng tôi.\n\n");
         content.append("Trân trọng,\nĐội ngũ Liora");

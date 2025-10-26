@@ -58,8 +58,6 @@ class LioraApp {
                 throw new Error('Missing cartId - cart may not be initialized');
             }
 
-            console.log('Adding product to cart:', { productId, quantity, cartId, choose });
-
             // 2) Gọi API thêm sản phẩm vào giỏ
             const addRaw = await this.apiCall(`/CartProduct/${cartId}`, 'POST', {
                 idProduct: Number(productId),
@@ -67,26 +65,14 @@ class LioraApp {
             });
             const addData = (addRaw && (addRaw.result || addRaw.data?.result)) ? (addRaw.result || addRaw.data.result) : addRaw;
 
-            console.log('Add product response:', addRaw);
-            console.log('Add data:', addData);
-
             // 3) Nếu choose = true, tick chọn sản phẩm này
             if (choose && addData && addData.idCartProduct) {
                 try {
-                    console.log('Attempting to mark product as chosen:', {
-                        cartId,
-                        cartProductId: addData.idCartProduct,
-                        choose: true
-                    });
-
                     // Gửi đầy đủ thông tin để tránh lỗi NULL constraint
                     const chooseResponse = await this.apiCall(`/CartProduct/${cartId}/${addData.idCartProduct}`, 'PUT', {
                         quantity: addData.quantity, // Gửi quantity hiện tại
                         choose: true
                     });
-
-                    console.log('Choose response:', chooseResponse);
-                    console.log('Product marked as chosen successfully:', addData.idCartProduct);
                 } catch (chooseErr) {
                     console.error('Failed to mark product as chosen:', chooseErr);
                     console.error('Choose error details:', {
@@ -378,22 +364,15 @@ class LioraApp {
     reloadProductRatings() {
         // Delay để đảm bảo DOM đã được render xong
         setTimeout(() => {
-            console.log('🔄 Reloading product ratings after page switch...');
-
             // Tìm tất cả product cards trên trang hiện tại
             const productCards = document.querySelectorAll('.product-card, .card.product-card');
-            console.log('🔄 Found', productCards.length, 'product cards to reload ratings for');
 
             if (productCards.length > 0) {
                 // Sử dụng ProductRatingUtils nếu có
                 if (window.ProductRatingUtils && typeof ProductRatingUtils.loadAndUpdateProductCards === 'function') {
-                    console.log('🔄 Using ProductRatingUtils to reload ratings...');
                     ProductRatingUtils.loadAndUpdateProductCards(productCards);
                 } else if (window.loadProductRatings && typeof window.loadProductRatings === 'function') {
-                    console.log('🔄 Using global loadProductRatings function...');
                     window.loadProductRatings();
-                } else {
-                    console.log('🔄 ProductRatingUtils not available, skipping rating reload');
                 }
             }
 
@@ -406,10 +385,8 @@ class LioraApp {
         // Reload ratings cho bestseller products homepage
         if (window.bestsellerProductsHomepageManager) {
             if (typeof window.bestsellerProductsHomepageManager.loadProductRatings === 'function') {
-                console.log('🔄 Reloading bestseller products homepage ratings...');
                 window.bestsellerProductsHomepageManager.loadProductRatings();
             } else if (typeof window.bestsellerProductsHomepageManager.renderBestsellerProducts === 'function') {
-                console.log('🔄 Re-rendering bestseller products homepage...');
                 // Trigger re-render which will reload ratings
                 const products = window.bestsellerProductsHomepageManager.products || [];
                 if (products.length > 0) {
@@ -421,10 +398,8 @@ class LioraApp {
         // Reload ratings cho newest products homepage
         if (window.newestProductsHomepageManager) {
             if (typeof window.newestProductsHomepageManager.loadProductRatings === 'function') {
-                console.log('🔄 Reloading newest products homepage ratings...');
                 window.newestProductsHomepageManager.loadProductRatings();
             } else if (typeof window.newestProductsHomepageManager.renderNewestProducts === 'function') {
-                console.log('🔄 Re-rendering newest products homepage...');
                 // Trigger re-render which will reload ratings
                 const products = window.newestProductsHomepageManager.products || [];
                 if (products.length > 0) {
@@ -436,10 +411,8 @@ class LioraApp {
         // Reload ratings cho featured category products
         if (window.featuredCategoryProductsManager) {
             if (typeof window.featuredCategoryProductsManager.loadProductRatings === 'function') {
-                console.log('🔄 Reloading featured category products ratings...');
                 window.featuredCategoryProductsManager.loadProductRatings();
             } else if (typeof window.featuredCategoryProductsManager.renderProducts === 'function') {
-                console.log('🔄 Re-rendering featured category products...');
                 window.featuredCategoryProductsManager.renderProducts();
             }
         }
@@ -447,10 +420,8 @@ class LioraApp {
         // Reload ratings cho brand products
         if (window.brandProductsManager) {
             if (typeof window.brandProductsManager.loadProductRatings === 'function') {
-                console.log('🔄 Reloading brand products ratings...');
                 window.brandProductsManager.loadProductRatings();
             } else if (typeof window.brandProductsManager.renderProducts === 'function') {
-                console.log('🔄 Re-rendering brand products...');
                 window.brandProductsManager.renderProducts();
             }
         }
@@ -458,10 +429,8 @@ class LioraApp {
         // Reload ratings cho category products
         if (window.categoryProductsManager) {
             if (typeof window.categoryProductsManager.loadProductRatings === 'function') {
-                console.log('🔄 Reloading category products ratings...');
                 window.categoryProductsManager.loadProductRatings();
             } else if (typeof window.categoryProductsManager.renderProducts === 'function') {
-                console.log('🔄 Re-rendering category products...');
                 window.categoryProductsManager.renderProducts();
             }
         }
@@ -469,10 +438,8 @@ class LioraApp {
         // Reload ratings cho search results
         if (window.searchResultsManager) {
             if (typeof window.searchResultsManager.loadProductRatings === 'function') {
-                console.log('🔄 Reloading search results ratings...');
                 window.searchResultsManager.loadProductRatings();
             } else if (typeof window.searchResultsManager.renderResults === 'function') {
-                console.log('🔄 Re-rendering search results...');
                 window.searchResultsManager.renderResults();
             }
         }
@@ -480,10 +447,8 @@ class LioraApp {
         // Reload ratings cho newest products page
         if (window.newestProductsPageManager) {
             if (typeof window.newestProductsPageManager.loadProductRatings === 'function') {
-                console.log('🔄 Reloading newest products page ratings...');
                 window.newestProductsPageManager.loadProductRatings();
             } else if (typeof window.newestProductsPageManager.renderProducts === 'function') {
-                console.log('🔄 Re-rendering newest products page...');
                 window.newestProductsPageManager.renderProducts();
             }
         }
@@ -491,10 +456,8 @@ class LioraApp {
         // Reload ratings cho bestseller products page
         if (window.bestsellerProductsPageManager) {
             if (typeof window.bestsellerProductsPageManager.loadProductRatings === 'function') {
-                console.log('🔄 Reloading bestseller products page ratings...');
                 window.bestsellerProductsPageManager.loadProductRatings();
             } else if (typeof window.bestsellerProductsPageManager.renderProducts === 'function') {
-                console.log('🔄 Re-rendering bestseller products page...');
                 window.bestsellerProductsPageManager.renderProducts();
             }
         }
@@ -502,7 +465,6 @@ class LioraApp {
         // Reload ratings cho similar products
         if (window.similarProductsManager) {
             if (typeof window.similarProductsManager.loadProductRatingsOptimized === 'function') {
-                console.log('🔄 Reloading similar products ratings...');
                 window.similarProductsManager.loadProductRatingsOptimized();
             }
         }
@@ -680,15 +642,11 @@ class LioraApp {
     }
 
     renderStars(rating) {
-        console.log('renderStars called with rating:', rating, 'type:', typeof rating);
-
         // Nếu rating = 0 hoặc null/undefined, hiển thị 5 sao rỗng
         if (!rating || rating === 0 || rating === '0') {
-            console.log('Rating is 0, showing empty stars');
             return Array(5).fill('<i class="mdi mdi-star-outline"></i>').join('');
         }
 
-        console.log('Rating is not 0, showing stars based on rating:', rating);
         const fullStars = Math.floor(rating);
         const decimalPart = rating % 1;
         const hasHalfStar = decimalPart > 0;
@@ -703,8 +661,6 @@ class LioraApp {
 
     // Method riêng cho Quick View modal
     generateStarsForModal(rating, reviewCount = 0) {
-        console.log('generateStarsForModal called with rating:', rating, 'type:', typeof rating);
-
         // Logic đúng cho Quick View modal
         if (!rating || rating === 0 || rating === '0' || rating === null || rating === undefined) {
             let stars = '';
@@ -714,7 +670,6 @@ class LioraApp {
             return stars;
         }
 
-        console.log('Modal: Rating is not 0, showing stars based on rating:', rating);
         const fullStars = Math.floor(rating);
         const decimalPart = rating % 1;
         const hasHalfStar = decimalPart > 0;
@@ -752,15 +707,11 @@ class LioraApp {
     }
 
     handleSearch(query) {
-        console.log('handleSearch called with query:', query);
-
         if (query.length < 2) {
-            console.log('Query too short, hiding dropdown');
             this.hideSearchDropdown();
             return;
         }
 
-        console.log('Showing search loading and calling API');
         // Show loading state
         this.showSearchLoading();
 
@@ -779,7 +730,6 @@ class LioraApp {
             if (isSuccess && data.result) {
                 this.displaySearchResults(query, data.result);
             } else {
-                console.error('Search API error:', data);
                 this.showSearchError();
             }
         } catch (error) {
@@ -894,7 +844,6 @@ class LioraApp {
         // Handle clicks on subcategory items and brand items
         this.showToast(`Browsing: ${itemName}`, 'info');
         // You can implement specific category filtering here
-        console.log('Category item clicked:', itemName);
     }
 
     handleNewsletterSubscription(form) {
@@ -1058,44 +1007,33 @@ class LioraApp {
     // Load categories for header dropdown
     async loadHeaderCategories() {
         try {
-            console.log('Loading header categories...');
             const response = await fetch('/api/header/categories/api');
-            console.log('Response status:', response.status);
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
             const data = await response.json();
-            console.log('API response:', data);
 
             if (data.result && data.result.length > 0) {
-                console.log('Rendering categories with data:', data.result);
                 this.renderHeaderCategories(data.result);
             } else {
-                console.warn('No categories found in API response');
-                // Show empty state instead of fallback data
                 this.renderEmptyCategories();
             }
         } catch (error) {
             console.error('Error loading header categories:', error);
-            // Show empty state instead of fallback data
             this.renderEmptyCategories();
         }
     }
 
     // Render categories in header dropdown
     renderHeaderCategories(categories) {
-        console.log('Rendering categories:', categories);
-
         // Render all 3 columns immediately
         this.renderAllCategories(categories);
     }
 
     // Render all categories in 3-tier structure like Guardian
     renderAllCategories(categories) {
-        console.log('renderAllCategories called with:', categories);
-
         // Try multiple selectors to find columns (3-column layout like image)
         let leftColumn = document.querySelector('.category-column:first-child .category-list');
         let middleColumn = document.querySelector('.category-column:nth-child(2) .subcategory-list');
@@ -1123,25 +1061,7 @@ class LioraApp {
             rightColumn = document.querySelector('.product-list');
         }
 
-        console.log('Left column:', leftColumn);
-        console.log('Middle column:', middleColumn);
-        console.log('Right column:', rightColumn);
-
         if (!leftColumn || !middleColumn || !rightColumn) {
-            console.error('Columns not found!');
-            console.error('Left column found:', !!leftColumn);
-            console.error('Middle column found:', !!middleColumn);
-            console.error('Right column found:', !!rightColumn);
-
-            // Try to find all elements with these classes
-            const allCategoryLists = document.querySelectorAll('.category-list');
-            const allSubcategoryLists = document.querySelectorAll('.subcategory-list');
-            const allProductLists = document.querySelectorAll('.product-list');
-
-            console.log('All category-list elements:', allCategoryLists);
-            console.log('All subcategory-list elements:', allSubcategoryLists);
-            console.log('All product-list elements:', allProductLists);
-
             return;
         }
 
@@ -1171,9 +1091,6 @@ class LioraApp {
                 });
             }
         });
-
-        console.log('Level 2 categories:', allLevel2Categories);
-        console.log('Level 3 categories:', allLevel3Categories);
 
         // Sort categories alphabetically for better organization
         const sortedCategories = categories.sort((a, b) => a.name.localeCompare(b.name, 'vi'));
@@ -1213,14 +1130,10 @@ class LioraApp {
             }
             this.showSubcategoriesForCategory(categories[0], middleColumn, rightColumn);
         }
-
-        console.log('All categories rendered successfully');
     }
 
     // Show subcategories for a specific level 1 category
     showSubcategoriesForCategory(category, middleColumn, rightColumn) {
-        console.log('Showing subcategories for:', category.name);
-
         // Clear existing content
         middleColumn.innerHTML = '';
         rightColumn.innerHTML = '';
@@ -1456,7 +1369,6 @@ class LioraApp {
 
     // Render empty state when no categories are available
     renderEmptyCategories() {
-        console.log('No categories available - showing empty state');
         const categoriesContainer = document.getElementById('categoriesMenu');
         if (categoriesContainer) {
             categoriesContainer.innerHTML = `
@@ -1517,8 +1429,9 @@ class LioraApp {
     }
 
     updateUserDisplay() {
-        const userSection = document.getElementById('user-section');
+        const userSection = document.getElementById('desktop-user-section');
         const mobileUserSection = document.getElementById('mobile-user-section');
+        const mobileMenuAccountSection = document.getElementById('mobile-menu-account-section');
 
         if (this.currentUser) {
             const displayName = this.currentUser.name || this.currentUser.username || 'User';
@@ -1543,18 +1456,44 @@ class LioraApp {
             `;
 
             const mobileUserHTML = `
-                <div class="text-dark fw-medium mb-2">Hi, ${displayName}! 💕</div>
-                <button class="btn btn-outline-pink w-100 rounded-pill mb-2" href="/info" onclick="app.openUserInfo()">
-                    <i class="mdi mdi-account me-2"></i>Thông tin cá nhân
-                </button>
-                ${isAdmin ? '<a class="btn btn-outline-pink w-100 rounded-pill mb-2" href="/admin"><i class="mdi mdi-cog me-2"></i>Trang quản trị</a>' : ''}
-                <button class="btn btn-outline-pink w-100 rounded-pill" href="/home" onclick="app.signOut()">
-                    <i class="mdi mdi-logout me-2"></i>Đăng xuất
-                </button>
+                <a href="#" class="btn-user-mobile" onclick="toggleMobileMenu()">
+                    <i class="mdi mdi-account-circle"></i>
+                </a>
+            `;
+
+            const mobileMenuAccountHTML = `
+                <div class="mobile-account-info">
+                    <i class="mdi mdi-account-circle"></i>
+                    <div class="mobile-account-text">
+                        <div class="mobile-account-title">TÀI KHOẢN</div>
+                        <div class="mobile-account-user-name">${displayName}</div>
+                    </div>
+                </div>
+                <div class="mobile-account-actions">
+                    <a href="/info" class="mobile-account-action" onclick="app.openUserInfo()">
+                        <i class="mdi mdi-account"></i>
+                        <span>Thông tin cá nhân</span>
+                    </a>
+                    ${isAdmin ? '<a href="/admin" class="mobile-account-action"><i class="mdi mdi-cog"></i><span>Trang quản trị</span></a>' : ''}
+                    <a href="#" class="mobile-account-action" onclick="app.signOut()">
+                        <i class="mdi mdi-logout"></i>
+                        <span>Đăng xuất</span>
+                    </a>
+                </div>
             `;
 
             if (userSection) userSection.innerHTML = userHTML;
             if (mobileUserSection) mobileUserSection.innerHTML = mobileUserHTML;
+            if (mobileMenuAccountSection) mobileMenuAccountSection.innerHTML = mobileMenuAccountHTML;
+
+            // Show user actions in mobile menu when logged in
+            const mobileUserActions = document.getElementById('mobile-user-actions');
+            const mobileNavigationSection = document.getElementById('mobile-navigation-section');
+
+            if (mobileUserActions && mobileNavigationSection) {
+                mobileUserActions.style.display = 'block';
+                mobileNavigationSection.style.display = 'none';
+            }
         } else {
             const userHTML = `
                 <button class="btn btn-user" data-bs-toggle="modal" data-bs-target="#authModal">
@@ -1564,13 +1503,44 @@ class LioraApp {
             `;
 
             const mobileUserHTML = `
-                <button class="btn btn-pink-primary w-100 rounded-pill" data-bs-toggle="modal" data-bs-target="#authModal">
-                    Sign In / Sign Up
+                <button class="btn-user-mobile" data-bs-toggle="modal" data-bs-target="#authModal">
+                    <i class="mdi mdi-account-circle"></i>
                 </button>
+            `;
+
+            const mobileMenuAccountHTML = `
+                <div class="mobile-account-info">
+                    <i class="mdi mdi-account-circle"></i>
+                    <div class="mobile-account-text">
+                        <div class="mobile-account-title">TÀI KHOẢN</div>
+                        <a href="#" class="mobile-account-link" data-bs-toggle="modal" data-bs-target="#authModal">
+                            Đăng nhập / Đăng ký
+                        </a>
+                    </div>
+                </div>
             `;
 
             if (userSection) userSection.innerHTML = userHTML;
             if (mobileUserSection) mobileUserSection.innerHTML = mobileUserHTML;
+            if (mobileMenuAccountSection) mobileMenuAccountSection.innerHTML = mobileMenuAccountHTML;
+
+            // Hide user actions in mobile menu when not logged in
+            const mobileUserActions = document.getElementById('mobile-user-actions');
+            const mobileNavigationSection = document.getElementById('mobile-navigation-section');
+
+            if (mobileUserActions && mobileNavigationSection) {
+                mobileUserActions.style.display = 'none';
+                mobileNavigationSection.style.display = 'block';
+            }
+        }
+    }
+
+    // Toggle mobile menu function
+    toggleMobileMenu() {
+        const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
+        if (mobileMenuOverlay) {
+            mobileMenuOverlay.classList.add('show');
+            document.body.style.overflow = 'hidden';
         }
     }
 
@@ -1760,7 +1730,6 @@ class LioraApp {
                     product.images = data.result || [];
                 }
             } catch (error) {
-                console.log('Could not load product images:', error);
                 product.images = [];
             }
         }
@@ -1772,7 +1741,6 @@ class LioraApp {
             if (productStats) {
                 product.averageRating = productStats.averageRating || 0;
                 product.reviewCount = productStats.totalReviews || 0;
-                console.log('Loaded rating data for modal:', product.averageRating, 'stars,', product.reviewCount, 'reviews');
             }
         } catch (error) {
             console.error('Error loading rating data:', error);
@@ -1932,14 +1900,10 @@ class LioraApp {
 
     // Setup slider navigation
     setupSliderNavigation(product) {
-        console.log('Setting up slider navigation for product:', product);
-
         const prevBtn = document.getElementById('quickViewPrevBtn');
         const nextBtn = document.getElementById('quickViewNextBtn');
         const mainImage = document.getElementById('mainProductImage');
         const thumbnails = document.querySelectorAll('.thumbnail-item');
-
-        console.log('Navigation elements found:', { prevBtn, nextBtn, mainImage, thumbnails: thumbnails.length });
 
         if (!product.images || product.images.length <= 1) {
             // Hide navigation buttons if only one image
@@ -1956,7 +1920,6 @@ class LioraApp {
 
         // Update main image
         const updateMainImage = (index) => {
-            console.log('Updating main image to index:', index);
             if (product.images && product.images[index]) {
                 mainImage.src = product.images[index].imageUrl;
                 mainImage.alt = product.name;
@@ -1988,7 +1951,6 @@ class LioraApp {
                 currentImageIndex = currentImageIndex > 0 ? currentImageIndex - 1 : product.images.length - 1;
                 updateMainImage(currentImageIndex);
             });
-            console.log('Previous button event listener added');
         }
 
         // Next button
@@ -1999,7 +1961,6 @@ class LioraApp {
                 currentImageIndex = currentImageIndex < product.images.length - 1 ? currentImageIndex + 1 : 0;
                 updateMainImage(currentImageIndex);
             });
-            console.log('Next button event listener added');
         }
 
         // Thumbnail click handlers
@@ -2011,7 +1972,6 @@ class LioraApp {
                 updateMainImage(currentImageIndex);
             });
         });
-        console.log('Thumbnail event listeners added');
     }
 
     // Generate image thumbnails for slider
@@ -2064,8 +2024,6 @@ class LioraApp {
 
         const quantityInput = document.getElementById('quantityInput');
         const quantity = quantityInput ? parseInt(quantityInput.value) : 1;
-
-        console.log('addToCartWithQuantity called with:', { productId, quantity });
 
         // Gọi backend để đảm bảo tạo cart (guest/user) và thêm sản phẩm
         this.addProductToCartBackend(productId, quantity, true, true).catch(() => {
@@ -2321,7 +2279,6 @@ class BannerSlider {
             this.bindEvents();
             this.startAutoSlide();
             this.isInitialized = true;
-            console.log('Banner slider initialized with', this.banners.length, 'banners');
         } catch (error) {
             console.error('Error initializing banner slider:', error);
         }
@@ -2329,7 +2286,6 @@ class BannerSlider {
 
     async loadBanners() {
         try {
-            console.log('Fetching banners from API...');
             const response = await fetch('/content/api/banners', {
                 method: 'GET',
                 headers: {
@@ -2337,15 +2293,11 @@ class BannerSlider {
                 },
             });
 
-            console.log('API Response status:', response.status);
-            console.log('API Response headers:', response.headers);
-
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
             const data = await response.json();
-            console.log('Raw API response:', data);
 
             // Handle different response formats
             if (Array.isArray(data)) {
@@ -2358,8 +2310,6 @@ class BannerSlider {
                 this.banners = [];
             }
 
-            console.log('Processed banners:', this.banners);
-
             // If no banners, show default content
             if (this.banners.length === 0) {
                 this.banners = [{
@@ -2368,11 +2318,9 @@ class BannerSlider {
                     imageUrl: "/user/img/banner.jpg",
                     targetLink: "#"
                 }];
-                console.log('No banners found, using default content');
             }
         } catch (error) {
             console.error('Error loading banners:', error);
-            console.error('Error details:', error.message);
             // Fallback content
             this.banners = [{
                 id: 1,
@@ -2590,7 +2538,6 @@ class DiscountSlider {
             this.bindEvents();
             this.updateSlider();
             this.isInitialized = true;
-            console.log('Discount slider initialized');
         } catch (error) {
             console.error('Error initializing discount slider:', error);
         }
@@ -2681,3 +2628,12 @@ class DiscountSlider {
 
 // Export for use in other scripts
 window.DiscountSlider = DiscountSlider;
+
+// Global functions for HTML onclick handlers
+function toggleMobileMenu() {
+    const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
+    if (mobileMenuOverlay) {
+        mobileMenuOverlay.classList.add('show');
+        document.body.style.overflow = 'hidden';
+    }
+}

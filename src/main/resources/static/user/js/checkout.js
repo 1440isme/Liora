@@ -615,12 +615,12 @@ class CheckoutPage {
             // Close add/edit modals but keep address selector open
             this.closeAddAddressModal();
             this.closeEditAddressModal();
-            
+
             // Refresh address selector modal if it's open
             if (document.getElementById('addressSelectorModal')) {
                 this.refreshAddressSelectorModal();
             }
-            
+
             // If no addresses left, close the selector
             if (!this.addresses || this.addresses.length === 0) {
                 this.closeAddressSelector();
@@ -698,7 +698,7 @@ class CheckoutPage {
 
         $('body').append(modalHTML);
         this.loadProvinces();
-        
+
         // Debug: Check if there's pre-filled data and load accordingly
         setTimeout(() => {
             const districtSelect = document.getElementById('addrDistrict');
@@ -927,7 +927,7 @@ class CheckoutPage {
     // Update the address display in the UI
     updateAddressDisplay() {
         if (!this.selectedAddressId || !this.addresses) return;
-        
+
         const selectedAddress = this.addresses.find(addr => addr.idAddress === this.selectedAddressId);
         if (!selectedAddress) return;
 
@@ -942,7 +942,7 @@ class CheckoutPage {
                 selectedAddress._districtName || '',
                 selectedAddress._provinceName || ''
             ].filter(Boolean).join(', ');
-            
+
             addressDisplay.innerHTML = `
                 <div class="selected-address">
                     <strong>${selectedAddress.name}</strong> - ${selectedAddress.phone}
@@ -1005,7 +1005,7 @@ class CheckoutPage {
             console.log('Fetching wards for district:', districtId);
             const res = await fetch(`/api/ghn/wards/${districtId}`);
             console.log('Wards API response status:', res.status);
-            
+
             if (!res.ok) throw new Error('Không thể tải phường/xã');
             const wards = await res.json();
             console.log('Wards data received:', wards);
@@ -1128,7 +1128,7 @@ class CheckoutPage {
 
             await this.apiCall(`/addresses/${this.currentUser.userId}`, 'POST', payload);
             this.showToast('Đã lưu địa chỉ thành công', 'success');
-            
+
             // Load addresses first before closing modal
             await this.loadAddresses();
 
@@ -1142,10 +1142,10 @@ class CheckoutPage {
                     this.updateAddressDisplay();
                 }
             }
-            
+
             // Close modal after updating everything
             this.closeAddAddressModal();
-            
+
             // If address selector modal was open, refresh it
             if (document.getElementById('addressSelectorModal')) {
                 this.refreshAddressSelectorModal();
@@ -1198,7 +1198,7 @@ class CheckoutPage {
 
             await this.apiCall(`/addresses/${this.currentUser.userId}/${currentAddressId}`, 'PUT', addressData);
             this.showToast('Cập nhật địa chỉ thành công', 'success');
-            
+
             // Load addresses first before closing modal
             await this.loadAddresses();
 
@@ -1211,10 +1211,10 @@ class CheckoutPage {
                     this.updateAddressDisplay();
                 }
             }
-            
+
             // Close modal after updating everything
             this.closeEditAddressModal();
-            
+
             // If address selector modal was open, refresh it
             if (document.getElementById('addressSelectorModal')) {
                 this.refreshAddressSelectorModal();
@@ -1576,7 +1576,21 @@ class CheckoutPage {
                 }
             }
 
-            // Nếu không phải VNPAY hoặc VNPAY thất bại, chuyển đến trang thành công
+            // Nếu phương thức là MOMO thì gọi tạo URL thanh toán và redirect
+            if (orderData.paymentMethod && orderData.paymentMethod.toUpperCase() === 'MOMO') {
+                try {
+                    const payResp = await this.apiCall(`/payment/momo/create/${response.idOrder}`, 'POST');
+                    if (payResp && payResp.paymentUrl) {
+                        window.location.href = payResp.paymentUrl;
+                        return; // dừng lại, sẽ rời trang
+                    }
+                } catch (e) {
+                    console.error('Create MOMO URL failed:', e);
+                    this.showToast('Không tạo được liên kết thanh toán MOMO, vui lòng thử lại', 'error');
+                }
+            }
+
+            // Nếu không phải VNPAY/MOMO hoặc thanh toán online thất bại, chuyển đến trang thành công
             this.showToast('Đặt hàng thành công!', 'success');
             setTimeout(() => {
                 this.redirectToOrderDetail(response.idOrder);

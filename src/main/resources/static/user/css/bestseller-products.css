@@ -320,7 +320,7 @@
 #bestsellerQuickViewModal .modal-content {
     border: none;
     border-radius: 3px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
     font-family: 'Gilroy', 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
@@ -630,16 +630,16 @@
     .bestseller-products-section .modal-dialog {
         margin: 1rem;
     }
-    
+
     .bestseller-products-section .main-image-container img {
         height: 200px;
     }
-    
+
     .bestseller-products-section .thumbnail-img {
         height: 40px;
         width: 40px;
     }
-    
+
     .bestseller-products-section .slider-nav {
         width: 35px;
         height: 35px;

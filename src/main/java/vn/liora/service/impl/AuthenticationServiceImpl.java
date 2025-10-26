@@ -81,7 +81,7 @@ public class AuthenticationServiceImpl implements IAuthenticationService {
         }
         boolean authenticated = passwordEncoder.matches(request.getPassword(), user.getPassword());
         if (!authenticated) {
-            throw new AppException(ErrorCode.UNAUTHENTICATED);
+            throw new AppException(ErrorCode.INVALID_PASSWORD);
         }
         String token;
         try {
