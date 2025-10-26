@@ -156,34 +156,29 @@ class SimilarProductsManager {
     }
 
     applyFilters() {
-        console.log('=== APPLY FILTERS CALLED ===');
+        console.log('=== CLEAR FILTERS CALLED ===');
 
-        // Get filter values
+        // Clear all filter values
         const priceRange = document.getElementById('priceRange');
         const ratingCheckboxes = document.querySelectorAll('input[type="checkbox"][id^="rating"]');
         const brandCheckboxes = document.querySelectorAll('.brand-filter');
 
-        // Price filter
-        if (priceRange && priceRange.value) {
-            const [min, max] = priceRange.value.split(',').map(Number);
-            this.currentFilters.minPrice = min;
-            this.currentFilters.maxPrice = max;
-        } else {
-            this.currentFilters.minPrice = '';
-            this.currentFilters.maxPrice = '';
+        // Clear price filter
+        if (priceRange) {
+            priceRange.value = '';
         }
+        this.currentFilters.minPrice = '';
+        this.currentFilters.maxPrice = '';
 
-        // Rating filter
-        this.currentFilters.ratings = Array.from(ratingCheckboxes)
-            .filter(cb => cb.checked)
-            .map(cb => parseInt(cb.value));
+        // Clear rating filter
+        ratingCheckboxes.forEach(cb => cb.checked = false);
+        this.currentFilters.ratings = [];
 
-        // Brand filter
-        this.currentFilters.brands = Array.from(brandCheckboxes)
-            .filter(cb => cb.checked)
-            .map(cb => cb.value);
+        // Clear brand filter
+        brandCheckboxes.forEach(cb => cb.checked = false);
+        this.currentFilters.brands = [];
 
-        console.log('🔍 Brand filters applied:', this.currentFilters.brands);
+        console.log('🔍 All filters cleared');
         console.log('Final filters:', this.currentFilters);
         this.currentPage = 0;
         
@@ -1141,7 +1136,7 @@ class SimilarProductsManager {
         try {
             // Sử dụng addProductToCartBackend để gọi API backend
             if (window.app && window.app.addProductToCartBackend) {
-                await window.app.addProductToCartBackend(productId, 1, true);
+                await window.app.addProductToCartBackend(productId, 1, false);
                 await window.app.refreshCartBadge?.();
             } else {
                 this.showNotification('Chức năng đang được tải...', 'error');
@@ -1196,7 +1191,7 @@ class SimilarProductsManager {
         try {
             // Sử dụng addProductToCartBackend để gọi API backend
             if (window.app && window.app.addProductToCartBackend) {
-                await window.app.addProductToCartBackend(productId, quantity, true);
+                await window.app.addProductToCartBackend(productId, quantity, false);
                 await window.app.refreshCartBadge?.();
             } else {
                 this.showNotification('Chức năng đang được tải...', 'error');

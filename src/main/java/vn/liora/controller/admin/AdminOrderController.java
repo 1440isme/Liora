@@ -123,10 +123,12 @@ public class AdminOrderController {
 
             // Đơn hàng theo trạng thái
             long pendingCount = allOrders.stream().filter(o -> "PENDING".equals(o.getOrderStatus())).count();
+            long confirmedCount = allOrders.stream().filter(o -> "CONFIRMED".equals(o.getOrderStatus())).count();
             long completedCount = allOrders.stream().filter(o -> "COMPLETED".equals(o.getOrderStatus())).count();
             long cancelledCount = allOrders.stream().filter(o -> "CANCELLED".equals(o.getOrderStatus())).count();
 
             statistics.put("pendingOrders", pendingCount);
+            statistics.put("confirmedOrders", confirmedCount);
             statistics.put("completedOrders", completedCount);
             statistics.put("cancelledOrders", cancelledCount);
 
