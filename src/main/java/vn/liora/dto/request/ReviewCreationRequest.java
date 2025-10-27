@@ -29,7 +29,4 @@ public class ReviewCreationRequest {
     @Builder.Default
     private Boolean anonymous = false;
 
-    // Media fields
-    private List<String> imagePaths; // List of uploaded image URLs
-    private List<String> videoPaths; // List of uploaded video URLs
 }
