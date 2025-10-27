@@ -24,8 +24,11 @@ jobs:
           java-version: '21'
           distribution: 'microsoft'
 
+      - name: Clear Maven cache
+        run: mvn dependency:purge-local-repository -DmanualInclude="org.springframework:spring-core"
+
       - name: Build with Maven
-        run: mvn clean install
+        run: mvn clean install -U
 
       - name: Create deployment package
         run: |
