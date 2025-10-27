@@ -52,4 +52,53 @@ public interface OrderProductRepository extends JpaRepository<OrderProduct,Long>
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate
     );
+
+    // ======================== TOP SẢN PHẨM BÁN CHẠY THEO THỜI GIAN ========================
+    @Query("""
+        SELECT p.productId, p.name, c.name, SUM(op.quantity), SUM(op.totalPrice),
+               COALESCE((SELECT AVG(CAST(r.rating AS DOUBLE))
+                         FROM Review r
+                         WHERE r.productId = p.productId
+                           AND r.createdAt BETWEEN :startDate AND :endDate), 0.0)
+        FROM OrderProduct op
+        JOIN op.order o
+        JOIN op.product p
+        JOIN p.category c
+        WHERE o.orderDate BETWEEN :startDate AND :endDate
+          AND o.orderStatus = 'COMPLETED'
+        GROUP BY p.productId, p.name, c.name
+        ORDER BY SUM(op.quantity) DESC
+    """)
+    List<Object[]> getTopSellingProductsByDateRange(
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate
+    );
+    
+    // ======================== ĐẾM SỐ SẢN PHẨM/BThương hiệu được BÁN ========================
+    @Query("""
+        SELECT COUNT(DISTINCT p.productId)
+        FROM OrderProduct op
+        JOIN op.order o
+        JOIN op.product p
+        WHERE o.orderDate BETWEEN :startDate AND :endDate
+          AND o.orderStatus = 'COMPLETED'
+    """)
+    long countSoldProductsByDateRange(
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate
+    );
+    
+    @Query("""
+        SELECT COUNT(DISTINCT b.brandId)
+        FROM OrderProduct op
+        JOIN op.order o
+        JOIN op.product p
+        JOIN p.brand b
+        WHERE o.orderDate BETWEEN :startDate AND :endDate
+          AND o.orderStatus = 'COMPLETED'
+    """)
+    long countSoldBrandsByDateRange(
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate
+    );
 }

@@ -20,8 +20,8 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="text-muted mb-1">Khách hàng mới trong tháng</h6>
-                            <h3 class="text-primary fw-bold mb-0" th:text="${newCustomersThisMonth}">0</h3>
+                            <h6 id="newCustomersLabel" class="text-muted mb-1">Khách hàng mới đăng ký</h6>
+                            <h3 id="newCustomersDisplay" class="text-primary fw-bold mb-0" th:text="${newCustomersThisMonth}">0</h3>
                         </div>
                         <i class="mdi mdi-account-plus text-primary" style="font-size: 2.5rem; opacity: 0.3;"></i>
                     </div>
@@ -34,9 +34,9 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="text-muted mb-1">Tỷ lệ khách quay lại</h6>
+                            <h6 id="returningCustomersLabel" class="text-muted mb-1">Tỷ lệ khách mua lại</h6>
                             <h3 class="text-success fw-bold mb-0">
-                                <span th:text="${#numbers.formatDecimal(returningCustomers ?: 0, 1, 'COMMA', 1, 'POINT')}">0</span>%
+                                <span id="returningCustomersDisplay" th:text="${#numbers.formatDecimal(returningCustomers ?: 0, 1, 'COMMA', 1, 'POINT')}">0</span>%
                             </h3>
                         </div>
                         <i class="mdi mdi-account-check text-success" style="font-size: 2.5rem; opacity: 0.3;"></i>
@@ -50,8 +50,8 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="text-muted mb-1">Tổng số khách hàng</h6>
-                            <h3 class="text-warning fw-bold mb-0" th:text="${totalCustomers}">0</h3>
+                            <h6 id="totalCustomersLabel" class="text-muted mb-1">Khách hàng có đơn hàng</h6>
+                            <h3 id="totalCustomersDisplay" class="text-warning fw-bold mb-0" th:text="${totalCustomers}">0</h3>
                         </div>
                         <i class="mdi mdi-account-group text-warning" style="font-size: 2.5rem; opacity: 0.3;"></i>
                     </div>
@@ -80,7 +80,7 @@
                         <th style="width: 200px;" class="text-center">Tổng chi tiêu</th>
                     </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="topCustomersBody">
                     <tr th:each="c, iterStat : ${topCustomers}">
                         <td class="text-center"><span th:text="${iterStat.count}">1</span></td>
                         <td class="text-center"><span class="fw-bold text-primary" th:text="${c.userId}">1</span></td>
