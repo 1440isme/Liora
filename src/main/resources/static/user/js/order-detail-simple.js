@@ -3,7 +3,7 @@ function cancelOrder(orderId) {
     if (confirm('Bạn có chắc chắn muốn hủy đơn hàng này không?')) {
         const token = localStorage.getItem('access_token');
         if (!token) {
-            alert('Vui lòng đăng nhập để thực hiện thao tác này');
+            alert('Bạn không thể thực hiện thao tác này');
             return;
         }
 
@@ -35,7 +35,7 @@ async function reorderOrder(orderId) {
     try {
         const token = localStorage.getItem('access_token');
         if (!token) {
-            showToast('Vui lòng đăng nhập để thực hiện thao tác này', 'error');
+            showToast('Bạn không thể thực hiện thao tác này', 'error');
             return;
         }
 

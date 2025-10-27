@@ -832,7 +832,7 @@ class UserInfoManager {
         try {
             const token = localStorage.getItem('access_token');
             if (!token) {
-                this.showError('Vui lòng đăng nhập để thực hiện thao tác này');
+                this.showError('Bạn không thể thực hiện thao tác này');
                 return;
             }
 
