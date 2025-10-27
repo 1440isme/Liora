@@ -33,12 +33,19 @@
                         <td th:text="${order.customerName}">Nguyễn Văn A</td>
                         <td th:text="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 0, 'POINT')} + ' ₫'">1,500,000 ₫</td>
                         <td>
-    <span class="badge text-white px-3 py-2 rounded-pill fw-semibold"
-          th:classappend="${order.status == 'PENDING' || order.status == 'PROCESSING'} ? 'bg-warning text-dark' :
-                          (${order.status == 'SHIPPED' || order.status == 'CONFIRMED'} ? 'bg-info text-dark' :
-                          (${order.status == 'DELIVERED' || order.status == 'COMPLETED'} ? 'bg-success' :
-                          (${order.status == 'CANCELLED' || order.status == 'FAILED'} ? 'bg-danger' : 'bg-secondary')))"
-          th:text="${order.status}">
+    <span class="fw-bold"
+          th:classappend="${order.status == 'PENDING' || order.status == 'PROCESSING'} ? 'text-warning' :
+                          (${order.status == 'SHIPPED' || order.status == 'CONFIRMED'} ? 'text-info' :
+                          (${order.status == 'DELIVERED' || order.status == 'COMPLETED'} ? 'text-success' :
+                          (${order.status == 'CANCELLED' || order.status == 'FAILED'} ? 'text-danger' : 'text-secondary')))"
+          th:text="${order.status == 'PENDING' ? 'Đang chờ' :
+                    order.status == 'PROCESSING' ? 'Đang xử lý' :
+                    order.status == 'CONFIRMED' ? 'Đã xác nhận' :
+                    order.status == 'SHIPPED' ? 'Đã vận chuyển' :
+                    order.status == 'DELIVERED' ? 'Đã giao hàng' :
+                    order.status == 'COMPLETED' ? 'Hoàn thành' :
+                    order.status == 'CANCELLED' ? 'Đã hủy' :
+                    order.status == 'FAILED' ? 'Thất bại' : order.status}">
         Đang xử lý
     </span>
                         </td>

@@ -259,15 +259,22 @@ class ProductTableManager {
                 <td>
                     <div class="d-flex align-items-center justify-content-center">
                         <img src="${product.mainImageUrl || 'https://placehold.co/300x300'}" 
-                            class="rounded" 
-                            style="width: 50px; height: 50px; object-fit: cover;"
+                            class="rounded product-image-clickable" 
+                            style="width: 50px; height: 50px; object-fit: cover; cursor: pointer;"
                             alt="${product.name}"
-                            onerror="this.src='https://placehold.co/300x300'">
+                            onclick="productTableManager.viewProduct(${product.productId})"
+                            onerror="this.src='https://placehold.co/300x300'"
+                            title="Click để xem chi tiết">
                     </div>
                 </td>
                 <td>
                     <div>
-                        <h6 class="mb-1">${product.name}</h6>
+                        <h6 class="mb-1 product-name-clickable" 
+                            style="cursor: pointer;"
+                            onclick="productTableManager.viewProduct(${product.productId})"
+                            title="Click để xem chi tiết">
+                            ${product.name}
+                        </h6>
                         <small class="text-muted">${shortDescription}</small>
                     </div>
                 </td>

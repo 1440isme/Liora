@@ -58,7 +58,10 @@ public class DashboardServiceImpl implements IDashboardService {
 
     @Override
     public long getLowStockProducts() {
-        return productService.findByStockLessThanEqual(10).size();
+        // Chỉ đếm sản phẩm sắp hết hàng (1-10), không bao gồm sản phẩm đã hết hàng (stock = 0)
+        return productService.findByStockLessThanEqual(10).stream()
+                .filter(p -> p.getStock() > 0)
+                .count();
     }
 
     @Override
@@ -68,7 +71,18 @@ public class DashboardServiceImpl implements IDashboardService {
 
     @Override
     public double getConversionRate() {
-        return 0;
+        // Đếm số khách hàng đã có ít nhất 1 đơn hàng COMPLETED
+        long customersWhoOrdered = orderService.countCustomersWithCompletedOrders();
+        
+        // Tổng số khách hàng (trừ admin)
+        long totalCustomers = userService.count() - 1;
+        
+        if (totalCustomers == 0) {
+            return 0.0;
+        }
+        
+        // Conversion Rate = (Số khách hàng đã mua / Tổng số khách hàng) × 100%
+        return ((double) customersWhoOrdered / totalCustomers) * 100.0;
     }
 
     @Override
@@ -109,6 +123,7 @@ public class DashboardServiceImpl implements IDashboardService {
     @Override
     public List<LowStockProductResponse> getLowStockProductsList(int threshold) {
         return productService.findByStockLessThanEqual(threshold).stream()
+                .filter(product -> product.getStock() > 0) // Chỉ lấy sản phẩm sắp hết hàng, không lấy sản phẩm đã hết hàng
                 .map(product -> LowStockProductResponse.builder()
                         .productId(product.getProductId())
                         .name(product.getName())

@@ -62,7 +62,7 @@
 
     <!-- Bảng Top khách hàng chi tiêu cao nhất -->
     <div class="card shadow mb-4">
-        <div class="card-header bg-white border-start border-4 border-warning d-flex justify-content-between">
+        <div class="card-header bg-white border-start border-4 border-warning d-flex justify-content-between align-items-center py-3 px-4">
             <h6 class="m-0 fw-bold text-warning">💎 Top khách hàng chi tiêu nhiều nhất</h6>
             <a href="/admin/users" class="btn btn-sm btn-warning text-white">Xem tất cả</a>
         </div>
@@ -72,6 +72,7 @@
                 <table class="table table-bordered table-hover align-middle">
                     <thead class="table-light">
                     <tr>
+                        <th style="width: 60px;" class="text-center">STT</th>
                         <th style="width: 80px;" class="text-center">Mã KH</th>
                         <th>Tên khách hàng</th>
                         <th style="width: 250px;">Email</th>
@@ -80,17 +81,18 @@
                     </tr>
                     </thead>
                     <tbody>
-                    <tr th:each="c : ${topCustomers}">
-                        <td class="text-center"><span class="text-dark" th:text="${c.userId}">1</span></td>
+                    <tr th:each="c, iterStat : ${topCustomers}">
+                        <td class="text-center"><span th:text="${iterStat.count}">1</span></td>
+                        <td class="text-center"><span class="fw-bold text-primary" th:text="${c.userId}">1</span></td>
                         <td th:text="${c.fullName}">Nguyễn Văn A</td>
                         <td th:text="${c.email}">a@gmail.com</td>
-                        <td class="text-center"><span class="text-success fw-semibold" th:text="${c.ordersCount}">3</span></td>
+                        <td class="text-center"><span class="fw-bold text-success" th:text="${c.ordersCount}">3</span></td>
                         <td class="text-center" th:text="${#numbers.formatDecimal(c.totalSpent, 0, 'COMMA', 0, 'POINT')} + ' ₫'">
                             1,200,000 ₫
                         </td>
                     </tr>
                     <tr th:if="${#lists.isEmpty(topCustomers)}">
-                        <td colspan="5" class="text-center text-muted">Không có dữ liệu khách hàng</td>
+                        <td colspan="6" class="text-center text-muted">Không có dữ liệu khách hàng</td>
                     </tr>
                     </tbody>
                 </table>
