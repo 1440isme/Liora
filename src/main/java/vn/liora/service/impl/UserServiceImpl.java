@@ -209,6 +209,11 @@ public class UserServiceImpl implements IUserService {
     }
     
     @Override
+    public long countNewCustomersByDateRange(java.time.LocalDateTime startDate, java.time.LocalDateTime endDate) {
+        return userRepository.countByRegistrationDateBetween(startDate, endDate);
+    }
+    
+    @Override
     public List<Object[]> getNewCustomersByMonth(java.time.LocalDateTime startDate) {
         return userRepository.countNewCustomersByMonth(startDate);
     }

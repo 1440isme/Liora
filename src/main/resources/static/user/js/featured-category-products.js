@@ -1024,7 +1024,7 @@ class FeaturedCategoryProductsManager {
             <img src="${image.imageUrl || image}" 
                  class="thumbnail ${index === 0 ? 'active' : ''}" 
                  alt="${product.name}"
-                 style="width: 60px; height: 60px; object-fit: cover; cursor: pointer; border: 2px solid ${index === 0 ? '#007bff' : 'transparent'}; border-radius: 4px;"
+                 style="width: 60px; height: 60px; object-fit: cover; cursor: pointer; border: ${index === 0 ? '2' : '1'}px solid #e0e0e0; border-radius: 4px;"
                  onerror="this.src='/user/img/default-product.jpg'">
         `).join('');
     }
@@ -1032,8 +1032,8 @@ class FeaturedCategoryProductsManager {
     // Setup slider navigation
     setupSliderNavigation(product) {
         const mainImage = document.getElementById('mainProductImage');
-        const prevBtn = document.getElementById('prevBtn');
-        const nextBtn = document.getElementById('nextBtn');
+        const prevBtn = document.getElementById('quickViewPrevBtn');
+        const nextBtn = document.getElementById('quickViewNextBtn');
         const thumbnails = document.querySelectorAll('.thumbnail');
 
         if (!mainImage || !product.images || product.images.length <= 1) {
@@ -1046,12 +1046,15 @@ class FeaturedCategoryProductsManager {
 
         const updateMainImage = (index) => {
             if (product.images && product.images[index]) {
-                mainImage.src = product.images[index].imageUrl;
+                const image = product.images[index];
+                // Handle both object format {imageUrl: '...'} and string format '...'
+                mainImage.src = image.imageUrl || image;
                 mainImage.alt = product.name;
 
                 // Update thumbnail selection
                 thumbnails.forEach((thumb, i) => {
                     thumb.classList.toggle('active', i === index);
+                    thumb.style.borderWidth = i === index ? '2px' : '1px';
                 });
             }
         };
@@ -1079,6 +1082,9 @@ class FeaturedCategoryProductsManager {
                 updateMainImage(currentImageIndex);
             });
         });
+
+        // Initialize with first image
+        updateMainImage(0);
     }
 
     // Get product status badge

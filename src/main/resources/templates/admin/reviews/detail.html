@@ -82,7 +82,7 @@
                                                 <label class="info-label">Tên sản phẩm:</label>
                                                 <div class="info-value" id="productName">Đang tải...</div>
                                             </div>
-                                            
+
                                             <!-- Mã sản phẩm và Giá sản phẩm ngang hàng -->
                                             <div class="row mb-4"> <!-- Tăng margin-bottom -->
                                                 <div class="col-md-6">
@@ -98,7 +98,7 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                            
+
                                             <!-- Thương hiệu và Danh mục ngang hàng -->
                                             <div class="row mb-3"> <!-- Tăng margin-bottom -->
                                                 <div class="col-md-6">
@@ -371,6 +371,226 @@
         #orderCode a:focus {
             outline: 2px solid #007bff;
             outline-offset: 2px;
+        }
+        
+        /* Review content detail styles */
+        .review-content-detail {
+            max-height: 600px;
+            overflow-y: auto;
+            padding: 15px;
+            background: #f8f9fc;
+            border-radius: 8px;
+            line-height: 1.6;
+            font-size: 1rem; /* Increase font size */
+        }
+        
+        .review-content-detail p {
+            margin-bottom: 12px;
+            color: #333;
+            font-size: 1rem; /* Text size */
+        }
+        
+        .review-content-detail img {
+            max-width: 100%;
+            max-height: 400px; /* Limit image height */
+            height: auto;
+            border-radius: 8px;
+            margin: 10px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            object-fit: contain; /* Maintain aspect ratio */
+        }
+        
+        .review-content-detail video {
+            max-width: 100%;
+            max-height: 400px; /* Limit video height */
+            height: auto;
+            border-radius: 8px;
+            margin: 10px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .review-content-detail figure {
+            margin: 15px 0;
+            text-align: center;
+        }
+        
+        .review-content-detail figure img {
+            max-width: 100%;
+            max-height: 400px; /* Consistent image size */
+            object-fit: contain;
+        }
+        
+        .review-content-detail strong {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 1rem;
+        }
+        
+        /* User images collapse styling */
+        .review-user-images-section {
+            margin-top: 12px;
+            padding-top: 12px;
+        }
+        
+        .review-show-images-btn {
+            color: #6c757d;
+            font-size: 0.875rem;
+            font-weight: 400;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 0;
+            border: none;
+            background: none;
+            cursor: pointer;
+        }
+        
+        .review-show-images-btn:hover {
+            color: #495057;
+            text-decoration: none;
+        }
+        
+        .review-show-images-btn i {
+            font-size: 1rem;
+        }
+        
+        .collapse-icon {
+            font-size: 0.7rem;
+            transition: transform 0.2s;
+        }
+        
+        .review-show-images-btn[aria-expanded="true"] .collapse-icon {
+            transform: rotate(180deg);
+        }
+        
+        .review-user-images-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 8px;
+            margin-top: 8px;
+        }
+        
+        .review-user-image-item {
+            position: relative;
+            width: 100%;
+            padding-bottom: 100%; /* Square aspect ratio */
+            border-radius: 4px;
+            overflow: hidden;
+            border: 1px solid #dee2e6;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .review-user-image-item:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            z-index: 1;
+        }
+        
+        .review-user-image-item img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        /* Lightbox styling */
+        .review-image-lightbox {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .review-image-lightbox.active {
+            display: flex;
+        }
+        
+        .lightbox-container {
+            position: relative;
+            max-width: 90vw;
+            max-height: 90vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .review-image-lightbox img {
+            max-width: 100%;
+            max-height: 90vh;
+            object-fit: contain;
+            border-radius: 8px;
+            cursor: default;
+        }
+        
+        .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            font-size: 40px;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            z-index: 10001;
+            line-height: 1;
+            transition: color 0.2s;
+        }
+        
+        .close-btn:hover {
+            color: #ff6b9d;
+        }
+        
+        .nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: white;
+            font-size: 30px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+            z-index: 10001;
+        }
+        
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .nav-btn.prev {
+            left: 20px;
+        }
+        
+        .nav-btn.next {
+            right: 20px;
+        }
+        
+        .image-counter {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            z-index: 10001;
         }
     </style>
 

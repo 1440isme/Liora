@@ -70,7 +70,7 @@ public class EmailService {
         StringBuilder content = new StringBuilder();
 
         content.append("Xin chào ").append(customerName).append(",\n\n");
-        content.append("Cảm ơn bạn đã đặt hàng tại Liora! Đơn hàng của bạn đã được xác nhận.\n\n");
+        content.append("Cảm ơn bạn đã đặt hàng tại Liora! Đơn hàng của bạn đang được xử lý.\n\n");
 
         content.append("THÔNG TIN ĐƠN HÀNG:\n");
         content.append("Mã đơn hàng: #").append(order.getIdOrder()).append("\n");
@@ -245,6 +245,91 @@ public class EmailService {
 
         content.append("Nếu bạn gặp vấn đề, hãy liên hệ với chúng tôi.\n\n");
         content.append("Trân trọng,\nĐội ngũ Liora");
+
+        return content.toString();
+    }
+
+    /**
+     * Gửi email thông báo hủy đơn hàng cho user đã đăng nhập
+     */
+    public void sendOrderCancellationEmail(String userEmail, String userName, OrderResponse order,
+            List<OrderProductResponse> orderProducts) {
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(userEmail);
+            message.setSubject("Thông báo hủy đơn hàng #" + order.getIdOrder() + " - Liora");
+
+            String content = buildOrderCancellationContent(userName, order, orderProducts, true);
+            message.setText(content);
+
+            mailSender.send(message);
+            System.out.println("Order cancellation email sent to: " + userEmail);
+        } catch (Exception e) {
+            System.err.println("Error sending order cancellation email: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Gửi email thông báo hủy đơn hàng cho guest
+     */
+    public void sendGuestOrderCancellationEmail(String guestEmail, OrderResponse order,
+            List<OrderProductResponse> orderProducts) {
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(guestEmail);
+            message.setSubject("Thông báo hủy đơn hàng #" + order.getIdOrder() + " - Liora");
+
+            String content = buildOrderCancellationContent("Khách hàng", order, orderProducts, false);
+            message.setText(content);
+
+            mailSender.send(message);
+            System.out.println("Guest order cancellation email sent to: " + guestEmail);
+        } catch (Exception e) {
+            System.err.println("Error sending guest order cancellation email: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Xây dựng nội dung email thông báo hủy đơn hàng
+     */
+    private String buildOrderCancellationContent(String customerName, OrderResponse order,
+            List<OrderProductResponse> orderProducts, boolean isRegisteredUser) {
+        StringBuilder content = new StringBuilder();
+
+        content.append("Xin chào ").append(customerName).append(",\n\n");
+        content.append("Chúng tôi xin thông báo đơn hàng của bạn đã bị hủy.\n\n");
+
+        content.append("THÔNG TIN ĐƠN HÀNG:\n");
+        content.append("Mã đơn hàng: #").append(order.getIdOrder()).append("\n");
+        content.append("Ngày đặt: ").append(order.getOrderDate()).append("\n");
+        content.append("Trạng thái: ").append("Đã hủy").append("\n");
+        content.append("Tổng tiền: ").append(String.format("%,.0f VNĐ", order.getTotal())).append("\n\n");
+
+        content.append("SẢN PHẨM ĐÃ HỦY:\n");
+        for (OrderProductResponse product : orderProducts) {
+            content.append("- ").append(product.getProductName())
+                    .append(" x").append(product.getQuantity())
+                    .append(" = ").append(String.format("%,.0f VNĐ", product.getTotalPrice())).append("\n");
+        }
+
+        if (isRegisteredUser) {
+            content.append("XEM CHI TIẾT ĐƠN HÀNG:\n");
+            content.append("Bạn có thể xem chi tiết đơn hàng tại: ");
+            content.append(appUrl).append("/user/order-detail/").append(order.getIdOrder()).append("\n\n");
+        } else {
+            content.append("XEM CHI TIẾT ĐƠN HÀNG:\n");
+            content.append("Bạn có thể xem chi tiết đơn hàng tại: ");
+            content.append(appUrl).append("/user/order-detail/access\n\n");
+            content.append("Thông tin cần thiết:\n");
+            content.append("- Mã đơn hàng: ").append(order.getIdOrder()).append("\n");
+            content.append("- Email đặt hàng: ").append(order.getEmail()).append("\n\n");
+        }
+
+        content.append("Nếu bạn cần hỗ trợ hoặc có câu hỏi về việc hủy đơn hàng, vui lòng liên hệ với chúng tôi.\n\n");
+        content.append("Trân trọng,\n");
+        content.append("Đội ngũ Liora");
 
         return content.toString();
     }

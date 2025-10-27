@@ -5,7 +5,7 @@ class UsersManager {
     constructor() {
         this.users = [];
         this.currentFilters = { search: '' };
-        this.currentSort = 'createdDate_desc';
+        this.currentSort = 'createdAt_desc';
         this.deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
         this.userToDelete = null;
         this.init();
@@ -104,8 +104,8 @@ class UsersManager {
             const fromDate = this.parseDateFilter(this.currentFilters.dateFrom);
             if (fromDate) {
                 filtered = filtered.filter(u => {
-                    if (!u.createdDate) return false;
-                    const userDate = new Date(u.createdDate);
+                    if (!u.createdAt) return false;
+                    const userDate = new Date(u.createdAt);
                     return userDate >= fromDate;
                 });
             }
@@ -115,8 +115,8 @@ class UsersManager {
             const toDate = this.parseDateFilter(this.currentFilters.dateTo);
             if (toDate) {
                 filtered = filtered.filter(u => {
-                    if (!u.createdDate) return false;
-                    const userDate = new Date(u.createdDate);
+                    if (!u.createdAt) return false;
+                    const userDate = new Date(u.createdAt);
                     return userDate <= toDate;
                 });
             }
@@ -131,10 +131,10 @@ class UsersManager {
     sortUsers(users, sortBy) {
         return users.sort((a, b) => {
             switch (sortBy) {
-                case 'createdDate_desc':
-                    return new Date(b.createdDate || 0) - new Date(a.createdDate || 0);
-                case 'createdDate_asc':
-                    return new Date(a.createdDate || 0) - new Date(b.createdDate || 0);
+                case 'createdAt_desc':
+                    return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+                case 'createdAt_asc':
+                    return new Date(a.createdAt || 0) - new Date(b.createdAt || 0);
                 case 'name_asc':
                     return (a.firstname + ' ' + a.lastname).localeCompare(b.firstname + ' ' + b.lastname);
                 case 'name_desc':
@@ -161,7 +161,7 @@ class UsersManager {
             ? u.roles.map(r => `<span class="badge bg-secondary">${r}</span>`).join(' ')
             : '<span class="text-muted">-</span>';
         const activeBadge = u.active ? '<span class="badge bg-success">Hoạt động</span>' : '<span class="badge bg-secondary">Không hoạt động</span>';
-        const created = u.createdDate ? this.formatDate(u.createdDate) : '-';
+        const created = u.createdAt ? this.formatDate(u.createdAt) : '-';
         const avatar = u.avatar || 'https://placehold.co/40';
 
         return `
@@ -725,11 +725,11 @@ class UsersFilters {
         }
         if (filters.dateFrom) {
             const from = new Date(filters.dateFrom);
-            result = result.filter(u => u.createdDate && new Date(u.createdDate) >= from);
+            result = result.filter(u => u.createdAt && new Date(u.createdAt) >= from);
         }
         if (filters.dateTo) {
             const to = new Date(filters.dateTo);
-            result = result.filter(u => u.createdDate && new Date(u.createdDate) <= to);
+            result = result.filter(u => u.createdAt && new Date(u.createdAt) <= to);
         }
         return result;
     }
@@ -741,7 +741,7 @@ class UsersFilters {
         // New users (7 days)
         const now = new Date();
         const sevenDaysAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
-        const newUsers = allUsers.filter(u => u.createdDate && new Date(u.createdDate) >= sevenDaysAgo).length;
+        const newUsers = allUsers.filter(u => u.createdAt && new Date(u.createdAt) >= sevenDaysAgo).length;
         const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = String(val); };
         set('totalUsers', total);
         set('activeUsers', active);
@@ -804,8 +804,8 @@ class UsersFilters {
                 const fromDate = this.parseDateFilter(this.currentFilters.dateFrom);
                 if (fromDate) {
                     filtered = filtered.filter(u => {
-                        if (!u.createdDate) return false;
-                        const userDate = new Date(u.createdDate);
+                        if (!u.createdAt) return false;
+                        const userDate = new Date(u.createdAt);
                         return userDate >= fromDate;
                     });
                 }
@@ -815,8 +815,8 @@ class UsersFilters {
                 const toDate = this.parseDateFilter(this.currentFilters.dateTo);
                 if (toDate) {
                     filtered = filtered.filter(u => {
-                        if (!u.createdDate) return false;
-                        const userDate = new Date(u.createdDate);
+                        if (!u.createdAt) return false;
+                        const userDate = new Date(u.createdAt);
                         return userDate <= toDate;
                     });
                 }

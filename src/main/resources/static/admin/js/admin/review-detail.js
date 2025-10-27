@@ -86,8 +86,35 @@ class ReviewDetailManager {
         document.title = `Chi tiết đánh giá #${review.reviewId} - Liora Admin`;
         $('#pageReviewId').text(`#${review.reviewId}`);
         
-        // Review content
-        $('#reviewContent').text(review.content || 'Không có nội dung');
+        // Review content - Display HTML including images and videos
+        // Extract images from HTML
+        const userImages = this.extractUserImages(review.content);
+        const hasUserImages = userImages.length > 0;
+        
+        // Clean content (remove img tags)
+        let cleanContent = review.content || '';
+        if (hasUserImages) {
+            cleanContent = cleanContent.replace(/<figure[^>]*>.*?<\/figure>/gi, '').trim();
+            if (!cleanContent) {
+                cleanContent = 'Đánh giá này có ảnh đính kèm.';
+            }
+        }
+        
+        let contentHtml = '';
+        if (review.content) {
+            contentHtml = `<div class="review-content-detail">
+                ${cleanContent}
+                ${hasUserImages ? this.createUserImagesCollapse(userImages, review.reviewId) : ''}
+            </div>`;
+        } else {
+            contentHtml = '<span class="text-muted">Không có nội dung</span>';
+        }
+        
+        $('#reviewContent').html(contentHtml);
+        
+        // Bind image click events after content is rendered
+        setTimeout(() => this.bindImageClickEvents(), 100);
+        
         $('#reviewStars').html(this.generateStars(review.rating));
         $('#ratingText').text(`${review.rating}/5 sao`);
         
@@ -163,7 +190,7 @@ class ReviewDetailManager {
             const orderCode = review.orderCode || `#${review.orderId}`;
             const orderLink = `<a href="/admin/orders/detail/${review.orderId}" class="text-decoration-none fw-bold text-primary" title="Xem chi tiết đơn hàng">${orderCode}</a>`;
             $('#orderCode').html(orderLink);
-            
+
             $('#orderDate').text(review.orderDate ? this.formatDateTime(new Date(review.orderDate)) : 'N/A');
             $('#orderUserId').text(review.userId || 'N/A');
         } else {
@@ -353,6 +380,178 @@ class ReviewDetailManager {
         setTimeout(() => {
             $('.alert').fadeOut();
         }, 5000);
+    }
+
+    extractUserImages(htmlContent) {
+        if (!htmlContent) return [];
+        
+        const images = [];
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(htmlContent, 'text/html');
+        const imgElements = doc.querySelectorAll('figure.image img');
+        
+        imgElements.forEach(img => {
+            const src = img.getAttribute('src');
+            if (src) {
+                images.push(src);
+            }
+        });
+        
+        return images;
+    }
+
+    createUserImagesCollapse(images, reviewId) {
+        const uniqueId = `review-images-${reviewId}-${Date.now()}`;
+        
+        return `
+            <div class="review-user-images-section" data-review-images='${JSON.stringify(images)}' data-review-id="${reviewId}">
+                <button class="btn btn-link p-0 mt-2 review-show-images-btn" 
+                        type="button" 
+                        data-bs-toggle="collapse" 
+                        data-bs-target="#${uniqueId}"
+                        aria-expanded="false">
+                    <i class="mdi mdi-image-multiple"></i>
+                    <span>Xem ảnh</span>
+                    <i class="mdi mdi-chevron-down collapse-icon"></i>
+                </button>
+                <div class="collapse mt-2" id="${uniqueId}">
+                    <div class="review-user-images-grid">
+                        ${images.map((src, index) => `
+                            <div class="review-user-image-item" data-image-index="${index}">
+                                <img src="${src}" alt="Review image" class="img-fluid" loading="lazy">
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    bindImageClickEvents() {
+        const container = document.querySelector('.review-content-detail');
+        if (!container) return;
+        
+        container.addEventListener('click', (e) => {
+            const imageItem = e.target.closest('.review-user-image-item');
+            if (imageItem) {
+                const section = imageItem.closest('.review-user-images-section');
+                if (section) {
+                    const imagesJson = section.getAttribute('data-review-images');
+                    if (imagesJson) {
+                        try {
+                            const images = JSON.parse(imagesJson);
+                            const imageIndex = parseInt(imageItem.getAttribute('data-image-index'));
+                            this.openImageLightbox(images, imageIndex);
+                        } catch (error) {
+                            console.error('Error parsing images:', error);
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    openImageLightbox(images, startIndex) {
+        let lightbox = document.getElementById('reviewImageLightbox');
+        
+        if (!lightbox) {
+            lightbox = document.createElement('div');
+            lightbox.className = 'review-image-lightbox';
+            lightbox.id = 'reviewImageLightbox';
+            lightbox.innerHTML = `
+                <span class="close-btn">&times;</span>
+                <button class="nav-btn prev">
+                    <i class="mdi mdi-chevron-left"></i>
+                </button>
+                <button class="nav-btn next">
+                    <i class="mdi mdi-chevron-right"></i>
+                </button>
+                <div class="lightbox-container">
+                    <img src="" alt="Full size" id="reviewLightboxImage">
+                    <div class="image-counter"></div>
+                </div>
+            `;
+            document.body.appendChild(lightbox);
+            
+            const closeBtn = lightbox.querySelector('.close-btn');
+            const navPrev = lightbox.querySelector('.nav-btn.prev');
+            const navNext = lightbox.querySelector('.nav-btn.next');
+            
+            lightbox.addEventListener('click', function(e) {
+                if (e.target === lightbox) {
+                    lightbox.classList.remove('active');
+                }
+            });
+            
+            closeBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                lightbox.classList.remove('active');
+            });
+            
+            navPrev.addEventListener('click', function(e) {
+                e.stopPropagation();
+                window.reviewDetailManager.navigateImage('prev');
+            });
+            
+            navNext.addEventListener('click', function(e) {
+                e.stopPropagation();
+                window.reviewDetailManager.navigateImage('next');
+            });
+            
+            document.addEventListener('keydown', function(e) {
+                if (lightbox.classList.contains('active')) {
+                    if (e.key === 'ArrowLeft') {
+                        window.reviewDetailManager.navigateImage('prev');
+                    } else if (e.key === 'ArrowRight') {
+                        window.reviewDetailManager.navigateImage('next');
+                    } else if (e.key === 'Escape') {
+                        lightbox.classList.remove('active');
+                    }
+                }
+            });
+        }
+
+        lightbox.dataset.images = JSON.stringify(images);
+        lightbox.dataset.currentIndex = startIndex;
+
+        this.updateLightboxImage();
+        lightbox.classList.add('active');
+    }
+
+    navigateImage(direction) {
+        const lightbox = document.getElementById('reviewImageLightbox');
+        if (!lightbox) return;
+        
+        const images = JSON.parse(lightbox.dataset.images);
+        let currentIndex = parseInt(lightbox.dataset.currentIndex);
+        
+        if (direction === 'prev') {
+            currentIndex = (currentIndex - 1 + images.length) % images.length;
+        } else if (direction === 'next') {
+            currentIndex = (currentIndex + 1) % images.length;
+        }
+        
+        lightbox.dataset.currentIndex = currentIndex;
+        this.updateLightboxImage();
+    }
+
+    updateLightboxImage() {
+        const lightbox = document.getElementById('reviewImageLightbox');
+        if (!lightbox) return;
+        
+        const images = JSON.parse(lightbox.dataset.images);
+        const currentIndex = parseInt(lightbox.dataset.currentIndex);
+        
+        const img = document.getElementById('reviewLightboxImage');
+        const counter = lightbox.querySelector('.image-counter');
+        
+        if (img && images[currentIndex]) {
+            img.src = images[currentIndex];
+        }
+        
+        if (counter) {
+            counter.textContent = `${currentIndex + 1} / ${images.length}`;
+        }
     }
 }
 

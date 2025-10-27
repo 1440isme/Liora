@@ -650,13 +650,145 @@ class OrderManager {
     }
 
     exportToExcel() {
-        // Implementation for Excel export
-        this.showAlert('info', 'Thông báo', 'Chức năng xuất Excel đang được phát triển');
+        try {
+            // Lấy danh sách đơn hàng hiện tại
+            const orders = this.filteredOrders.length > 0 ? this.filteredOrders : this.orders;
+            
+            if (!orders || orders.length === 0) {
+                this.showAlert('warning', 'Cảnh báo', 'Không có dữ liệu để xuất Excel');
+                return;
+            }
+
+            // Tạo CSV content
+            let csv = '\uFEFF'; // UTF-8 BOM for proper encoding in Excel
+            csv += 'Mã đơn hàng,Thời gian đặt,Khách hàng,Tổng tiền,Trạng thái đơn hàng,Trạng thái thanh toán,Phương thức thanh toán\n';
+
+            orders.forEach(order => {
+                const orderId = order.idOrder || '';
+                const orderDate = this.formatDate(order.orderDate || '');
+                const customerName = (order.customerName || '').replace(/,/g, ';');
+                const totalAmount = (order.total || 0).toLocaleString('vi-VN');
+                const orderStatus = this.getOrderStatusText(order.orderStatus || '');
+                const paymentStatus = this.getPaymentStatusText(order.paymentStatus || '');
+                const paymentMethod = (order.paymentMethod || '').replace(/,/g, ';');
+
+                csv += `${orderId},"${orderDate}","${customerName}","${totalAmount} ₫","${orderStatus}","${paymentStatus}","${paymentMethod}"\n`;
+            });
+
+            // Create blob and download
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            const now = new Date();
+            const dateStr = now.toISOString().split('T')[0];
+            link.setAttribute('href', url);
+            link.setAttribute('download', `danh_sach_don_hang_${dateStr}.csv`);
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            this.showAlert('success', 'Thành công', 'Xuất Excel thành công!');
+        } catch (error) {
+            console.error('Error exporting to Excel:', error);
+            this.showAlert('error', 'Lỗi', 'Có lỗi xảy ra khi xuất Excel');
+        }
     }
 
     printReport() {
-        // Implementation for printing
-        window.print();
+        try {
+            // Chuẩn bị dữ liệu để in
+            const orders = this.filteredOrders.length > 0 ? this.filteredOrders : this.orders;
+            const dateFrom = $('#filterDateFrom').val();
+            const dateTo = $('#filterDateTo').val();
+
+            if (!orders || orders.length === 0) {
+                this.showAlert('warning', 'Cảnh báo', 'Không có dữ liệu để in');
+                return;
+            }
+
+            // Tạo cửa sổ in
+            const printWindow = window.open('', '_blank');
+            
+            // Lấy thông tin thống kê
+            // Chỉ tính các đơn đã hoàn tất để phù hợp với thống kê trên trang
+            const completedOrders = orders.filter(order => order.orderStatus === 'COMPLETED');
+            const totalOrders = orders.length;
+            const totalRevenue = completedOrders.reduce((sum, order) => {
+                const amount = typeof order.total === 'number' ? order.total : parseFloat(order.total || 0);
+                return sum + (isNaN(amount) ? 0 : amount);
+            }, 0);
+
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Báo cáo đơn hàng</title>
+                    <meta charset="UTF-8">
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 20px; }
+                        h1 { text-align: center; color: #333; }
+                        .header-info { margin-bottom: 20px; text-align: center; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                        th { background-color: #4e73df; color: white; }
+                        .summary { margin-top: 20px; text-align: right; }
+                        .summary-row { padding: 5px 0; }
+                        @media print {
+                            .no-print { display: none; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <h1>BÁO CÁO ĐƠN HÀNG</h1>
+                    <div class="header-info">
+                        <p><strong>Thời gian:</strong> ${dateFrom} đến ${dateTo}</p>
+                        <p><strong>Ngày in:</strong> ${new Date().toLocaleString('vi-VN')}</p>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Mã đơn hàng</th>
+                                <th>Thời gian đặt</th>
+                                <th>Khách hàng</th>
+                                <th>Tổng tiền</th>
+                                <th>Trạng thái</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${orders.map(order => `
+                                <tr>
+                                    <td>${order.idOrder || ''}</td>
+                                    <td>${this.formatDate(order.orderDate || '')}</td>
+                                    <td>${order.customerName || ''}</td>
+                                    <td>${(order.total || 0).toLocaleString('vi-VN')} ₫</td>
+                                    <td>${this.getOrderStatusText(order.orderStatus || '')}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                    <div class="summary">
+                        <div class="summary-row"><strong>Tổng đơn hàng:</strong> ${totalOrders}</div>
+                        <div class="summary-row"><strong>Đơn hàng đã hoàn tất:</strong> ${completedOrders.length}</div>
+                        <div class="summary-row"><strong>Tổng doanh thu (đã hoàn tất):</strong> ${totalRevenue.toLocaleString('vi-VN')} ₫</div>
+                    </div>
+                </body>
+                </html>
+            `);
+            
+            printWindow.document.close();
+            printWindow.focus();
+            
+            // Đợi nội dung load xong rồi mới in
+            setTimeout(() => {
+                printWindow.print();
+            }, 500);
+        } catch (error) {
+            console.error('Error printing report:', error);
+            this.showAlert('error', 'Lỗi', 'Có lỗi xảy ra khi in báo cáo');
+        }
     }
 
     // Helper methods

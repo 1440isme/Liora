@@ -48,6 +48,7 @@ public interface IUserService {
     Optional<User> findByUsername(String username);
 
     long countNewCustomersThisMonth();
+    long countNewCustomersByDateRange(java.time.LocalDateTime startDate, java.time.LocalDateTime endDate);
     
     List<Object[]> getNewCustomersByMonth(java.time.LocalDateTime startDate);
 

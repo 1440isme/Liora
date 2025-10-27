@@ -313,9 +313,14 @@
 .unavailable-product-title {
     font-size: 0.95rem;
     font-weight: var(--font-medium);
-    color: #e8a2b0;
+    color: #000000;
     margin-bottom: 0.25rem;
     line-height: 1.4;
+    transition: color 0.2s ease;
+}
+
+.unavailable-product-title:hover {
+    color: #e8a2b0;
 }
 
 .unavailable-product-brand {

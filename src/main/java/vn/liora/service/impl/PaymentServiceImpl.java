@@ -10,13 +10,23 @@ import org.springframework.transaction.annotation.Transactional;
 import vn.liora.entity.Order;
 import vn.liora.entity.VnpayPayment;
 import vn.liora.entity.MomoPayment;
+import vn.liora.entity.Discount;
+import vn.liora.entity.Product;
+import vn.liora.entity.OrderProduct;
+import vn.liora.dto.response.OrderResponse;
+import vn.liora.dto.response.OrderProductResponse;
+import vn.liora.mapper.OrderMapper;
+import vn.liora.mapper.OrderProductMapper;
 import vn.liora.exception.AppException;
 import vn.liora.exception.ErrorCode;
 import vn.liora.repository.OrderRepository;
 import vn.liora.repository.VnpayPaymentRepository;
 import vn.liora.repository.MomoPaymentRepository;
+import vn.liora.repository.OrderProductRepository;
+import vn.liora.repository.DiscountRepository;
 import vn.liora.service.PaymentService;
-import vn.liora.service.IGhnShippingService;
+import vn.liora.service.IProductService;
+import vn.liora.service.EmailService;
 import vn.liora.util.VnpayUtil;
 import vn.liora.util.MomoUtil;
 
@@ -24,6 +34,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.List;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -38,7 +49,12 @@ public class PaymentServiceImpl implements PaymentService {
     final OrderRepository orderRepository;
     final VnpayPaymentRepository vnpayPaymentRepository;
     final MomoPaymentRepository momoPaymentRepository;
-    final IGhnShippingService ghnShippingService;
+    final OrderProductRepository orderProductRepository;
+    final IProductService productService;
+    final DiscountRepository discountRepository;
+    final EmailService emailService;
+    final OrderMapper orderMapper;
+    final OrderProductMapper orderProductMapper;
     final RestTemplate restTemplate;
 
     @Value("${vnpay.tmnCode}")
@@ -229,21 +245,7 @@ public class PaymentServiceImpl implements PaymentService {
 
         if ("00".equals(responseCode)) {
             order.setPaymentStatus("PAID");
-            order.setOrderStatus("CONFIRMED");
-
-            // Auto create GHN shipping order sau khi thanh toán thành công
-            try {
-                // Đảm bảo Order đã có đủ thông tin địa chỉ (district/ward)
-                // Nếu thiếu thì bỏ qua tạo GHN để không chặn IPN
-                if (order.getDistrictId() != null && order.getWardCode() != null) {
-                    ghnShippingService.createShippingOrder(order);
-                    log.info("Created GHN shipping order for Order {}", order.getIdOrder());
-                } else {
-                    log.warn("Skip GHN create: Order missing district/ward.");
-                }
-            } catch (Exception ex) {
-                log.error("Failed to auto create GHN order after payment: {}", ex.getMessage());
-            }
+            // orderStatus vẫn là PENDING, đợi admin duyệt đơn để tạo GHN
 
             // Update VnpayPayment entity
             vnpayPayment.setVnpTransactionNo(transactionNo);
@@ -254,11 +256,39 @@ public class PaymentServiceImpl implements PaymentService {
             vnpayPayment.setFailureReason(null);
         } else if ("24".equals(responseCode)) { // 24: User cancel payment at VNPAY
             order.setPaymentStatus("CANCELLED");
-            // Giữ orderStatus ở trạng thái hiện tại (thường là PENDING)
+            order.setOrderStatus("CANCELLED"); // Đơn hàng cũng chuyển thành đã hủy
+
+            // ✅ HOÀN LẠI DISCOUNT NẾU CÓ
+            if (order.getDiscount() != null) {
+                try {
+                    Discount discount = order.getDiscount();
+                    if (discount.getUsedCount() > 0) {
+                        discount.setUsedCount(discount.getUsedCount() - 1);
+                        discountRepository.save(discount);
+                        log.info("Rolled back discount usage for order {} (payment cancelled)", order.getIdOrder());
+                    }
+                } catch (Exception e) {
+                    log.warn("Failed to rollback discount for cancelled payment: {}", e.getMessage());
+                }
+            }
+
+            // ✅ HOÀN LẠI STOCK
+            try {
+                restoreStockForOrder(order);
+            } catch (Exception e) {
+                log.warn("Failed to restore stock for cancelled payment: {}", e.getMessage());
+            }
 
             // Update VnpayPayment entity
             vnpayPayment.setVnpResponseCode(responseCode);
             vnpayPayment.setFailureReason("VNPAY user cancelled (code=24)");
+
+            // ✅ GỬI EMAIL THÔNG BÁO HỦY ĐƠN HÀNG
+            try {
+                sendCancellationEmail(order);
+            } catch (Exception e) {
+                log.warn("Failed to send cancellation email: {}", e.getMessage());
+            }
         } else {
             order.setPaymentStatus("FAILED");
 
@@ -434,19 +464,7 @@ public class PaymentServiceImpl implements PaymentService {
             if (resultCode != null && resultCode == 0) {
                 // Payment successful
                 order.setPaymentStatus("PAID");
-                order.setOrderStatus("PAID");
-
-                // Auto create GHN shipping order
-                try {
-                    if (order.getDistrictId() != null && order.getWardCode() != null) {
-                        ghnShippingService.createShippingOrder(order);
-                        log.info("Created GHN shipping order for Order {}", order.getIdOrder());
-                    } else {
-                        log.warn("Skip GHN create: Order missing district/ward.");
-                    }
-                } catch (Exception ex) {
-                    log.error("Failed to auto create GHN order after MOMO payment: {}", ex.getMessage());
-                }
+                // orderStatus vẫn là PENDING, đợi admin duyệt đơn để tạo GHN
 
                 momoPayment.setPaidAmount(order.getTotal());
                 momoPayment.setPaidAt(LocalDateTime.now());
@@ -454,9 +472,38 @@ public class PaymentServiceImpl implements PaymentService {
             } else if (resultCode != null && (resultCode == 42 || resultCode == 24)) {
                 // Payment cancelled by user (42: Bad request, 24: Cancelled)
                 order.setPaymentStatus("CANCELLED");
-                // Keep order status as PENDING for cancelled payments
+                order.setOrderStatus("CANCELLED"); // Đơn hàng cũng chuyển thành đã hủy
+
+                // ✅ HOÀN LẠI DISCOUNT NẾU CÓ
+                if (order.getDiscount() != null) {
+                    try {
+                        Discount discount = order.getDiscount();
+                        if (discount.getUsedCount() > 0) {
+                            discount.setUsedCount(discount.getUsedCount() - 1);
+                            discountRepository.save(discount);
+                            log.info("Rolled back discount usage for order {} (payment cancelled)", order.getIdOrder());
+                        }
+                    } catch (Exception e) {
+                        log.warn("Failed to rollback discount for cancelled payment: {}", e.getMessage());
+                    }
+                }
+
+                // ✅ HOÀN LẠI STOCK
+                try {
+                    restoreStockForOrder(order);
+                } catch (Exception e) {
+                    log.warn("Failed to restore stock for cancelled payment: {}", e.getMessage());
+                }
+
                 momoPayment.setFailureReason(
                         "MOMO errorCode=" + resultCode + ", message=" + message + " (User cancelled)");
+
+                // ✅ GỬI EMAIL THÔNG BÁO HỦY ĐƠN HÀNG
+                try {
+                    sendCancellationEmail(order);
+                } catch (Exception e) {
+                    log.warn("Failed to send cancellation email: {}", e.getMessage());
+                }
             } else {
                 // Payment failed for other reasons
                 order.setPaymentStatus("FAILED");
@@ -485,6 +532,63 @@ public class PaymentServiceImpl implements PaymentService {
         } catch (Exception e) {
             log.error("Error calling MOMO API", e);
             throw new RuntimeException("Error calling MOMO API", e);
+        }
+    }
+
+    /**
+     * Gửi email thông báo hủy đơn hàng
+     */
+    private void sendCancellationEmail(Order order) {
+        try {
+            OrderResponse orderResponse = orderMapper.toOrderResponse(order);
+            List<OrderProduct> orderProducts = orderProductRepository.findByOrder(order);
+            List<OrderProductResponse> orderProductResponses = orderProducts.stream()
+                    .map(orderProductMapper::toOrderProductResponse)
+                    .collect(java.util.stream.Collectors.toList());
+
+            if (order.getUser() != null) {
+                // User đã đăng nhập
+                emailService.sendOrderCancellationEmail(
+                        order.getUser().getEmail(),
+                        order.getUser().getFirstname() + " " + order.getUser().getLastname(),
+                        orderResponse,
+                        orderProductResponses);
+            } else {
+                // Guest user
+                emailService.sendGuestOrderCancellationEmail(
+                        order.getEmail(),
+                        orderResponse,
+                        orderProductResponses);
+            }
+        } catch (Exception e) {
+            log.error("Failed to send cancellation email: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Hoàn lại stock cho các sản phẩm trong đơn hàng bị hủy
+     */
+    private void restoreStockForOrder(Order order) {
+        try {
+            var orderProducts = orderProductRepository.findByOrder(order);
+            for (var orderProduct : orderProducts) {
+                try {
+                    Product product = orderProduct.getProduct();
+                    Integer currentStock = product.getStock();
+                    Integer quantity = orderProduct.getQuantity();
+                    Integer newStock = currentStock + quantity;
+
+                    productService.updateStock(product.getProductId(), newStock);
+
+                    log.info("Restored stock for product {}: {} -> {} (quantity: {})",
+                            product.getProductId(), currentStock, newStock, quantity);
+                } catch (Exception e) {
+                    log.error("Error restoring stock for product {}: {}",
+                            orderProduct.getProduct().getProductId(), e.getMessage());
+                }
+            }
+        } catch (Exception e) {
+            log.error("Error restoring stock for order {}: {}", order.getIdOrder(), e.getMessage());
         }
     }
 

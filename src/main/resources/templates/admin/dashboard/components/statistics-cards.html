@@ -118,7 +118,7 @@
                             <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
                                 Sản phẩm sắp hết hàng
                             </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800" th:text="${lowStockProducts}">0</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" th:text="${#lists.size(lowStockProducts)}">0</div>
                         </div>
                         <div class="col-auto">
                             <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
@@ -156,7 +156,7 @@
                             <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
                                 Tỷ lệ chuyển đổi
                             </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800" th:text="${conversionRate}">0%</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" th:text="${conversionRate != null ? #numbers.formatDecimal(conversionRate, 1, 'COMMA', 2, 'POINT') + '%' : '0%'}">0%</div>
                         </div>
                         <div class="col-auto">
                             <i class="fas fa-percentage fa-2x text-gray-300"></i>

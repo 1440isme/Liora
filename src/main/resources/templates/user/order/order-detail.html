@@ -40,7 +40,7 @@
                 <!-- Guest Notice -->
                 <div th:if="${isGuest != null and isGuest}" class="alert alert-info mb-4">
                     <i class="fas fa-info-circle me-2"></i>
-                    <strong>Thông báo:</strong> Bạn đang xem đơn hàng với tư cách khách hàng.
+                    <strong>Thông báo:</strong> Bạn đang xem đơn hàng với tư cách khách.
                     Để quản lý đơn hàng tốt hơn, hãy <a href="/login" class="alert-link">đăng nhập</a> hoặc
                     <a href="/register" class="alert-link">đăng ký tài khoản</a>.
                 </div>
@@ -194,10 +194,12 @@
                                         <td>
                                             <span class="status-badge"
                                                 th:classappend="${order.orderStatus == 'PENDING'} ? 'status-pending' : 
+                                                                            (${order.orderStatus == 'CONFIRMED'} ? 'status-confirmed' :
                                                                             (${order.orderStatus == 'COMPLETED'} ? 'status-completed' : 
-                                                                            (${order.orderStatus == 'CANCELLED'} ? 'status-cancelled' : 'status-pending'))">
+                                                                            (${order.orderStatus == 'CANCELLED'} ? 'status-cancelled' : 'status-pending')))">
                                                 <span th:switch="${order.orderStatus}">
                                                     <span th:case="'PENDING'">Chờ xử lý</span>
+                                                    <span th:case="'CONFIRMED'">Đã xác nhận</span>
                                                     <span th:case="'COMPLETED'">Hoàn tất</span>
                                                     <span th:case="'CANCELLED'">Đã hủy</span>
                                                     <span th:case="*" th:text="${order.orderStatus}"></span>
@@ -309,6 +311,8 @@
     <!-- Scripts -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- CKEditor Classic Editor for Review -->
+    <script src="https://cdn.ckeditor.com/ckeditor5/41.4.2/classic/ckeditor.js"></script>
     <script th:src="@{/user/js/order-detail-simple.js}"></script>
     <script th:src="@{/user/js/main.js}"></script>
     <script th:src="@{/user/js/cart.js}"></script>

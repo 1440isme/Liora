@@ -13,6 +13,34 @@
                 <div class="row">
                     <div class="col-sm-12">
                         <div class="home-tab">
+                            <!-- ====================== BỘ LỌC THỜI GIAN ====================== -->
+                            <div class="card card-rounded shadow-sm mb-4">
+                                <div class="card-body">
+                                    <div class="d-flex flex-wrap align-items-center gap-3">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <i class="mdi mdi-filter-variant"></i>
+                                            <label for="globalDateFilter" class="form-label mb-0 fw-bold">Thời gian tạo:</label>
+                                        </div>
+                                        <select class="form-select form-select-sm" id="globalDateFilter" style="width:150px;">
+                                            <option value="LAST_7_DAYS" selected>7 ngày gần nhất</option>
+                                            <option value="TODAY">Hôm nay</option>
+                                            <option value="THIS_WEEK">Tuần này</option>
+                                            <option value="THIS_MONTH">Tháng này</option>
+                                            <option value="THIS_YEAR">Năm nay</option>
+                                            <option value="CUSTOM">Tùy chỉnh</option>
+                                        </select>
+                                        <div id="customDateContainer" class="d-flex gap-2 align-items-center" style="display:none!important;">
+                                            <input type="date" id="globalStartDate" class="form-control form-control-sm" style="width:150px;" max="">
+                                            <span>đến</span>
+                                            <input type="date" id="globalEndDate" class="form-control form-control-sm" style="width:150px;" max="">
+                                        </div>
+                                        <button id="applyFilter" class="btn btn-primary btn-sm">
+                                            <i class="mdi mdi-filter"></i> Áp dụng
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="d-sm-flex align-items-center justify-content-between border-bottom">
                                 <ul class="nav nav-tabs" role="tablist">
                                     <li class="nav-item">
@@ -53,10 +81,6 @@
                                                 </h4>
 
                                                 <div class="d-flex flex-wrap align-items-center gap-2">
-                                                    <!-- Input thời gian -->
-                                                    <input type="date" id="startDate" class="form-control form-control-sm" style="width:150px;" max="">
-                                                    <input type="date" id="endDate" class="form-control form-control-sm" style="width:150px;" max="">
-
                                                     <!-- Chọn nhóm -->
                                                     <select id="groupType" class="form-select form-select-sm bg-white text-dark border-secondary"
                                                             style="width:100px;">
@@ -177,45 +201,89 @@
         let chart;
         let currentType = "time";
 
+        // Khởi tạo bộ lọc toàn cục
         const today = new Date();
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(today.getDate() - 7);
-
-        document.getElementById("startDate").value = sevenDaysAgo.toISOString().split("T")[0];
-        document.getElementById("endDate").value = today.toISOString().split("T")[0];
-
-// Gán max cho input (không vượt hôm nay)
         const todayStr = today.toISOString().split("T")[0];
-        document.getElementById("startDate").setAttribute("max", todayStr);
-        document.getElementById("endDate").setAttribute("max", todayStr);
+        document.getElementById("globalStartDate").setAttribute("max", todayStr);
+        document.getElementById("globalEndDate").setAttribute("max", todayStr);
+        
+        // Setup date filter handler - Ẩn custom date container khi trang load
+        const globalDateFilter = document.getElementById("globalDateFilter");
+        const customDateContainer = document.getElementById("customDateContainer");
+        
+        // Ẩn container ban đầu
+        customDateContainer.setAttribute('style', 'display:none!important;');
+        
+        globalDateFilter.addEventListener('change', function() {
+            if (this.value === 'CUSTOM') {
+                // Hiện container khi chọn "Tùy chỉnh"
+                customDateContainer.setAttribute('style', 'display:flex!important;');
+            } else {
+                // Ẩn container khi chọn preset khác
+                customDateContainer.setAttribute('style', 'display:none!important;');
+            }
+        });
 
-
-        const endInputEl = document.getElementById("endDate");
-        if (new Date(endInputEl.value) > today) {
-            endInputEl.value = todayStr;
+        // Lấy giá trị bộ lọc toàn cục
+        function getGlobalDateRange() {
+            const filterType = document.getElementById("globalDateFilter").value;
+            const end = new Date();
+            let start = new Date();
+            
+            // Xử lý các preset
+            switch(filterType) {
+                case 'TODAY':
+                    start = new Date(end);
+                    break;
+                case 'THIS_WEEK':
+                    const dayOfWeek = end.getDay();
+                    const diff = end.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+                    start = new Date(end.setDate(diff));
+                    break;
+                case 'THIS_MONTH':
+                    start = new Date(end.getFullYear(), end.getMonth(), 1);
+                    break;
+                case 'THIS_YEAR':
+                    start = new Date(end.getFullYear(), 0, 1);
+                    break;
+                case 'CUSTOM':
+                    const startInput = document.getElementById("globalStartDate").value;
+                    const endInput = document.getElementById("globalEndDate").value;
+                    if (startInput && endInput) {
+                        return {
+                            start: startInput,
+                            end: endInput,
+                            startDate: `${startInput}T00:00:00`,
+                            endDate: `${endInput}T23:59:59`
+                        };
+                    }
+                    // Fall through to LAST_7_DAYS if custom dates not set
+                case 'LAST_7_DAYS':
+                default:
+                    start.setDate(end.getDate() - 7);
+                    break;
+            }
+            
+            start.setHours(0, 0, 0, 0);
+            end.setHours(23, 59, 59, 999);
+            
+            return {
+                start: start.toISOString().split("T")[0],
+                end: end.toISOString().split("T")[0],
+                startDate: `${start.toISOString().split("T")[0]}T00:00:00`,
+                endDate: `${end.toISOString().split("T")[0]}T23:59:59`
+            };
         }
 
         async function loadChart() {
             const groupType = document.getElementById("groupType").value;
-            const startInput = document.getElementById("startDate").value;
-            const endInput = document.getElementById("endDate").value;
-            let startDate, endDate;
+            const dateRange = getGlobalDateRange();
+            const startInput = dateRange.start;
+            const endInput = dateRange.end;
+            const startDate = dateRange.startDate;
+            const endDate = dateRange.endDate;
             let labels = [];
             let values = [];
-
-            // Nếu chưa chọn, mặc định 7 ngày gần nhất
-            if (!startInput || !endInput) {
-                const end = new Date();
-                const start = new Date();
-                start.setDate(end.getDate() - 7);
-                startDate = `${start.toISOString().split("T")[0]}T00:00:00`;
-                endDate = `${end.toISOString().split("T")[0]}T23:59:59`;
-                document.getElementById("startDate").value = start.toISOString().split("T")[0];
-                document.getElementById("endDate").value = end.toISOString().split("T")[0];
-            } else {
-                startDate = `${startInput}T00:00:00`;
-                endDate = `${endInput}T23:59:59`;
-            }
 
             // Ràng buộc ngày
             if (new Date(startInput) > new Date(endInput)) {
@@ -340,6 +408,254 @@
         document.getElementById("refreshChart").addEventListener("click", loadChart);
         document.getElementById("groupType").addEventListener("change", () => {
             if (currentType === "time") loadChart();
+        });
+        
+        // Function format currency
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
+        }
+        
+        // Function format date
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            return `${day}/${month}/${year} ${hours}:${minutes}`;
+        }
+        
+        // Function get status text and class
+        function getOrderStatusInfo(status) {
+            const statusMap = {
+                'PENDING': { text: 'Chờ xử lý', class: 'text-warning' },
+                'PROCESSING': { text: 'Đang xử lý', class: 'text-warning' },
+                'SHIPPED': { text: 'Đã giao vận', class: 'text-info' },
+                'CONFIRMED': { text: 'Đã xác nhận', class: 'text-info' },
+                'DELIVERED': { text: 'Đã giao hàng', class: 'text-success' },
+                'COMPLETED': { text: 'Hoàn thành', class: 'text-success' },
+                'CANCELLED': { text: 'Đã hủy', class: 'text-danger' },
+                'FAILED': { text: 'Thất bại', class: 'text-danger' }
+            };
+            return statusMap[status] || { text: status, class: 'text-secondary' };
+        }
+        
+        function getPaymentStatusInfo(status) {
+            const statusMap = {
+                'PAID': { text: 'Đã thanh toán', class: 'text-success' },
+                'PENDING': { text: 'Chờ thanh toán', class: 'text-warning' },
+                'REFUNDED': { text: 'Hoàn tiền', class: 'text-info' },
+                'FAILED': { text: 'Thất bại', class: 'text-danger' },
+                'CANCELLED': { text: 'Đã hủy', class: 'text-danger' }
+            };
+            return statusMap[status] || { text: status, class: 'text-secondary' };
+        }
+        
+        // Function reload đơn hàng và sản phẩm bán chạy
+        async function reloadFilteredData() {
+            const dateRange = getGlobalDateRange();
+            
+            // Reload tổng doanh thu
+            const revenueUrl = `/admin/analytics/total-revenue?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`;
+            const revenueResponse = await fetch(revenueUrl);
+            if (revenueResponse.ok) {
+                const revenueData = await revenueResponse.json();
+                console.log("💰 Filtered total revenue:", revenueData);
+                
+                // Cập nhật card "Tổng doanh thu"
+                const totalRevenueElement = document.getElementById('totalRevenueDisplay');
+                if (totalRevenueElement && revenueData.totalRevenue !== undefined) {
+                    totalRevenueElement.textContent = new Intl.NumberFormat('vi-VN', { 
+                        style: 'currency', 
+                        currency: 'VND' 
+                    }).format(revenueData.totalRevenue);
+                }
+            }
+            
+            // Reload tổng đơn hàng
+            const ordersUrl = `/admin/analytics/total-orders?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`;
+            const ordersResponse = await fetch(ordersUrl);
+            if (ordersResponse.ok) {
+                const ordersData = await ordersResponse.json();
+                console.log("📦 Filtered total orders:", ordersData);
+                
+                // Cập nhật card "Tổng đơn hàng"
+                const totalOrdersElement = document.getElementById('totalOrdersDisplay');
+                if (totalOrdersElement && ordersData.totalOrders !== undefined) {
+                    totalOrdersElement.textContent = ordersData.totalOrders;
+                }
+            }
+            
+            // Reload đơn hàng
+            const url = `/admin/analytics/recent-orders?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}&limit=15`;
+            const response = await fetch(url);
+            if (response.ok) {
+                const data = await response.json();
+                console.log("📦 Filtered recent orders:", data);
+                
+                const tbody = document.getElementById('recentOrdersBody');
+                if (tbody && data.length > 0) {
+                    tbody.innerHTML = data.map(order => {
+                        const statusInfo = getOrderStatusInfo(order.status);
+                        const paymentInfo = getPaymentStatusInfo(order.paymentStatus);
+                        return `
+                            <tr>
+                                <td class="text-center">${order.id}</td>
+                                <td>${order.customerName}</td>
+                                <td>${formatCurrency(order.totalAmount)}</td>
+                                <td class="text-center">
+                                    <span class="fw-semibold ${statusInfo.class}">${statusInfo.text}</span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="fw-semibold ${paymentInfo.class}">${paymentInfo.text}</span>
+                                </td>
+                                <td class="text-center">${formatDate(order.createdAt)}</td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
+            }
+            
+            // Reload sản phẩm bán chạy
+            const urlProducts = `/admin/analytics/top-products?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}&limit=15`;
+            const responseProducts = await fetch(urlProducts);
+            if (responseProducts.ok) {
+                const data = await responseProducts.json();
+                console.log("🔥 Filtered top products:", data);
+                
+                const tbody = document.getElementById('topProductsBody');
+                if (tbody && data.length > 0) {
+                    tbody.innerHTML = data.filter(p => p.soldQuantity > 0).map(product => {
+                        return `
+                            <tr>
+                                <td class="text-center">${product.id}</td>
+                                <td>${product.name}</td>
+                                <td>${product.categoryName}</td>
+                                <td class="text-center"><span class="text-success fw-semibold">${product.soldQuantity}</span></td>
+                                <td>${formatCurrency(product.revenue)}</td>
+                                <td class="text-center">${product.rating.toFixed(1)}/5</td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
+            }
+            
+            // Reload tổng số khách hàng
+            const customersUrl = `/admin/analytics/total-customers?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`;
+            const customersResponse = await fetch(customersUrl);
+            if (customersResponse.ok) {
+                const customersData = await customersResponse.json();
+                console.log("👤 Filtered total customers:", customersData);
+                
+                // Cập nhật card "Tổng số khách hàng"
+                const totalCustomersElement = document.getElementById('totalCustomersDisplay');
+                if (totalCustomersElement && customersData.totalCustomers !== undefined) {
+                    totalCustomersElement.textContent = customersData.totalCustomers;
+                }
+            }
+            
+            // Reload số sản phẩm được bán
+            const productsSoldUrl = `/admin/analytics/total-products-sold?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`;
+            const productsSoldResponse = await fetch(productsSoldUrl);
+            if (productsSoldResponse.ok) {
+                const productsSoldData = await productsSoldResponse.json();
+                console.log("📦 Filtered products sold:", productsSoldData);
+                
+                const totalProductsElement = document.getElementById('totalProductsDisplay');
+                if (totalProductsElement && productsSoldData.totalProductsSold !== undefined) {
+                    totalProductsElement.textContent = productsSoldData.totalProductsSold;
+                }
+            }
+            
+            // Reload số thương hiệu được bán
+            const brandsSoldUrl = `/admin/analytics/total-brands-sold?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`;
+            const brandsSoldResponse = await fetch(brandsSoldUrl);
+            if (brandsSoldResponse.ok) {
+                const brandsSoldData = await brandsSoldResponse.json();
+                console.log("🏷️ Filtered brands sold:", brandsSoldData);
+                
+                const totalBrandsElement = document.getElementById('totalBrandsDisplay');
+                if (totalBrandsElement && brandsSoldData.totalBrandsSold !== undefined) {
+                    totalBrandsElement.textContent = brandsSoldData.totalBrandsSold;
+                }
+            }
+            
+            // Reload thống kê khách hàng
+            const customerStatsUrl = `/admin/analytics/customer-stats?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`;
+            const customerStatsResponse = await fetch(customerStatsUrl);
+            if (customerStatsResponse.ok) {
+                const customerData = await customerStatsResponse.json();
+                console.log("👥 Filtered customer stats:", customerData);
+                
+                // Cập nhật label "Khách hàng mới đăng ký" khi filter thay đổi
+                const newCustomersLabel = document.getElementById('newCustomersLabel');
+                if (newCustomersLabel) {
+                    newCustomersLabel.textContent = 'Khách hàng mới đăng ký';
+                }
+                
+                // Cập nhật label "Khách hàng có đơn hàng"
+                const totalCustomersLabel = document.getElementById('totalCustomersLabel');
+                if (totalCustomersLabel) {
+                    totalCustomersLabel.textContent = 'Khách hàng có đơn hàng';
+                }
+                
+                // Cập nhật label "Tỷ lệ khách mua lặp lại"
+                const returningCustomersLabel = document.getElementById('returningCustomersLabel');
+                if (returningCustomersLabel) {
+                    returningCustomersLabel.textContent = 'Tỷ lệ khách mua lại';
+                }
+                
+                // Cập nhật khách hàng mới
+                const newCustomersElement = document.getElementById('newCustomersDisplay');
+                if (newCustomersElement && customerData.newCustomers !== undefined) {
+                    newCustomersElement.textContent = customerData.newCustomers;
+                }
+                
+                // Cập nhật tỷ lệ khách quay lại
+                const returningCustomersElement = document.getElementById('returningCustomersDisplay');
+                if (returningCustomersElement && customerData.returningCustomers !== undefined) {
+                    returningCustomersElement.textContent = customerData.returningCustomers.toFixed(1);
+                }
+                
+                // Cập nhật top khách hàng
+                const topCustomersBody = document.getElementById('topCustomersBody');
+                if (topCustomersBody && customerData.topCustomers && customerData.topCustomers.length > 0) {
+                    topCustomersBody.innerHTML = customerData.topCustomers.map((customer, index) => {
+                        return `
+                            <tr>
+                                <td class="text-center">${index + 1}</td>
+                                <td class="text-center"><span class="fw-bold text-primary">${customer.userId}</span></td>
+                                <td>${customer.fullName}</td>
+                                <td>${customer.email}</td>
+                                <td class="text-center"><span class="fw-bold text-success">${customer.ordersCount}</span></td>
+                                <td class="text-center">${formatCurrency(customer.totalSpent)}</td>
+                            </tr>
+                        `;
+                    }).join('');
+                } else if (topCustomersBody) {
+                    topCustomersBody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Không có dữ liệu khách hàng</td></tr>';
+                }
+            }
+        }
+        
+        // Sự kiện cho nút Áp dụng bộ lọc
+        document.getElementById("applyFilter").addEventListener("click", async function() {
+            loadChart();
+            await reloadFilteredData();
+        });
+        
+        // Sự kiện khi chuyển tab
+        document.getElementById("revenue-tab").addEventListener("shown.bs.tab", function() {
+            console.log("Tab Thống kê doanh thu được chọn");
+        });
+        
+        document.getElementById("customers-tab").addEventListener("shown.bs.tab", async function() {
+            console.log("Tab Thống kê khách hàng được chọn - Đang reload dữ liệu khách hàng");
+            // Đợi một chút để đảm bảo tab đã hiển thị xong
+            setTimeout(async () => {
+                await reloadFilteredData();
+            }, 100);
         });
 
         function switchType(id, type) {

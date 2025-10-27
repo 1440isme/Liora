@@ -670,6 +670,33 @@ class ReviewsManager {
 
         const reviewsHTML = reviews.map(review => this.createReviewHTML(review)).join('');
         reviewsList.innerHTML = reviewsHTML;
+        
+        // Add event delegation for image clicks
+        this.bindImageClickEvents();
+    }
+    
+    bindImageClickEvents() {
+        const reviewsList = document.getElementById('reviewsList');
+        if (!reviewsList) return;
+        
+        reviewsList.addEventListener('click', (e) => {
+            const imageItem = e.target.closest('.review-user-image-item');
+            if (imageItem) {
+                const section = imageItem.closest('.review-user-images-section');
+                if (section) {
+                    const imagesJson = section.getAttribute('data-review-images');
+                    if (imagesJson) {
+                        try {
+                            const images = JSON.parse(imagesJson);
+                            const imageIndex = parseInt(imageItem.getAttribute('data-image-index'));
+                            this.openImageLightbox(images, imageIndex);
+                        } catch (error) {
+                            console.error('Error parsing images:', error);
+                        }
+                    }
+                }
+            }
+        });
     }
 
     createReviewHTML(review) {
@@ -698,7 +725,21 @@ class ReviewsManager {
 
         // Kiểm tra xem review có bị ẩn không
         const isHidden = review.isVisible === false;
-        
+
+        // Parse HTML để tìm ảnh upload
+        const userImages = this.extractUserImages(review.content);
+        const hasUserImages = userImages.length > 0;
+
+        // Tạo HTML cho text content (bỏ qua ảnh)
+        let textContent = review.content || 'Không có nội dung đánh giá.';
+        if (hasUserImages && !isHidden) {
+            // Loại bỏ thẻ img từ content để chỉ hiển thị text
+            textContent = textContent.replace(/<figure[^>]*>.*?<\/figure>/gi, '').trim();
+            if (!textContent || textContent === '') {
+                textContent = 'Đánh giá này có ảnh đính kèm.';
+            }
+        }
+
         return `
             <div class="review-item ${isHidden ? 'review-hidden' : ''}">
                 <div class="review-header">
@@ -716,13 +757,186 @@ class ReviewsManager {
                     </div>
                 </div>
                 <div class="review-content">
-                    ${isHidden ? 
-                        '<div class="review-hidden-content"><i class="fas fa-eye-slash me-2"></i>Nội dung đánh giá đã bị ẩn</div>' : 
-                        (review.content || 'Không có nội dung đánh giá.')
+                    ${isHidden ?
+                        '<div class="review-hidden-content"><i class="fas fa-eye-slash me-2"></i>Nội dung đánh giá đã bị ẩn</div>' :
+                        textContent
                     }
+                </div>
+                ${hasUserImages && !isHidden ? this.createUserImagesCollapse(userImages, review.reviewId) : ''}
+            </div>
+        `;
+    }
+
+    extractUserImages(htmlContent) {
+        if (!htmlContent) return [];
+        
+        const images = [];
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(htmlContent, 'text/html');
+        const imgElements = doc.querySelectorAll('figure.image img');
+        
+        imgElements.forEach(img => {
+            const src = img.getAttribute('src');
+            if (src) {
+                images.push(src);
+            }
+        });
+        
+        return images;
+    }
+
+    createUserImagesCollapse(images, reviewId) {
+        const uniqueId = `review-images-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        
+        return `
+            <div class="review-user-images-section" data-review-images='${JSON.stringify(images)}' data-review-id="${reviewId}">
+                                 <button class="btn btn-link p-0 mt-2 review-show-images-btn" 
+                         type="button" 
+                         data-bs-toggle="collapse" 
+                         data-bs-target="#${uniqueId}"
+                         aria-expanded="false">
+                     <i class="fas fa-images"></i>
+                     <span>Xem ảnh</span>
+                     <i class="fas fa-chevron-down collapse-icon" style="margin-left: 4px; font-size: 0.7rem;"></i>
+                 </button>
+                <div class="collapse mt-2" id="${uniqueId}">
+                    <div class="review-user-images-grid">
+                        ${images.map((src, index) => `
+                            <div class="review-user-image-item" data-image-index="${index}">
+                                <img src="${src}" alt="Review image" class="img-fluid" loading="lazy">
+                            </div>
+                        `).join('')}
+                    </div>
                 </div>
             </div>
         `;
+    }
+
+    openImageLightbox(images, startIndex) {
+        // Get or create lightbox
+        let lightbox = document.getElementById('reviewImageLightbox');
+        
+        if (!lightbox) {
+            // Create lightbox if it doesn't exist
+            lightbox = document.createElement('div');
+            lightbox.className = 'review-image-lightbox';
+            lightbox.id = 'reviewImageLightbox';
+            lightbox.innerHTML = `
+                <span class="close-btn">&times;</span>
+                <button class="nav-btn prev">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <button class="nav-btn next">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+                <div class="lightbox-container">
+                    <img src="" alt="Full size" id="reviewLightboxImage">
+                    <div class="image-counter"></div>
+                </div>
+            `;
+            document.body.appendChild(lightbox);
+            
+            // Add click event to close
+            const closeBtn = lightbox.querySelector('.close-btn');
+            const navPrev = lightbox.querySelector('.nav-btn.prev');
+            const navNext = lightbox.querySelector('.nav-btn.next');
+            
+            lightbox.addEventListener('click', function(e) {
+                if (e.target === lightbox) {
+                    lightbox.classList.remove('active');
+                }
+            });
+            
+            closeBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                lightbox.classList.remove('active');
+            });
+            
+            // Navigation buttons
+            navPrev.addEventListener('click', function(e) {
+                e.stopPropagation();
+                window.reviewsManager.navigateImage('prev');
+            });
+            
+            navNext.addEventListener('click', function(e) {
+                e.stopPropagation();
+                window.reviewsManager.navigateImage('next');
+            });
+            
+            // Store images array
+            lightbox.dataset.images = JSON.stringify(images);
+            lightbox.dataset.currentIndex = startIndex;
+            
+            // Keyboard navigation
+            document.addEventListener('keydown', function(e) {
+                if (lightbox.classList.contains('active')) {
+                    if (e.key === 'ArrowLeft') {
+                        window.reviewsManager.navigateImage('prev');
+                    } else if (e.key === 'ArrowRight') {
+                        window.reviewsManager.navigateImage('next');
+                    } else if (e.key === 'Escape') {
+                        lightbox.classList.remove('active');
+                    }
+                }
+            });
+        }
+
+        // Store images and current index
+        lightbox.dataset.images = JSON.stringify(images);
+        lightbox.dataset.currentIndex = startIndex;
+
+        // Update image and counter
+        this.updateLightboxImage();
+        
+        // Show lightbox
+        lightbox.classList.add('active');
+    }
+
+    navigateImage(direction) {
+        const lightbox = document.getElementById('reviewImageLightbox');
+        if (!lightbox) return;
+        
+        const images = JSON.parse(lightbox.dataset.images);
+        let currentIndex = parseInt(lightbox.dataset.currentIndex);
+        
+        if (direction === 'prev') {
+            currentIndex = (currentIndex - 1 + images.length) % images.length;
+        } else if (direction === 'next') {
+            currentIndex = (currentIndex + 1) % images.length;
+        }
+        
+        lightbox.dataset.currentIndex = currentIndex;
+        this.updateLightboxImage();
+    }
+
+    updateLightboxImage() {
+        const lightbox = document.getElementById('reviewImageLightbox');
+        if (!lightbox) return;
+        
+        const images = JSON.parse(lightbox.dataset.images);
+        const currentIndex = parseInt(lightbox.dataset.currentIndex);
+        const imageCounter = lightbox.querySelector('.image-counter');
+        const navPrev = lightbox.querySelector('.nav-btn.prev');
+        const navNext = lightbox.querySelector('.nav-btn.next');
+        
+        // Update image
+        const image = lightbox.querySelector('#reviewLightboxImage');
+        if (image) {
+            image.src = images[currentIndex];
+        }
+        
+        // Update counter
+        if (imageCounter) {
+            imageCounter.textContent = `${currentIndex + 1} / ${images.length}`;
+        }
+        
+        // Show/hide navigation buttons based on number of images
+        if (navPrev) {
+            navPrev.style.display = images.length > 1 ? 'flex' : 'none';
+        }
+        if (navNext) {
+            navNext.style.display = images.length > 1 ? 'flex' : 'none';
+        }
     }
 
     createStarsHTML(rating) {

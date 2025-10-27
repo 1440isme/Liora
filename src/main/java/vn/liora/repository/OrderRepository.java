@@ -22,6 +22,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     List<Order> findByUserAndOrderStatus(User user, String orderStatus);
 
     List<Order> findByOrderDateBetween(LocalDateTime start, LocalDateTime end);
+    
+    List<Order> findByOrderDateBetweenAndOrderStatus(LocalDateTime start, LocalDateTime end, String orderStatus);
 
     long countByUser(User user);
 
@@ -109,6 +111,14 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
       AND (SELECT COUNT(o) FROM Order o WHERE o.user = u) > 1
     """)
     long countReturningCustomers();
+    
+    @Query("""
+    SELECT COUNT(DISTINCT o.user)
+    FROM Order o
+    WHERE o.orderStatus = 'COMPLETED'
+      AND o.user IS NOT NULL
+    """)
+    long countCustomersWithCompletedOrders();
 
 
     @Query("""

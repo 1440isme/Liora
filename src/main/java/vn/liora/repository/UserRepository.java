@@ -37,13 +37,23 @@ public interface UserRepository extends JpaRepository<User, Long> {
     """)
     long countNewCustomersThisMonth();
     
+    @Query("""
+    SELECT COUNT(DISTINCT u.userId)
+    FROM User u
+    JOIN u.roles r
+    WHERE r.name = 'USER'
+      AND CAST(u.createdDate AS timestamp) >= :startDate
+      AND CAST(u.createdDate AS timestamp) <= :endDate
+    """)
+    long countByRegistrationDateBetween(java.time.LocalDateTime startDate, java.time.LocalDateTime endDate);
+    
     // Đếm khách hàng mới theo tháng (trả về year-month và count)
     @Query("""
     SELECT YEAR(u.createdDate), MONTH(u.createdDate), COUNT(DISTINCT u.userId)
     FROM User u
     JOIN u.roles r
     WHERE r.name = 'USER'
-      AND u.createdDate >= :startDate
+      AND CAST(u.createdDate AS timestamp) >= :startDate
     GROUP BY YEAR(u.createdDate), MONTH(u.createdDate)
     ORDER BY YEAR(u.createdDate), MONTH(u.createdDate)
     """)
