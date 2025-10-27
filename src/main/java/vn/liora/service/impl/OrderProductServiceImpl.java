@@ -28,4 +28,19 @@ public class OrderProductServiceImpl implements IOrderProductService {
     public List<Object[]> getRevenueByBrand(LocalDateTime startDate, LocalDateTime endDate) {
         return orderProductRepository.getRevenueByBrand(startDate, endDate);
     }
+
+    @Override
+    public List<Object[]> getTopSellingProductsByDateRange(LocalDateTime startDate, LocalDateTime endDate) {
+        return orderProductRepository.getTopSellingProductsByDateRange(startDate, endDate);
+    }
+    
+    @Override
+    public long countSoldProductsByDateRange(LocalDateTime startDate, LocalDateTime endDate) {
+        return orderProductRepository.countSoldProductsByDateRange(startDate, endDate);
+    }
+    
+    @Override
+    public long countSoldBrandsByDateRange(LocalDateTime startDate, LocalDateTime endDate) {
+        return orderProductRepository.countSoldBrandsByDateRange(startDate, endDate);
+    }
 }

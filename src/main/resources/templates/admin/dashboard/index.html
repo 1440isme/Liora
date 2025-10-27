@@ -52,11 +52,18 @@
 
                                         <!-- ĐƠN HÀNG GẦN ĐÂY & SẢN PHẨM BÁN CHẠY -->
                                     <div class="row">
-                                        <div class="col-lg-6 mb-4">
+                                        <div class="col-lg-6 mb-4 d-flex">
                                             <div th:replace="~{admin/dashboard/components/recent-orders}"></div>
                                         </div>
-                                        <div class="col-lg-6 mb-4">
+                                        <div class="col-lg-6 mb-4 d-flex">
                                             <div th:replace="~{admin/dashboard/components/top-products}"></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- SẢN PHẨM SẮP HẾT HÀNG -->
+                                    <div class="row">
+                                        <div class="col-lg-12 mb-4">
+                                            <div th:replace="~{admin/dashboard/components/low-stock-products}"></div>
                                         </div>
                                     </div>
 
@@ -73,6 +80,31 @@
 </div>
 
 <div th:replace="~{admin/fragments/admin-scripts :: admin-scripts}"></div>
+
+<!-- ================= CUSTOM STYLES ================= -->
+<style>
+    /* Đảm bảo 2 card cạnh nhau có cùng chiều cao */
+    .row > div.d-flex {
+        display: flex !important;
+    }
+    
+    .row > div.d-flex > .card {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+    
+    .row > div.d-flex > .card > .card-body {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .row > div.d-flex > .card > .card-body > .table-responsive {
+        flex: 1;
+    }
+</style>
 
 <!-- ================= CUSTOM DASHBOARD SCRIPT ================= -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

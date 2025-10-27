@@ -8,12 +8,16 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import vn.liora.dto.response.TopCustomerResponse;
 import vn.liora.service.IBrandService;
 import vn.liora.service.ICategoryService;
 import vn.liora.service.IDashboardService;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/admin")
@@ -47,11 +51,135 @@ public class AdminPageController {
         };
     }
     
+    // API lấy đơn hàng gần đây theo khoảng thời gian
+    @GetMapping("/analytics/recent-orders")
+    @ResponseBody
+    public List<Object> getRecentOrdersByDateRange(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
+            @RequestParam(defaultValue = "15") int limit) {
+        return dashboardService.getRecentOrdersByDateRange(limit, startDate, endDate).stream()
+                .map(order -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("id", order.getId());
+                    map.put("customerName", order.getCustomerName());
+                    map.put("totalAmount", order.getTotalAmount());
+                    map.put("status", order.getStatus());
+                    map.put("paymentStatus", order.getPaymentStatus());
+                    map.put("createdAt", order.getCreatedAt());
+                    return map;
+                })
+                .collect(Collectors.toList());
+    }
+    
+    // API lấy sản phẩm bán chạy theo khoảng thời gian
+    @GetMapping("/analytics/top-products")
+    @ResponseBody
+    public List<Object> getTopProductsByDateRange(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
+            @RequestParam(defaultValue = "15") int limit) {
+        return dashboardService.getTopProductsByDateRange(limit, startDate, endDate).stream()
+                .map(product -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("id", product.getId());
+                    map.put("name", product.getName());
+                    map.put("categoryName", product.getCategoryName());
+                    map.put("soldQuantity", product.getSoldQuantity());
+                    map.put("revenue", product.getRevenue());
+                    map.put("rating", product.getRating());
+                    return map;
+                })
+                .collect(Collectors.toList());
+    }
+    
+    // API lấy tổng doanh thu theo khoảng thời gian
+    @GetMapping("/analytics/total-revenue")
+    @ResponseBody
+    public Map<String, Object> getTotalRevenueByDateRange(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("totalRevenue", dashboardService.getTotalRevenueByDateRange(startDate, endDate));
+        return result;
+    }
+    
+    // API lấy tổng đơn hàng theo khoảng thời gian
+    @GetMapping("/analytics/total-orders")
+    @ResponseBody
+    public Map<String, Object> getTotalOrdersByDateRange(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("totalOrders", dashboardService.getTotalOrdersByDateRange(startDate, endDate));
+        return result;
+    }
+    
+    // API lấy tổng số khách hàng theo khoảng thời gian
+    @GetMapping("/analytics/total-customers")
+    @ResponseBody
+    public Map<String, Object> getTotalCustomersByDateRange(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("totalCustomers", dashboardService.getTotalCustomersByDateRange(startDate, endDate));
+        return result;
+    }
+    
     // API lấy dữ liệu khách hàng mới theo tháng
     @GetMapping("/customers/new-by-month")
     @ResponseBody
     public Map<String, Long> getNewCustomersByMonth() {
         return dashboardService.getNewCustomersByMonth();
+    }
+    
+    // API lấy số sản phẩm được bán theo khoảng thời gian
+    @GetMapping("/analytics/total-products-sold")
+    @ResponseBody
+    public Map<String, Object> getTotalProductsSoldByDateRange(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("totalProductsSold", dashboardService.countSoldProductsByDateRange(startDate, endDate));
+        return result;
+    }
+    
+    // API lấy số thương hiệu được bán theo khoảng thời gian
+    @GetMapping("/analytics/total-brands-sold")
+    @ResponseBody
+    public Map<String, Object> getTotalBrandsSoldByDateRange(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("totalBrandsSold", dashboardService.countSoldBrandsByDateRange(startDate, endDate));
+        return result;
+    }
+
+    // API lấy dữ liệu thống kê khách hàng theo khoảng thời gian
+    @GetMapping("/analytics/customer-stats")
+    @ResponseBody
+    public Map<String, Object> getCustomerStatsByDateRange(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("newCustomers", dashboardService.getNewCustomersByDateRange(startDate, endDate));
+        result.put("returningCustomers", dashboardService.getReturningCustomersByDateRange(startDate, endDate));
+        
+        // Convert List<TopCustomerResponse> to List<Map>
+        List<TopCustomerResponse> topCustomers = dashboardService.getTopCustomersByDateRange(10, startDate, endDate);
+        result.put("topCustomers", topCustomers.stream()
+                .map(c -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("userId", c.getUserId());
+                    map.put("fullName", c.getFullName());
+                    map.put("email", c.getEmail());
+                    map.put("ordersCount", c.getOrdersCount());
+                    map.put("totalSpent", c.getTotalSpent());
+                    return map;
+                })
+                .collect(Collectors.toList()));
+        
+        return result;
     }
 
     // Dashboard
@@ -63,7 +191,7 @@ public class AdminPageController {
         model.addAttribute("totalProducts", dashboardService.getTotalProducts());
         model.addAttribute("totalCustomers", dashboardService.getTotalCustomers());
         model.addAttribute("pendingOrders", dashboardService.getPendingOrders());
-        model.addAttribute("lowStockProducts", dashboardService.getLowStockProducts());
+        model.addAttribute("lowStockProducts", dashboardService.getLowStockProductsList(10));
         model.addAttribute("todayRevenue", dashboardService.getTodayRevenue());
         model.addAttribute("conversionRate", dashboardService.getConversionRate());
 
