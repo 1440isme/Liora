@@ -65,14 +65,14 @@ public class ReviewController {
         try {
             Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
             
-            // Lấy đánh giá
+            // Lấy đánh giá (bao gồm cả ẩn để hiển thị với nội dung che)
             Page<ReviewResponse> reviews;
             if (rating != null && rating >= 1 && rating <= 5) {
-                // Lọc theo rating cụ thể
-                reviews = reviewService.findVisibleReviewsByProductIdWithRating(productId, rating, pageable);
+                // Lọc theo rating cụ thể - lấy tất cả reviews (bao gồm ẩn)
+                reviews = reviewService.findReviewsByProductIdWithRating(productId, rating, pageable);
             } else {
-                // Lấy tất cả đánh giá
-                reviews = reviewService.findVisibleReviewsByProductId(productId, pageable);
+                // Lấy tất cả đánh giá (bao gồm cả ẩn)
+                reviews = reviewService.findReviewsByProductId(productId, pageable);
             }
             
             // Lấy thống kê

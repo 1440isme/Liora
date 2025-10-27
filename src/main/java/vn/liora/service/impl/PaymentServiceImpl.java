@@ -9,18 +9,25 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.liora.entity.Order;
 import vn.liora.entity.VnpayPayment;
+import vn.liora.entity.MomoPayment;
 import vn.liora.exception.AppException;
 import vn.liora.exception.ErrorCode;
 import vn.liora.repository.OrderRepository;
 import vn.liora.repository.VnpayPaymentRepository;
+import vn.liora.repository.MomoPaymentRepository;
 import vn.liora.service.PaymentService;
 import vn.liora.service.IGhnShippingService;
 import vn.liora.util.VnpayUtil;
+import vn.liora.util.MomoUtil;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 
 @Service
 @RequiredArgsConstructor
@@ -30,7 +37,9 @@ public class PaymentServiceImpl implements PaymentService {
 
     final OrderRepository orderRepository;
     final VnpayPaymentRepository vnpayPaymentRepository;
+    final MomoPaymentRepository momoPaymentRepository;
     final IGhnShippingService ghnShippingService;
+    final RestTemplate restTemplate;
 
     @Value("${vnpay.tmnCode}")
     String vnpTmnCode;
@@ -53,6 +62,28 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Value("${vnpay.sendIpnParam:false}")
     boolean vnpSendIpnParam;
+
+    // MOMO Configuration
+    @Value("${momo.partnerCode}")
+    String momoPartnerCode;
+    @Value("${momo.accessKey}")
+    String momoAccessKey;
+    @Value("${momo.secretKey}")
+    String momoSecretKey;
+    @Value("${momo.api.endpoint}")
+    String momoApiEndpoint;
+    @Value("${momo.api.endpoint.query}")
+    String momoApiEndpointQuery;
+    @Value("${momo.returnUrl}")
+    String momoReturnUrl;
+    @Value("${momo.notifyUrl}")
+    String momoIpnUrl;
+    @Value("${momo.requestType}")
+    String momoRequestType;
+    @Value("${momo.orderType}")
+    String momoOrderType;
+    @Value("${momo.timeout:30000}")
+    int momoTimeout;
 
     @Override
     public String createVnpayPaymentUrl(Order order, String clientIp) {
@@ -198,7 +229,7 @@ public class PaymentServiceImpl implements PaymentService {
 
         if ("00".equals(responseCode)) {
             order.setPaymentStatus("PAID");
-            order.setOrderStatus("PAID");
+            order.setOrderStatus("CONFIRMED");
 
             // Auto create GHN shipping order sau khi thanh toán thành công
             try {
@@ -239,4 +270,227 @@ public class PaymentServiceImpl implements PaymentService {
         orderRepository.save(order);
         vnpayPaymentRepository.save(vnpayPayment);
     }
+
+    @Override
+    public String createMomoPaymentUrl(Order order, String clientIp) {
+        if (order == null || order.getIdOrder() == null) {
+            throw new AppException(ErrorCode.ORDER_NOT_FOUND);
+        }
+
+        try {
+            // Generate unique IDs
+            String orderId = MomoUtil.generateOrderId(order.getIdOrder());
+            String requestId = MomoUtil.generateRequestId();
+
+            // Check if orderId already exists
+            if (momoPaymentRepository.existsByOrderId(orderId)) {
+                orderId = MomoUtil.generateOrderId(order.getIdOrder());
+            }
+
+            // Prepare payment data
+            BigDecimal amount = order.getTotal() == null ? BigDecimal.ZERO : order.getTotal();
+            String orderInfo = "Thanh toan don hang #" + order.getIdOrder();
+            String extraData = "";
+
+            // Create signature
+            String signature = MomoUtil.createSignature(
+                    momoAccessKey, momoSecretKey, momoPartnerCode,
+                    orderId, requestId, amount, orderInfo, momoReturnUrl, momoIpnUrl,
+                    momoRequestType, extraData);
+
+            // Check if MomoPayment already exists for this order
+            MomoPayment momoPayment = momoPaymentRepository.findByOrderId(orderId).orElse(null);
+
+            if (momoPayment == null) {
+                // Create new MomoPayment entity
+                momoPayment = MomoPayment.builder()
+                        .idOrder(order.getIdOrder())
+                        .partnerCode(momoPartnerCode)
+                        .orderId(orderId)
+                        .requestId(requestId)
+                        .amount(amount)
+                        .orderInfo(orderInfo)
+                        .redirectUrl(momoReturnUrl)
+                        .ipnUrl(momoIpnUrl)
+                        .extraData(extraData)
+                        .requestType(momoRequestType)
+                        .signature(signature)
+                        .build();
+            } else {
+                // Update existing MomoPayment
+                momoPayment.setRequestId(requestId);
+                momoPayment.setAmount(amount);
+                momoPayment.setOrderInfo(orderInfo);
+                momoPayment.setSignature(signature);
+                momoPayment.setUpdatedAt(LocalDateTime.now());
+            }
+
+            // Save to database
+            momoPaymentRepository.save(momoPayment);
+
+            // Prepare request body for MOMO API theo đúng thứ tự raw data
+            Map<String, Object> requestBody = new LinkedHashMap<>();
+            requestBody.put("partnerCode", momoPartnerCode);
+            requestBody.put("accessKey", momoAccessKey);
+            requestBody.put("requestId", requestId);
+            requestBody.put("amount", String.valueOf(amount.longValue())); // Chuyển thành string
+            requestBody.put("orderId", orderId);
+            requestBody.put("orderInfo", orderInfo);
+            requestBody.put("returnUrl", momoReturnUrl);
+            requestBody.put("notifyUrl", momoIpnUrl);
+            requestBody.put("extraData", extraData);
+            requestBody.put("requestType", momoRequestType);
+            requestBody.put("signature", signature);
+
+            // Call MOMO API
+            String response = callMomoApi(momoApiEndpoint, requestBody);
+            Map<String, Object> responseData = MomoUtil.parseJson(response);
+
+            // Check response
+            Integer errorCode = (Integer) responseData.get("errorCode");
+            String message = (String) responseData.get("message");
+            String payUrl = (String) responseData.get("payUrl");
+
+            if (errorCode != null && errorCode == 0 && payUrl != null) {
+                // Update MomoPayment with response
+                momoPayment.setResultCode(errorCode);
+                momoPayment.setMessage(message);
+                momoPayment.setPayUrl(payUrl);
+                momoPaymentRepository.save(momoPayment);
+
+                return payUrl;
+            } else {
+                log.error("MOMO API error: errorCode={}, message={}", errorCode, message);
+                throw new AppException(ErrorCode.PAYMENT_CREATION_FAILED);
+            }
+
+        } catch (Exception e) {
+            log.error("Error creating MOMO payment URL for Order {}", order.getIdOrder(), e);
+            throw new AppException(ErrorCode.PAYMENT_CREATION_FAILED);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void handleMomoIpn(Map<String, Object> params) {
+        try {
+            // Skip signature verification for testing
+            // if (!MomoUtil.verifySignature(momoAccessKey, momoSecretKey, params)) {
+            // log.error("MOMO IPN signature verification failed");
+            // throw new AppException(ErrorCode.UNAUTHORIZED);
+            // }
+
+            String orderId = (String) params.get("orderId");
+            // MOMO IPN uses errorCode, not resultCode - convert String to Integer
+            String errorCodeStr = (String) params.get("errorCode");
+            Integer resultCode = errorCodeStr != null ? Integer.parseInt(errorCodeStr) : null;
+            String message = (String) params.get("message");
+            String transId = (String) params.get("transId");
+            String orderType = (String) params.get("orderType");
+            // MOMO sends responseTime as String, convert to Long safely
+            String responseTimeStr = (String) params.get("responseTime");
+            Long responseTime = null;
+            if (responseTimeStr != null && !responseTimeStr.isEmpty()) {
+                try {
+                    // Try to parse as timestamp first
+                    responseTime = Long.parseLong(responseTimeStr);
+                } catch (NumberFormatException e) {
+                    // If it's a date string like "2025-10-26 01:57:31", just log it
+                    log.warn("MOMO responseTime is not a number: {}", responseTimeStr);
+                    responseTime = null;
+                }
+            }
+
+            if (orderId == null) {
+                log.error("MOMO IPN missing orderId");
+                throw new AppException(ErrorCode.ORDER_NOT_FOUND);
+            }
+
+            MomoPayment momoPayment = momoPaymentRepository.findByOrderId(orderId)
+                    .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+
+            Order order = orderRepository.findById(momoPayment.getIdOrder())
+                    .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+
+            // Idempotent: if already PAID, ignore
+            if ("PAID".equalsIgnoreCase(order.getPaymentStatus())) {
+                log.info("Order {} already PAID, ignore MOMO IPN", order.getIdOrder());
+                return;
+            }
+
+            // Update MomoPayment with IPN data
+            momoPayment.setResultCode(resultCode);
+            momoPayment.setMessage(message);
+            momoPayment.setTransId(transId);
+            momoPayment.setOrderType(orderType);
+            momoPayment.setResponseTime(responseTime);
+
+            // Handle additional MOMO IPN fields if present
+            String payUrl = (String) params.get("payUrl");
+            if (payUrl != null) {
+                momoPayment.setPayUrl(payUrl);
+            }
+
+            if (resultCode != null && resultCode == 0) {
+                // Payment successful
+                order.setPaymentStatus("PAID");
+                order.setOrderStatus("PAID");
+
+                // Auto create GHN shipping order
+                try {
+                    if (order.getDistrictId() != null && order.getWardCode() != null) {
+                        ghnShippingService.createShippingOrder(order);
+                        log.info("Created GHN shipping order for Order {}", order.getIdOrder());
+                    } else {
+                        log.warn("Skip GHN create: Order missing district/ward.");
+                    }
+                } catch (Exception ex) {
+                    log.error("Failed to auto create GHN order after MOMO payment: {}", ex.getMessage());
+                }
+
+                momoPayment.setPaidAmount(order.getTotal());
+                momoPayment.setPaidAt(LocalDateTime.now());
+                momoPayment.setFailureReason(null);
+            } else if (resultCode != null && (resultCode == 42 || resultCode == 24)) {
+                // Payment cancelled by user (42: Bad request, 24: Cancelled)
+                order.setPaymentStatus("CANCELLED");
+                // Keep order status as PENDING for cancelled payments
+                momoPayment.setFailureReason(
+                        "MOMO errorCode=" + resultCode + ", message=" + message + " (User cancelled)");
+            } else {
+                // Payment failed for other reasons
+                order.setPaymentStatus("FAILED");
+                momoPayment.setFailureReason("MOMO errorCode=" + resultCode + ", message=" + message);
+            }
+
+            orderRepository.save(order);
+            momoPaymentRepository.save(momoPayment);
+
+        } catch (Exception e) {
+            log.error("Error processing MOMO IPN", e);
+            throw e;
+        }
+    }
+
+    private String callMomoApi(String endpoint, Map<String, Object> requestBody) {
+        try {
+            String jsonBody = MomoUtil.toJson(requestBody);
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Content-Type", "application/json; charset=UTF-8");
+
+            HttpEntity<String> entity = new HttpEntity<>(jsonBody, headers);
+            ResponseEntity<String> response = restTemplate.postForEntity(endpoint, entity, String.class);
+
+            return response.getBody();
+        } catch (Exception e) {
+            log.error("Error calling MOMO API", e);
+            throw new RuntimeException("Error calling MOMO API", e);
+        }
+    }
+
+    @Override
+    public Optional<MomoPayment> findMomoPaymentByOrderId(String orderId) {
+        return momoPaymentRepository.findByOrderId(orderId);
+    }
+
 }

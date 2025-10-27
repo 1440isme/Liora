@@ -30,15 +30,17 @@ function cancelOrder(orderId) {
     }
 }
 
+// Enhanced reorder function with modal (from order-detail.js)
 async function reorderOrder(orderId) {
-    const token = localStorage.getItem('access_token');
-    if (!token) {
-        alert('Vui lòng đăng nhập để thực hiện thao tác này');
-        return;
-    }
-
     try {
-        const response = await fetch(`/api/orders/${orderId}/items`, {
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+            showToast('Vui lòng đăng nhập để thực hiện thao tác này', 'error');
+            return;
+        }
+
+        // Lấy danh sách sản phẩm từ đơn hàng
+        const orderItemsResponse = await fetch(`/api/orders/${orderId}/items`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -46,118 +48,371 @@ async function reorderOrder(orderId) {
             }
         });
 
-        if (!response.ok) {
-            alert('Không thể tải thông tin đơn hàng');
+        if (!orderItemsResponse.ok) {
+            throw new Error('Không thể lấy thông tin sản phẩm từ đơn hàng');
+        }
+
+        const orderItems = await orderItemsResponse.json();
+        if (!orderItems || orderItems.length === 0) {
+            showToast('Đơn hàng không có sản phẩm nào', 'error');
             return;
         }
 
-        const orderProducts = await response.json();
+        // Lấy thông tin trạng thái sản phẩm hiện tại
+        const enrichedItems = await enrichOrderItemsWithCurrentStatus(orderItems, token);
 
-        // Kiểm tra từng sản phẩm có hợp lệ không
-        const validProducts = [];
-        const invalidProducts = [];
+        // Phân loại sản phẩm
+        const validItems = [];
+        const invalidItems = [];
 
-        for (const orderProduct of orderProducts) {
-            // Kiểm tra thông tin sản phẩm hiện tại
-            const productResponse = await fetch(`/api/products/${orderProduct.idProduct}`);
-            if (productResponse.ok) {
-                const productInfo = await productResponse.json();
-
-                // Kiểm tra sản phẩm còn hàng và đang bán
-                if (productInfo.available && productInfo.isActive && productInfo.stock > 0) {
-                    validProducts.push({
-                        idProduct: orderProduct.idProduct,
-                        quantity: orderProduct.quantity,
-                        productName: orderProduct.productName
-                    });
-                } else {
-                    invalidProducts.push({
-                        productName: orderProduct.productName,
-                        reason: !productInfo.available ? 'không còn bán' :
-                            !productInfo.isActive ? 'đã ngừng bán' : 'hết hàng'
-                    });
-                }
+        enrichedItems.forEach(item => {
+            const productStatus = getProductStatus(item);
+            if (productStatus === 'available') {
+                validItems.push(item);
             } else {
-                invalidProducts.push({
-                    productName: orderProduct.productName,
-                    reason: 'không tìm thấy'
-                });
-            }
-        }
-
-        // Hiển thị thông báo về sản phẩm không hợp lệ
-        if (invalidProducts.length > 0) {
-            let message = 'Một số sản phẩm không thể mua lại:\n';
-            invalidProducts.forEach(product => {
-                message += `• ${product.productName}: ${product.reason}\n`;
-            });
-
-            if (validProducts.length === 0) {
-                alert(message + '\nKhông có sản phẩm nào hợp lệ để mua lại.');
-                return;
-            } else {
-                if (!confirm(message + '\n\nBạn có muốn thêm các sản phẩm hợp lệ vào giỏ hàng không?')) {
-                    return;
-                }
-            }
-        }
-
-        // Lấy thông tin giỏ hàng hiện tại
-        const cartResponse = await fetch('/api/user/cart', {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
+                invalidItems.push(item);
             }
         });
 
-        if (!cartResponse.ok) {
-            alert('Không thể lấy thông tin giỏ hàng');
+
+        // Nếu tất cả sản phẩm đều hợp lệ
+        if (validItems.length === enrichedItems.length && validItems.length > 0) {
+            // Thêm tất cả vào giỏ hàng và chuyển đến cart
+            await addItemsToCartDirectly(validItems);
             return;
         }
 
-        const cartInfo = await cartResponse.json();
-        const cartId = cartInfo.idCart;
-
-        // Thêm từng sản phẩm hợp lệ vào giỏ hàng
-        let successCount = 0;
-        for (const product of validProducts) {
-            try {
-                const addToCartResponse = await fetch(`/CartProduct/${cartId}`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        idProduct: product.idProduct,
-                        quantity: product.quantity
-                    })
-                });
-
-                if (addToCartResponse.ok) {
-                    successCount++;
-                }
-            } catch (error) {
-                console.error(`Error adding ${product.productName} to cart:`, error);
-            }
+        // Nếu tất cả sản phẩm đều không hợp lệ
+        if (invalidItems.length === enrichedItems.length) {
+            showToast('Tất cả sản phẩm trong đơn hàng đều không hợp lệ (hết hàng hoặc ngừng kinh doanh)', 'error');
+            return;
         }
 
-        // Hiển thị kết quả
-        if (successCount === validProducts.length) {
-            showReorderSuccess(successCount);
-        } else {
-            alert(`Đã thêm ${successCount}/${validProducts.length} sản phẩm vào giỏ hàng.`);
-        }
-
-        // Refresh giỏ hàng nếu có cartManager
-        if (window.cartManager && typeof window.cartManager.refreshCart === 'function') {
-            window.cartManager.refreshCart();
-        }
+        // Nếu có cả sản phẩm hợp lệ và không hợp lệ, hiển thị modal
+        showReorderModal(enrichedItems);
 
     } catch (error) {
         console.error('Error reordering:', error);
-        alert('Có lỗi xảy ra khi thực hiện mua lại');
+        showToast('Có lỗi xảy ra khi thực hiện mua lại', 'error');
+    }
+}
+
+// Helper functions for enhanced reorder
+async function enrichOrderItemsWithCurrentStatus(orderItems, token) {
+    const enrichedItems = [];
+
+    for (const item of orderItems) {
+        try {
+            // Gọi API lấy thông tin sản phẩm hiện tại
+            const productResponse = await fetch(`/api/products/${item.idProduct}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (productResponse.ok) {
+                const productData = await productResponse.json();
+                const product = productData.result;
+
+                // Kết hợp thông tin từ order và thông tin sản phẩm hiện tại
+                enrichedItems.push({
+                    ...item,
+                    isActive: product.isActive,
+                    available: product.available,
+                    stock: product.stock
+                });
+            } else {
+                // Nếu không lấy được thông tin sản phẩm, giữ nguyên
+                enrichedItems.push(item);
+            }
+        } catch (error) {
+            console.error('Error fetching product info for:', item.idProduct, error);
+            // Nếu có lỗi, giữ nguyên thông tin cũ
+            enrichedItems.push(item);
+        }
+    }
+
+    return enrichedItems;
+}
+
+async function addItemsToCartDirectly(items) {
+    let successCount = 0;
+    let failedItems = [];
+
+    for (const item of items) {
+        try {
+            if (window.app && typeof window.app.addProductToCartBackend === 'function') {
+                await window.app.addProductToCartBackend(item.idProduct, item.quantity, false);
+                successCount++;
+            }
+        } catch (error) {
+            console.error('Error adding product to cart:', error);
+            failedItems.push({
+                productId: item.idProduct,
+                quantity: item.quantity,
+                error: error.message || 'Không thể thêm vào giỏ hàng'
+            });
+        }
+    }
+
+    if (successCount > 0) {
+        showToast(`Đã thêm ${successCount} sản phẩm vào giỏ hàng`, 'success');
+        // Chuyển đến trang giỏ hàng sau 1.5 giây
+        setTimeout(() => {
+            window.location.href = '/cart';
+        }, 1500);
+    }
+
+    if (failedItems.length > 0) {
+        showToast(`Không thể thêm ${failedItems.length} sản phẩm vào giỏ hàng`, 'error');
+    }
+}
+
+function getProductStatus(item) {
+    // Debug: Log dữ liệu để kiểm tra
+    console.log('Product status check:', {
+        productName: item.productName,
+        isActive: item.isActive,
+        available: item.available,
+        stock: item.stock,
+        isActiveType: typeof item.isActive,
+        availableType: typeof item.available,
+        stockType: typeof item.stock
+    });
+
+    // Nếu không có thông tin trạng thái (chưa được enrich), coi như available
+    if (item.isActive === undefined && item.available === undefined && item.stock === undefined) {
+        console.log('Status: available (no status info)');
+        return 'available';
+    }
+
+    // Kiểm tra trạng thái sản phẩm - hết hàng trước
+    if (item.stock !== undefined && item.stock <= 0) {
+        console.log('Status: out_of_stock (stock <= 0)');
+        return 'out_of_stock';
+    }
+    if ((item.available !== undefined && !item.available) || (item.isActive !== undefined && !item.isActive)) {
+        console.log('Status: deactivated (!available || !isActive)');
+        return 'deactivated';
+    }
+    console.log('Status: available');
+    return 'available';
+}
+
+function getProductStatusText(status) {
+    switch (status) {
+        case 'deactivated':
+            return 'Ngừng kinh doanh';
+        case 'out_of_stock':
+            return 'Hết hàng';
+        case 'available':
+            return 'Có thể thêm';
+        default:
+            return 'Có thể thêm';
+    }
+}
+
+function getProductStatusBadgeClass(status) {
+    switch (status) {
+        case 'deactivated':
+            return 'bg-danger';
+        case 'out_of_stock':
+            return 'bg-secondary';
+        case 'available':
+            return 'bg-success';
+        default:
+            return 'bg-success';
+    }
+}
+
+function showReorderModal(orderItems) {
+    console.log('showReorderModal called with items:', orderItems);
+
+    // Lưu orderItems để sử dụng trong addAllValidItemsToCart
+    window.lastOrderItems = orderItems;
+
+    // Tạo modal HTML
+    const modalHTML = `
+        <div class="modal fade" id="reorderModal" tabindex="-1" aria-labelledby="reorderModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="reorderModalLabel">
+                            <i class="fas fa-shopping-cart me-2"></i>Mua lại đơn hàng
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="reorder-items-list">
+                            ${orderItems.map((item, index) => {
+        const productStatus = getProductStatus(item);
+        const isProductValid = productStatus === 'available';
+
+        return `
+                                    <div class="card mb-3 ${!isProductValid ? 'opacity-50' : ''}" id="reorder-item-${index}">
+                                        <div class="card-body">
+                                            <div class="row align-items-center">
+                                                <div class="col-auto">
+                                                    <img src="${item.mainImageUrl || '/user/img/default-product.jpg'}" 
+                                                         class="img-thumbnail" 
+                                                         alt="${item.productName}"
+                                                         style="width: 60px; height: 60px; object-fit: cover;"
+                                                         onerror="this.src='https://placehold.co/60x60'">
+                                                </div>
+                                                <div class="col">
+                                                    <h6 class="mb-1">${item.productName || 'Sản phẩm không xác định'}</h6>
+                                                    <small class="text-muted">${item.brandName || ''}</small>
+                                                    ${productStatus !== 'available' ? `
+                                                        <div class="mt-1">
+                                                            <span class="badge ${getProductStatusBadgeClass(productStatus)}">${getProductStatusText(productStatus)}</span>
+                                                        </div>
+                                                    ` : ''}
+                                                </div>
+                                                <div class="col-auto text-end">
+                                                    <span class="text-muted">x${item.quantity}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+    }).join('')}
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-success w-100" onclick="addAllValidItemsToCart()">
+                            <i class="fas fa-shopping-cart me-1"></i>
+                            Thêm (${orderItems.filter(item => getProductStatus(item) === 'available').length}) sản phẩm vào giỏ hàng
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Thêm modal vào body
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+    console.log('Modal HTML added to body');
+
+    // Hiển thị modal
+    const modalElement = document.getElementById('reorderModal');
+    console.log('Modal element found:', modalElement);
+
+    if (modalElement) {
+        // Kiểm tra Bootstrap có sẵn không
+        if (typeof bootstrap !== 'undefined') {
+            const modal = new bootstrap.Modal(modalElement);
+            console.log('Bootstrap modal created:', modal);
+            modal.show();
+            console.log('Modal show() called');
+        } else {
+            // Fallback: hiển thị modal bằng CSS
+            console.log('Bootstrap not available, using CSS fallback');
+            modalElement.style.display = 'block';
+            modalElement.classList.add('show');
+            modalElement.setAttribute('aria-modal', 'true');
+            modalElement.setAttribute('role', 'dialog');
+
+            // Thêm backdrop
+            const backdrop = document.createElement('div');
+            backdrop.className = 'modal-backdrop fade show';
+            backdrop.id = 'reorderModalBackdrop';
+            document.body.appendChild(backdrop);
+        }
+    } else {
+        console.error('Modal element not found');
+        showToast('Không thể tạo modal. Vui lòng thử lại.', 'error');
+    }
+
+    // Xóa modal khi đóng
+    const closeModal = () => {
+        const modal = document.getElementById('reorderModal');
+        const backdrop = document.getElementById('reorderModalBackdrop');
+        if (modal) modal.remove();
+        if (backdrop) backdrop.remove();
+    };
+
+    // Xử lý đóng modal
+    modalElement.addEventListener('hidden.bs.modal', closeModal);
+
+    // Thêm event listener cho nút đóng
+    const closeButtons = modalElement.querySelectorAll('[data-bs-dismiss="modal"], .btn-close');
+    closeButtons.forEach(button => {
+        button.addEventListener('click', closeModal);
+    });
+
+    // Thêm event listener cho backdrop
+    modalElement.addEventListener('click', (e) => {
+        if (e.target === modalElement) {
+            closeModal();
+        }
+    });
+}
+
+async function addAllValidItemsToCart() {
+    console.log('addAllValidItemsToCart called');
+
+    // Lấy tất cả sản phẩm hợp lệ từ lastOrderItems
+    const orderItems = window.lastOrderItems || [];
+    console.log('Last order items:', orderItems);
+    const validItems = [];
+
+    orderItems.forEach((item, index) => {
+        const productStatus = getProductStatus(item);
+        if (productStatus === 'available') {
+            validItems.push({
+                productId: item.idProduct,
+                quantity: item.quantity,
+                index: index
+            });
+        }
+    });
+
+    if (validItems.length === 0) {
+        showToast('Không có sản phẩm nào có thể thêm vào giỏ hàng', 'error');
+        return;
+    }
+
+    console.log('Adding valid items to cart:', validItems);
+    let successCount = 0;
+    let failedItems = [];
+
+    for (const item of validItems) {
+        try {
+            if (window.app && typeof window.app.addProductToCartBackend === 'function') {
+                await window.app.addProductToCartBackend(item.productId, item.quantity, true);
+                successCount++;
+
+                console.log(`Successfully added product ${item.productId} with quantity ${item.quantity}`);
+            }
+        } catch (error) {
+            console.error('Error adding product to cart:', error);
+            failedItems.push({
+                productId: item.productId,
+                quantity: item.quantity,
+                error: error.message || 'Không thể thêm vào giỏ hàng'
+            });
+        }
+    }
+
+    if (successCount > 0) {
+        showToast(`Đã thêm ${successCount} sản phẩm vào giỏ hàng`, 'success');
+        // Tự động đóng modal sau khi thêm thành công
+        setTimeout(() => {
+            const modal = document.getElementById('reorderModal');
+            if (modal) {
+                const backdrop = document.getElementById('reorderModalBackdrop');
+                if (backdrop) backdrop.remove();
+                modal.remove();
+            }
+            // Chuyển đến trang giỏ hàng
+            window.location.href = '/cart';
+        }, 1500);
+    }
+
+    if (failedItems.length > 0) {
+        showToast(`Không thể thêm ${failedItems.length} sản phẩm vào giỏ hàng`, 'error');
     }
 }
 
@@ -210,20 +465,56 @@ function showReorderSuccess(count) {
 let currentOrderId = null;
 let orderProducts = [];
 
-// Check if we should open review modal on page load
+// Check if we should open review modal or reorder modal on page load
 $(document).ready(function () {
-    // Check if URL has #review hash
-    if (window.location.hash === '#review') {
-        // Get order ID from URL path
-        const pathParts = window.location.pathname.split('/');
-        const orderId = pathParts[pathParts.length - 1];
-        if (orderId && !isNaN(orderId)) {
+    // Get order ID from URL path
+    const pathParts = window.location.pathname.split('/');
+    const orderId = pathParts[pathParts.length - 1];
+    console.log('Page load - URL:', window.location.href);
+    console.log('Page load - Hash:', window.location.hash);
+    console.log('Page load - OrderId:', orderId);
+
+    if (orderId && !isNaN(orderId)) {
+        // Check if URL has #review hash
+        if (window.location.hash === '#review') {
+            console.log('Hash #review detected on page load');
             // Small delay to ensure page is fully loaded
             setTimeout(() => {
                 openReviewModal(parseInt(orderId));
             }, 500);
         }
+        // Check if URL has #reorder hash
+        else if (window.location.hash === '#reorder') {
+            console.log('Hash #reorder detected on page load');
+            // Small delay to ensure page is fully loaded
+            setTimeout(() => {
+                reorderOrder(parseInt(orderId));
+            }, 500);
+        }
     }
+
+    // Also listen for hash changes
+    window.addEventListener('hashchange', function () {
+        console.log('Hash changed to:', window.location.hash);
+        const pathParts = window.location.pathname.split('/');
+        const orderId = pathParts[pathParts.length - 1];
+        console.log('Hash change - OrderId:', orderId);
+
+        if (orderId && !isNaN(orderId)) {
+            if (window.location.hash === '#review') {
+                console.log('Hash change: #review detected');
+                setTimeout(() => {
+                    openReviewModal(parseInt(orderId));
+                }, 100);
+            }
+            else if (window.location.hash === '#reorder') {
+                console.log('Hash change: #reorder detected');
+                setTimeout(() => {
+                    reorderOrder(parseInt(orderId));
+                }, 100);
+            }
+        }
+    });
 });
 
 function openReviewModal(orderId) {
@@ -585,7 +876,10 @@ function renderViewReviewProducts(products) {
                         <div class="mb-3">
                             <label class="form-label fw-medium">Nhận xét:</label>
                             <div class="review-content p-3 bg-light rounded">
-                                ${existingReview.content || '<em class="text-muted">Không có nhận xét</em>'}
+                                ${existingReview.isVisible === false ?
+                    '<div class="review-hidden-content"><i class="fas fa-eye-slash me-2"></i>Nội dung đánh giá đã bị ẩn</div>' :
+                    (existingReview.content || '<em class="text-muted">Không có nhận xét</em>')
+                }
                             </div>
                         </div>
                         

@@ -381,6 +381,21 @@ body.sidebar-icon-only .sidebar .nav .nav-item.pinned>.nav-link::after {
     transform: rotate(90deg);
 }
 
+/* Category name with children - double click to toggle */
+.category-name[data-has-children="true"] {
+    transition: color 0.2s ease;
+}
+
+.category-name[data-has-children="true"]:hover {
+    color: var(--bs-primary) !important;
+    text-decoration: underline;
+}
+
+/* Category row hover effect for rows with children */
+.category-row:hover .category-name[data-has-children="true"] {
+    color: var(--bs-primary) !important;
+}
+
 /* Collapsed rows */
 .category-row.collapsed {
     display: none;

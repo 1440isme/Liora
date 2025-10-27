@@ -4,18 +4,15 @@
  */
 class NewestProductsHomepageManager {
     constructor() {
-        console.log('NewestProductsHomepageManager constructor called');
         this.products = [];
         this.isLoading = false;
         this.init();
     }
 
     init() {
-        console.log('NewestProductsHomepageManager init() called');
         try {
             this.loadNewestProducts();
             this.bindEvents();
-            console.log('Newest products manager initialized successfully');
         } catch (error) {
             console.error('Error in init():', error);
         }
@@ -37,24 +34,20 @@ class NewestProductsHomepageManager {
     async loadNewestProducts() {
         if (this.isLoading) return;
 
-        console.log('Loading newest products...');
         this.isLoading = true;
         this.showLoading();
 
         try {
             const response = await fetch('/api/products/newest?limit=8');
-            console.log('Newest products API response:', response.status);
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
             const data = await response.json();
-            console.log('Newest products API data:', data);
 
             if (data.code === 1000 && data.result) {
                 this.products = data.result;
-                console.log('Loaded newest products:', this.products.length);
                 this.renderNewestProducts();
 
                 // Add scroll event listener
@@ -68,7 +61,6 @@ class NewestProductsHomepageManager {
                     this.updateNavigationButtons();
                 }, 100);
             } else {
-                console.log('API error:', data.message);
                 this.showEmpty();
             }
         } catch (error) {
@@ -88,12 +80,11 @@ class NewestProductsHomepageManager {
             return;
         }
 
-        console.log(`Rendering all newest products: ${this.products.length}`);
 
         // Render all products instead of slicing
         grid.innerHTML = this.products.map(product => this.createProductCard(product)).join('');
         this.hideLoading();
-        
+
         // Trigger rating load sau khi render xong
         setTimeout(() => {
             if (window.loadProductRatings) {
@@ -349,25 +340,12 @@ class NewestProductsHomepageManager {
         const isAtStart = scrollLeft <= 1;
         const isAtEnd = scrollLeft >= (maxScrollLeft - 1);
 
-        console.log('Navigation buttons update:', {
-            scrollLeft,
-            maxScrollLeft,
-            scrollWidth: grid.scrollWidth,
-            clientWidth: grid.clientWidth,
-            productsLength: this.products.length,
-            isAtStart,
-            isAtEnd,
-            prevBtnExists: !!prevBtn,
-            nextBtnExists: !!nextBtn
-        });
 
         if (prevBtn) {
             prevBtn.disabled = isAtStart;
-            console.log('Prev button disabled:', isAtStart);
         }
         if (nextBtn) {
             nextBtn.disabled = isAtEnd;
-            console.log('Next button disabled:', isAtEnd);
         }
     }
 
@@ -407,7 +385,7 @@ class NewestProductsHomepageManager {
         try {
             // Sử dụng addProductToCartBackend để gọi API backend
             if (window.app && window.app.addProductToCartBackend) {
-                await window.app.addProductToCartBackend(productId, 1, true);
+                await window.app.addProductToCartBackend(productId, 1, false);
                 await window.app.refreshCartBadge?.();
             } else {
                 this.showNotification('Chức năng đang được tải...', 'error');
@@ -419,7 +397,6 @@ class NewestProductsHomepageManager {
     }
 
     async showQuickView(productId) {
-        console.log('Showing quick view for product:', productId);
 
         // Find product in current products
         const product = this.products.find(p => (p.productId || p.id) === productId);
@@ -448,7 +425,6 @@ class NewestProductsHomepageManager {
             if (productStats) {
                 product.averageRating = productStats.averageRating || 0;
                 product.reviewCount = productStats.totalReviews || 0;
-                console.log('Loaded rating data for modal:', product.averageRating, 'stars,', product.reviewCount, 'reviews');
             }
         } catch (error) {
             console.error('Error loading rating data:', error);
@@ -588,7 +564,7 @@ class NewestProductsHomepageManager {
         setTimeout(() => {
             const backdrop = document.querySelector('.modal-backdrop');
             if (backdrop) {
-                backdrop.style.zIndex = '9998';
+                backdrop.style.setProperty('z-index', '9998', 'important');
                 backdrop.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
             }
         }, 10);
@@ -692,13 +668,6 @@ class NewestProductsHomepageManager {
             const mainImage = document.getElementById('homepageNewestModalMainProductImage');
             const thumbnails = document.querySelectorAll('#homepageNewestQuickViewModal .thumbnail-item');
 
-            console.log('Setting up newest slider navigation:', {
-                prevBtn: !!prevBtn,
-                nextBtn: !!nextBtn,
-                mainImage: !!mainImage,
-                thumbnails: thumbnails.length,
-                productImages: product.images ? product.images.length : 0
-            });
 
             if (!product.images || product.images.length <= 1) {
                 // Hide navigation buttons if only one image
@@ -886,7 +855,7 @@ class NewestProductsHomepageManager {
         try {
             // Sử dụng addProductToCartBackend để gọi API backend
             if (window.app && window.app.addProductToCartBackend) {
-                await window.app.addProductToCartBackend(productId, quantity, true);
+                await window.app.addProductToCartBackend(productId, quantity, false);
                 await window.app.refreshCartBadge?.();
             } else {
                 this.showNotification('Chức năng đang được tải...', 'error');
@@ -907,7 +876,7 @@ class NewestProductsHomepageManager {
         try {
             // Sử dụng addProductToCartBackend để gọi API backend
             if (window.app && window.app.addProductToCartBackend) {
-                await window.app.addProductToCartBackend(productId, quantity, true);
+                await window.app.addProductToCartBackend(productId, quantity, false);
                 await window.app.refreshCartBadge?.();
             } else {
                 this.showNotification('Chức năng đang được tải...', 'error');

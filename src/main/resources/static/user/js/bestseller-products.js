@@ -749,7 +749,7 @@ class BestsellerProductsManager {
         try {
             // Sử dụng addProductToCartBackend để gọi API backend
             if (window.app && window.app.addProductToCartBackend) {
-                await window.app.addProductToCartBackend(productId, 1, true);
+                await window.app.addProductToCartBackend(productId, 1, false);
                 await window.app.refreshCartBadge?.();
                 if (window.cartPage && typeof window.cartPage.loadCartData === 'function') {
                     await window.cartPage.loadCartData();
@@ -799,7 +799,7 @@ class BestsellerProductsManager {
         try {
             // Sử dụng addProductToCartBackend để gọi API backend
             if (window.app && window.app.addProductToCartBackend) {
-                await window.app.addProductToCartBackend(productId, quantity, true);
+                await window.app.addProductToCartBackend(productId, quantity, false);
                 await window.app.refreshCartBadge?.();
                 if (window.cartPage && typeof window.cartPage.loadCartData === 'function') {
                     await window.cartPage.loadCartData();

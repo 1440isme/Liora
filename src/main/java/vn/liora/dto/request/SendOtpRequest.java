@@ -11,9 +11,10 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ForgotPasswordRequest {
-
+public class SendOtpRequest {
     @NotBlank(message = "Email không được để trống")
     @Email(message = "Email không hợp lệ")
     private String email;
+    
+    private String type; // REGISTRATION, PASSWORD_RESET
 }

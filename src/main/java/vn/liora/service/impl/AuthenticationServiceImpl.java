@@ -81,7 +81,7 @@ public class AuthenticationServiceImpl implements IAuthenticationService {
         }
         boolean authenticated = passwordEncoder.matches(request.getPassword(), user.getPassword());
         if (!authenticated) {
-            throw new AppException(ErrorCode.UNAUTHENTICATED);
+            throw new AppException(ErrorCode.INVALID_PASSWORD);
         }
         String token;
         try {
@@ -162,6 +162,7 @@ public class AuthenticationServiceImpl implements IAuthenticationService {
                         Instant.now().plus(VALID_DURATION, ChronoUnit.SECONDS).toEpochMilli()))
                 .jwtID(UUID.randomUUID().toString())
                 .claim("scope", buildScope(user))
+                .claim("userId", user.getUserId().toString())
                 .claim("name", fullName)
                 .claim("email", user.getEmail())
                 .claim("avatar", user.getAvatar())

@@ -46,6 +46,13 @@ public class AdminPageController {
             default -> dashboardService.getRevenueByTime(groupType, startDate, endDate);
         };
     }
+    
+    // API lấy dữ liệu khách hàng mới theo tháng
+    @GetMapping("/customers/new-by-month")
+    @ResponseBody
+    public Map<String, Long> getNewCustomersByMonth() {
+        return dashboardService.getNewCustomersByMonth();
+    }
 
     // Dashboard
     @GetMapping({ "", "/", "/dashboard" })
@@ -201,6 +208,7 @@ public class AdminPageController {
         model.addAttribute("totalRevenue", dashboardService.getTotalRevenue());
         model.addAttribute("totalOrders", dashboardService.getTotalOrders());
         model.addAttribute("totalProducts", dashboardService.getTotalProducts());
+        model.addAttribute("totalBrands", brandService.count());
         model.addAttribute("totalCustomers", dashboardService.getTotalCustomers());
         model.addAttribute("returningCustomers", dashboardService.getReturningCustomers());
         model.addAttribute("newCustomersThisMonth", dashboardService.getNewCustomersThisMonth());

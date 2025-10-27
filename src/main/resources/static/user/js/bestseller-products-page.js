@@ -407,9 +407,27 @@ class BestsellerProductsPageManager {
         if (emptyState) {
             emptyState.style.display = 'block';
             emptyState.style.visibility = 'visible';
-            const titleElement = emptyState.querySelector('h4');
-            if (titleElement) {
-                titleElement.textContent = message;
+            
+            // Kiểm tra xem có filter nào đang được áp dụng không
+            const hasFilters = this.hasActiveFilters();
+            
+            if (hasFilters) {
+                // Hiển thị với nút "Xóa bộ lọc"
+                emptyState.innerHTML = `
+                    <i class="fas fa-filter fa-3x text-muted mb-3"></i>
+                    <h4>Không tìm thấy sản phẩm phù hợp</h4>
+                    <p class="text-muted">Thử thay đổi bộ lọc hoặc chọn khoảng giá khác</p>
+                    <button class="btn btn-outline-primary" onclick="window.bestsellerProductsPageManager.clearFilters()">
+                        <i class="fas fa-times me-2"></i>Xóa bộ lọc
+                    </button>
+                `;
+            } else {
+                // Hiển thị bình thường không có nút
+                emptyState.innerHTML = `
+                    <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+                    <h4>Không tìm thấy sản phẩm</h4>
+                    <p class="text-muted">${message}</p>
+                `;
             }
         }
 
@@ -420,6 +438,16 @@ class BestsellerProductsPageManager {
         this.updatePagination();
         
         console.log('Empty state shown - no products match filters:', message);
+    }
+
+    // Kiểm tra xem có filter nào đang được áp dụng không
+    hasActiveFilters() {
+        return !!(
+            this.currentFilters.minPrice ||
+            this.currentFilters.maxPrice ||
+            (this.currentFilters.brands && this.currentFilters.brands.length > 0) ||
+            (this.currentFilters.ratings && this.currentFilters.ratings.length > 0)
+        );
     }
 
     renderProducts() {
@@ -700,7 +728,7 @@ class BestsellerProductsPageManager {
         try {
             // Sử dụng addProductToCartBackend để gọi API backend
             if (window.app && window.app.addProductToCartBackend) {
-                await window.app.addProductToCartBackend(productId, 1, true);
+                await window.app.addProductToCartBackend(productId, 1, false);
                 await window.app.refreshCartBadge?.();
             }
         } catch (error) {
@@ -1150,7 +1178,7 @@ class BestsellerProductsPageManager {
         try {
             // Sử dụng addProductToCartBackend để gọi API backend
             if (window.app && window.app.addProductToCartBackend) {
-                await window.app.addProductToCartBackend(productId, quantity, true);
+                await window.app.addProductToCartBackend(productId, quantity, false);
                 await window.app.refreshCartBadge?.();
             } else {
                 this.showNotification('Chức năng đang được tải...', 'error');
@@ -1171,7 +1199,7 @@ class BestsellerProductsPageManager {
     async addToCartWithQuantityValue(productId, productName, price, quantity) {
         try {
             if (window.app && window.app.addProductToCartBackend) {
-                await window.app.addProductToCartBackend(productId, quantity, true);
+                await window.app.addProductToCartBackend(productId, quantity, false);
                 await window.app.refreshCartBadge?.();
                 if (window.app.updateCartDisplay) {
                     window.app.updateCartDisplay();

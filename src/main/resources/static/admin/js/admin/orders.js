@@ -463,7 +463,7 @@ class OrderManager {
                     finalPaymentStatus = 'PAID';
                 }
             } else if (orderStatus === 'CANCELLED') {
-                // Nếu đơn hàng hủy và đã thanh toán, chuyển thành "Đã hoàn tiền"
+                // Nếu đơn hàng hủy và đã thanh toán, chuyển thành "Hoàn tiền"
                 if (paymentStatus === 'PAID') {
                     finalPaymentStatus = 'REFUNDED';
                 }
@@ -675,6 +675,8 @@ class OrderManager {
         switch (status) {
             case 'PENDING':
                 return 'bg-warning';
+            case 'CONFIRMED':
+                return 'bg-info';
             case 'CANCELLED':
                 return 'bg-danger';
             case 'COMPLETED':
@@ -688,6 +690,8 @@ class OrderManager {
         switch (status) {
             case 'PENDING':
                 return 'Chờ xử lý';
+            case 'CONFIRMED':
+                return 'Đã xác nhận';
             case 'CANCELLED':
                 return 'Đã hủy';
             case 'COMPLETED':
@@ -725,7 +729,7 @@ class OrderManager {
             case 'CANCELLED':
                 return 'Đã hủy';
             case 'REFUNDED':
-                return 'Đã hoàn tiền';
+                return 'Hoàn tiền';
             default:
                 return 'Không xác định';
         }

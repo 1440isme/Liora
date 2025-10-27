@@ -1,8 +1,16 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<body>
+
 <!-- admin/analytics/components/customers.html -->
 <div th:fragment="customers-statistics">
     <!-- Tiêu đề -->
-    <div class="d-sm-flex align-items-center justify-content-between border-bottom mb-3">
-        <h4 class="fw-bold text-dark mb-0">📊 Thống kê khách hàng</h4>
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h4 class="fw-bold text-dark mb-0">👥 Thống kê khách hàng</h4>
+        <div class="text-muted">
+            <i class="mdi mdi-calendar"></i> 
+            <span th:text="${#temporals.format(#temporals.createNow(), 'dd/MM/yyyy')}">22/10/2024</span>
+        </div>
     </div>
 
     <!-- 3 Thẻ tổng quan -->
@@ -10,8 +18,13 @@
         <div class="col-md-4 mb-4">
             <div class="card border-start border-4 border-primary shadow-sm">
                 <div class="card-body">
-                    <h6 class="text-muted mb-1">Khách hàng mới trong tháng</h6>
-                    <h3 class="text-primary fw-bold" th:text="${newCustomersThisMonth}">0</h3>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Khách hàng mới trong tháng</h6>
+                            <h3 class="text-primary fw-bold mb-0" th:text="${newCustomersThisMonth}">0</h3>
+                        </div>
+                        <i class="mdi mdi-account-plus text-primary" style="font-size: 2.5rem; opacity: 0.3;"></i>
+                    </div>
                 </div>
             </div>
         </div>
@@ -19,20 +32,29 @@
         <div class="col-md-4 mb-4">
             <div class="card border-start border-4 border-success shadow-sm">
                 <div class="card-body">
-                    <h6 class="text-muted mb-1">Khách hàng quay lại</h6>
-                    <h3 class="text-success fw-bold">
-                        <span th:text="${#numbers.formatDecimal(returningCustomersRate ?: 0, 1, 'COMMA', 1, 'POINT')}">0</span>%
-                    </h3>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Tỷ lệ khách quay lại</h6>
+                            <h3 class="text-success fw-bold mb-0">
+                                <span th:text="${#numbers.formatDecimal(returningCustomers ?: 0, 1, 'COMMA', 1, 'POINT')}">0</span>%
+                            </h3>
+                        </div>
+                        <i class="mdi mdi-account-check text-success" style="font-size: 2.5rem; opacity: 0.3;"></i>
+                    </div>
                 </div>
             </div>
         </div>
 
-
         <div class="col-md-4 mb-4">
             <div class="card border-start border-4 border-warning shadow-sm">
                 <div class="card-body">
-                    <h6 class="text-muted mb-1">Tổng số khách hàng</h6>
-                    <h3 class="text-warning fw-bold" th:text="${totalCustomers}">0</h3>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-1">Tổng số khách hàng</h6>
+                            <h3 class="text-warning fw-bold mb-0" th:text="${totalCustomers}">0</h3>
+                        </div>
+                        <i class="mdi mdi-account-group text-warning" style="font-size: 2.5rem; opacity: 0.3;"></i>
+                    </div>
                 </div>
             </div>
         </div>
@@ -47,23 +69,23 @@
 
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-bordered align-middle">
+                <table class="table table-bordered table-hover align-middle">
                     <thead class="table-light">
                     <tr>
-                        <th>ID</th>
+                        <th style="width: 80px;" class="text-center">Mã KH</th>
                         <th>Tên khách hàng</th>
-                        <th>Email</th>
-                        <th>Số đơn hàng</th>
-                        <th>Tổng chi tiêu (₫)</th>
+                        <th style="width: 250px;">Email</th>
+                        <th style="width: 150px;" class="text-center">Số đơn hàng</th>
+                        <th style="width: 200px;" class="text-center">Tổng chi tiêu</th>
                     </tr>
                     </thead>
                     <tbody>
                     <tr th:each="c : ${topCustomers}">
-                        <td th:text="${c.userId}">1</td>
+                        <td class="text-center"><span class="text-dark" th:text="${c.userId}">1</span></td>
                         <td th:text="${c.fullName}">Nguyễn Văn A</td>
                         <td th:text="${c.email}">a@gmail.com</td>
-                        <td th:text="${c.ordersCount}">3</td>
-                        <td th:text="${#numbers.formatDecimal(c.totalSpent, 0, 'COMMA', 0, 'POINT')} + ' ₫'">
+                        <td class="text-center"><span class="text-success fw-semibold" th:text="${c.ordersCount}">3</span></td>
+                        <td class="text-center" th:text="${#numbers.formatDecimal(c.totalSpent, 0, 'COMMA', 0, 'POINT')} + ' ₫'">
                             1,200,000 ₫
                         </td>
                     </tr>
@@ -76,3 +98,6 @@
         </div>
     </div>
 </div>
+
+</body>
+</html>

@@ -183,6 +183,25 @@ public class ReviewServiceImpl implements IReviewService {
         return reviews.map(reviewMapper::toReviewResponse);
     }
 
+    // Methods to get all reviews (including hidden) for display with hidden content
+    @Override
+    public List<ReviewResponse> findReviewsByProductId(Long productId) {
+        List<Review> reviews = reviewRepository.findByProductId(productId);
+        return reviewMapper.toReviewResponseList(reviews);
+    }
+
+    @Override
+    public Page<ReviewResponse> findReviewsByProductId(Long productId, Pageable pageable) {
+        Page<Review> reviews = reviewRepository.findByProductId(productId, pageable);
+        return reviews.map(reviewMapper::toReviewResponse);
+    }
+
+    @Override
+    public Page<ReviewResponse> findReviewsByProductIdWithRating(Long productId, Integer rating, Pageable pageable) {
+        Page<Review> reviews = reviewRepository.findByProductIdAndRating(productId, rating, pageable);
+        return reviews.map(reviewMapper::toReviewResponse);
+    }
+
     // ========== BY USER ==========
     
     @Override
