@@ -663,15 +663,6 @@ class ReviewsManager {
         // Kiểm tra xem review có bị ẩn không
         const isHidden = review.isVisible === false;
 
-        // Render media (images and videos)
-        let mediaHTML = '';
-        const hasImages = review.images && review.images.length > 0;
-        const hasVideos = review.videos && review.videos.length > 0;
-
-        if (!isHidden && (hasImages || hasVideos)) {
-            mediaHTML = this.createMediaHTML(review);
-        }
-
         return `
             <div class="review-item ${isHidden ? 'review-hidden' : ''}">
                 <div class="review-header">
@@ -694,73 +685,8 @@ class ReviewsManager {
                         (review.content || 'Không có nội dung đánh giá.')
                     }
                 </div>
-                ${mediaHTML}
             </div>
         `;
-    }
-
-    createMediaHTML(review) {
-        let mediaHTML = '';
-
-        // Render images
-        if (review.images && review.images.length > 0) {
-            mediaHTML += `
-                <div class="review-media mt-3">
-                    <div class="review-images">
-                        <div class="row g-2">
-            `;
-
-            review.images.forEach((imageUrl, index) => {
-                mediaHTML += `
-                    <div class="col-6 col-md-4">
-                        <img src="${imageUrl}"
-                             alt="Ảnh đánh giá ${index + 1}"
-                             class="review-image img-fluid rounded cursor-pointer"
-                             style="width: 100%; height: 120px; object-fit: cover; border: 1px solid #e0e0e0;"
-                             onclick="openReviewImageModal('${imageUrl}', 'Ảnh đánh giá ${index + 1}')"
-                             title="Click để xem ảnh lớn">
-                    </div>
-                `;
-            });
-
-            mediaHTML += `
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        // Render videos
-        if (review.videos && review.videos.length > 0) {
-            mediaHTML += `
-                <div class="review-media mt-3">
-                    <div class="review-videos">
-                        <div class="row g-2">
-            `;
-
-            review.videos.forEach((videoUrl, index) => {
-                mediaHTML += `
-                    <div class="col-6 col-md-4">
-                        <video controls
-                               class="review-video img-fluid rounded"
-                               style="width: 100%; height: 120px; object-fit: cover; border: 1px solid #e0e0e0;">
-                            <source src="${videoUrl}" type="video/mp4">
-                            <source src="${videoUrl}" type="video/webm">
-                            <source src="${videoUrl}" type="video/quicktime">
-                            Trình duyệt của bạn không hỗ trợ video.
-                        </video>
-                    </div>
-                `;
-            });
-
-            mediaHTML += `
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        return mediaHTML;
     }
 
     createStarsHTML(rating) {
@@ -909,25 +835,3 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
-
-// Global function to open review image modal
-function openReviewImageModal(imageSrc, imageAlt) {
-    const modal = document.getElementById('reviewMediaModal');
-    const modalTitle = document.getElementById('reviewMediaModalLabel');
-    const modalBody = modal.querySelector('.modal-body');
-
-    if (modal && modalTitle && modalBody) {
-        modalTitle.innerHTML = `<i class="mdi mdi-image-multiple me-2"></i>${imageAlt}`;
-        modalBody.innerHTML = `
-            <div class="text-center">
-                <img src="${imageSrc}"
-                     alt="${imageAlt}"
-                     class="img-fluid rounded"
-                     style="max-width: 100%; max-height: 400px; object-fit: contain;">
-            </div>
-        `;
-
-        const bsModal = new bootstrap.Modal(modal);
-        bsModal.show();
-    }
-}
