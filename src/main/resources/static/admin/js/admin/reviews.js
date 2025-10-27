@@ -248,11 +248,55 @@ function displayReviews(reviews) {
     });
 }
 
+// Function to strip HTML and extract plain text
+function stripHtml(html) {
+    if (!html) return '';
+    
+    // Remove script and style tags
+    let text = html.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
+    text = text.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '');
+    
+    // Replace <br>, <p>, <div> with spaces
+    text = text.replace(/<(?:br|p|div)[^>]*>/gi, ' ');
+    
+    // Remove remaining HTML tags
+    text = text.replace(/<[^>]+>/g, '');
+    
+    // Decode HTML entities
+    const temp = document.createElement('div');
+    temp.innerHTML = text;
+    text = temp.textContent || temp.innerText || '';
+    
+    // Clean up multiple spaces and trim
+    text = text.replace(/\s+/g, ' ').trim();
+    
+    return text;
+}
+
+// Function to check if content has media (images or videos)
+function hasMedia(content) {
+    if (!content) return false;
+    return content.includes('<img') || content.includes('<video') || content.includes('<figure');
+}
+
 // Create review row
 function createReviewRow(review, index) {
-    const content = review.content ?
-        `<div class="content-preview" title="${review.content}">${review.content}</div>` :
-        '<span class="text-muted">Không có nội dung</span>';
+    // Strip HTML and get plain text preview
+    const plainText = stripHtml(review.content);
+    const hasMediaContent = hasMedia(review.content);
+    
+    let contentHtml = '';
+    if (plainText) {
+        // Truncate to 50 characters max for preview
+        const truncatedText = plainText.length > 50 ? plainText.substring(0, 47) + '...' : plainText;
+        
+        contentHtml = `<div class="content-preview" title="${plainText}">
+            ${truncatedText}
+            ${hasMediaContent ? '<br><small class="text-info"><i class="mdi mdi-image"></i> Có hình ảnh/video</small>' : ''}
+        </div>`;
+    } else {
+        contentHtml = '<span class="text-muted">Không có nội dung</span>';
+    }
 
     const stars = generateStars(review.rating);
 
@@ -271,7 +315,7 @@ function createReviewRow(review, index) {
     return `
         <tr>
             <td class="text-center">${index}</td>
-            <td>${content}</td>
+            <td>${contentHtml}</td>
             <td class="text-center">
                 <div class="star-rating">${stars}</div>
                 <small class="text-muted">${review.rating}/5</small>
@@ -369,7 +413,11 @@ function viewReviewDetail(reviewId) {
 
 // Show review detail modal
 function showReviewDetailModal(review) {
-    $('#modalReviewContent').text(review.content || 'Không có nội dung');
+    // Display full HTML content including images and videos
+    const contentHtml = review.content ? 
+        `<div class="review-modal-content">${review.content}</div>` : 
+        '<span class="text-muted">Không có nội dung</span>';
+    $('#modalReviewContent').html(contentHtml);
     $('#modalReviewRating').html(generateStars(review.rating) + ` <span class="ms-2">${review.rating}/5</span>`);
     $('#modalReviewAnonymous').html(review.anonymous ?
         '<span class="text-info fw-bold">Ẩn danh</span>' :

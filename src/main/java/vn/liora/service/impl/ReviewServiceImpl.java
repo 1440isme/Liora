@@ -299,18 +299,44 @@ public class ReviewServiceImpl implements IReviewService {
     public Map<String, Object> getMultipleProductsReviewStatistics(List<Long> productIds) {
         Map<String, Object> result = new HashMap<>();
         
+        // Validate input
+        if (productIds == null || productIds.isEmpty()) {
+            log.warn("getMultipleProductsReviewStatistics called with empty productIds list");
+            return result;
+        }
+        
+        log.debug("Getting statistics for {} products", productIds.size());
+        
         for (Long productId : productIds) {
-            Map<String, Object> productStats = new HashMap<>();
+            // Skip null product IDs
+            if (productId == null) {
+                log.warn("Skipping null product ID in getMultipleProductsReviewStatistics");
+                continue;
+            }
             
-            // Lấy điểm trung bình
-            Double averageRating = reviewRepository.getAverageRatingByProductId(productId);
-            productStats.put("averageRating", averageRating != null ? averageRating : 0.0);
-            
-            // Lấy tổng số review (bao gồm cả ẩn) để hiển thị đúng count
-            Long totalReviews = reviewRepository.getTotalReviewCountByProductId(productId);
-            productStats.put("totalReviews", totalReviews != null ? totalReviews : 0L);
-            
-            result.put(productId.toString(), productStats);
+            try {
+                Map<String, Object> productStats = new HashMap<>();
+                
+                // Lấy điểm trung bình
+                Double averageRating = reviewRepository.getAverageRatingByProductId(productId);
+                productStats.put("averageRating", averageRating != null ? averageRating : 0.0);
+                
+                // Lấy tổng số review (bao gồm cả ẩn) để hiển thị đúng count
+                Long totalReviews = reviewRepository.getTotalReviewCountByProductId(productId);
+                productStats.put("totalReviews", totalReviews != null ? totalReviews : 0L);
+                
+                result.put(productId.toString(), productStats);
+                
+                log.debug("Got statistics for product {}: averageRating={}, totalReviews={}", 
+                          productId, averageRating, totalReviews);
+            } catch (Exception e) {
+                log.error("Error getting statistics for product {}: {}", productId, e.getMessage(), e);
+                // Continue processing other products even if one fails
+                Map<String, Object> errorStats = new HashMap<>();
+                errorStats.put("averageRating", 0.0);
+                errorStats.put("totalReviews", 0L);
+                result.put(productId.toString(), errorStats);
+            }
         }
         
         return result;

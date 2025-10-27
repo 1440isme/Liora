@@ -444,6 +444,41 @@
     .sortable.sorted-desc .sort-icon::before {
         content: "\F045"; /* mdi-arrow-down */
     }
+    
+    /* Review content in modal with HTML support */
+    .review-modal-content {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    
+    .review-modal-content img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 4px;
+        margin: 8px 0;
+    }
+    
+    .review-modal-content video {
+        max-width: 100%;
+        height: auto;
+        border-radius: 4px;
+        margin: 8px 0;
+    }
+    
+    .review-modal-content figure {
+        margin: 8px 0;
+    }
+    
+    .review-modal-content p {
+        margin-bottom: 8px;
+    }
+    
+    /* Content preview in table */
+    .content-preview {
+        max-height: 60px;
+        overflow: hidden;
+        word-break: break-word;
+    }
 </style>
 </body>
 
