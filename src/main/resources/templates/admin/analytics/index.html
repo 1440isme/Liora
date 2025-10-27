@@ -237,8 +237,12 @@
                     break;
                 case 'THIS_WEEK':
                     const dayOfWeek = end.getDay();
+                    // Tính Thứ 2 của tuần hiện tại
                     const diff = end.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
-                    start = new Date(end.setDate(diff));
+                    // Tạo start là Thứ 2, không thay đổi end (hôm nay)
+                    const endCopy = new Date(end);
+                    start = new Date(endCopy.setDate(diff));
+                    // end giữ nguyên là hôm nay
                     break;
                 case 'THIS_MONTH':
                     start = new Date(end.getFullYear(), end.getMonth(), 1);
@@ -495,25 +499,29 @@
                 console.log("📦 Filtered recent orders:", data);
                 
                 const tbody = document.getElementById('recentOrdersBody');
-                if (tbody && data.length > 0) {
-                    tbody.innerHTML = data.map(order => {
-                        const statusInfo = getOrderStatusInfo(order.status);
-                        const paymentInfo = getPaymentStatusInfo(order.paymentStatus);
-                        return `
-                            <tr>
-                                <td class="text-center">${order.id}</td>
-                                <td>${order.customerName}</td>
-                                <td>${formatCurrency(order.totalAmount)}</td>
-                                <td class="text-center">
-                                    <span class="fw-semibold ${statusInfo.class}">${statusInfo.text}</span>
-                                </td>
-                                <td class="text-center">
-                                    <span class="fw-semibold ${paymentInfo.class}">${paymentInfo.text}</span>
-                                </td>
-                                <td class="text-center">${formatDate(order.createdAt)}</td>
-                            </tr>
-                        `;
-                    }).join('');
+                if (tbody) {
+                    if (data.length > 0) {
+                        tbody.innerHTML = data.map(order => {
+                            const statusInfo = getOrderStatusInfo(order.status);
+                            const paymentInfo = getPaymentStatusInfo(order.paymentStatus);
+                            return `
+                                <tr>
+                                    <td class="text-center">${order.id}</td>
+                                    <td>${order.customerName}</td>
+                                    <td>${formatCurrency(order.totalAmount)}</td>
+                                    <td class="text-center">
+                                        <span class="fw-semibold ${statusInfo.class}">${statusInfo.text}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="fw-semibold ${paymentInfo.class}">${paymentInfo.text}</span>
+                                    </td>
+                                    <td class="text-center">${formatDate(order.createdAt)}</td>
+                                </tr>
+                            `;
+                        }).join('');
+                    } else {
+                        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Không có đơn hàng trong khoảng thời gian này</td></tr>';
+                    }
                 }
             }
             
@@ -525,19 +533,24 @@
                 console.log("🔥 Filtered top products:", data);
                 
                 const tbody = document.getElementById('topProductsBody');
-                if (tbody && data.length > 0) {
-                    tbody.innerHTML = data.filter(p => p.soldQuantity > 0).map(product => {
-                        return `
-                            <tr>
-                                <td class="text-center">${product.id}</td>
-                                <td>${product.name}</td>
-                                <td>${product.categoryName}</td>
-                                <td class="text-center"><span class="text-success fw-semibold">${product.soldQuantity}</span></td>
-                                <td>${formatCurrency(product.revenue)}</td>
-                                <td class="text-center">${product.rating.toFixed(1)}/5</td>
-                            </tr>
-                        `;
-                    }).join('');
+                if (tbody) {
+                    const filteredData = data.filter(p => p.soldQuantity > 0);
+                    if (filteredData.length > 0) {
+                        tbody.innerHTML = filteredData.map(product => {
+                            return `
+                                <tr>
+                                    <td class="text-center">${product.id}</td>
+                                    <td>${product.name}</td>
+                                    <td>${product.categoryName}</td>
+                                    <td class="text-center"><span class="text-success fw-semibold">${product.soldQuantity}</span></td>
+                                    <td>${formatCurrency(product.revenue)}</td>
+                                    <td class="text-center">${product.rating.toFixed(1)}/5</td>
+                                </tr>
+                            `;
+                        }).join('');
+                    } else {
+                        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Không có sản phẩm được bán trong khoảng thời gian này</td></tr>';
+                    }
                 }
             }
             
