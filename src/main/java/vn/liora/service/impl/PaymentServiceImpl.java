@@ -24,6 +24,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.List;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -254,7 +255,7 @@ public class PaymentServiceImpl implements PaymentService {
             vnpayPayment.setFailureReason(null);
         } else if ("24".equals(responseCode)) { // 24: User cancel payment at VNPAY
             order.setPaymentStatus("CANCELLED");
-            // Giữ orderStatus ở trạng thái hiện tại (thường là PENDING)
+            order.setOrderStatus("CANCELLED"); // Đơn hàng cũng chuyển thành đã hủy
 
             // Update VnpayPayment entity
             vnpayPayment.setVnpResponseCode(responseCode);
@@ -434,7 +435,6 @@ public class PaymentServiceImpl implements PaymentService {
             if (resultCode != null && resultCode == 0) {
                 // Payment successful
                 order.setPaymentStatus("PAID");
-                order.setOrderStatus("PAID");
 
                 // Auto create GHN shipping order
                 try {
@@ -454,7 +454,7 @@ public class PaymentServiceImpl implements PaymentService {
             } else if (resultCode != null && (resultCode == 42 || resultCode == 24)) {
                 // Payment cancelled by user (42: Bad request, 24: Cancelled)
                 order.setPaymentStatus("CANCELLED");
-                // Keep order status as PENDING for cancelled payments
+                order.setOrderStatus("CANCELLED"); // Đơn hàng cũng chuyển thành đã hủy
                 momoPayment.setFailureReason(
                         "MOMO errorCode=" + resultCode + ", message=" + message + " (User cancelled)");
             } else {

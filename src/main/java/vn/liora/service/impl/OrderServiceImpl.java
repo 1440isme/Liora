@@ -377,6 +377,15 @@ public class OrderServiceImpl implements IOrderService {
         // Cập nhật trạng thái đơn hàng
         orderMapper.updateOrder(order, request);
         
+        // ✅ TỰ ĐỘNG CẬP NHẬT TRẠNG THÁI ĐƠN HÀNG KHI THANH TOÁN BỊ HỦY
+        if (request.getPaymentStatus() != null && "CANCELLED".equals(request.getPaymentStatus())) {
+            order.setOrderStatus("CANCELLED");
+            log.info("Auto-updated order {} status to CANCELLED due to payment cancellation", idOrder);
+            
+            // Hoàn lại stock cho các sản phẩm trong đơn hàng bị hủy
+            restoreStockForOrder(order);
+        }
+        
         // Tự động cập nhật trạng thái thanh toán và sold count dựa trên trạng thái đơn hàng
         String newOrderStatus = request.getOrderStatus();
         if ("COMPLETED".equals(newOrderStatus)) {

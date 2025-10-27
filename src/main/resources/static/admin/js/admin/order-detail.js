@@ -393,7 +393,7 @@ class OrderDetailManager {
 
         if (typeof status === 'string') {
             const upperStatus = status.toUpperCase();
-            if (['PENDING', 'COMPLETED', 'CANCELLED'].includes(upperStatus)) {
+            if (['PENDING', 'CONFIRMED', 'COMPLETED', 'CANCELLED'].includes(upperStatus)) {
                 return upperStatus;
             }
         }
