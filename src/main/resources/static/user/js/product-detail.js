@@ -698,7 +698,7 @@ class ReviewsManager {
 
         // Kiểm tra xem review có bị ẩn không
         const isHidden = review.isVisible === false;
-        
+
         return `
             <div class="review-item ${isHidden ? 'review-hidden' : ''}">
                 <div class="review-header">
@@ -716,8 +716,8 @@ class ReviewsManager {
                     </div>
                 </div>
                 <div class="review-content">
-                    ${isHidden ? 
-                        '<div class="review-hidden-content"><i class="fas fa-eye-slash me-2"></i>Nội dung đánh giá đã bị ẩn</div>' : 
+                    ${isHidden ?
+                        '<div class="review-hidden-content"><i class="fas fa-eye-slash me-2"></i>Nội dung đánh giá đã bị ẩn</div>' :
                         (review.content || 'Không có nội dung đánh giá.')
                     }
                 </div>

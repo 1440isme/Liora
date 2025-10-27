@@ -33,6 +33,7 @@ public class UserDiscountController {
 
     private final IDiscountService discountService;
     private final DiscountMapper discountMapper;
+    private final vn.liora.repository.UserRepository userRepository;
 
     // ========== PUBLIC DISCOUNT ACCESS ==========
     @GetMapping
@@ -208,6 +209,39 @@ public class UserDiscountController {
                 response.setMessage(String.format("Đơn hàng phải có giá trị tối thiểu %s để áp dụng mã này",
                         discount.getMinOrderValue()));
                 return ResponseEntity.badRequest().body(response);
+            }
+
+            // ✅ Kiểm tra per-user và các điều kiện có thể áp dụng
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            Long userId = null;
+            if (authentication != null && authentication.isAuthenticated() && !"anonymousUser".equals(authentication.getName())) {
+                userId = userRepository.findByUsername(authentication.getName())
+                        .map(u -> u.getUserId())
+                        .orElse(null);
+            }
+
+            // Kiểm tra điều kiện áp dụng mã giảm giá
+            if (userId != null) {
+                // Kiểm tra mã còn hiệu lực không
+                if (!discountService.isDiscountActive(discount.getDiscountId())) {
+                    response.setCode(400);
+                    response.setMessage("Mã giảm giá này đã hết hạn hoặc chưa đến thời gian sử dụng.");
+                    return ResponseEntity.badRequest().body(response);
+                }
+                
+                // Kiểm tra tổng lượt sử dụng của mã
+                if (discountService.hasReachedUsageLimit(discount.getDiscountId())) {
+                    response.setCode(400);
+                    response.setMessage("Mã giảm giá này đã hết lượt sử dụng.");
+                    return ResponseEntity.badRequest().body(response);
+                }
+
+                // Kiểm tra lượt sử dụng của user
+                if (discountService.hasReachedUserUsageLimit(discount.getDiscountId(), userId)) {
+                    response.setCode(400);
+                    response.setMessage("Bạn đã hết lượt dùng mã giảm giá này.");
+                    return ResponseEntity.badRequest().body(response);
+                }
             }
 
             // Tính số tiền giảm giá

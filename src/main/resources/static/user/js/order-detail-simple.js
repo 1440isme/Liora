@@ -652,9 +652,9 @@ function renderReviewProducts(products) {
                     <!-- Ô nhập nội dung -->
                     <div class="mb-3">
                         <label class="form-label fw-medium">Nhận xét:</label>
-                        <textarea class="form-control" 
-                                  rows="3" 
-                                  placeholder="${isReviewed ? 'Đã đánh giá' : 'Nhập nhận xét của bạn...'}" 
+                        <textarea class="form-control"
+                                  rows="3"
+                                  placeholder="${isReviewed ? 'Đã đánh giá' : 'Nhập nhận xét của bạn...'}"
                                   data-order-product-id="${product.idOrderProduct}"
                                   ${isReviewed ? 'readonly' : ''}>${isReviewed && existingReview ? existingReview.content : ''}</textarea>
                     </div>
@@ -931,20 +931,20 @@ function renderViewReviewProducts(products) {
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="mb-3">
                             <label class="form-label fw-medium">Nhận xét:</label>
-                            <textarea class="form-control" 
-                                      rows="3" 
+                            <textarea class="form-control"
+                                      rows="3"
                                       placeholder="Nhập nhận xét của bạn..."
                                       data-order-product-id="${product.idOrderProduct}"></textarea>
                         </div>
-                        
+
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" 
-                                   id="anonymous_${product.idOrderProduct}" 
+                            <input class="form-check-input" type="checkbox"
+                                   id="anonymous_${product.idOrderProduct}"
                                    data-order-product-id="${product.idOrderProduct}">
-                            <label class="form-check-label text-muted small" 
+                            <label class="form-check-label text-muted small"
                                    for="anonymous_${product.idOrderProduct}">
                                 Ẩn danh khi đánh giá
                             </label>

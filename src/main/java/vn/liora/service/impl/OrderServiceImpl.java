@@ -143,11 +143,8 @@ public class OrderServiceImpl implements IOrderService {
                         totalDiscount = discountService.calculateDiscountAmount(discount.getDiscountId(), subtotal);
                         total = subtotal.subtract(totalDiscount);
 
-                        // Set discount cho order
+                        // Set discount cho order (do not increment global usedCount yet — do it after order persisted)
                         order.setDiscount(discount);
-
-                        // Tăng usage count
-                        discountService.incrementUsageCount(discount.getDiscountId());
 
                         log.info("Applied discount {} (code: {}) to order. Discount amount: {}",
                                 discount.getDiscountId(), discount.getName(), totalDiscount);
@@ -183,6 +180,14 @@ public class OrderServiceImpl implements IOrderService {
             order.setTotal(computedTotal);
 
             final Order savedOrder = orderRepository.save(order);
+            // After order persisted, increment discount usage (if a discount was applied)
+            try {
+                if (savedOrder.getDiscount() != null) {
+                    discountService.incrementUsageCount(savedOrder.getDiscount().getDiscountId());
+                }
+            } catch (Exception e) {
+                log.warn("Failed to increment discount usage after saving order {}: {}", savedOrder.getIdOrder(), e.getMessage());
+            }
             orderProducts.forEach(op -> op.setOrder(savedOrder));
             orderProductRepository.saveAll(orderProducts);
 
