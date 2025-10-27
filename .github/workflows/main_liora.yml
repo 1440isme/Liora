@@ -34,8 +34,16 @@ jobs:
         run: |
           mkdir -p deployment
           cp target/*.jar deployment/app.jar
-          # Uploads folder sẽ được Azure tự động mount từ persistent storage
-          # Static resources đã được package vào JAR
+          
+          # Copy uploads folder nếu có để sync files lên Azure
+          # Note: Azure sẽ tự động sync folder /home/uploads
+          if [ -d "uploads" ]; then
+            echo "📦 Uploads folder found, will sync to Azure /home/uploads"
+            mkdir -p deployment/uploads
+            cp -r uploads/* deployment/uploads/ || true
+          fi
+          
+          echo "✅ Deployment package created"
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
@@ -62,7 +70,7 @@ jobs:
           echo "Deployment package contents:"
           ls -lah ${{ github.workspace }}/deployment/
       
-      - name: Deploy to Azure Web App
+      - name: Deploy JAR to Azure Web App
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
@@ -70,6 +78,20 @@ jobs:
           slot-name: 'Production'
           package: '${{ github.workspace }}/deployment/app.jar'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_F03850EE7CCB4EC69DC616AB3E8164E8 }}
+      
+      - name: Install Azure CLI Extension
+        run: |
+          az extension add --name webapp 2>/dev/null || true
+      
+      - name: Setup Uploads Folder on Azure
+        if: hashFiles('uploads/**') != ''
+        run: |
+          echo "📤 Setting up uploads folder on Azure..."
+          # Note: Azure Web App sẽ tự động mount /home/uploads
+          # Bạn chỉ cần tạo folder này thông qua Kudu hoặc SSH
+          echo "⚠️  Please manually create /home/uploads folder via Kudu Console:"
+          echo "   https://liora.scm.azurewebsites.net"
+          echo "   Debug console → mkdir uploads"
       
       - name: Deployment Summary
         run: |
