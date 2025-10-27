@@ -163,7 +163,7 @@ class ReviewDetailManager {
             const orderCode = review.orderCode || `#${review.orderId}`;
             const orderLink = `<a href="/admin/orders/detail/${review.orderId}" class="text-decoration-none fw-bold text-primary" title="Xem chi tiết đơn hàng">${orderCode}</a>`;
             $('#orderCode').html(orderLink);
-            
+
             $('#orderDate').text(review.orderDate ? this.formatDateTime(new Date(review.orderDate)) : 'N/A');
             $('#orderUserId').text(review.userId || 'N/A');
         } else {

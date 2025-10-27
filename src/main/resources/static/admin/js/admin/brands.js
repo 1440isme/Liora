@@ -80,6 +80,12 @@ class BrandsManager {
                 this.resetFilters();
             });
         }
+
+        // Export Excel button
+        const exportExcelBtn = document.getElementById('exportExcelBtn');
+        if (exportExcelBtn) {
+            exportExcelBtn.addEventListener('click', () => this.exportToExcel());
+        }
     }
 
     async loadBrands(page = 0, size = 12) {
@@ -91,7 +97,8 @@ class BrandsManager {
             };
 
             const response = await this.ajax.get('/brands', params);
-            this.renderBrands(response.result.content);
+            this.brands = response.result.content; // Cache brands for export
+            this.renderBrands(this.brands);
             this.updatePagination(response.result);
         } catch (error) {
             console.error('Error loading brands:', error);
@@ -491,6 +498,52 @@ class BrandsManager {
 
         logoFile.value = '';
         preview.style.display = 'none';
+    }
+
+    async exportToExcel() {
+        try {
+            // Load all brands without pagination
+            const response = await this.ajax.get('/brands', { page: 0, size: 1000 });
+            const allBrands = response.result.content;
+            
+            if (!allBrands || allBrands.length === 0) {
+                this.showNotification('Không có dữ liệu để xuất Excel', 'warning');
+                return;
+            }
+
+            // Create CSV content
+            let csv = '\uFEFF'; // UTF-8 BOM for proper encoding in Excel
+            csv += 'ID,Tên thương hiệu,Mã thương hiệu,Trạng thái\n';
+
+            // Use API data instead of DOM
+            allBrands.forEach(brand => {
+                const id = brand.brandId || '';
+                const name = (brand.name || '').replace(/"/g, '""'); // Escape quotes
+                const slug = brand.slug || '';
+                const status = brand.isActive ? 'Hoạt động' : 'Ngừng hoạt động';
+                csv += `${id},"${name}",${slug},"${status}"\n`;
+            });
+
+            // Create blob and download
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            const now = new Date();
+            const dateStr = now.toISOString().split('T')[0];
+            link.setAttribute('href', url);
+            link.setAttribute('download', `brands_${dateStr}.csv`);
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            this.showNotification('Xuất Excel thành công', 'success');
+        } catch (error) {
+            console.error('Error exporting to Excel:', error);
+            this.showNotification('Có lỗi xảy ra khi xuất Excel: ' + error.message, 'error');
+        }
     }
 
     debounce(func, wait) {

@@ -109,6 +109,14 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
       AND (SELECT COUNT(o) FROM Order o WHERE o.user = u) > 1
     """)
     long countReturningCustomers();
+    
+    @Query("""
+    SELECT COUNT(DISTINCT o.user)
+    FROM Order o
+    WHERE o.orderStatus = 'COMPLETED'
+      AND o.user IS NOT NULL
+    """)
+    long countCustomersWithCompletedOrders();
 
 
     @Query("""

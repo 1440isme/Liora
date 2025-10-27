@@ -380,16 +380,16 @@ class SearchResultsManager {
                                 <div class="col-md-6">
                                     <div class="product-image-slider">
                                         <!-- Main Image -->
-                                        <div class="main-image-container mb-3">
-                                            <button class="slider-nav slider-prev" id="prevBtn">
-                                                <i class="fas fa-chevron-left"></i>
-                                            </button>
+                                        <div class="main-image-container position-relative mb-3">
                                             <img id="mainProductImage" 
                                                  src="${this.getMainImageUrl(product)}" 
                                                  class="img-fluid rounded" 
                                                  alt="${product.name}"
                                                  onerror="this.src='/user/img/default-product.jpg'">
-                                            <button class="slider-nav slider-next" id="nextBtn">
+                                            <button class="slider-nav slider-prev" id="searchPrevBtn">
+                                                <i class="fas fa-chevron-left"></i>
+                                            </button>
+                                            <button class="slider-nav slider-next" id="searchNextBtn">
                                                 <i class="fas fa-chevron-right"></i>
                                             </button>
                                         </div>
@@ -538,7 +538,7 @@ class SearchResultsManager {
         }
         return images.map((img, idx) => `
             <div class="thumbnail-item ${idx === 0 ? 'active' : ''}" style="cursor:pointer;">
-                <img src="${img.imageUrl || img}" class="thumbnail-img" alt="${product.name}" onerror="this.src='/user/img/default-product.jpg'" style="width:60px;height:60px;object-fit:cover;border:2px solid ${idx === 0 ? '#0d6efd' : 'transparent'};border-radius:4px;"/>
+                <img src="${img.imageUrl || img}" class="thumbnail-img" alt="${product.name}" onerror="this.src='/user/img/default-product.jpg'" style="width:60px;height:60px;object-fit:cover;border:1px solid #e0e0e0;border-radius:4px;${idx === 0 ? 'border-width:2px;' : ''}"/>
             </div>
         `).join('');
     }
@@ -659,8 +659,8 @@ class SearchResultsManager {
 
 
     setupSliderNavigation(product) {
-        const prevBtn = document.getElementById('prevBtn');
-        const nextBtn = document.getElementById('nextBtn');
+        const prevBtn = document.getElementById('searchPrevBtn');
+        const nextBtn = document.getElementById('searchNextBtn');
         const mainImage = document.getElementById('mainProductImage');
         const thumbnails = document.querySelectorAll('.thumbnail-item');
 
@@ -674,12 +674,18 @@ class SearchResultsManager {
 
         const updateMainImage = (index) => {
             if (product.images && product.images[index]) {
-                mainImage.src = product.images[index].imageUrl;
+                const image = product.images[index];
+                // Handle both object format {imageUrl: '...'} and string format '...'
+                mainImage.src = image.imageUrl || image;
                 mainImage.alt = product.name;
 
                 // Update thumbnail selection
                 thumbnails.forEach((thumb, i) => {
                     thumb.classList.toggle('active', i === index);
+                    const thumbnailImg = thumb.querySelector('img');
+                    if (thumbnailImg) {
+                        thumbnailImg.style.borderWidth = i === index ? '2px' : '1px';
+                    }
                 });
             }
         };
@@ -707,6 +713,9 @@ class SearchResultsManager {
                 updateMainImage(currentImageIndex);
             });
         });
+
+        // Initialize with first image
+        updateMainImage(0);
     }
 
     // Add to cart with quantity

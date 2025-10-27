@@ -11,7 +11,7 @@ import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface ReviewMapper {
-    
+
     // ========== CREATION MAPPING ==========
     @Mapping(target = "reviewId", ignore = true)
     @Mapping(target = "isVisible", ignore = true) // Mặc định true
@@ -82,20 +82,20 @@ public interface ReviewMapper {
             }
             return "Anonymous User";
         }
-        
+
         // User không chọn ẩn danh - hiển thị full username
         String username = review.getOrderProduct().getOrder().getUser().getUsername();
         if (username != null && !username.trim().isEmpty()) {
             return username;
         }
-        
+
         // Fallback to firstname + lastname
         String firstname = review.getOrderProduct().getOrder().getUser().getFirstname();
         String lastname = review.getOrderProduct().getOrder().getUser().getLastname();
         if (firstname != null && lastname != null) {
             return firstname + " " + lastname;
         }
-        
+
         return "User";
     }
 
@@ -105,21 +105,21 @@ public interface ReviewMapper {
         if (username == null || username.length() <= 2) {
             return username;
         }
-        
+
         if (username.length() == 3) {
             return username.charAt(0) + "*" + username.charAt(2);
         }
-        
+
         // Tạo chuỗi với chữ đầu, các dấu *, và chữ cuối
         StringBuilder masked = new StringBuilder();
         masked.append(username.charAt(0));
-        
+
         for (int i = 1; i < username.length() - 1; i++) {
             masked.append("*");
         }
-        
+
         masked.append(username.charAt(username.length() - 1));
-        
+
         return masked.toString();
     }
 }
