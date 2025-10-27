@@ -41,6 +41,9 @@ public class ReviewController {
     @Autowired
     private IProductService productService;
 
+    @Autowired
+    private vn.liora.service.IImageOptimizationService imageOptimizationService;
+
     // ========== PUBLIC ENDPOINTS ==========
 
     /**
@@ -285,5 +288,90 @@ public class ReviewController {
         }
 
         return null;
+    }
+
+    /**
+     * Upload media cho review (ảnh/video)
+     */
+    @PostMapping("/upload-media")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<Map<String, Object>> uploadReviewMedia(@RequestParam("upload") org.springframework.web.multipart.MultipartFile file) {
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            // Validate file
+            if (file.isEmpty()) {
+                response.put("error", Map.of("message", "File không được để trống"));
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // Validate file type - allow both image and video
+            String contentType = file.getContentType();
+            boolean isImage = contentType != null && contentType.startsWith("image/");
+            boolean isVideo = contentType != null && contentType.startsWith("video/");
+
+            if (!isImage && !isVideo) {
+                response.put("error", Map.of("message", "Chỉ được upload file ảnh hoặc video"));
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // Validate file size (10MB max for videos, 5MB for images)
+            long maxSize = isVideo ? 10 * 1024 * 1024 : 5 * 1024 * 1024;
+            if (file.getSize() > maxSize) {
+                String maxSizeStr = isVideo ? "10MB" : "5MB";
+                response.put("error", Map.of("message", "Kích thước file không được vượt quá " + maxSizeStr));
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // Generate unique filename
+            String originalFilename = file.getOriginalFilename();
+            String extension = "";
+            if (originalFilename != null && originalFilename.contains(".")) {
+                extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+            }
+
+            String uniqueFilename = java.util.UUID.randomUUID().toString() + extension;
+
+            // Create directory structure: uploads/reviews/YYYY/MM/DD/
+            java.time.LocalDateTime now = java.time.LocalDateTime.now();
+            String year = String.valueOf(now.getYear());
+            String month = String.format("%02d", now.getMonthValue());
+            String day = String.format("%02d", now.getDayOfMonth());
+
+            java.nio.file.Path reviewDir = java.nio.file.Paths.get("uploads", "reviews", year, month, day);
+            java.nio.file.Files.createDirectories(reviewDir);
+
+            // Save file
+            java.nio.file.Path filePath = reviewDir.resolve(uniqueFilename);
+            
+            // If it's an image, optimize and resize it (max 800px width, 85% quality)
+            if (isImage) {
+                try {
+                    imageOptimizationService.optimizeImage(file, filePath, 800, 800, 0.85f);
+                } catch (Exception e) {
+                    // Fallback to normal save if optimization fails
+                    java.nio.file.Files.copy(file.getInputStream(), filePath);
+                }
+            } else {
+                // For videos, save as-is
+                java.nio.file.Files.copy(file.getInputStream(), filePath);
+            }
+
+            // Generate URL
+            String fileUrl = "/uploads/reviews/" + year + "/" + month + "/" + day + "/" + uniqueFilename;
+
+            // CKEditor expects specific format
+            response.put("url", fileUrl);
+            response.put("uploaded", true);
+
+            return ResponseEntity.ok(response);
+
+        } catch (java.io.IOException e) {
+            response.put("error", Map.of("message", "Lỗi khi upload file: " + e.getMessage()));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        } catch (Exception e) {
+            response.put("error", Map.of("message", "Lỗi không xác định: " + e.getMessage()));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
     }
 }
