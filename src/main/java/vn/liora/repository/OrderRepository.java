@@ -138,6 +138,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     List<TopCustomerResponse> findTopSpenders(Pageable pageable);
     
     // ======================== DISCOUNT USAGE TRACKING ========================
-    @Query("SELECT COUNT(o) FROM Order o WHERE o.user.userId = :userId AND o.discount.discountId = :discountId")
+    // Đếm tất cả orders trừ CANCELLED (PENDING được đếm để user không thể đặt 2 đơn PENDING cùng mã)
+    @Query("SELECT COUNT(o) FROM Order o WHERE o.user.userId = :userId AND o.discount.discountId = :discountId AND o.orderStatus != 'CANCELLED'")
     Long countOrdersByUserAndDiscount(@Param("userId") Long userId, @Param("discountId") Long discountId);
 }
