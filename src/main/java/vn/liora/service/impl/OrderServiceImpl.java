@@ -677,6 +677,11 @@ public class OrderServiceImpl implements IOrderService {
     public long countReturningCustomers() {
         return orderRepository.countReturningCustomers();
     }
+    
+    @Override
+    public long countCustomersWithCompletedOrders() {
+        return orderRepository.countCustomersWithCompletedOrders();
+    }
 
     @Override
     public List<TopCustomerResponse> getTopSpenders(int limit) {

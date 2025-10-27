@@ -156,7 +156,7 @@
                             <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
                                 Tỷ lệ chuyển đổi
                             </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800" th:text="${conversionRate}">0%</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" th:text="${conversionRate != null ? #numbers.formatDecimal(conversionRate, 1, 'COMMA', 2, 'POINT') + '%' : '0%'}">0%</div>
                         </div>
                         <div class="col-auto">
                             <i class="fas fa-percentage fa-2x text-gray-300"></i>

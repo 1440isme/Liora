@@ -179,6 +179,12 @@ class CategoriesManager {
             });
         }
 
+        // Export Excel button
+        const exportExcelBtn = document.getElementById('exportExcelBtn');
+        if (exportExcelBtn) {
+            exportExcelBtn.addEventListener('click', () => this.exportToExcel());
+        }
+
     }
 
     async loadCategories(page = 0, size = 12) {
@@ -1348,6 +1354,67 @@ class CategoriesManager {
         return count;
     }
 
+    exportToExcel() {
+        try {
+            // Flatten all categories from tree structure
+            const flattenCategories = (categories, level = 0, parentName = '') => {
+                let result = [];
+                categories.forEach(category => {
+                    const categoryData = {
+                        id: category.categoryId,
+                        name: category.name,
+                        level: level,
+                        parent: parentName,
+                        type: category.isParent ? 'Danh mục cha' : 'Danh mục con',
+                        status: category.isActive ? 'Hoạt động' : 'Ngừng hoạt động'
+                    };
+                    result.push(categoryData);
+                    
+                    if (category.children && category.children.length > 0) {
+                        result = result.concat(flattenCategories(category.children, level + 1, category.name));
+                    }
+                });
+                return result;
+            };
+
+            const categories = this.cachedCategories;
+            if (!categories || categories.length === 0) {
+                this.showNotification('Không có dữ liệu để xuất Excel', 'warning');
+                return;
+            }
+
+            const flatCategories = flattenCategories(categories);
+
+            // Create CSV content
+            let csv = '\uFEFF'; // UTF-8 BOM for proper encoding in Excel
+            csv += 'ID,Tên danh mục,Cấp độ,Danh mục cha,Loại,Trạng thái\n';
+
+            flatCategories.forEach(cat => {
+                const indent = '  '.repeat(cat.level);
+                csv += `${cat.id},"${indent}${cat.name.replace(/"/g, '""')}",${cat.level},"${cat.parent}","${cat.type}","${cat.status}"\n`;
+            });
+
+            // Create blob and download
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            
+            const now = new Date();
+            const dateStr = now.toISOString().split('T')[0];
+            link.setAttribute('href', url);
+            link.setAttribute('download', `categories_${dateStr}.csv`);
+            link.style.visibility = 'hidden';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            this.showNotification('Xuất Excel thành công', 'success');
+        } catch (error) {
+            console.error('Error exporting to Excel:', error);
+            this.showNotification('Có lỗi xảy ra khi xuất Excel', 'error');
+        }
+    }
 
     debounce(func, wait) {
         let timeout;

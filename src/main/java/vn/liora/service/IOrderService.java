@@ -46,5 +46,6 @@ public interface IOrderService {
     List<Object[]> getRevenueByYear(LocalDateTime startDate, LocalDateTime endDate);
 
     long countReturningCustomers();
+    long countCustomersWithCompletedOrders();
     List<TopCustomerResponse> getTopSpenders(int limit);
 }
