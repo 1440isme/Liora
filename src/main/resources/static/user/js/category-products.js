@@ -1290,7 +1290,7 @@ class CategoryProductsManager {
 
         // Gọi backend thống nhất
         if (window.app && typeof window.app.addProductToCartBackend === 'function') {
-            window.app.addProductToCartBackend(productId, quantity, true)
+            window.app.addProductToCartBackend(productId, quantity, false)
                 .then(() => window.app.refreshCartBadge?.())
                 .catch(() => this.showNotification('Không thể thêm vào giỏ hàng', 'error'));
             return;

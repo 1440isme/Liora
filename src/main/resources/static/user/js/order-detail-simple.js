@@ -32,14 +32,12 @@ function cancelOrder(orderId) {
 
 // Enhanced reorder function with modal (from order-detail.js)
 async function reorderOrder(orderId) {
-    console.log('reorderOrder function called with orderId:', orderId);
     try {
-    const token = localStorage.getItem('access_token');
-        console.log('Token found:', !!token);
-    if (!token) {
+        const token = localStorage.getItem('access_token');
+        if (!token) {
             showToast('Vui lòng đăng nhập để thực hiện thao tác này', 'error');
-        return;
-    }
+            return;
+        }
 
         // Lấy danh sách sản phẩm từ đơn hàng
         const orderItemsResponse = await fetch(`/api/orders/${orderId}/items`, {
@@ -55,7 +53,6 @@ async function reorderOrder(orderId) {
         }
 
         const orderItems = await orderItemsResponse.json();
-        console.log('Order items:', orderItems);
         if (!orderItems || orderItems.length === 0) {
             showToast('Đơn hàng không có sản phẩm nào', 'error');
             return;
@@ -63,37 +60,35 @@ async function reorderOrder(orderId) {
 
         // Lấy thông tin trạng thái sản phẩm hiện tại
         const enrichedItems = await enrichOrderItemsWithCurrentStatus(orderItems, token);
-        
+
         // Phân loại sản phẩm
         const validItems = [];
         const invalidItems = [];
-        
+
         enrichedItems.forEach(item => {
             const productStatus = getProductStatus(item);
             if (productStatus === 'available') {
                 validItems.push(item);
-                } else {
+            } else {
                 invalidItems.push(item);
             }
         });
-        
-        console.log('Valid items:', validItems.length, 'Invalid items:', invalidItems.length);
-        
+
+
         // Nếu tất cả sản phẩm đều hợp lệ
         if (validItems.length === enrichedItems.length && validItems.length > 0) {
             // Thêm tất cả vào giỏ hàng và chuyển đến cart
             await addItemsToCartDirectly(validItems);
-                return;
+            return;
         }
-        
+
         // Nếu tất cả sản phẩm đều không hợp lệ
         if (invalidItems.length === enrichedItems.length) {
             showToast('Tất cả sản phẩm trong đơn hàng đều không hợp lệ (hết hàng hoặc ngừng kinh doanh)', 'error');
-                    return;
-                }
-        
+            return;
+        }
+
         // Nếu có cả sản phẩm hợp lệ và không hợp lệ, hiển thị modal
-        console.log('About to show reorder modal with mixed items');
         showReorderModal(enrichedItems);
 
     } catch (error) {
@@ -105,22 +100,22 @@ async function reorderOrder(orderId) {
 // Helper functions for enhanced reorder
 async function enrichOrderItemsWithCurrentStatus(orderItems, token) {
     const enrichedItems = [];
-    
+
     for (const item of orderItems) {
         try {
             // Gọi API lấy thông tin sản phẩm hiện tại
             const productResponse = await fetch(`/api/products/${item.idProduct}`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        });
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
 
             if (productResponse.ok) {
                 const productData = await productResponse.json();
                 const product = productData.result;
-                
+
                 // Kết hợp thông tin từ order và thông tin sản phẩm hiện tại
                 enrichedItems.push({
                     ...item,
@@ -138,23 +133,21 @@ async function enrichOrderItemsWithCurrentStatus(orderItems, token) {
             enrichedItems.push(item);
         }
     }
-    
+
     return enrichedItems;
 }
 
 async function addItemsToCartDirectly(items) {
-    console.log('Adding items directly to cart:', items);
-        let successCount = 0;
+    let successCount = 0;
     let failedItems = [];
 
     for (const item of items) {
         try {
             if (window.app && typeof window.app.addProductToCartBackend === 'function') {
                 await window.app.addProductToCartBackend(item.idProduct, item.quantity, false);
-                    successCount++;
-                console.log(`Successfully added product ${item.idProduct} with quantity ${item.quantity}`);
-                }
-            } catch (error) {
+                successCount++;
+            }
+        } catch (error) {
             console.error('Error adding product to cart:', error);
             failedItems.push({
                 productId: item.idProduct,
@@ -236,10 +229,10 @@ function getProductStatusBadgeClass(status) {
 
 function showReorderModal(orderItems) {
     console.log('showReorderModal called with items:', orderItems);
-    
+
     // Lưu orderItems để sử dụng trong addAllValidItemsToCart
     window.lastOrderItems = orderItems;
-    
+
     // Tạo modal HTML
     const modalHTML = `
         <div class="modal fade" id="reorderModal" tabindex="-1" aria-labelledby="reorderModalLabel" aria-hidden="true">
@@ -254,10 +247,10 @@ function showReorderModal(orderItems) {
                     <div class="modal-body">
                         <div class="reorder-items-list">
                             ${orderItems.map((item, index) => {
-                                const productStatus = getProductStatus(item);
-                                const isProductValid = productStatus === 'available';
-                                
-                                return `
+        const productStatus = getProductStatus(item);
+        const isProductValid = productStatus === 'available';
+
+        return `
                                     <div class="card mb-3 ${!isProductValid ? 'opacity-50' : ''}" id="reorder-item-${index}">
                                         <div class="card-body">
                                             <div class="row align-items-center">
@@ -284,7 +277,7 @@ function showReorderModal(orderItems) {
                                         </div>
                                     </div>
                                 `;
-                            }).join('')}
+    }).join('')}
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -305,7 +298,7 @@ function showReorderModal(orderItems) {
     // Hiển thị modal
     const modalElement = document.getElementById('reorderModal');
     console.log('Modal element found:', modalElement);
-    
+
     if (modalElement) {
         // Kiểm tra Bootstrap có sẵn không
         if (typeof bootstrap !== 'undefined') {
@@ -320,7 +313,7 @@ function showReorderModal(orderItems) {
             modalElement.classList.add('show');
             modalElement.setAttribute('aria-modal', 'true');
             modalElement.setAttribute('role', 'dialog');
-            
+
             // Thêm backdrop
             const backdrop = document.createElement('div');
             backdrop.className = 'modal-backdrop fade show';
@@ -342,13 +335,13 @@ function showReorderModal(orderItems) {
 
     // Xử lý đóng modal
     modalElement.addEventListener('hidden.bs.modal', closeModal);
-    
+
     // Thêm event listener cho nút đóng
     const closeButtons = modalElement.querySelectorAll('[data-bs-dismiss="modal"], .btn-close');
     closeButtons.forEach(button => {
         button.addEventListener('click', closeModal);
     });
-    
+
     // Thêm event listener cho backdrop
     modalElement.addEventListener('click', (e) => {
         if (e.target === modalElement) {
@@ -359,12 +352,12 @@ function showReorderModal(orderItems) {
 
 async function addAllValidItemsToCart() {
     console.log('addAllValidItemsToCart called');
-    
+
     // Lấy tất cả sản phẩm hợp lệ từ lastOrderItems
     const orderItems = window.lastOrderItems || [];
     console.log('Last order items:', orderItems);
     const validItems = [];
-    
+
     orderItems.forEach((item, index) => {
         const productStatus = getProductStatus(item);
         if (productStatus === 'available') {
@@ -390,10 +383,10 @@ async function addAllValidItemsToCart() {
             if (window.app && typeof window.app.addProductToCartBackend === 'function') {
                 await window.app.addProductToCartBackend(item.productId, item.quantity, true);
                 successCount++;
-                
+
                 console.log(`Successfully added product ${item.productId} with quantity ${item.quantity}`);
             }
-    } catch (error) {
+        } catch (error) {
             console.error('Error adding product to cart:', error);
             failedItems.push({
                 productId: item.productId,
@@ -480,7 +473,7 @@ $(document).ready(function () {
     console.log('Page load - URL:', window.location.href);
     console.log('Page load - Hash:', window.location.hash);
     console.log('Page load - OrderId:', orderId);
-    
+
     if (orderId && !isNaN(orderId)) {
         // Check if URL has #review hash
         if (window.location.hash === '#review') {
@@ -499,14 +492,14 @@ $(document).ready(function () {
             }, 500);
         }
     }
-    
+
     // Also listen for hash changes
-    window.addEventListener('hashchange', function() {
+    window.addEventListener('hashchange', function () {
         console.log('Hash changed to:', window.location.hash);
         const pathParts = window.location.pathname.split('/');
         const orderId = pathParts[pathParts.length - 1];
         console.log('Hash change - OrderId:', orderId);
-        
+
         if (orderId && !isNaN(orderId)) {
             if (window.location.hash === '#review') {
                 console.log('Hash change: #review detected');
@@ -883,10 +876,10 @@ function renderViewReviewProducts(products) {
                         <div class="mb-3">
                             <label class="form-label fw-medium">Nhận xét:</label>
                             <div class="review-content p-3 bg-light rounded">
-                                ${existingReview.isVisible === false ? 
-                                    '<div class="review-hidden-content"><i class="fas fa-eye-slash me-2"></i>Nội dung đánh giá đã bị ẩn</div>' : 
-                                    (existingReview.content || '<em class="text-muted">Không có nhận xét</em>')
-                                }
+                                ${existingReview.isVisible === false ?
+                    '<div class="review-hidden-content"><i class="fas fa-eye-slash me-2"></i>Nội dung đánh giá đã bị ẩn</div>' :
+                    (existingReview.content || '<em class="text-muted">Không có nhận xét</em>')
+                }
                             </div>
                         </div>
                         

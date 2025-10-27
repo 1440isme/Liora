@@ -238,7 +238,6 @@ class FeaturedCategoryProductsManager {
 
                 this.showLoading(false);
             } else {
-                console.log('API error:', data.message);
                 this.showLoading(false);
                 this.showEmptyState('Không tìm thấy sản phẩm');
             }
@@ -258,7 +257,6 @@ class FeaturedCategoryProductsManager {
         const emptyState = document.getElementById('emptyState');
 
         if (!grid) {
-            console.log('Grid element not found');
             return;
         }
 
@@ -266,7 +264,8 @@ class FeaturedCategoryProductsManager {
             grid.style.display = 'none';
             grid.innerHTML = '';
             if (emptyState) {
-                emptyState.style.display = 'block';
+                // Gọi showEmptyState để hiển thị đúng UI với nút xóa filter nếu có
+                this.showEmptyState('Không tìm thấy sản phẩm');
             }
             return;
         }
@@ -282,26 +281,19 @@ class FeaturedCategoryProductsManager {
 
         // Trigger rating load sau khi render xong
         setTimeout(() => {
-            console.log('🔍 Loading product ratings for featured category products...');
-            
+
             // Fallback: call global loadProductRatings first
             if (window.loadProductRatings) {
-                console.log('🔍 Calling global loadProductRatings...');
                 window.loadProductRatings();
             }
-            
+
             // Also manually load ratings for this specific grid
             const productCards = grid.querySelectorAll('.product-card');
-            console.log('🔍 Found product cards:', productCards.length);
-            
+
             if (productCards.length > 0 && window.ProductRatingUtils) {
-                console.log('🔍 Calling ProductRatingUtils.loadAndUpdateProductCards...');
                 window.ProductRatingUtils.loadAndUpdateProductCards(productCards);
             } else {
-                console.log('🔍 ProductRatingUtils not available, using fallback rating loading...');
-                console.log('🔍 ProductRatingUtils available:', !!window.ProductRatingUtils);
-                console.log('🔍 Product cards found:', productCards.length);
-                
+
                 // Fallback: Load ratings manually using our own logic
                 this.loadProductRatingsFallback(productCards);
             }
@@ -416,17 +408,28 @@ class FeaturedCategoryProductsManager {
     }
 
     getProductStatus(product) {
-        if (!product.isActive) {
+        if (!product) return 'available';
+
+        // 1. Kiểm tra ngừng kinh doanh (ưu tiên cao nhất)
+        // Bao gồm: sản phẩm bị ngừng, category bị ngừng, hoặc brand bị ngừng
+        // (Khi category/brand bị ngừng, tất cả sản phẩm thuộc sẽ có isActive = false)
+        if (product.deactivated || product.isActive === false) {
             return 'deactivated';
         }
-        if (product.stock <= 0) {
+
+        // 2. Kiểm tra hết hàng (chỉ khi sản phẩm còn active)
+        if (product.available === false) {
             return 'out_of_stock';
         }
+        if (typeof product.stock === 'number' && product.stock <= 0) {
+            return 'out_of_stock';
+        }
+
+        // 3. Còn hàng (isActive = true và stock > 0)
         return 'available';
     }
 
-    getProductStatusClass(product) {
-        const status = this.getProductStatus(product);
+    getProductStatusClass(status) {
         switch (status) {
             case 'deactivated':
                 return 'product-deactivated';
@@ -434,7 +437,7 @@ class FeaturedCategoryProductsManager {
                 return 'product-out-of-stock';
             case 'available':
             default:
-                return 'product-available';
+                return ''; // Không thêm class gì cho sản phẩm available
         }
     }
 
@@ -663,12 +666,88 @@ class FeaturedCategoryProductsManager {
         if (grid) grid.style.display = 'none';
         if (emptyState) {
             emptyState.style.display = 'block';
-            emptyState.innerHTML = `
-                <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
-                <h4>Không tìm thấy sản phẩm</h4>
-                <p class="text-muted">${message}</p>
-            `;
+
+            // Kiểm tra xem có filter nào đang được áp dụng không
+            const hasFilters = this.hasActiveFilters();
+
+            if (hasFilters) {
+                // Hiển thị với nút "Xóa bộ lọc"
+                emptyState.innerHTML = `
+                    <i class="fas fa-filter fa-3x text-muted mb-3"></i>
+                    <h4>Không tìm thấy sản phẩm phù hợp</h4>
+                    <p class="text-muted">Thử thay đổi bộ lọc hoặc chọn khoảng giá khác</p>
+                    <button class="btn btn-outline-primary" onclick="window.featuredCategoryProductsManager.clearFilters()">
+                        <i class="fas fa-times me-2"></i>Xóa bộ lọc
+                    </button>
+                `;
+            } else {
+                // Hiển thị bình thường không có nút
+                emptyState.innerHTML = `
+                    <i class="fas fa-box-open fa-3x text-muted mb-3"></i>
+                    <h4>Không tìm thấy sản phẩm</h4>
+                    <p class="text-muted">${message}</p>
+                `;
+            }
         }
+    }
+
+    // Kiểm tra xem có filter nào đang được áp dụng không
+    hasActiveFilters() {
+        return !!(
+            this.currentFilters.minPrice ||
+            this.currentFilters.maxPrice ||
+            (this.currentFilters.brands && this.currentFilters.brands.length > 0) ||
+            (this.currentFilters.categories && this.currentFilters.categories.length > 0) ||
+            (this.currentFilters.ratings && this.currentFilters.ratings.length > 0)
+        );
+    }
+
+    // Xóa tất cả các filter
+    clearFilters() {
+        // Reset filters
+        this.currentFilters = {
+            search: '',
+            minPrice: null,
+            maxPrice: null,
+            brands: [],
+            categories: [],
+            ratings: [],
+            sort: ''
+        };
+
+        // Reset UI elements
+        const priceRangeSelect = document.getElementById('priceRange');
+        if (priceRangeSelect) {
+            priceRangeSelect.value = '';
+        }
+
+        // Uncheck all brand checkboxes
+        const brandCheckboxes = document.querySelectorAll('#brandFilters input[type="checkbox"]');
+        brandCheckboxes.forEach(checkbox => {
+            checkbox.checked = false;
+        });
+
+        // Uncheck all category checkboxes
+        const categoryCheckboxes = document.querySelectorAll('#categoryFilters input[type="checkbox"]');
+        categoryCheckboxes.forEach(checkbox => {
+            checkbox.checked = false;
+        });
+
+        // Uncheck all rating checkboxes
+        const ratingCheckboxes = document.querySelectorAll('#ratingFilters input[type="checkbox"]');
+        ratingCheckboxes.forEach(checkbox => {
+            checkbox.checked = false;
+        });
+
+        // Reset sort
+        const sortSelect = document.getElementById('sortSelect');
+        if (sortSelect) {
+            sortSelect.value = '';
+        }
+
+        // Reset page and reload products
+        this.currentPage = 0;
+        this.loadProducts();
     }
 
     updateResultsInfo() {
@@ -682,7 +761,7 @@ class FeaturedCategoryProductsManager {
         try {
             // Sử dụng addProductToCartBackend để gọi API backend
             if (window.app && window.app.addProductToCartBackend) {
-                await window.app.addProductToCartBackend(productId, 1, true);
+                await window.app.addProductToCartBackend(productId, 1, false);
                 await window.app.refreshCartBadge?.();
             } else {
                 this.showNotification('Chức năng đang được tải...', 'error');
@@ -743,7 +822,6 @@ class FeaturedCategoryProductsManager {
                     product.images = data.result || [];
                 }
             } catch (error) {
-                console.log('Could not load product images:', error);
                 product.images = [];
             }
         }
@@ -755,7 +833,6 @@ class FeaturedCategoryProductsManager {
             if (productStats) {
                 product.averageRating = productStats.averageRating || 0;
                 product.reviewCount = productStats.totalReviews || 0;
-                console.log('Loaded rating data for modal:', product.averageRating, 'stars,', product.reviewCount, 'reviews');
             }
         } catch (error) {
             console.error('Error loading rating data:', error);
@@ -773,9 +850,9 @@ class FeaturedCategoryProductsManager {
         }
 
         const modalHTML = `
-            <div class="modal fade" id="quickViewModal" tabindex="-1" aria-labelledby="quickViewModalLabel" aria-hidden="true">
+            <div class="modal fade" id="quickViewModal" tabindex="-1" aria-labelledby="quickViewModalLabel" aria-hidden="true" style="z-index: 9999 !important;">
                 <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content">
+                    <div class="modal-content" style="position: relative; z-index: 10000 !important;">
                         <div class="modal-header border-0">
                             <h5 class="modal-title" id="quickViewModalLabel">Xem nhanh sản phẩm</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -893,9 +970,22 @@ class FeaturedCategoryProductsManager {
         // Add modal to body
         document.body.insertAdjacentHTML('beforeend', modalHTML);
 
-        // Show modal
-        const modal = new bootstrap.Modal(document.getElementById('quickViewModal'));
+        // Show modal with proper backdrop
+        const modal = new bootstrap.Modal(document.getElementById('quickViewModal'), {
+            backdrop: true,
+            keyboard: true,
+            focus: true
+        });
         modal.show();
+
+        // Ensure backdrop has proper z-index
+        setTimeout(() => {
+            const backdrop = document.querySelector('.modal-backdrop');
+            if (backdrop) {
+                backdrop.style.setProperty('z-index', '9998', 'important');
+                backdrop.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+            }
+        }, 10);
 
         // Add slider navigation event listeners after modal is shown
         setTimeout(() => {
@@ -1161,7 +1251,7 @@ class FeaturedCategoryProductsManager {
         try {
             // Sử dụng addProductToCartBackend để gọi API backend
             if (window.app && window.app.addProductToCartBackend) {
-                await window.app.addProductToCartBackend(productId, quantity, true);
+                await window.app.addProductToCartBackend(productId, quantity, false);
                 await window.app.refreshCartBadge?.();
             } else {
                 this.showNotification('Chức năng đang được tải...', 'error');
@@ -1271,7 +1361,6 @@ class FeaturedCategoryProductsManager {
     async loadProductRatingsFallback(productCards) {
         if (!productCards || productCards.length === 0) return;
 
-        console.log('🔍 Loading ratings using fallback method for', productCards.length, 'products');
 
         // Get product IDs
         const productIds = Array.from(productCards).map(card => {
@@ -1280,7 +1369,6 @@ class FeaturedCategoryProductsManager {
         }).filter(id => id !== null);
 
         if (productIds.length === 0) {
-            console.log('🔍 No valid product IDs found for fallback rating loading');
             return;
         }
 
@@ -1296,7 +1384,6 @@ class FeaturedCategoryProductsManager {
 
             if (response.ok) {
                 const statistics = await response.json();
-                console.log('🔍 Fallback: Loaded rating statistics:', statistics);
 
                 // Update each product card
                 productCards.forEach(card => {
@@ -1319,12 +1406,10 @@ class FeaturedCategoryProductsManager {
         const averageRating = productStats.averageRating || 0;
         const reviewCount = productStats.totalReviews || 0;
 
-        console.log('🔍 Fallback: Updating rating for product', productId, ':', averageRating, 'stars,', reviewCount, 'reviews');
 
         // Find rating container
         const ratingContainer = cardElement.querySelector('.product-rating');
         if (!ratingContainer) {
-            console.log('🔍 Fallback: No rating container found for product:', productId);
             return;
         }
 

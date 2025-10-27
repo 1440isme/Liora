@@ -106,12 +106,13 @@ public class AdminCategoryController {
     public ResponseEntity<ApiResponse<List<CategoryResponse>>> getAllActiveCategories() {
         ApiResponse<List<CategoryResponse>> response = new ApiResponse<>();
         try {
-            List<Category> activeCategories = categoryService.findActiveCategories();
+            // Trả về tất cả categories (bao gồm cả inactive) để form edit có thể hiển thị category hiện tại
+            List<Category> categories = categoryService.findAll();
 
             // Sort categories alphabetically by name
-            activeCategories.sort(Comparator.comparing(Category::getName));
+            categories.sort(Comparator.comparing(Category::getName));
 
-            List<CategoryResponse> categoryResponses = activeCategories.stream()
+            List<CategoryResponse> categoryResponses = categories.stream()
                     .map(categoryMapper::toCategoryResponse)
                     .collect(Collectors.toList());
 

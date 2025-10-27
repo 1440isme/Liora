@@ -95,17 +95,21 @@ public class ProductServiceImpl implements IProductService {
                 .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
 
         // validate brand
+        Brand brand = product.getBrand();
         if (request.getBrandId() != null) {
-            Brand brand = brandRepository.findById(request.getBrandId())
+            brand = brandRepository.findById(request.getBrandId())
                     .orElseThrow(() -> new AppException(ErrorCode.BRAND_NOT_FOUND));
             product.setBrand(brand);
         }
 
+        // validate category
+        Category category = product.getCategory();
         if (request.getCategoryId() != null) {
-            Category category = categoryRepository.findById(request.getCategoryId())
+            category = categoryRepository.findById(request.getCategoryId())
                     .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
             product.setCategory(category);
         }
+        
         // check name uniqueness if name is being updated
         if (request.getName() != null && !request.getName().equalsIgnoreCase(product.getName())
             && productRepository.existsByName(request.getName())) {
@@ -113,6 +117,17 @@ public class ProductServiceImpl implements IProductService {
         }
 
         productMapper.updateProduct(product, request);
+        
+        // Kiểm tra ràng buộc khi activate sản phẩm
+        if (request.getIsActive() != null && request.getIsActive()) {
+            // Nếu đang cố gắng activate sản phẩm, kiểm tra category và brand
+            if (category == null || category.getIsActive() == null || !category.getIsActive()) {
+                throw new AppException(ErrorCode.PRODUCT_CATEGORY_INACTIVE);
+            }
+            if (brand == null || brand.getIsActive() == null || !brand.getIsActive()) {
+                throw new AppException(ErrorCode.PRODUCT_BRAND_INACTIVE);
+            }
+        }
         
         // Tự động set available dựa vào stock
         if (request.getStock() != null) {
@@ -392,6 +407,18 @@ public class ProductServiceImpl implements IProductService {
     public void activateProduct(Long id) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
+        
+        // Kiểm tra ràng buộc: Category và Brand phải cùng hoạt động
+        Category category = product.getCategory();
+        if (category == null || category.getIsActive() == null || !category.getIsActive()) {
+            throw new AppException(ErrorCode.PRODUCT_CATEGORY_INACTIVE);
+        }
+        
+        Brand brand = product.getBrand();
+        if (brand == null || brand.getIsActive() == null || !brand.getIsActive()) {
+            throw new AppException(ErrorCode.PRODUCT_BRAND_INACTIVE);
+        }
+        
         product.setIsActive(true);
         product.setUpdatedDate(LocalDateTime.now());
         productRepository.save(product);

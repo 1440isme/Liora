@@ -31,21 +31,30 @@ class BestsellerProductsHomepageManager {
         if (this.nextBtn) {
             this.nextBtn.addEventListener('click', () => this.scrollRight());
         }
+
+        // Add window resize listener
+        window.addEventListener('resize', () => {
+            // Debounce resize events
+            clearTimeout(this.resizeTimeout);
+            this.resizeTimeout = setTimeout(() => {
+                this.updateNavigationButtons();
+            }, 250);
+        });
+
+        // Add touch support for mobile
+        this.setupTouchSupport();
     }
 
     async loadBestsellerProducts() {
         try {
             this.showLoading();
 
-            console.log('Loading bestseller products...');
             const response = await fetch('/api/products/best-selling?limit=8');
             const data = await response.json();
 
-            console.log('API Response:', data);
 
             if (data.code === 1000 && data.result && data.result.length > 0) {
                 this.allProducts = data.result;
-                console.log('Loaded products:', this.allProducts);
                 this.renderBestsellerProducts(this.allProducts);
 
                 this.gridEl.addEventListener('scroll', () => this.updateNavigationButtons());
@@ -83,7 +92,7 @@ class BestsellerProductsHomepageManager {
         if (this.loadingEl) this.loadingEl.style.display = 'none';
         if (this.emptyEl) this.emptyEl.style.display = 'none';
         if (this.gridEl) this.gridEl.style.display = 'flex';
-        
+
         // Trigger rating load sau khi render xong
         setTimeout(() => {
             if (window.loadProductRatings) {
@@ -192,7 +201,7 @@ class BestsellerProductsHomepageManager {
                                         data-product-name="${productName}"
                                         data-product-price="${currentPrice}"
                                         title="Thêm vào giỏ"
-                                        onclick="event.preventDefault(); event.stopPropagation(); if(window.app && window.app.addProductToCartBackend) { window.app.addProductToCartBackend(${productId}, 1, true).then(() => window.app.refreshCartBadge?.()).catch(() => alert('Không thể thêm vào giỏ hàng')); } else { alert('Chức năng đang được tải...'); }">
+                                        onclick="event.preventDefault(); event.stopPropagation(); if(window.app && window.app.addProductToCartBackend) { window.app.addProductToCartBackend(${productId}, 1, false).then(() => window.app.refreshCartBadge?.()).catch(() => alert('Không thể thêm vào giỏ hàng')); } else { alert('Chức năng đang được tải...'); }">
                                     <i class="fas fa-shopping-cart"></i>
                                 </button>
                             </div>
@@ -251,7 +260,7 @@ class BestsellerProductsHomepageManager {
 
     scrollLeft() {
         if (this.gridEl) {
-            const cardWidth = 280 + 24; // card width + gap
+            const cardWidth = this.getCardWidth();
             this.gridEl.scrollBy({
                 left: -cardWidth,
                 behavior: 'smooth'
@@ -266,7 +275,7 @@ class BestsellerProductsHomepageManager {
 
     scrollRight() {
         if (this.gridEl) {
-            const cardWidth = 280 + 24; // card width + gap
+            const cardWidth = this.getCardWidth();
             this.gridEl.scrollBy({
                 left: cardWidth,
                 behavior: 'smooth'
@@ -277,6 +286,78 @@ class BestsellerProductsHomepageManager {
                 this.updateNavigationButtons();
             }, 300);
         }
+    }
+
+    getCardWidth() {
+        const screenWidth = window.innerWidth;
+        let cardWidth = 280; // Default desktop
+        let gap = 24; // Default gap
+
+        if (screenWidth < 480) {
+            cardWidth = 160;
+            gap = 12;
+        } else if (screenWidth < 576) {
+            cardWidth = 180;
+            gap = 16;
+        } else if (screenWidth < 768) {
+            cardWidth = 200;
+            gap = 24;
+        } else if (screenWidth < 1200) {
+            cardWidth = 220;
+            gap = 12;
+        } else if (screenWidth < 1300) {
+            cardWidth = 230;
+            gap = 12;
+        } else if (screenWidth < 1400) {
+            cardWidth = 250;
+            gap = 16;
+        }
+
+        return cardWidth + gap;
+    }
+
+    setupTouchSupport() {
+        if (!this.gridEl) return;
+
+        let touchStartX = 0;
+        let touchEndX = 0;
+        let isDragging = false;
+
+        const handleTouchStart = (e) => {
+            touchStartX = e.touches[0].clientX;
+            isDragging = true;
+        };
+
+        const handleTouchMove = (e) => {
+            if (!isDragging) return;
+            e.preventDefault(); // Prevent scrolling while dragging
+        };
+
+        const handleTouchEnd = (e) => {
+            if (!isDragging) return;
+            touchEndX = e.changedTouches[0].clientX;
+            handleSwipe();
+            isDragging = false;
+        };
+
+        const handleSwipe = () => {
+            const swipeThreshold = 50; // Minimum distance for a swipe
+            const swipeDistance = touchEndX - touchStartX;
+
+            if (Math.abs(swipeDistance) > swipeThreshold) {
+                if (swipeDistance > 0) {
+                    // Swipe right - go to previous slide
+                    this.scrollLeft();
+                } else {
+                    // Swipe left - go to next slide
+                    this.scrollRight();
+                }
+            }
+        };
+
+        this.gridEl.addEventListener('touchstart', handleTouchStart, { passive: false });
+        this.gridEl.addEventListener('touchmove', handleTouchMove, { passive: false });
+        this.gridEl.addEventListener('touchend', handleTouchEnd, { passive: false });
     }
 
     updateNavigationButtons() {
@@ -298,7 +379,6 @@ class BestsellerProductsHomepageManager {
             return;
         }
 
-        console.log('Showing navigation buttons - more than 4 products');
         if (navigationContainer) {
             navigationContainer.classList.remove('hidden');
         }
@@ -310,25 +390,12 @@ class BestsellerProductsHomepageManager {
         const isAtStart = scrollLeft <= 1;
         const isAtEnd = scrollLeft >= (maxScrollLeft - 1);
 
-        console.log('Bestseller navigation buttons update:', {
-            scrollLeft,
-            maxScrollLeft,
-            scrollWidth: this.gridEl.scrollWidth,
-            clientWidth: this.gridEl.clientWidth,
-            productsLength: this.allProducts.length,
-            isAtStart,
-            isAtEnd,
-            prevBtnExists: !!this.prevBtn,
-            nextBtnExists: !!this.nextBtn
-        });
 
         if (this.prevBtn) {
             this.prevBtn.disabled = isAtStart;
-            console.log('Bestseller prev button disabled:', isAtStart);
         }
         if (this.nextBtn) {
             this.nextBtn.disabled = isAtEnd;
-            console.log('Bestseller next button disabled:', isAtEnd);
         }
     }
 
@@ -336,7 +403,7 @@ class BestsellerProductsHomepageManager {
         try {
             // Sử dụng addProductToCartBackend để gọi API backend
             if (window.app && window.app.addProductToCartBackend) {
-                await window.app.addProductToCartBackend(productId, 1, true);
+                await window.app.addProductToCartBackend(productId, 1, false);
                 await window.app.refreshCartBadge?.();
             } else {
                 this.showNotification('Chức năng đang được tải...', 'error');
@@ -501,7 +568,7 @@ class BestsellerProductsHomepageManager {
         setTimeout(() => {
             const backdrop = document.querySelector('.modal-backdrop');
             if (backdrop) {
-                backdrop.style.zIndex = '9998';
+                backdrop.style.setProperty('z-index', '9998', 'important');
                 backdrop.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
             }
         }, 10);
@@ -817,7 +884,7 @@ class BestsellerProductsHomepageManager {
         try {
             // Sử dụng addProductToCartBackend để gọi API backend
             if (window.app && window.app.addProductToCartBackend) {
-                await window.app.addProductToCartBackend(productId, quantity, true);
+                await window.app.addProductToCartBackend(productId, quantity, false);
                 await window.app.refreshCartBadge?.();
             } else {
                 this.showNotification('Chức năng đang được tải...', 'error');

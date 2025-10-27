@@ -379,13 +379,31 @@ body #productsGrid .product-card .card-title {
 
 /* Product Status Styles */
 .product-card.product-deactivated {
-    opacity: 0.7;
     position: relative;
 }
 
+/* Giữ ảnh rõ nét, chỉ làm mờ phần body */
+.product-card.product-deactivated .card-img-top {
+    opacity: 1;
+    filter: grayscale(15%);
+}
+
+.product-card.product-deactivated .card-body {
+    opacity: 0.6;
+}
+
 .product-card.product-out-of-stock {
-    opacity: 0.8;
     position: relative;
+}
+
+/* Giữ ảnh rõ nét, chỉ làm mờ phần body */
+.product-card.product-out-of-stock .card-img-top {
+    opacity: 1;
+    filter: grayscale(10%);
+}
+
+.product-card.product-out-of-stock .card-body {
+    opacity: 0.7;
 }
 
 .product-status-badge {
@@ -427,6 +445,15 @@ body #productsGrid .product-card .card-title {
 }
 
 /* Quick View Modal Styles */
+#quickViewModal {
+    z-index: 9999 !important;
+}
+
+#quickViewModal .modal-backdrop {
+    z-index: 9998 !important;
+    background-color: rgba(0, 0, 0, 0.5) !important;
+}
+
 #quickViewModal .modal-dialog {
     max-width: 900px;
 }

@@ -13,6 +13,10 @@ import vn.liora.dto.request.ApiResponse;
 import vn.liora.dto.request.UserCreationRequest;
 import vn.liora.dto.request.UserUpdateRequest;
 import vn.liora.dto.request.ChangePasswordRequest;
+import vn.liora.dto.request.SendOtpRequest;
+import vn.liora.dto.request.VerifyOtpRequest;
+import vn.liora.dto.request.RegistrationWithOtpRequest;
+import vn.liora.dto.request.ResetPasswordWithOtpRequest;
 import vn.liora.dto.response.UserResponse;
 import vn.liora.dto.response.OrderResponse;
 import vn.liora.dto.response.OrderProductResponse;
@@ -28,12 +32,15 @@ import vn.liora.service.IAuthenticationService;
 import vn.liora.service.IDirectoryStructureService;
 import vn.liora.service.IStorageService;
 import vn.liora.service.IImageOptimizationService;
+import vn.liora.service.EmailService;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.nimbusds.jose.JOSEException;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -50,6 +57,28 @@ public class UserController {
     private final IDirectoryStructureService directoryStructureService;
     private final IStorageService storageService;
     private final IImageOptimizationService imageOptimizationService;
+    private final EmailService emailService;
+    private final PasswordEncoder passwordEncoder;
+
+    // Lưu trữ OTP tạm thời trong memory (có thể thay bằng Redis trong production)
+    private final Map<String, OtpData> otpStorage = new ConcurrentHashMap<>();
+
+    // Class để lưu trữ OTP data
+    private static class OtpData {
+        String otpCode;
+        long expiryTime;
+        String type;
+
+        OtpData(String otpCode, long expiryTime, String type) {
+            this.otpCode = otpCode;
+            this.expiryTime = expiryTime;
+            this.type = type;
+        }
+
+        boolean isExpired() {
+            return System.currentTimeMillis() > expiryTime;
+        }
+    }
 
     @GetMapping("/myInfo")
     public ResponseEntity<ApiResponse<UserResponse>> getMyInfo() {
@@ -269,55 +298,6 @@ public class UserController {
     }
 
     /**
-     * API đăng ký tài khoản công khai cho user
-     */
-    @PostMapping
-    public ResponseEntity<ApiResponse<Object>> registerUser(@Valid @RequestBody UserCreationRequest request) {
-        try {
-            // Tạo user mới
-            UserResponse userResponse = userService.createUser(request);
-
-            // Tạo JWT token cho user vừa đăng ký
-            User user = userRepository.findByUsername(userResponse.getUsername())
-                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
-            String token;
-            try {
-                token = authenticationService.generateTokenForOAuth2User(user);
-            } catch (JOSEException e) {
-                throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
-            }
-
-            // Tạo response chứa cả user info và token
-            class RegistrationResponse {
-                @SuppressWarnings("unused")
-                public final UserResponse user;
-                @SuppressWarnings("unused")
-                public final String token;
-                @SuppressWarnings("unused")
-                public final String tokenType = "Bearer";
-
-                public RegistrationResponse(UserResponse user, String token) {
-                    this.user = user;
-                    this.token = token;
-                }
-            }
-
-            RegistrationResponse registrationResponse = new RegistrationResponse(userResponse, token);
-
-            ApiResponse<Object> response = new ApiResponse<>();
-            response.setResult(registrationResponse);
-            response.setMessage("Đăng ký tài khoản thành công");
-            response.setCode(1000);
-
-            return ResponseEntity.ok(response);
-        } catch (AppException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
-        }
-    }
-
-    /**
      * Tìm user từ authentication, hỗ trợ cả JWT và OAuth2
      */
     private User findUserByPrincipal(Authentication authentication) {
@@ -470,6 +450,256 @@ public class UserController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.error("Lỗi khi upload avatar: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * API test đơn giản
+     */
+    @GetMapping("/test")
+    public ResponseEntity<ApiResponse<Object>> test() {
+        ApiResponse<Object> response = new ApiResponse<>();
+        response.setMessage("API test thành công");
+        response.setCode(1000);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * API gửi OTP cho đăng ký
+     */
+    @PostMapping("/send-registration-otp")
+    public ResponseEntity<ApiResponse<Object>> sendRegistrationOtp(@Valid @RequestBody SendOtpRequest request) {
+        try {
+            // Kiểm tra email đã tồn tại chưa
+            if (userRepository.existsByEmail(request.getEmail())) {
+                throw new AppException(ErrorCode.EMAIL_EXISTED);
+            }
+
+            // Tạo OTP code
+            String otpCode = emailService.generateOtpCode();
+
+            // Lưu OTP vào storage (10 phút)
+            long expiryTime = System.currentTimeMillis() + (10 * 60 * 1000);
+            otpStorage.put(request.getEmail(), new OtpData(otpCode, expiryTime, "REGISTRATION"));
+
+            // Gửi email OTP
+            emailService.sendRegistrationOtpEmail(request.getEmail(), otpCode);
+
+            ApiResponse<Object> response = new ApiResponse<>();
+            response.setMessage("Mã OTP đã được gửi đến email của bạn");
+            response.setCode(1000);
+
+            return ResponseEntity.ok(response);
+        } catch (AppException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        }
+    }
+
+    /**
+     * API xác thực OTP cho đăng ký
+     */
+    @PostMapping("/verify-registration-otp")
+    public ResponseEntity<ApiResponse<Object>> verifyRegistrationOtp(@Valid @RequestBody VerifyOtpRequest request) {
+        try {
+            OtpData otpData = otpStorage.get(request.getEmail());
+
+            if (otpData == null || otpData.isExpired() || !otpData.type.equals("REGISTRATION")) {
+                throw new AppException(ErrorCode.INVALID_OTP);
+            }
+
+            if (!otpData.otpCode.equals(request.getOtpCode())) {
+                throw new AppException(ErrorCode.INVALID_OTP);
+            }
+
+            // Xóa OTP sau khi xác thực thành công
+            otpStorage.remove(request.getEmail());
+
+            ApiResponse<Object> response = new ApiResponse<>();
+            response.setMessage("Xác thực OTP thành công");
+            response.setCode(1000);
+
+            return ResponseEntity.ok(response);
+        } catch (AppException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        }
+    }
+
+    /**
+     * API đăng ký với OTP
+     */
+    @PostMapping("/register-with-otp")
+    public ResponseEntity<ApiResponse<Object>> registerWithOtp(@Valid @RequestBody RegistrationWithOtpRequest request) {
+        try {
+            // Xác thực OTP trước
+            OtpData otpData = otpStorage.get(request.getEmail());
+
+            if (otpData == null || otpData.isExpired() || !otpData.type.equals("REGISTRATION")) {
+                throw new AppException(ErrorCode.INVALID_OTP);
+            }
+
+            if (!otpData.otpCode.equals(request.getOtpCode())) {
+                throw new AppException(ErrorCode.INVALID_OTP);
+            }
+
+            // Xóa OTP sau khi xác thực thành công
+            otpStorage.remove(request.getEmail());
+
+            // Tạo UserCreationRequest từ RegistrationWithOtpRequest
+            UserCreationRequest userCreationRequest = UserCreationRequest.builder()
+                    .username(request.getUsername())
+                    .password(request.getPassword())
+                    .email(request.getEmail())
+                    .phone(request.getPhone())
+                    .firstname(request.getFirstname())
+                    .lastname(request.getLastname())
+                    .dob(request.getDob())
+                    .gender(request.getGender())
+                    .avatar(request.getAvatar())
+                    .active(request.getActive())
+                    .createdDate(request.getCreatedDate())
+                    .role(request.getRole())
+                    .build();
+
+            // Tạo user mới
+            UserResponse userResponse = userService.createUser(userCreationRequest);
+
+            // Tạo JWT token cho user vừa đăng ký
+            User user = userRepository.findByUsername(userResponse.getUsername())
+                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+            String token;
+            try {
+                token = authenticationService.generateTokenForOAuth2User(user);
+            } catch (JOSEException e) {
+                throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+            }
+
+            // Tạo response chứa cả user info và token
+            class RegistrationResponse {
+                @SuppressWarnings("unused")
+                public final UserResponse user;
+                @SuppressWarnings("unused")
+                public final String token;
+                @SuppressWarnings("unused")
+                public final String tokenType = "Bearer";
+
+                public RegistrationResponse(UserResponse user, String token) {
+                    this.user = user;
+                    this.token = token;
+                }
+            }
+
+            RegistrationResponse registrationResponse = new RegistrationResponse(userResponse, token);
+
+            ApiResponse<Object> response = new ApiResponse<>();
+            response.setResult(registrationResponse);
+            response.setMessage("Đăng ký tài khoản thành công");
+            response.setCode(1000);
+
+            return ResponseEntity.ok(response);
+        } catch (AppException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        }
+    }
+
+    /**
+     * API gửi OTP cho reset password
+     */
+    @PostMapping("/send-password-reset-otp")
+    public ResponseEntity<ApiResponse<Object>> sendPasswordResetOtp(@Valid @RequestBody SendOtpRequest request) {
+        try {
+            // Kiểm tra email có tồn tại không
+            if (!userRepository.existsByEmail(request.getEmail())) {
+                throw new AppException(ErrorCode.USER_NOT_FOUND);
+            }
+
+            // Tạo OTP code
+            String otpCode = emailService.generateOtpCode();
+
+            // Lưu OTP vào storage (10 phút)
+            long expiryTime = System.currentTimeMillis() + (10 * 60 * 1000);
+            otpStorage.put(request.getEmail(), new OtpData(otpCode, expiryTime, "PASSWORD_RESET"));
+
+            // Gửi email OTP
+            emailService.sendPasswordResetOtpEmail(request.getEmail(), otpCode);
+
+            ApiResponse<Object> response = new ApiResponse<>();
+            response.setMessage("Mã OTP đã được gửi đến email của bạn");
+            response.setCode(1000);
+
+            return ResponseEntity.ok(response);
+        } catch (AppException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        }
+    }
+
+    /**
+     * API xác thực OTP cho reset password
+     */
+    @PostMapping("/verify-password-reset-otp")
+    public ResponseEntity<ApiResponse<Object>> verifyPasswordResetOtp(@Valid @RequestBody VerifyOtpRequest request) {
+        try {
+            OtpData otpData = otpStorage.get(request.getEmail());
+
+            if (otpData == null || otpData.isExpired() || !otpData.type.equals("PASSWORD_RESET")) {
+                throw new AppException(ErrorCode.INVALID_OTP);
+            }
+
+            if (!otpData.otpCode.equals(request.getOtpCode())) {
+                throw new AppException(ErrorCode.INVALID_OTP);
+            }
+
+            // Xóa OTP sau khi xác thực thành công
+            otpStorage.remove(request.getEmail());
+
+            ApiResponse<Object> response = new ApiResponse<>();
+            response.setMessage("Xác thực OTP thành công");
+            response.setCode(1000);
+
+            return ResponseEntity.ok(response);
+        } catch (AppException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
+        }
+    }
+
+    /**
+     * API reset password với OTP
+     */
+    @PostMapping("/reset-password-with-otp")
+    public ResponseEntity<ApiResponse<Object>> resetPasswordWithOtp(
+            @Valid @RequestBody ResetPasswordWithOtpRequest request) {
+        try {
+            // Kiểm tra mật khẩu xác nhận
+            if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+                throw new AppException(ErrorCode.PASSWORD_NOT_MATCH);
+            }
+
+            // Tìm user
+            User user = userRepository.findByEmail(request.getEmail())
+                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+            // Cập nhật mật khẩu
+            user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+            userRepository.save(user);
+
+            ApiResponse<Object> response = new ApiResponse<>();
+            response.setMessage("Đặt lại mật khẩu thành công");
+            response.setCode(1000);
+
+            return ResponseEntity.ok(response);
+        } catch (AppException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.UNCATEGORIZED_EXCEPTION);
         }
     }
 }

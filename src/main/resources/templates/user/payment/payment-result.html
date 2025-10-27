@@ -107,18 +107,70 @@
             const orderRef = getParam('orderRef');
             const bank = getParam('bank');
             const amount = getParam('amount');
+            const message = getParam('message');
+            const transId = getParam('transId');
+
             // fill UI
             const okBox = document.getElementById('okBox');
             const failBox = document.getElementById('failBox');
-            if (code === '00') { okBox.style.display = 'flex'; failBox.style.display = 'none'; }
-            else { okBox.style.display = 'flex'; okBox.classList.remove('status-success'); okBox.classList.add('status-failed'); okBox.querySelector('strong').innerText = 'Thanh toán không thành công'; }
-            const refEl = document.getElementById('refText'); if (refEl) refEl.textContent = orderRef || '—';
-            const bankEl = document.getElementById('bankText'); if (bankEl) bankEl.textContent = bank || '—';
-            const amountEl = document.getElementById('amountText'); if (amountEl) { amountEl.textContent = formatVnd(amount || ''); }
+
+            // Check if this is MOMO payment (has transId) or VNPAY (code === '00')
+            const isMomoPayment = transId && transId !== '';
+            const isVnpaySuccess = code === '00';
+            const isMomoSuccess = code === '0';
+            const isMomoCancelled = code === '42' || code === '24';
+            const isVnpayCancelled = code === '24';
+
+            if (isVnpaySuccess || isMomoSuccess) {
+                okBox.style.display = 'flex';
+                failBox.style.display = 'none';
+            } else if (isMomoCancelled || isVnpayCancelled) {
+                okBox.style.display = 'flex';
+                okBox.classList.remove('status-success');
+                okBox.classList.add('status-failed');
+                okBox.querySelector('strong').innerText = 'Thanh toán đã bị hủy';
+            } else {
+                okBox.style.display = 'flex';
+                okBox.classList.remove('status-success');
+                okBox.classList.add('status-failed');
+                okBox.querySelector('strong').innerText = 'Thanh toán không thành công';
+            }
+
+            const refEl = document.getElementById('refText');
+            if (refEl) refEl.textContent = orderRef || '—';
+
+            const bankEl = document.getElementById('bankText');
+            if (bankEl) {
+                if (isMomoPayment) {
+                    bankEl.textContent = 'MOMO Wallet';
+                } else {
+                    bankEl.textContent = bank || '—';
+                }
+            }
+
+            const amountEl = document.getElementById('amountText');
+            if (amountEl) {
+                if (isMomoPayment && amount) {
+                    // MOMO amount is already in VND, no need to divide by 100
+                    const vndAmount = parseInt(amount, 10);
+                    amountEl.textContent = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(vndAmount);
+                } else {
+                    amountEl.textContent = formatVnd(amount || '');
+                }
+            }
+
             const btnOrder = document.getElementById('btnViewOrder');
             const btnHomePrimary = document.getElementById('btnHomePrimary');
-            if (orderId && btnOrder) { btnOrder.href = `/user/order-detail/${orderId}`; btnOrder.style.display = 'inline-block'; if (btnHomePrimary) btnHomePrimary.style.display = 'none'; }
-            if (orderId) { pollTimer = setInterval(pollStatus, 5000); }
+            if (orderId && btnOrder) {
+                btnOrder.href = `/user/order-detail/${orderId}`;
+                btnOrder.style.display = 'inline-block';
+                if (btnHomePrimary) btnHomePrimary.style.display = 'none';
+            }
+
+            // Only poll for VNPAY, MOMO uses IPN
+            if (orderId && !isMomoPayment) {
+                pollTimer = setInterval(pollStatus, 5000);
+            }
         });
     </script>
     <style>
@@ -147,9 +199,7 @@
             <a id="btnHomePrimary" href="/" class="btn">Về trang chủ</a>
             <a href="/" class="btn btn-outline" style="margin-left:8px;">Về trang chủ</a>
         </div>
-        <div class="mt-3 text-muted" style="font-size: 13px;">
-            Lưu ý: Trạng thái cuối cùng của đơn sẽ được xác nhận khi hệ thống nhận IPN từ VNPAY.
-        </div>
+
     </div>
 </body>
 

@@ -10,7 +10,7 @@
 <body>
     <!-- Order Status Timeline -->
     <div class="timeline">
-        <div class="timeline-item" th:classappend="${order.status == 'PENDING'} ? 'active' : 'completed'">
+        <div class="timeline-item" th:classappend="${order.orderStatus == 'PENDING'} ? 'active' : 'completed'">
             <div class="timeline-marker">
                 <i class="fas fa-clock"></i>
             </div>
@@ -23,7 +23,7 @@
         </div>
 
         <div class="timeline-item"
-            th:classappend="${order.status == 'CONFIRMED'} ? 'active' : (${order.status == 'SHIPPED' or order.status == 'DELIVERED'}) ? 'completed' : ''">
+            th:classappend="${order.orderStatus == 'CONFIRMED'} ? 'active' : (${order.orderStatus == 'COMPLETED'}) ? 'completed' : ''">
             <div class="timeline-marker">
                 <i class="fas fa-check-circle"></i>
             </div>
@@ -35,40 +35,20 @@
             </div>
         </div>
 
-        <div class="timeline-item"
-            th:classappend="${order.status == 'SHIPPED'} ? 'active' : (${order.status == 'DELIVERED'}) ? 'completed' : ''">
+        <div class="timeline-item" th:classappend="${order.orderStatus == 'COMPLETED'} ? 'active completed' : ''">
             <div class="timeline-marker">
-                <i class="fas fa-truck"></i>
+                <i class="fas fa-check-double"></i>
             </div>
             <div class="timeline-content">
-                <h6 class="timeline-title">Đang giao hàng</h6>
-                <p class="timeline-text">Đơn hàng đã được giao cho đơn vị vận chuyển</p>
-                <div th:if="${order.shippingInfo != null}">
-                    <small class="text-muted">
-                        <strong>Đơn vị:</strong> <span th:text="${order.shippingInfo.carrier}">Viettel Post</span> |
-                        <strong>Mã vận đơn:</strong> <span
-                            th:text="${order.shippingInfo.trackingNumber}">VT123456789</span>
-                    </small>
-                </div>
-                <small class="text-muted" th:if="${order.shippedAt != null}"
-                    th:text="${#temporals.format(order.shippedAt, 'dd/MM/yyyy HH:mm')}">16/12/2024 09:00</small>
-            </div>
-        </div>
-
-        <div class="timeline-item" th:classappend="${order.status == 'DELIVERED'} ? 'active completed' : ''">
-            <div class="timeline-marker">
-                <i class="fas fa-home"></i>
-            </div>
-            <div class="timeline-content">
-                <h6 class="timeline-title">Đã giao hàng</h6>
-                <p class="timeline-text">Đơn hàng đã được giao thành công</p>
-                <small class="text-muted" th:if="${order.deliveredAt != null}"
-                    th:text="${#temporals.format(order.deliveredAt, 'dd/MM/yyyy HH:mm')}">17/12/2024 14:30</small>
+                <h6 class="timeline-title">Hoàn tất</h6>
+                <p class="timeline-text">Đơn hàng đã được hoàn tất</p>
+                <small class="text-muted" th:if="${order.completedAt != null}"
+                    th:text="${#temporals.format(order.completedAt, 'dd/MM/yyyy HH:mm')}">17/12/2024 14:30</small>
             </div>
         </div>
 
         <!-- Cancelled Status -->
-        <div class="timeline-item" th:if="${order.status == 'CANCELLED'}" th:classappend="'cancelled'">
+        <div class="timeline-item" th:if="${order.orderStatus == 'CANCELLED'}" th:classappend="'cancelled'">
             <div class="timeline-marker">
                 <i class="fas fa-times-circle"></i>
             </div>
@@ -111,20 +91,16 @@
             <div class="col-md-6">
                 <h6>Thao tác nhanh</h6>
                 <div class="btn-group" role="group">
-                    <button type="button" class="btn btn-sm btn-outline-primary" th:if="${order.status == 'PENDING'}"
+                    <button type="button" class="btn btn-sm btn-outline-primary" th:if="${order.orderStatus == 'PENDING'}"
                         th:onclick="'updateOrderStatus(\'' + ${order.id} + '\', \'CONFIRMED\')'">
                         <i class="fas fa-check"></i> Xác nhận
                     </button>
-                    <button type="button" class="btn btn-sm btn-outline-info" th:if="${order.status == 'CONFIRMED'}"
-                        th:onclick="'updateOrderStatus(\'' + ${order.id} + '\', \'SHIPPED\')'">
-                        <i class="fas fa-truck"></i> Giao hàng
-                    </button>
-                    <button type="button" class="btn btn-sm btn-outline-success" th:if="${order.status == 'SHIPPED'}"
-                        th:onclick="'updateOrderStatus(\'' + ${order.id} + '\', \'DELIVERED\')'">
-                        <i class="fas fa-home"></i> Hoàn thành
+                    <button type="button" class="btn btn-sm btn-outline-success" th:if="${order.orderStatus == 'CONFIRMED'}"
+                        th:onclick="'updateOrderStatus(\'' + ${order.id} + '\', \'COMPLETED\')'">
+                        <i class="fas fa-check-double"></i> Hoàn tất
                     </button>
                     <button type="button" class="btn btn-sm btn-outline-danger"
-                        th:if="${order.status != 'CANCELLED' and order.status != 'DELIVERED'}"
+                        th:if="${order.orderStatus == 'PENDING'}"
                         th:onclick="'cancelOrder(\'' + ${order.id} + '\')'">
                         <i class="fas fa-times"></i> Hủy đơn
                     </button>

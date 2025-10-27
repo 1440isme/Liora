@@ -518,6 +518,7 @@ class OrderDetailManager {
         const mappedStatus = this.mapOrderStatusToStandard(status);
         switch (mappedStatus) {
             case 'PENDING': return 'Chờ xử lý';
+            case 'CONFIRMED': return 'Đã xác nhận';
             case 'COMPLETED': return 'Hoàn tất';
             case 'CANCELLED': return 'Đã hủy';
             default: return 'Chờ xử lý';
@@ -529,6 +530,7 @@ class OrderDetailManager {
         const mappedStatus = this.mapOrderStatusToStandard(status);
         switch (mappedStatus) {
             case 'PENDING': return 'bg-warning';
+            case 'CONFIRMED': return 'bg-info';
             case 'COMPLETED': return 'bg-success';
             case 'CANCELLED': return 'bg-danger';
             default: return 'bg-secondary';
@@ -544,6 +546,7 @@ class OrderDetailManager {
             case 'PAID': return 'Đã thanh toán';
             case 'CANCELLED': return 'Đã hủy';
             case 'FAILED': return 'Thanh toán thất bại';
+            case 'REFUNDED': return 'Hoàn tiền';
             default: return status;
         }
     }
@@ -557,6 +560,7 @@ class OrderDetailManager {
             case 'PAID': return 'bg-success';
             case 'CANCELLED': return 'bg-danger';
             case 'FAILED': return 'bg-danger';
+            case 'REFUNDED': return 'bg-info';
             default: return 'bg-secondary';
         }
     }

@@ -114,7 +114,8 @@ public class AdminBrandController {
     public ResponseEntity<ApiResponse<List<BrandResponse>>> getAllBrands() {
         ApiResponse<List<BrandResponse>> response = new ApiResponse<>();
         try {
-            List<Brand> brands = brandService.findActiveBrands();
+            // Trả về tất cả brands (bao gồm cả inactive) để form edit có thể hiển thị brand hiện tại
+            List<Brand> brands = brandService.findAll();
 
             // Sort brands alphabetically by name
             brands.sort(Comparator.comparing(Brand::getName));

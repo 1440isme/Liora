@@ -31,6 +31,12 @@ class ProductTableManager {
             confirmDeleteBtn.addEventListener('click', () => this.confirmDelete());
         }
 
+        // Export Excel button
+        const exportExcelBtn = document.getElementById('exportExcelBtn');
+        if (exportExcelBtn) {
+            exportExcelBtn.addEventListener('click', () => this.exportToExcel());
+        }
+
         // Search and filter events
         this.setupSearchAndFilter();
     }
@@ -101,6 +107,41 @@ class ProductTableManager {
         } else {
             console.log('Stock status filter NOT found');
         }
+
+        // Date filter - handled by inline script in HTML
+        // But we need to update searchParams when form submits
+        const filterForm = document.querySelector('form[action="/admin/products"]');
+        if (filterForm) {
+            filterForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const formData = new FormData(filterForm);
+                const dateFilter = formData.get('dateFilter');
+                const startDate = formData.get('startDate');
+                const endDate = formData.get('endDate');
+                
+                // Update search params
+                if (dateFilter && dateFilter !== '') {
+                    this.searchParams.dateFilter = dateFilter;
+                } else {
+                    delete this.searchParams.dateFilter;
+                }
+                
+                if (startDate) {
+                    this.searchParams.startDate = startDate;
+                } else {
+                    delete this.searchParams.startDate;
+                }
+                
+                if (endDate) {
+                    this.searchParams.endDate = endDate;
+                } else {
+                    delete this.searchParams.endDate;
+                }
+                
+                this.currentPage = 0;
+                this.loadProducts();
+            });
+        }
     }
 
     // Load products from API
@@ -115,6 +156,17 @@ class ProductTableManager {
                 status: this.searchParams.status,
                 stockStatus: this.searchParams.stockStatus
             });
+            
+            // Add date filter params
+            if (this.searchParams.dateFilter) {
+                params.append('dateFilter', this.searchParams.dateFilter);
+            }
+            if (this.searchParams.startDate) {
+                params.append('startDate', this.searchParams.startDate);
+            }
+            if (this.searchParams.endDate) {
+                params.append('endDate', this.searchParams.endDate);
+            }
 
             console.log('Loading products with params:', params.toString());
             console.log('Search params:', this.searchParams);
@@ -225,7 +277,7 @@ class ProductTableManager {
                 <td>
                     <div class="d-flex align-items-center gap-1">
                         <span class="${(product.stock || 0) <= 10 ? '' : 'text-start'}">${product.stock || 0}</span>
-                        ${(product.stock || 0) <= 10 ? '<i class="mdi mdi-alert-circle text-warning" title="Sắp hết hàng" data-bs-toggle="tooltip"></i>' : ''}
+                        ${(product.stock || 0) > 0 && (product.stock || 0) <= 10 ? '<i class="mdi mdi-alert-circle text-warning" title="Sắp hết hàng" data-bs-toggle="tooltip"></i>' : ''}
                     </div>
                 </td>
                 <td class="text-start">${product.soldCount || 0}</td>
@@ -474,6 +526,107 @@ class ProductTableManager {
         tooltipTriggerList.map(function (tooltipTriggerEl) {
             return new bootstrap.Tooltip(tooltipTriggerEl);
         });
+    }
+
+    // Export to Excel
+    async exportToExcel() {
+        try {
+            this.showNotification('Đang tải dữ liệu để xuất Excel...', 'success');
+            
+            // Lấy tất cả sản phẩm với các filter hiện tại
+            const params = new URLSearchParams({
+                page: 0,
+                size: 10000, // Lấy nhiều nhất có thể
+                search: this.searchParams.search,
+                brandId: this.searchParams.brand,
+                categoryId: this.searchParams.category,
+                status: this.searchParams.status,
+                stockStatus: this.searchParams.stockStatus
+            });
+            
+            // Add date filter params
+            if (this.searchParams.dateFilter) {
+                params.append('dateFilter', this.searchParams.dateFilter);
+            }
+            if (this.searchParams.startDate) {
+                params.append('startDate', this.searchParams.startDate);
+            }
+            if (this.searchParams.endDate) {
+                params.append('endDate', this.searchParams.endDate);
+            }
+
+            const response = await fetch(`/admin/api/products?${params}`);
+            const data = await response.json();
+
+            if (data.result && data.result.content) {
+                const products = data.result.content;
+                this.downloadExcel(products);
+                this.showNotification('Xuất Excel thành công!', 'success');
+            } else {
+                this.showNotification('Không có dữ liệu để xuất', 'error');
+            }
+        } catch (error) {
+            console.error('Error exporting to Excel:', error);
+            this.showNotification('Có lỗi xảy ra khi xuất Excel', 'error');
+        }
+    }
+
+    // Download Excel file
+    downloadExcel(products) {
+        // Tạo CSV content
+        const headers = [
+            'STT',
+            'ID Sản phẩm',
+            'Tên sản phẩm',
+            'Danh mục',
+            'Thương hiệu',
+            'Giá (VND)',
+            'Tồn kho',
+            'Đã bán',
+            'Trạng thái',
+            'Tình trạng hàng',
+            'Ngày tạo'
+        ];
+
+        let csvContent = '\uFEFF'; // BOM để hỗ trợ UTF-8
+        csvContent += headers.join(',') + '\n';
+
+        products.forEach((product, index) => {
+            const row = [
+                index + 1,
+                product.productId || '',
+                `"${this.escapeCSV(product.name || '')}"`,
+                `"${this.escapeCSV(product.categoryName || 'N/A')}"`,
+                `"${this.escapeCSV(product.brandName || 'N/A')}"`,
+                product.price || 0,
+                product.stock || 0,
+                product.soldCount || 0,
+                product.isActive ? 'Hoạt động' : 'Tạm dừng',
+                (product.stock || 0) > 0 ? 'Còn hàng' : 'Hết hàng',
+                `"${this.formatDate(product.createdDate)}"`
+            ];
+            csvContent += row.join(',') + '\n';
+        });
+
+        // Tạo blob và download
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        
+        const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `danh_sach_san_pham_${timestamp}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    // Escape CSV special characters
+    escapeCSV(text) {
+        if (!text) return '';
+        // Thay thế dấu nháy kép bằng hai dấu nháy kép
+        return String(text).replace(/"/g, '""');
     }
 
     // Debounce function for search

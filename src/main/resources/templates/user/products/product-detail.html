@@ -950,35 +950,40 @@
                                                 <div class="rating-bar" data-rating="5">
                                                     <span class="rating-label">5 sao</span>
                                                     <div class="progress">
-                                                        <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                                        <div class="progress-bar" role="progressbar" style="width: 0%">
+                                                        </div>
                                                     </div>
                                                     <span class="rating-count">0</span>
                                                 </div>
                                                 <div class="rating-bar" data-rating="4">
                                                     <span class="rating-label">4 sao</span>
                                                     <div class="progress">
-                                                        <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                                        <div class="progress-bar" role="progressbar" style="width: 0%">
+                                                        </div>
                                                     </div>
                                                     <span class="rating-count">0</span>
                                                 </div>
                                                 <div class="rating-bar" data-rating="3">
                                                     <span class="rating-label">3 sao</span>
                                                     <div class="progress">
-                                                        <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                                        <div class="progress-bar" role="progressbar" style="width: 0%">
+                                                        </div>
                                                     </div>
                                                     <span class="rating-count">0</span>
                                                 </div>
                                                 <div class="rating-bar" data-rating="2">
                                                     <span class="rating-label">2 sao</span>
                                                     <div class="progress">
-                                                        <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                                        <div class="progress-bar" role="progressbar" style="width: 0%">
+                                                        </div>
                                                     </div>
                                                     <span class="rating-count">0</span>
                                                 </div>
                                                 <div class="rating-bar" data-rating="1">
                                                     <span class="rating-label">1 sao</span>
                                                     <div class="progress">
-                                                        <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                                        <div class="progress-bar" role="progressbar" style="width: 0%">
+                                                        </div>
                                                     </div>
                                                     <span class="rating-count">0</span>
                                                 </div>
@@ -1045,6 +1050,9 @@
     <!-- Include Similar Products Section -->
     <div th:replace="user/products/fragments/_similar-products :: similarProductsSection"></div>
 
+    <!-- Include Recently Viewed Section -->
+    <div th:replace="user/products/fragments/_recently-viewed-homepage :: recentlyViewedHomepageSection"></div>
+
     <!-- Footer -->
     <div th:replace="~{user/layout/user-footer :: footer}"></div>
 
@@ -1055,26 +1063,23 @@
     <script th:src="@{/user/js/main.js}"></script>
     <script th:src="@{/user/js/products.js}"></script>
     <script th:src="@{/user/js/product-detail.js}"></script>
+    <script th:src="@{/user/js/recently-viewed-manager.js}"></script>
 
     <script>
         // Gallery Functions with Debug
         function productDetailChangeImage(imageUrl) {
 
             const mainImage = document.getElementById('productDetailMainImage');
-            console.log('Main image found:', !!mainImage);
 
             if (mainImage) {
-                console.log('Changing main image to:', imageUrl);
                 mainImage.src = imageUrl;
 
                 // Update active thumbnail
                 const thumbnails = document.querySelectorAll('.product-detail-thumbnail-item');
-                console.log('Thumbnails found:', thumbnails.length);
 
                 thumbnails.forEach(item => item.classList.remove('active'));
                 if (event && event.currentTarget) {
                     event.currentTarget.classList.add('active');
-                    console.log('Updated active thumbnail');
                 }
             } else {
                 console.error('Main image not found!');
@@ -1082,14 +1087,10 @@
         }
 
         function productDetailScroll(direction) {
-            console.log('=== GALLERY DEBUG: productDetailScroll ===');
-            console.log('Direction:', direction);
 
             const thumbnails = document.querySelectorAll('.product-detail-thumbnail-item');
             const mainImage = document.getElementById('productDetailMainImage');
 
-            console.log('Thumbnails found:', thumbnails.length);
-            console.log('Main image found:', !!mainImage);
 
             if (thumbnails.length === 0 || !mainImage) {
                 console.error('Required elements not found!');
@@ -1104,7 +1105,6 @@
                 }
             });
 
-            console.log('Current active index:', currentIndex);
 
             if (currentIndex === -1) currentIndex = 0;
 
@@ -1338,6 +1338,46 @@
         }
 
         // Initialize product detail page with detailed debugging
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔍 [DEBUG] Product detail page loaded');
+            
+            // Initialize RecentlyViewedManager
+            if (!window.recentlyViewedManager) {
+                console.log('🔍 [DEBUG] Initializing RecentlyViewedManager...');
+                window.recentlyViewedManager = new RecentlyViewedManager();
+            }
+            
+            // Track product view FIRST (before rendering)
+            const productId = /*[[${product.productId}]]*/ null;
+            const productName = /*[[${product.name}]]*/ '';
+            const productPrice = /*[[${product.price}]]*/ 0;
+            const mainImageUrl = /*[[${product.mainImageUrl}]]*/ '';
+            
+            console.log('🔍 [DEBUG] Product data:', { productId, productName, productPrice, mainImageUrl });
+            
+            if (productId && window.recentlyViewedManager) {
+                console.log('🔍 [DEBUG] Tracking product view FIRST...');
+                
+                const productData = {
+                    name: productName,
+                    price: productPrice,
+                    mainImageUrl: mainImageUrl
+                };
+                
+                window.recentlyViewedManager.trackProductView(productId, productData);
+            } else {
+                console.warn('⚠️ [WARNING] Cannot track product view:', { 
+                    productId, 
+                    hasManager: !!window.recentlyViewedManager 
+                });
+            }
+            
+            // Render recently viewed products AFTER tracking
+            if (window.recentlyViewedManager) {
+                console.log('🔍 [DEBUG] Rendering recently viewed products AFTER tracking...');
+                window.recentlyViewedManager.renderRecentlyViewed('recentlyViewedGrid', 6);
+            }
+        });
         document.addEventListener('DOMContentLoaded', function () {
             console.log('=== PRODUCT DETAIL PAGE DEBUG START ===');
             console.log('Product detail page loaded');
@@ -1685,7 +1725,7 @@
 
             // Initialize slider
             initializeSlider();
-            
+
             // Initialize popup hover effects
             initializeDiscountPopups();
         }
@@ -1826,7 +1866,7 @@
         // Initialize popup hover effects
         function initializeDiscountPopups() {
             const infoIcons = document.querySelectorAll('.discount-info-icon');
-            
+
             // Create popup portal if it doesn't exist
             let portal = document.getElementById('popup-portal');
             if (!portal) {
@@ -1834,17 +1874,17 @@
                 portal.id = 'popup-portal';
                 document.body.appendChild(portal);
             }
-            
+
             infoIcons.forEach(icon => {
                 const popup = icon.querySelector('.discount-popup');
                 let hoverTimeout;
-                
+
                 // Show popup on mouse enter
                 icon.addEventListener('mouseenter', () => {
                     clearTimeout(hoverTimeout);
                     // Hide all other popups first
                     portal.innerHTML = '';
-                    
+
                     // Get icon position
                     const rect = icon.getBoundingClientRect();
                     const popupClone = popup.cloneNode(true);
@@ -1853,22 +1893,22 @@
                     popupClone.style.left = (rect.left + 30) + 'px';
                     popupClone.style.zIndex = '9999';
                     popupClone.classList.add('show');
-                    
+
                     // Add to portal
                     portal.appendChild(popupClone);
-                    
+
                     // Add event listeners to popup clone
                     popupClone.addEventListener('mouseenter', () => {
                         clearTimeout(hoverTimeout);
                     });
-                    
+
                     popupClone.addEventListener('mouseleave', () => {
                         hoverTimeout = setTimeout(() => {
                             portal.innerHTML = '';
                         }, 100);
                     });
                 });
-                
+
                 // Hide popup on mouse leave
                 icon.addEventListener('mouseleave', () => {
                     hoverTimeout = setTimeout(() => {
@@ -1885,7 +1925,7 @@
                 showSimpleNotification(`Đã sao chép mã "${code}"`);
             }).catch(err => {
                 console.error('Failed to copy discount code:', err);
-                
+
                 // Fallback for older browsers
                 const textArea = document.createElement('textarea');
                 textArea.value = code;
@@ -1893,7 +1933,7 @@
                 textArea.select();
                 document.execCommand('copy');
                 document.body.removeChild(textArea);
-                
+
                 // Show success feedback
                 showSimpleNotification(`Đã sao chép mã "${code}"`);
             });
@@ -2017,16 +2057,51 @@
         }
 
         // Close popup when clicking outside
-        document.addEventListener('click', function(event) {
+        document.addEventListener('click', function (event) {
             if (!event.target.closest('.discount-info-icon')) {
                 document.querySelectorAll('.discount-popup.show').forEach(popup => {
                     popup.classList.remove('show');
                 });
             }
         });
+
+        // Track product view for recently viewed
+        document.addEventListener('DOMContentLoaded', function() {
+            try {
+                const productId = document.getElementById('productId')?.value;
+                if (productId && window.recentlyViewedManager) {
+                    console.log('🔍 [DEBUG] Tracking product view for productId:', productId);
+                    window.recentlyViewedManager.trackProductView(productId);
+                }
+            } catch (error) {
+                console.error('❌ [ERROR] Error tracking product view:', error);
+            }
+            
+            // Initialize recently viewed section
+            function initRecentlyViewed() {
+                if (window.recentlyViewedManager) {
+                    console.log('🔍 [DEBUG] Initializing recently viewed section...');
+                    // Render recently viewed section
+                    window.recentlyViewedManager.renderRecentlyViewed('recentlyViewedGrid', 6);
+                    
+                    // Setup auto-refresh every 30 seconds
+                    setInterval(() => {
+                        if (window.recentlyViewedManager) {
+                            window.recentlyViewedManager.renderRecentlyViewed('recentlyViewedGrid', 6);
+                        }
+                    }, 30000);
+                } else {
+                    console.log('🔍 [DEBUG] Waiting for recentlyViewedManager...');
+                    // Retry after 100ms
+                    setTimeout(initRecentlyViewed, 100);
+                }
+            }
+            
+            initRecentlyViewed();
+        });
     </script>
 
-    <!-- Hidden input để lấy product ID -->
+    <!-- Hidden input cho Similar Products -->
     <input type="hidden" id="productId" th:value="${product.productId}" />
 
     <!-- Include CSS -->
@@ -2034,6 +2109,8 @@
 
     <!-- Include JavaScript -->
     <script th:src="@{/user/js/similar-products.js}"></script>
+    <script th:src="@{/user/js/product-rating-utils.js}"></script>
+
 </body>
 
 </html>
