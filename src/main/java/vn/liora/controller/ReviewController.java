@@ -120,12 +120,22 @@ public class ReviewController {
     @PostMapping("/products/statistics")
     public ResponseEntity<Map<String, Object>> getMultipleProductsReviewStatistics(@RequestBody List<Long> productIds) {
         try {
+            log.debug("getMultipleProductsReviewStatistics called with {} product IDs", 
+                     productIds != null ? productIds.size() : 0);
+            
+            if (productIds == null || productIds.isEmpty()) {
+                log.warn("Empty productIds list received");
+                return ResponseEntity.ok(new HashMap<>());
+            }
+            
             Map<String, Object> statistics = reviewService.getMultipleProductsReviewStatistics(productIds);
+            log.debug("Returning statistics for {} products", statistics.size());
             return ResponseEntity.ok(statistics);
         } catch (Exception e) {
-            log.error("Error getting multiple products review statistics: {}", e.getMessage());
+            log.error("Error getting multiple products review statistics", e);
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("error", "Không thể lấy thống kê đánh giá");
+            errorResponse.put("message", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
