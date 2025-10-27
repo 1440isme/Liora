@@ -33,17 +33,9 @@ jobs:
       - name: Create deployment package
         run: |
           mkdir -p deployment
-          cp target/*.jar deployment/
-          cp -r uploads deployment/  # Copy uploads directory
-          cp -r src/main/resources/static deployment/  # Copy static resources
-          
-          # Debug: List files in deployment
-          echo "=== Deployment package contents ==="
-          ls -la deployment/
-          echo "=== JAR file info ==="
-          ls -la deployment/*.jar
-          echo "=== Uploads directory ==="
-          ls -la deployment/uploads/
+          cp target/*.jar deployment/app.jar
+          # Uploads folder sẽ được Azure tự động mount từ persistent storage
+          # Static resources đã được package vào JAR
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
@@ -54,12 +46,21 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: build
+    environment:
+      name: 'Production'
+      url: https://liora.azurewebsites.net
       
     steps:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
           name: java-app
+          path: '${{ github.workspace }}/deployment'
+      
+      - name: List deployment contents
+        run: |
+          echo "Deployment package contents:"
+          ls -lah ${{ github.workspace }}/deployment/
       
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
@@ -67,5 +68,17 @@ jobs:
         with:
           app-name: 'liora'
           slot-name: 'Production'
-          package: '.'
+          package: '${{ github.workspace }}/deployment/app.jar'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_F03850EE7CCB4EC69DC616AB3E8164E8 }}
+      
+      - name: Deployment Summary
+        run: |
+          echo "✅ Deployment completed successfully!"
+          echo "⚠️  IMPORTANT: Please set these environment variables in Azure Portal:"
+          echo "   - SPRING_PROFILES_ACTIVE=azure"
+          echo "   - SQL_USERNAME, SQL_PASSWORD"
+          echo "   - JWT_SIGNER_KEY"
+          echo "   - GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET"
+          echo "   - MAIL_USERNAME, MAIL_PASSWORD"
+          echo ""
+          echo "👉 Then RESTART the web app from Azure Portal"
