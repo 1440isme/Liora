@@ -7,7 +7,6 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -51,10 +50,6 @@ public class ReviewResponse {
     private String orderCustomerPhone;   // SĐT khách hàng từ đơn hàng  
     private String orderCustomerEmail;   // Email khách hàng từ đơn hàng
     private String orderCustomerAddress; // Địa chỉ khách hàng từ đơn hàng
-    
-    // Media files
-    private List<String> images; // Danh sách đường dẫn ảnh
-    private List<String> videos;    // Danh sách đường dẫn video
 
     // Helper method to get display name
     public String getUserDisplayName() {

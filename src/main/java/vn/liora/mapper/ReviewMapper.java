@@ -7,12 +7,7 @@ import vn.liora.dto.response.ReviewResponse;
 import vn.liora.entity.Image;
 import vn.liora.entity.Review;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Mapper(componentModel = "spring")
 public interface ReviewMapper {
@@ -24,8 +19,7 @@ public interface ReviewMapper {
     @Mapping(target = "lastUpdate", ignore = true) // Sẽ set trong service
     @Mapping(target = "userId", ignore = true) // Sẽ set trong service
     @Mapping(target = "productId", ignore = true) // Sẽ set trong service
-    @Mapping(target = "orderProduct", ignore = true)
-    // Sẽ set trong service
+    @Mapping(target = "orderProduct", ignore = true) // Sẽ set trong service
     Review toReview(ReviewCreationRequest request);
 
     // ========== RESPONSE MAPPING ==========

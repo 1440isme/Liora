@@ -2,7 +2,6 @@ package vn.liora.controller;
 
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -12,7 +11,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 import vn.liora.dto.request.ReviewCreationRequest;
 import vn.liora.dto.request.ReviewUpdateRequest;
 import vn.liora.dto.response.ReviewResponse;
@@ -23,16 +21,9 @@ import vn.liora.repository.UserRepository;
 import vn.liora.service.IProductService;
 import vn.liora.service.IReviewService;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -40,13 +31,6 @@ import lombok.extern.slf4j.Slf4j;
 @RequestMapping("/api/reviews")
 @CrossOrigin(origins = "*")
 public class ReviewController {
-
-    @Value("${app.upload.path:uploads}")
-    private String uploadPath;
-
-    private static final long MAX_IMAGE_SIZE = 1 * 1024 * 1024; // 1MB
-    private static final long MAX_VIDEO_SIZE = 10 * 1024 * 1024; // 10MB - increased to allow larger videos
-    private static final int MAX_IMAGES = 5;
 
     @Autowired
     private IReviewService reviewService;
@@ -301,171 +285,5 @@ public class ReviewController {
         }
 
         return null;
-    }
-    
-    /**
-     * Upload ảnh cho đánh giá sản phẩm
-     */
-    @PostMapping("/media/images")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<Map<String, Object>> uploadReviewImages(@RequestParam("files") MultipartFile[] files) {
-        Map<String, Object> response = new HashMap<>();
-        List<String> uploadedUrls = new ArrayList<>();
-        List<String> errors = new ArrayList<>();
-
-        try {
-            // Kiểm tra số lượng file
-            if (files.length > MAX_IMAGES) {
-                response.put("success", false);
-                response.put("message", "Chỉ được tải lên tối đa " + MAX_IMAGES + " ảnh");
-                return ResponseEntity.badRequest().body(response);
-            }
-
-            for (MultipartFile file : files) {
-                // Validate file
-                if (file.isEmpty()) {
-                    errors.add("File trống");
-                    continue;
-                }
-
-                // Validate file type
-                String contentType = file.getContentType();
-                if (contentType == null || !contentType.startsWith("image/")) {
-                    errors.add("File " + file.getOriginalFilename() + " không phải là ảnh");
-                    continue;
-                }
-
-                // Validate file size
-                if (file.getSize() > MAX_IMAGE_SIZE) {
-                    errors.add("File " + file.getOriginalFilename() + " vượt quá kích thước cho phép (1MB)");
-                    continue;
-                }
-
-                // Generate unique filename
-                String originalFilename = file.getOriginalFilename();
-                String extension = "";
-                if (originalFilename != null && originalFilename.contains(".")) {
-                    extension = originalFilename.substring(originalFilename.lastIndexOf("."));
-                }
-
-                String uniqueFilename = UUID.randomUUID().toString() + extension;
-
-                // Create directory structure: uploads/reviews/images/YYYY/MM/DD/
-                LocalDateTime now = LocalDateTime.now();
-                String year = String.valueOf(now.getYear());
-                String month = String.format("%02d", now.getMonthValue());
-                String day = String.format("%02d", now.getDayOfMonth());
-
-                Path imageDir = Paths.get(uploadPath, "reviews", "images", year, month, day);
-                Files.createDirectories(imageDir);
-
-                // Save file
-                Path filePath = imageDir.resolve(uniqueFilename);
-                Files.copy(file.getInputStream(), filePath);
-
-                // Generate URL
-                String fileUrl = "/uploads/reviews/images/" + year + "/" + month + "/" + day + "/" + uniqueFilename;
-                uploadedUrls.add(fileUrl);
-            }
-
-            response.put("success", true);
-            response.put("message", "Upload thành công");
-            response.put("imagePaths", uploadedUrls);
-            
-            if (!errors.isEmpty()) {
-                response.put("errors", errors);
-            }
-
-            return ResponseEntity.ok(response);
-
-        } catch (IOException e) {
-            log.error("Lỗi khi upload ảnh đánh giá: ", e);
-            response.put("success", false);
-            response.put("message", "Lỗi khi upload file: " + e.getMessage());
-            return ResponseEntity.internalServerError().body(response);
-        } catch (Exception e) {
-            log.error("Lỗi không xác định khi upload ảnh đánh giá: ", e);
-            response.put("success", false);
-            response.put("message", "Lỗi không xác định: " + e.getMessage());
-            return ResponseEntity.internalServerError().body(response);
-        }
-    }
-
-    /**
-     * Upload video cho đánh giá sản phẩm
-     */
-    @PostMapping("/media/video")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<Map<String, Object>> uploadReviewVideo(@RequestParam("file") MultipartFile file) {
-        Map<String, Object> response = new HashMap<>();
-
-        try {
-            // Validate file
-            if (file.isEmpty()) {
-                response.put("success", false);
-                response.put("message", "File không được để trống");
-                return ResponseEntity.badRequest().body(response);
-            }
-
-            // Validate file type
-            String contentType = file.getContentType();
-            if (contentType == null || !contentType.startsWith("video/")) {
-                response.put("success", false);
-                response.put("message", "Chỉ được upload file video");
-                return ResponseEntity.badRequest().body(response);
-            }
-
-            // Validate file size
-            if (file.getSize() > MAX_VIDEO_SIZE) {
-                response.put("success", false);
-                response.put("message", "Kích thước file không được vượt quá 10MB");
-                return ResponseEntity.badRequest().body(response);
-            }
-
-            // Generate unique filename
-            String originalFilename = file.getOriginalFilename();
-            String extension = "";
-            if (originalFilename != null && originalFilename.contains(".")) {
-                extension = originalFilename.substring(originalFilename.lastIndexOf("."));
-            }
-
-            String uniqueFilename = UUID.randomUUID().toString() + extension;
-
-            // Create directory structure: uploads/reviews/videos/YYYY/MM/DD/
-            LocalDateTime now = LocalDateTime.now();
-            String year = String.valueOf(now.getYear());
-            String month = String.format("%02d", now.getMonthValue());
-            String day = String.format("%02d", now.getDayOfMonth());
-
-            Path videoDir = Paths.get(uploadPath, "reviews", "videos", year, month, day);
-            Files.createDirectories(videoDir);
-
-            // Save file
-            Path filePath = videoDir.resolve(uniqueFilename);
-            Files.copy(file.getInputStream(), filePath);
-
-            // Generate URL
-            String fileUrl = "/uploads/reviews/videos/" + year + "/" + month + "/" + day + "/" + uniqueFilename;
-
-            response.put("success", true);
-            response.put("message", "Upload thành công");
-            response.put("videoPath", fileUrl);
-            response.put("filename", uniqueFilename);
-            response.put("originalName", originalFilename);
-            response.put("size", file.getSize());
-
-            return ResponseEntity.ok(response);
-
-        } catch (IOException e) {
-            log.error("Lỗi khi upload video đánh giá: ", e);
-            response.put("success", false);
-            response.put("message", "Lỗi khi upload file: " + e.getMessage());
-            return ResponseEntity.internalServerError().body(response);
-        } catch (Exception e) {
-            log.error("Lỗi không xác định khi upload video đánh giá: ", e);
-            response.put("success", false);
-            response.put("message", "Lỗi không xác định: " + e.getMessage());
-            return ResponseEntity.internalServerError().body(response);
-        }
     }
 }

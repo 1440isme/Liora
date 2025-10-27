@@ -6,8 +6,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -18,7 +16,7 @@ public class ReviewCreationRequest {
     @NotNull(message = "OrderProduct ID is required")
     private Long orderProductId;
 
-    @Size(max = 10000, message = "Content must not exceed 10000 characters")
+    @Size(max = 1000, message = "Content must not exceed 1000 characters")
     private String content;
 
     @NotNull(message = "Rating is required")
