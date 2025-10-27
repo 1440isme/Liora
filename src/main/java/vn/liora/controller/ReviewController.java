@@ -45,7 +45,7 @@ public class ReviewController {
     private String uploadPath;
 
     private static final long MAX_IMAGE_SIZE = 1 * 1024 * 1024; // 1MB
-    private static final long MAX_VIDEO_SIZE = 5 * 1024 * 1024; // 5MB
+    private static final long MAX_VIDEO_SIZE = 10 * 1024 * 1024; // 10MB - increased to allow larger videos
     private static final int MAX_IMAGES = 5;
 
     @Autowired
@@ -418,7 +418,7 @@ public class ReviewController {
             // Validate file size
             if (file.getSize() > MAX_VIDEO_SIZE) {
                 response.put("success", false);
-                response.put("message", "Kích thước file không được vượt quá 5MB");
+                response.put("message", "Kích thước file không được vượt quá 10MB");
                 return ResponseEntity.badRequest().body(response);
             }
 

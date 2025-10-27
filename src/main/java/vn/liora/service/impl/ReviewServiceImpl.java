@@ -76,8 +76,6 @@ public class ReviewServiceImpl implements IReviewService {
         review.setLastUpdate(LocalDateTime.now());
         review.setIsVisible(true);
 
-        // Media fields are handled by mapper
-
         // Lưu review
         Review savedReview = reviewRepository.save(review);
 
@@ -107,8 +105,6 @@ public class ReviewServiceImpl implements IReviewService {
 
         reviewMapper.updateReview(review, request);
         review.setLastUpdate(LocalDateTime.now());
-
-        // Media fields are handled by mapper
 
         Review savedReview = reviewRepository.save(review);
 

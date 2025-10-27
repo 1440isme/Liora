@@ -14,7 +14,7 @@ import java.util.List;
 @Builder
 public class ReviewUpdateRequest {
 
-    @Size(max = 10000, message = "Content must not exceed 10000 characters")
+    @Size(max = 1000, message = "Content must not exceed 1000 characters")
     private String content;
 
     @NotNull(message = "Rating is required")
@@ -23,8 +23,4 @@ public class ReviewUpdateRequest {
     private Integer rating;
 
     private Boolean anonymous;
-
-    // Media fields
-    private List<String> imagePaths; // List of uploaded image URLs
-    private List<String> videoPaths; // List of uploaded video URLs
 }

@@ -16,7 +16,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Mapper(componentModel = "spring")
 public interface ReviewMapper {
-    
+
     // ========== CREATION MAPPING ==========
     @Mapping(target = "reviewId", ignore = true)
     @Mapping(target = "isVisible", ignore = true) // Mặc định true
@@ -24,9 +24,8 @@ public interface ReviewMapper {
     @Mapping(target = "lastUpdate", ignore = true) // Sẽ set trong service
     @Mapping(target = "userId", ignore = true) // Sẽ set trong service
     @Mapping(target = "productId", ignore = true) // Sẽ set trong service
-    @Mapping(target = "orderProduct", ignore = true) // Sẽ set trong service
-    @Mapping(target = "imagePaths", expression = "java(convertImagePathsToJson(request.getImagePaths()))")
-    @Mapping(target = "videoPaths", expression = "java(convertVideoPathsToJson(request.getVideoPaths()))")
+    @Mapping(target = "orderProduct", ignore = true)
+    // Sẽ set trong service
     Review toReview(ReviewCreationRequest request);
 
     // ========== RESPONSE MAPPING ==========
@@ -52,8 +51,6 @@ public interface ReviewMapper {
     @Mapping(target = "orderCode", source = "orderProduct.order.idOrder", qualifiedByName = "mapOrderCode")
     @Mapping(target = "orderDate", source = "orderProduct.order.orderDate")
     @Mapping(target = "userDisplayName", expression = "java(calculateUserDisplayName(review))")
-    @Mapping(target = "images", expression = "java(parseImagePaths(review.getImagePaths()))")
-    @Mapping(target = "videos", expression = "java(parseVideoPaths(review.getVideoPaths()))")
     ReviewResponse toReviewResponse(Review review);
 
     // ========== BATCH RESPONSE MAPPING ==========
@@ -70,8 +67,6 @@ public interface ReviewMapper {
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "lastUpdate", ignore = true)
     @Mapping(target = "orderProduct", ignore = true)
-    @Mapping(target = "imagePaths", expression = "java(updateImagePaths(review.getImagePaths(), request.getImagePaths()))")
-    @Mapping(target = "videoPaths", expression = "java(updateVideoPaths(review.getVideoPaths(), request.getVideoPaths()))")
     void updateReview(@MappingTarget Review review, ReviewUpdateRequest request);
 
     @Named("mapOrderCode")
@@ -93,20 +88,20 @@ public interface ReviewMapper {
             }
             return "Anonymous User";
         }
-        
+
         // User không chọn ẩn danh - hiển thị full username
         String username = review.getOrderProduct().getOrder().getUser().getUsername();
         if (username != null && !username.trim().isEmpty()) {
             return username;
         }
-        
+
         // Fallback to firstname + lastname
         String firstname = review.getOrderProduct().getOrder().getUser().getFirstname();
         String lastname = review.getOrderProduct().getOrder().getUser().getLastname();
         if (firstname != null && lastname != null) {
             return firstname + " " + lastname;
         }
-        
+
         return "User";
     }
 
@@ -132,110 +127,5 @@ public interface ReviewMapper {
         masked.append(username.charAt(username.length() - 1));
 
         return masked.toString();
-    }
-
-    // Helper methods for parsing media paths
-    default List<String> parseImagePaths(String imagePathsJson) {
-        if (imagePathsJson == null || imagePathsJson.trim().isEmpty()) {
-            return new ArrayList<>();
-        }
-
-        try {
-            ObjectMapper objectMapper = new ObjectMapper();
-            if (imagePathsJson.startsWith("[")) {
-                // Parse JSON array
-                JsonNode jsonNode = objectMapper.readTree(imagePathsJson);
-                List<String> paths = new ArrayList<>();
-                for (JsonNode node : jsonNode) {
-                    paths.add(node.asText());
-                }
-                return paths;
-            } else {
-                // Single path or comma-separated paths
-                return Arrays.asList(imagePathsJson.split(","));
-            }
-        } catch (Exception e) {
-            // If parsing fails, return empty list
-            return new ArrayList<>();
-        }
-    }
-
-    default List<String> parseVideoPaths(String videoPathsJson) {
-        if (videoPathsJson == null || videoPathsJson.trim().isEmpty()) {
-            return new ArrayList<>();
-        }
-
-        try {
-            ObjectMapper objectMapper = new ObjectMapper();
-            if (videoPathsJson.startsWith("[")) {
-                // Parse JSON array
-                JsonNode jsonNode = objectMapper.readTree(videoPathsJson);
-                List<String> paths = new ArrayList<>();
-                for (JsonNode node : jsonNode) {
-                    paths.add(node.asText());
-                }
-                return paths;
-            } else {
-                // Single path or comma-separated paths
-                return Arrays.asList(videoPathsJson.split(","));
-            }
-        } catch (Exception e) {
-            // If parsing fails, return empty list
-            return new ArrayList<>();
-        }
-    }
-
-    // Helper methods for converting media paths to JSON
-    default String convertImagePathsToJson(List<String> imagePaths) {
-        if (imagePaths == null || imagePaths.isEmpty()) {
-            return null;
-        }
-
-        try {
-            ObjectMapper objectMapper = new ObjectMapper();
-            return objectMapper.writeValueAsString(imagePaths);
-        } catch (JsonProcessingException e) {
-            // If serialization fails, return null
-            return null;
-        }
-    }
-
-    default String convertVideoPathsToJson(List<String> videoPaths) {
-        if (videoPaths == null || videoPaths.isEmpty()) {
-            return null;
-        }
-
-        try {
-            ObjectMapper objectMapper = new ObjectMapper();
-            return objectMapper.writeValueAsString(videoPaths);
-        } catch (JsonProcessingException e) {
-            // If serialization fails, return null
-            return null;
-        }
-    }
-
-    // Helper methods for updating media paths
-    default String updateImagePaths(String currentImagePaths, List<String> newImagePaths) {
-        if (newImagePaths == null) {
-            return currentImagePaths; // Keep current paths if new paths are null
-        }
-
-        if (newImagePaths.isEmpty()) {
-            return null; // Clear paths if new paths are empty
-        }
-
-        return convertImagePathsToJson(newImagePaths);
-    }
-
-    default String updateVideoPaths(String currentVideoPaths, List<String> newVideoPaths) {
-        if (newVideoPaths == null) {
-            return currentVideoPaths; // Keep current paths if new paths are null
-        }
-
-        if (newVideoPaths.isEmpty()) {
-            return null; // Clear paths if new paths are empty
-        }
-
-        return convertVideoPathsToJson(newVideoPaths);
     }
 }
