@@ -55,8 +55,8 @@ public class DashboardServiceImpl implements IDashboardService {
 
     @Override
     public long getTotalOrdersByDateRange(LocalDateTime startDate, LocalDateTime endDate) {
-        // Đếm tổng số đơn hàng trong khoảng thời gian
-        List<Order> orders = orderRepository.findByOrderDateBetween(startDate, endDate);
+        // Đếm tổng số đơn hàng đã COMPLETED trong khoảng thời gian
+        List<Order> orders = orderRepository.findByOrderDateBetweenAndOrderStatus(startDate, endDate, "COMPLETED");
         return orders.size();
     }
 
@@ -339,13 +339,19 @@ public class DashboardServiceImpl implements IDashboardService {
                 String lastName = order.getUser().getLastname() != null ? order.getUser().getLastname() : "";
                 String fullName = (firstName + " " + lastName).trim();
                 if (fullName.isEmpty()) {
-                    fullName = order.getUser().getUsername();
+                    fullName = order.getUser().getUsername() != null ? order.getUser().getUsername() : "Không có tên";
+                }
+                
+                // Handle null email
+                String email = order.getUser().getEmail();
+                if (email == null || email.isEmpty()) {
+                    email = "N/A";
                 }
                 
                 customerMap.put(userId, TopCustomerResponse.builder()
                         .userId(userId)
                         .fullName(fullName)
-                        .email(order.getUser().getEmail())
+                        .email(email)
                         .ordersCount(0L)
                         .totalSpent(BigDecimal.ZERO)
                         .build());

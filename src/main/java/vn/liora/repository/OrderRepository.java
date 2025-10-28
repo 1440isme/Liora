@@ -124,20 +124,22 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @Query("""
         SELECT new vn.liora.dto.response.TopCustomerResponse(
             u.userId,
-            CONCAT(u.firstname, ' ', u.lastname),
-            u.email,
+            COALESCE(CONCAT(u.firstname, ' ', u.lastname), u.username, ''),
+            COALESCE(u.email, 'N/A'),
             COUNT(o.idOrder),
             SUM(o.total)
         )
         FROM Order o
         JOIN o.user u
         WHERE u.active = true
-        GROUP BY u.userId, u.firstname, u.lastname, u.email
+          AND o.orderStatus = 'COMPLETED'
+        GROUP BY u.userId, u.firstname, u.lastname, u.email, u.username
         ORDER BY SUM(o.total) DESC
         """)
     List<TopCustomerResponse> findTopSpenders(Pageable pageable);
     
     // ======================== DISCOUNT USAGE TRACKING ========================
-    @Query("SELECT COUNT(o) FROM Order o WHERE o.user.userId = :userId AND o.discount.discountId = :discountId")
+    // Đếm tất cả orders trừ CANCELLED (PENDING được đếm để user không thể đặt 2 đơn PENDING cùng mã)
+    @Query("SELECT COUNT(o) FROM Order o WHERE o.user.userId = :userId AND o.discount.discountId = :discountId AND o.orderStatus != 'CANCELLED'")
     Long countOrdersByUserAndDiscount(@Param("userId") Long userId, @Param("discountId") Long discountId);
 }

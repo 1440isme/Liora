@@ -237,8 +237,12 @@
                     break;
                 case 'THIS_WEEK':
                     const dayOfWeek = end.getDay();
+                    // Tính Thứ 2 của tuần hiện tại
                     const diff = end.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
-                    start = new Date(end.setDate(diff));
+                    // Tạo start là Thứ 2, không thay đổi end (hôm nay)
+                    const endCopy = new Date(end);
+                    start = new Date(endCopy.setDate(diff));
+                    // end giữ nguyên là hôm nay
                     break;
                 case 'THIS_MONTH':
                     start = new Date(end.getFullYear(), end.getMonth(), 1);
@@ -267,11 +271,20 @@
             start.setHours(0, 0, 0, 0);
             end.setHours(23, 59, 59, 999);
             
+            
+            // Format date theo local timezone (không dùng ISO để tránh lệch múi giờ)
+            function formatLocalDate(date) {
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            }
+            
             return {
-                start: start.toISOString().split("T")[0],
-                end: end.toISOString().split("T")[0],
-                startDate: `${start.toISOString().split("T")[0]}T00:00:00`,
-                endDate: `${end.toISOString().split("T")[0]}T23:59:59`
+                start: formatLocalDate(start),
+                end: formatLocalDate(end),
+                startDate: `${formatLocalDate(start)}T00:00:00`,
+                endDate: `${formatLocalDate(end)}T23:59:59`
             };
         }
 
@@ -452,9 +465,37 @@
             return statusMap[status] || { text: status, class: 'text-secondary' };
         }
         
+        // Function tính limit động dựa trên khoảng thời gian
+        function getDynamicLimit(filterType, startDate, endDate) {
+            switch(filterType) {
+                case 'TODAY':
+                    return 20;
+                case 'THIS_WEEK':
+                case 'LAST_7_DAYS':
+                    return 30;
+                case 'THIS_MONTH':
+                    return 100;
+                case 'THIS_YEAR':
+                    return 200;
+                case 'CUSTOM':
+                    // Tính số ngày trong khoảng thời gian
+                    const start = new Date(startDate);
+                    const end = new Date(endDate);
+                    const diffTime = Math.abs(end - start);
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    
+                    // Giới hạn tối đa 500 đơn hàng
+                    return Math.min(diffDays * 5, 500);
+                default:
+                    return 30;
+            }
+        }
+        
         // Function reload đơn hàng và sản phẩm bán chạy
         async function reloadFilteredData() {
             const dateRange = getGlobalDateRange();
+            const filterType = document.getElementById("globalDateFilter").value;
+            const dynamicLimit = getDynamicLimit(filterType, dateRange.start, dateRange.end);
             
             // Reload tổng doanh thu
             const revenueUrl = `/admin/analytics/total-revenue?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`;
@@ -487,57 +528,69 @@
                 }
             }
             
-            // Reload đơn hàng
-            const url = `/admin/analytics/recent-orders?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}&limit=15`;
+            // Reload đơn hàng với limit động
+            const url = `/admin/analytics/recent-orders?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}&limit=${dynamicLimit}`;
+            console.log(`🔍 Loading recent orders with limit: ${dynamicLimit}`);
             const response = await fetch(url);
             if (response.ok) {
                 const data = await response.json();
                 console.log("📦 Filtered recent orders:", data);
                 
                 const tbody = document.getElementById('recentOrdersBody');
-                if (tbody && data.length > 0) {
-                    tbody.innerHTML = data.map(order => {
-                        const statusInfo = getOrderStatusInfo(order.status);
-                        const paymentInfo = getPaymentStatusInfo(order.paymentStatus);
-                        return `
-                            <tr>
-                                <td class="text-center">${order.id}</td>
-                                <td>${order.customerName}</td>
-                                <td>${formatCurrency(order.totalAmount)}</td>
-                                <td class="text-center">
-                                    <span class="fw-semibold ${statusInfo.class}">${statusInfo.text}</span>
-                                </td>
-                                <td class="text-center">
-                                    <span class="fw-semibold ${paymentInfo.class}">${paymentInfo.text}</span>
-                                </td>
-                                <td class="text-center">${formatDate(order.createdAt)}</td>
-                            </tr>
-                        `;
-                    }).join('');
+                if (tbody) {
+                    if (data.length > 0) {
+                        tbody.innerHTML = data.map(order => {
+                            const statusInfo = getOrderStatusInfo(order.status);
+                            const paymentInfo = getPaymentStatusInfo(order.paymentStatus);
+                            return `
+                                <tr>
+                                    <td class="text-center">${order.id}</td>
+                                    <td>${order.customerName}</td>
+                                    <td>${formatCurrency(order.totalAmount)}</td>
+                                    <td class="text-center">
+                                        <span class="fw-semibold ${statusInfo.class}">${statusInfo.text}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="fw-semibold ${paymentInfo.class}">${paymentInfo.text}</span>
+                                    </td>
+                                    <td class="text-center">${formatDate(order.createdAt)}</td>
+                                </tr>
+                            `;
+                        }).join('');
+                    } else {
+                        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Không có đơn hàng trong khoảng thời gian này</td></tr>';
+                    }
                 }
             }
             
-            // Reload sản phẩm bán chạy
-            const urlProducts = `/admin/analytics/top-products?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}&limit=15`;
+            // Reload sản phẩm bán chạy với limit động
+            const dynamicLimitProducts = getDynamicLimit(filterType, dateRange.start, dateRange.end);
+            const urlProducts = `/admin/analytics/top-products?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}&limit=${dynamicLimitProducts}`;
+            console.log(`🔍 Loading top products with limit: ${dynamicLimitProducts}`);
             const responseProducts = await fetch(urlProducts);
             if (responseProducts.ok) {
                 const data = await responseProducts.json();
                 console.log("🔥 Filtered top products:", data);
                 
                 const tbody = document.getElementById('topProductsBody');
-                if (tbody && data.length > 0) {
-                    tbody.innerHTML = data.filter(p => p.soldQuantity > 0).map(product => {
-                        return `
-                            <tr>
-                                <td class="text-center">${product.id}</td>
-                                <td>${product.name}</td>
-                                <td>${product.categoryName}</td>
-                                <td class="text-center"><span class="text-success fw-semibold">${product.soldQuantity}</span></td>
-                                <td>${formatCurrency(product.revenue)}</td>
-                                <td class="text-center">${product.rating.toFixed(1)}/5</td>
-                            </tr>
-                        `;
-                    }).join('');
+                if (tbody) {
+                    const filteredData = data.filter(p => p.soldQuantity > 0);
+                    if (filteredData.length > 0) {
+                        tbody.innerHTML = filteredData.map(product => {
+                            return `
+                                <tr>
+                                    <td class="text-center">${product.id}</td>
+                                    <td>${product.name}</td>
+                                    <td>${product.categoryName}</td>
+                                    <td class="text-center"><span class="text-success fw-semibold">${product.soldQuantity}</span></td>
+                                    <td>${formatCurrency(product.revenue)}</td>
+                                    <td class="text-center">${product.rating.toFixed(1)}/5</td>
+                                </tr>
+                            `;
+                        }).join('');
+                    } else {
+                        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Không có sản phẩm được bán trong khoảng thời gian này</td></tr>';
+                    }
                 }
             }
             
