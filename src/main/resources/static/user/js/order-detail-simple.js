@@ -1052,21 +1052,11 @@ function renderReviewProducts(products) {
         }
     });
 
-    // ✅ FIX: Update modal footer buttons based on review status
-    const allReviewed = products.every(p => p.hasReview);
-    
-    if (allReviewed) {
-        // All products are reviewed - show "Close" button only
-        $('.modal-footer').html(`
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-        `);
-    } else {
-        // Has unreviewed products - show submit button
-        $('.modal-footer').html(`
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-            <button type="button" class="btn btn-primary" onclick="submitAllReviews()">Gửi đánh giá</button>
-        `);
-    }
+    // ✅ FIX: Always show both buttons (Đóng and Gửi đánh giá)
+    $('.modal-footer').html(`
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+        <button type="button" class="btn btn-primary" onclick="submitAllReviews()">Gửi đánh giá</button>
+    `);
 
     // Khởi tạo CKEditor sau khi render HTML
     setTimeout(() => {
@@ -1350,25 +1340,14 @@ function renderViewReviewProducts(products) {
         }
     });
 
-    // ✅ FIX: Check if all products are reviewed or mixed
-    const allReviewed = products.every(p => p.hasReview);
-    const hasUnreviewed = products.some(p => !p.hasReview);
-    
-    // Update modal title and buttons based on state
+    // ✅ FIX: Always show both buttons (Đóng and Gửi đánh giá)
     $('#reviewModalLabel').html('<i class="fas fa-star me-2"></i>Đánh giá sản phẩm');
     
-    if (allReviewed) {
-        // All products are reviewed - show "Close" button only
-        $('.modal-footer').html(`
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-        `);
-    } else {
-        // Has unreviewed products - show submit button
-        $('.modal-footer').html(`
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-            <button type="button" class="btn btn-primary" onclick="submitAllReviews()">Gửi đánh giá</button>
-        `);
-    }
+    // Always show both buttons
+    $('.modal-footer').html(`
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+        <button type="button" class="btn btn-primary" onclick="submitAllReviews()">Gửi đánh giá</button>
+    `);
 
     // Đảm bảo tất cả nút "Sửa" đều hiển thị khi reload
     $('.edit-btn').show();
