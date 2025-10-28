@@ -465,9 +465,37 @@
             return statusMap[status] || { text: status, class: 'text-secondary' };
         }
         
+        // Function tính limit động dựa trên khoảng thời gian
+        function getDynamicLimit(filterType, startDate, endDate) {
+            switch(filterType) {
+                case 'TODAY':
+                    return 20;
+                case 'THIS_WEEK':
+                case 'LAST_7_DAYS':
+                    return 30;
+                case 'THIS_MONTH':
+                    return 100;
+                case 'THIS_YEAR':
+                    return 200;
+                case 'CUSTOM':
+                    // Tính số ngày trong khoảng thời gian
+                    const start = new Date(startDate);
+                    const end = new Date(endDate);
+                    const diffTime = Math.abs(end - start);
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    
+                    // Giới hạn tối đa 500 đơn hàng
+                    return Math.min(diffDays * 5, 500);
+                default:
+                    return 30;
+            }
+        }
+        
         // Function reload đơn hàng và sản phẩm bán chạy
         async function reloadFilteredData() {
             const dateRange = getGlobalDateRange();
+            const filterType = document.getElementById("globalDateFilter").value;
+            const dynamicLimit = getDynamicLimit(filterType, dateRange.start, dateRange.end);
             
             // Reload tổng doanh thu
             const revenueUrl = `/admin/analytics/total-revenue?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`;
@@ -500,8 +528,9 @@
                 }
             }
             
-            // Reload đơn hàng
-            const url = `/admin/analytics/recent-orders?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}&limit=15`;
+            // Reload đơn hàng với limit động
+            const url = `/admin/analytics/recent-orders?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}&limit=${dynamicLimit}`;
+            console.log(`🔍 Loading recent orders with limit: ${dynamicLimit}`);
             const response = await fetch(url);
             if (response.ok) {
                 const data = await response.json();
@@ -534,8 +563,10 @@
                 }
             }
             
-            // Reload sản phẩm bán chạy
-            const urlProducts = `/admin/analytics/top-products?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}&limit=15`;
+            // Reload sản phẩm bán chạy với limit động
+            const dynamicLimitProducts = getDynamicLimit(filterType, dateRange.start, dateRange.end);
+            const urlProducts = `/admin/analytics/top-products?startDate=${dateRange.startDate}&endDate=${dateRange.endDate}&limit=${dynamicLimitProducts}`;
+            console.log(`🔍 Loading top products with limit: ${dynamicLimitProducts}`);
             const responseProducts = await fetch(urlProducts);
             if (responseProducts.ok) {
                 const data = await responseProducts.json();

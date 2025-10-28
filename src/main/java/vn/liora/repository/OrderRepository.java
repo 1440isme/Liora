@@ -124,15 +124,16 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @Query("""
         SELECT new vn.liora.dto.response.TopCustomerResponse(
             u.userId,
-            CONCAT(u.firstname, ' ', u.lastname),
-            u.email,
+            COALESCE(CONCAT(u.firstname, ' ', u.lastname), u.username, ''),
+            COALESCE(u.email, 'N/A'),
             COUNT(o.idOrder),
             SUM(o.total)
         )
         FROM Order o
         JOIN o.user u
         WHERE u.active = true
-        GROUP BY u.userId, u.firstname, u.lastname, u.email
+          AND o.orderStatus = 'COMPLETED'
+        GROUP BY u.userId, u.firstname, u.lastname, u.email, u.username
         ORDER BY SUM(o.total) DESC
         """)
     List<TopCustomerResponse> findTopSpenders(Pageable pageable);
