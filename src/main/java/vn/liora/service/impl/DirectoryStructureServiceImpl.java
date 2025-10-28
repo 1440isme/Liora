@@ -17,7 +17,7 @@ public class DirectoryStructureServiceImpl implements IDirectoryStructureService
     @Value("${storage.location}")
     private String uploadBasePath;
 
-    private static final String[] CATEGORIES = { "brands", "products", "categories", "users" };
+    private static final String[] CATEGORIES = { "brands", "products", "categories", "users", "banners" };
     private static final String THUMBNAIL_SUBDIR = "thumbnails";
     private static final String AVATAR_SUBDIR = "avatars";
 
@@ -36,7 +36,8 @@ public class DirectoryStructureServiceImpl implements IDirectoryStructureService
                 if ("users".equals(category)) {
                     Path avatarDir = categoryDir.resolve(AVATAR_SUBDIR);
                     ensureDirectoryExists(avatarDir);
-                } else {
+                } else if (!"banners".equals(category)) {
+                    // Banners không cần thumbnails, chỉ cần folder gốc
                     Path thumbnailDir = categoryDir.resolve(THUMBNAIL_SUBDIR);
                     ensureDirectoryExists(thumbnailDir);
                 }

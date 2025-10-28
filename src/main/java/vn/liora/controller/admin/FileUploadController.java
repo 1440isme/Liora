@@ -1,17 +1,17 @@
 package vn.liora.controller.admin;
 
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import vn.liora.service.IStorageService;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -21,8 +21,8 @@ import java.util.UUID;
 @PreAuthorize("hasAuthority('banner.create')")
 public class FileUploadController {
 
-    @Value("${app.upload.path:uploads}")
-    private String uploadPath;
+    @Autowired
+    private IStorageService storageService;
 
     @PostMapping("/banner")
     public ResponseEntity<Map<String, Object>> uploadBannerImage(@RequestParam("file") MultipartFile file) {
@@ -66,7 +66,7 @@ public class FileUploadController {
             String month = String.format("%02d", now.getMonthValue());
             String day = String.format("%02d", now.getDayOfMonth());
 
-            Path bannerDir = Paths.get(uploadPath, "banners", year, month, day);
+            Path bannerDir = Paths.get(storageService.getStorageLocation(), "banners", year, month, day);
             Files.createDirectories(bannerDir);
 
             // Save file
@@ -138,7 +138,7 @@ public class FileUploadController {
             String month = String.format("%02d", now.getMonthValue());
             String day = String.format("%02d", now.getDayOfMonth());
 
-            Path imageDir = Paths.get(uploadPath, "images", year, month, day);
+            Path imageDir = Paths.get(storageService.getStorageLocation(), "images", year, month, day);
             Files.createDirectories(imageDir);
 
             // Save file
@@ -176,7 +176,7 @@ public class FileUploadController {
         try {
             // Remove leading slash and convert to file path
             String filePath = fileUrl.startsWith("/") ? fileUrl.substring(1) : fileUrl;
-            Path path = Paths.get(uploadPath, filePath);
+            Path path = Paths.get(storageService.getStorageLocation(), filePath);
 
             if (Files.exists(path)) {
                 Files.delete(path);

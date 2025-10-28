@@ -107,30 +107,27 @@ class RolesManager {
 
     async loadStats() {
         try {
-            // Load total roles
-            const rolesResponse = await this.ajax.get('/roles');
-            if (rolesResponse && rolesResponse.result) {
-                const roles = rolesResponse.result.content || rolesResponse.result;
+            // Gọi song song: roles, permissions (tất cả), users (tất cả)
+            const [rolesRes, permsRes, usersRes] = await Promise.all([
+                this.ajax.get('/roles'),
+                this.ajax.get('/permissions'),
+                this.ajax.get('/users')
+            ]);
 
-                // Calculate stats
-                const totalRoles = roles.length;
+            // Tổng vai trò
+            const roles = rolesRes && rolesRes.result ? (rolesRes.result.content || rolesRes.result) : [];
+            const totalRoles = Array.isArray(roles) ? roles.length : 0;
 
-                // Count total permissions across all roles
-                let totalPermissions = 0;
-                let totalUsers = 0;
+            // Tổng quyền hạn (unique toàn hệ thống)
+            const permissions = permsRes && permsRes.result ? (permsRes.result.content || permsRes.result) : [];
+            const totalPermissions = Array.isArray(permissions) ? permissions.length : 0;
 
-                roles.forEach(role => {
-                    if (role.permissions) {
-                        totalPermissions += role.permissions.length;
-                    }
-                    if (role.userCount !== undefined) {
-                        totalUsers += role.userCount;
-                    }
-                });
+            // Tổng người dùng
+            const users = usersRes && usersRes.result ? (usersRes.result.content || usersRes.result) : [];
+            const totalUsers = Array.isArray(users) ? users.length : 0;
 
-                // Update stats in UI
-                this.updateStats(totalRoles, totalPermissions, totalUsers);
-            }
+            // Cập nhật UI
+            this.updateStats(totalRoles, totalPermissions, totalUsers);
         } catch (error) {
             console.error('Error loading stats:', error);
         }
