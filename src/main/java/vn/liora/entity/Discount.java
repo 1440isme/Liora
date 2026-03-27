@@ -3,10 +3,10 @@ package vn.liora.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import vn.liora.enums.DiscountType;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -32,6 +32,10 @@ public class Discount {
     @Column(name = "DiscountValue", nullable = false, precision = 10, scale = 2)
     @DecimalMin(value = "0.0", message = "Discount value must be positive")
     private BigDecimal discountValue;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "DiscountType", nullable = false, length = 50)
+    private DiscountType discountType = DiscountType.PERCENTAGE;
 
     @Column(name = "MinOrderValue", precision = 10, scale = 2)
     private BigDecimal minOrderValue;
@@ -67,4 +71,15 @@ public class Discount {
     @OneToMany(mappedBy = "discount", fetch = FetchType.LAZY)
     @JsonIgnore
     private List<Order> orders;
+
+    @PrePersist
+    @PreUpdate
+    private void ensureDefaults() {
+        if (discountType == null) {
+            discountType = DiscountType.PERCENTAGE;
+        }
+        if (usedCount == null) {
+            usedCount = 0;
+        }
+    }
 }
