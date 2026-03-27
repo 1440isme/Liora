@@ -31,8 +31,10 @@ import vn.liora.service.IOrderService;
 import vn.liora.service.IProductService;
 import vn.liora.service.IGhnShippingService;
 import vn.liora.service.EmailService;
-import vn.liora.entity.Discount;
-import vn.liora.repository.DiscountRepository;
+import vn.liora.service.discount.DiscountApplicationResult;
+import vn.liora.service.discount.DiscountApplicationService;
+import vn.liora.service.discount.DiscountContext;
+import vn.liora.service.discount.DiscountUsageService;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -59,6 +61,9 @@ public class OrderServiceImpl implements IOrderService {
     IGhnShippingService ghnShippingService;
     EmailService emailService;
     GhnShippingRepository ghnShippingRepository;
+    DiscountRepository discountRepository;
+    DiscountApplicationService discountApplicationService;
+    DiscountUsageService discountUsageService;
 
     @Override
     @Transactional
@@ -126,7 +131,10 @@ public class OrderServiceImpl implements IOrderService {
 
                     // ✅ Xử lý discount theo discountCode (ưu tiên)
                     if (request.getDiscountCode() != null && !request.getDiscountCode().trim().isEmpty()) {
-                        discount = discountService.findAvailableDiscountByCode(request.getDiscountCode());
+                        discount = discountRepository.findAvailableDiscountByName(
+                                request.getDiscountCode(),
+                                LocalDateTime.now())
+                                .orElse(null);
                         if (discount == null) {
                             log.warn("Discount code {} not found or not available", request.getDiscountCode());
                         }
@@ -138,22 +146,27 @@ public class OrderServiceImpl implements IOrderService {
                     }
 
                     // ✅ Áp dụng discount nếu tìm thấy
-                    if (discount != null
-                            && discountService.canApplyDiscount(discount.getDiscountId(), user.getUserId(), subtotal)) {
-                        // Tính discount amount
-                        totalDiscount = discountService.calculateDiscountAmount(discount.getDiscountId(), subtotal);
-                        total = subtotal.subtract(totalDiscount);
+                    if (discount != null) {
+                        DiscountApplicationResult applicationResult = discountApplicationService.apply(
+                                discount,
+                                buildDiscountContext(user.getUserId(), subtotal, BigDecimal.ZERO, order.getPaymentMethod()));
+                        if (!applicationResult.isApplied()) {
+                            log.warn("Cannot apply discount to order. User: {}, Subtotal: {}, Discount: {}, Reason: {}",
+                                    user.getUserId(), subtotal, discount.getDiscountId(), applicationResult.getFailureReason());
+                        } else {
+                            totalDiscount = applicationResult.getFinalDiscountAmount();
+                            total = subtotal.subtract(totalDiscount);
 
-                        // Set discount cho order (do not increment global usedCount yet — do it after
-                        // order persisted)
-                        order.setDiscount(discount);
+                            // Set discount cho order (do not increment global usedCount yet — do it after
+                            // order persisted)
+                            order.setDiscount(discount);
 
-                        log.info("Applied discount {} (code: {}) to order. Discount amount: {}",
-                                discount.getDiscountId(), discount.getName(), totalDiscount);
+                            log.info("Applied discount {} (code: {}) to order. Discount amount: {}",
+                                    discount.getDiscountId(), discount.getName(), totalDiscount);
+                        }
                     } else {
                         log.warn("Cannot apply discount to order. User: {}, Subtotal: {}, Discount: {}",
-                                user != null ? user.getUserId() : "Guest", subtotal,
-                                discount != null ? discount.getDiscountId() : "null");
+                                user != null ? user.getUserId() : "Guest", subtotal, "null");
                     }
                 } catch (Exception e) {
                     log.warn("Error applying discount: {}. Order will be created without discount.", e.getMessage());
@@ -185,7 +198,7 @@ public class OrderServiceImpl implements IOrderService {
             // After order persisted, increment discount usage (if a discount was applied)
             try {
                 if (savedOrder.getDiscount() != null) {
-                    discountService.incrementUsageCount(savedOrder.getDiscount().getDiscountId());
+                    discountUsageService.confirmUsage(savedOrder.getDiscount().getDiscountId());
                 }
             } catch (Exception e) {
                 log.warn("Failed to increment discount usage after saving order {}: {}", savedOrder.getIdOrder(),
@@ -262,12 +275,6 @@ public class OrderServiceImpl implements IOrderService {
         }
     }
 
-    @Autowired
-    private DiscountRepository discountRepository;
-
-    @Autowired
-    private DiscountServiceImpl discountService;
-
     public void applyDiscountToOrder(Long orderId, Long discountId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
@@ -278,13 +285,22 @@ public class OrderServiceImpl implements IOrderService {
         // Tính subtotal từ OrderProducts
         BigDecimal subTotal = calculateOrderSubTotal(order);
 
-        // Kiểm tra có thể áp dụng discount không
-        if (!discountService.canApplyDiscount(discountId, order.getUser().getUserId(), subTotal)) {
-            throw new AppException(ErrorCode.DISCOUNT_CANNOT_BE_APPLIED);
+        DiscountApplicationResult applicationResult = discountApplicationService.apply(
+                discountId,
+                buildDiscountContext(order.getUser() != null ? order.getUser().getUserId() : null,
+                        subTotal,
+                        order.getShippingFee(),
+                        order.getPaymentMethod()));
+        if (!applicationResult.isApplied()) {
+            String failureReason = applicationResult.getFailureReason();
+            throw new AppException(
+                    ErrorCode.DISCOUNT_CANNOT_BE_APPLIED,
+                    failureReason != null && !failureReason.isBlank()
+                            ? failureReason
+                            : ErrorCode.DISCOUNT_CANNOT_BE_APPLIED.getMessage());
         }
 
-        // Tính discount amount
-        BigDecimal discountAmount = discountService.calculateDiscountAmount(discountId, subTotal);
+        BigDecimal discountAmount = applicationResult.getFinalDiscountAmount();
 
         // Cập nhật order
         order.setDiscount(discount);
@@ -294,7 +310,7 @@ public class OrderServiceImpl implements IOrderService {
         orderRepository.save(order);
 
         // Tăng usage count
-        discountService.incrementUsageCount(discountId);
+        discountUsageService.confirmUsage(discountId);
     }
 
     private BigDecimal calculateOrderSubTotal(Order order) {
@@ -328,10 +344,7 @@ public class OrderServiceImpl implements IOrderService {
         orderRepository.save(order);
 
         // Decrement usage count
-        if (discount.getUsedCount() > 0) {
-            discount.setUsedCount(discount.getUsedCount() - 1);
-            discountRepository.save(discount);
-        }
+        discountUsageService.rollbackUsage(discount);
     }
 
     @Override
@@ -345,14 +358,7 @@ public class OrderServiceImpl implements IOrderService {
             // Hoàn lại discount nếu có
             if (order.getDiscount() != null) {
                 try {
-                    Discount discount = order.getDiscount();
-                    // Giảm usage count của discount
-                    if (discount.getUsedCount() > 0) {
-                        discount.setUsedCount(discount.getUsedCount() - 1);
-                        discountRepository.save(discount);
-                        log.info("Rolled back discount usage for discount {} (order {} cancelled by admin)",
-                                discount.getDiscountId(), idOrder);
-                    }
+                    rollbackDiscountUsage(order.getDiscount(), "order " + idOrder + " cancelled by admin");
                 } catch (Exception e) {
                     log.warn("Failed to rollback discount usage for order {}: {}", idOrder, e.getMessage());
                     // Không throw exception để không ảnh hưởng đến việc cập nhật trạng thái đơn
@@ -665,14 +671,7 @@ public class OrderServiceImpl implements IOrderService {
         // ✅ HOÀN LẠI DISCOUNT NẾU CÓ
         if (order.getDiscount() != null) {
             try {
-                Discount discount = order.getDiscount();
-                // Giảm usage count của discount
-                if (discount.getUsedCount() > 0) {
-                    discount.setUsedCount(discount.getUsedCount() - 1);
-                    discountRepository.save(discount);
-                    log.info("Rolled back discount usage for discount {} (order {})",
-                            discount.getDiscountId(), orderId);
-                }
+                rollbackDiscountUsage(order.getDiscount(), "order " + orderId);
             } catch (Exception e) {
                 log.warn("Failed to rollback discount usage for order {}: {}", orderId, e.getMessage());
                 // Không throw exception để không ảnh hưởng đến việc hủy đơn hàng
@@ -719,6 +718,21 @@ public class OrderServiceImpl implements IOrderService {
         }
 
         log.info("Order {} cancelled by user {}", orderId, userId);
+    }
+
+    private DiscountContext buildDiscountContext(Long userId, BigDecimal subtotal, BigDecimal shippingFee, String paymentMethod) {
+        return DiscountContext.builder()
+                .userId(userId)
+                .orderSubtotal(subtotal)
+                .shippingFee(shippingFee)
+                .paymentMethod(paymentMethod)
+                .appliedAt(LocalDateTime.now())
+                .build();
+    }
+
+    private void rollbackDiscountUsage(Discount discount, String reason) {
+        discountUsageService.rollbackUsage(discount);
+        log.info("Rolled back discount usage for discount {} ({})", discount.getDiscountId(), reason);
     }
 
     @Override
