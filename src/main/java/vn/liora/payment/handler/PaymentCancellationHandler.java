@@ -5,16 +5,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import vn.liora.dto.response.OrderProductResponse;
 import vn.liora.dto.response.OrderResponse;
-import vn.liora.entity.Discount;
 import vn.liora.entity.Order;
 import vn.liora.entity.OrderProduct;
 import vn.liora.entity.Product;
 import vn.liora.mapper.OrderMapper;
 import vn.liora.mapper.OrderProductMapper;
-import vn.liora.repository.DiscountRepository;
 import vn.liora.repository.OrderProductRepository;
 import vn.liora.service.EmailService;
 import vn.liora.service.IProductService;
+import vn.liora.service.discount.DiscountUsageService;
 
 import java.util.List;
 
@@ -22,12 +21,12 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 public class PaymentCancellationHandler {
-    private final DiscountRepository discountRepository;
     private final OrderProductRepository orderProductRepository;
     private final IProductService productService;
     private final EmailService emailService;
     private final OrderMapper orderMapper;
     private final OrderProductMapper orderProductMapper;
+    private final DiscountUsageService discountUsageService;
 
     public void handleCancellation(Order order) {
         rollbackDiscountIfAny(order);
@@ -40,12 +39,8 @@ public class PaymentCancellationHandler {
             return;
         }
         try {
-            Discount discount = order.getDiscount();
-            if (discount.getUsedCount() > 0) {
-                discount.setUsedCount(discount.getUsedCount() - 1);
-                discountRepository.save(discount);
-                log.info("Rolled back discount usage for order {} (payment cancelled)", order.getIdOrder());
-            }
+            discountUsageService.rollbackUsage(order.getDiscount());
+            log.info("Rolled back discount usage for order {} (payment cancelled)", order.getIdOrder());
         } catch (Exception e) {
             log.warn("Failed to rollback discount for cancelled payment: {}", e.getMessage());
         }
@@ -100,4 +95,3 @@ public class PaymentCancellationHandler {
         }
     }
 }
-
