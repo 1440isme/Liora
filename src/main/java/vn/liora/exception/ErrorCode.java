@@ -117,6 +117,7 @@ public enum ErrorCode {
         DISCOUNT_NOT_APPLIED_TO_ORDER(411, "Mã giảm giá không được áp dụng cho đơn hàng này", HttpStatus.BAD_REQUEST),
         INTERNAL_SERVER_ERROR(412, "Lỗi máy chủ nội bộ", HttpStatus.INTERNAL_SERVER_ERROR),
         ORDER_NOT_DELIVERED(413, "Đơn hàng chưa được giao", HttpStatus.BAD_REQUEST),
+        DISCOUNT_HAS_ORDERS(414, "Không thể xóa mã giảm giá đã được áp dụng cho đơn hàng", HttpStatus.BAD_REQUEST),
         VALIDATION_DESCRIPTION_TOO_LONG(400, "Mô tả không được vượt quá 500 ký tự", HttpStatus.BAD_REQUEST),
         VALIDATION_DISCOUNT_VALUE_POSITIVE(400, "Giá trị giảm giá phải là số dương", HttpStatus.BAD_REQUEST),
         VALIDATION_MIN_ORDER_VALUE_POSITIVE(400, "Giá trị đơn hàng tối thiểu phải là số dương", HttpStatus.BAD_REQUEST),

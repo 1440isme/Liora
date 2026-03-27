@@ -27,6 +27,7 @@ import vn.liora.repository.DiscountRepository;
 import vn.liora.service.PaymentService;
 import vn.liora.service.IProductService;
 import vn.liora.service.EmailService;
+import vn.liora.service.discount.DiscountUsageService;
 import vn.liora.util.VnpayUtil;
 import vn.liora.util.MomoUtil;
 
@@ -56,6 +57,7 @@ public class PaymentServiceImpl implements PaymentService {
     final OrderMapper orderMapper;
     final OrderProductMapper orderProductMapper;
     final RestTemplate restTemplate;
+    final DiscountUsageService discountUsageService;
 
     @Value("${vnpay.tmnCode}")
     String vnpTmnCode;
@@ -261,12 +263,8 @@ public class PaymentServiceImpl implements PaymentService {
             // ✅ HOÀN LẠI DISCOUNT NẾU CÓ
             if (order.getDiscount() != null) {
                 try {
-                    Discount discount = order.getDiscount();
-                    if (discount.getUsedCount() > 0) {
-                        discount.setUsedCount(discount.getUsedCount() - 1);
-                        discountRepository.save(discount);
-                        log.info("Rolled back discount usage for order {} (payment cancelled)", order.getIdOrder());
-                    }
+                    discountUsageService.rollbackUsage(order.getDiscount());
+                    log.info("Rolled back discount usage for order {} (payment cancelled)", order.getIdOrder());
                 } catch (Exception e) {
                     log.warn("Failed to rollback discount for cancelled payment: {}", e.getMessage());
                 }
@@ -477,12 +475,8 @@ public class PaymentServiceImpl implements PaymentService {
                 // ✅ HOÀN LẠI DISCOUNT NẾU CÓ
                 if (order.getDiscount() != null) {
                     try {
-                        Discount discount = order.getDiscount();
-                        if (discount.getUsedCount() > 0) {
-                            discount.setUsedCount(discount.getUsedCount() - 1);
-                            discountRepository.save(discount);
-                            log.info("Rolled back discount usage for order {} (payment cancelled)", order.getIdOrder());
-                        }
+                        discountUsageService.rollbackUsage(order.getDiscount());
+                        log.info("Rolled back discount usage for order {} (payment cancelled)", order.getIdOrder());
                     } catch (Exception e) {
                         log.warn("Failed to rollback discount for cancelled payment: {}", e.getMessage());
                     }
