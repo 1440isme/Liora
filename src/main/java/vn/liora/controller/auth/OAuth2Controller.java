@@ -15,12 +15,14 @@ import vn.liora.enums.Role;
 import vn.liora.repository.RoleRepository;
 import vn.liora.repository.UserRepository;
 import vn.liora.service.IAuthenticationService;
+import vn.liora.service.Authen.AuthenticationStrategyFactory;
 
 @Controller
 @RequiredArgsConstructor
 public class OAuth2Controller {
 
     private final IAuthenticationService authenticationService;
+    private final AuthenticationStrategyFactory strategyFactory;
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
 
@@ -37,7 +39,10 @@ public class OAuth2Controller {
 
             if (principal instanceof CustomOAuth2User customUser) {
                 userEntity = customUser.getUser();
-            } else {
+            } else if (authentication instanceof org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken oauthToken) {
+                String provider = oauthToken.getAuthorizedClientRegistrationId().toUpperCase();
+                vn.liora.service.Authen.LoginStrategy strategy = strategyFactory.getStrategy(provider);
+
                 java.util.Map<String, Object> attrs = java.util.Collections.emptyMap();
                 if (principal instanceof OidcUser oidcUser) {
                     attrs = oidcUser.getClaims();
@@ -45,44 +50,9 @@ public class OAuth2Controller {
                     attrs = oauth2User.getAttributes();
                 }
 
-                String email = (String) attrs.getOrDefault("email", "");
-                String name = (String) attrs.getOrDefault("name", "");
-                String picture = (String) attrs.getOrDefault("picture", "");
-
-                if (email == null || email.isBlank()) {
-                    return new RedirectView("/?auth=error");
-                }
-
-                userEntity = userRepository.findByEmail(email).orElseGet(() -> {
-                    String username = email.split("@")[0];
-                    String original = username;
-                    int c = 1;
-                    while (userRepository.findByUsername(username).isPresent()) {
-                        username = original + c++;
-                    }
-                    String[] parts = name != null ? name.split(" ") : new String[] { username };
-                    String firstname = parts.length > 0 ? parts[0] : username;
-                    String lastname = parts.length > 1
-                            ? String.join(" ", java.util.Arrays.copyOfRange(parts, 1, parts.length))
-                            : "";
-                    vn.liora.entity.Role userRole = roleRepository.findById(Role.USER.name())
-                            .orElseThrow(() -> new RuntimeException("Role USER not found"));
-                    return User.builder()
-                            .username(username)
-                            .email(email)
-                            .firstname(firstname)
-                            .lastname(lastname)
-                            .avatar(picture)
-                            .password("")
-                            .active(true)
-                            .createdDate(java.time.LocalDate.now())
-                            .roles(java.util.Set.of(userRole))
-                            .build();
-                });
-
-                if (userEntity.getUserId() == null) {
-                    userEntity = userRepository.save(userEntity);
-                }
+                userEntity = strategy.login(attrs);
+            } else {
+                return new RedirectView("/?auth=error");
             }
 
             if (Boolean.FALSE.equals(userEntity.getActive())) {
