@@ -3,6 +3,7 @@ package vn.liora.dto.response;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import vn.liora.enums.DiscountType;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -15,6 +16,7 @@ public class DiscountResponse {
     private String name;
     private String description;
     private BigDecimal discountValue;
+    private DiscountType discountType;
     private BigDecimal minOrderValue;
     private BigDecimal maxDiscountAmount;
     private LocalDateTime startDate;

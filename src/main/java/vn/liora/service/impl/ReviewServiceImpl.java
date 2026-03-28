@@ -19,7 +19,6 @@ import vn.liora.exception.ErrorCode;
 import vn.liora.mapper.ReviewMapper;
 import vn.liora.repository.*;
 import vn.liora.service.IReviewService;
-import vn.liora.service.IProductService;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -28,7 +27,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-@Service
+@Service("reviewCoreService")
 @RequiredArgsConstructor
 @Slf4j
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
@@ -40,7 +39,6 @@ public class ReviewServiceImpl implements IReviewService {
     BrandRepository brandRepository; // Thêm vào constructor
     CategoryRepository categoryRepository; // Thêm vào constructor
     ProductRepository productRepository; // Thêm vào constructor
-    IProductService productService; // Thêm vào constructor
 
     // ========== BASIC CRUD ==========
     
@@ -79,14 +77,6 @@ public class ReviewServiceImpl implements IReviewService {
         // Lưu review
         Review savedReview = reviewRepository.save(review);
 
-        // Cập nhật average rating cho product
-        try {
-            productService.updateProductAverageRating(orderProduct.getProduct().getProductId());
-        } catch (Exception e) {
-            log.error("Error updating product average rating: {}", e.getMessage());
-            // Không throw exception để không ảnh hưởng đến việc tạo review
-        }
-
         return reviewMapper.toReviewResponse(savedReview);
     }
 
@@ -108,13 +98,6 @@ public class ReviewServiceImpl implements IReviewService {
 
         Review savedReview = reviewRepository.save(review);
 
-        // Cập nhật average rating cho product
-        try {
-            productService.updateProductAverageRating(review.getProductId());
-        } catch (Exception e) {
-            log.error("Error updating product average rating: {}", e.getMessage());
-        }
-
         return reviewMapper.toReviewResponse(savedReview);
     }
 
@@ -124,15 +107,7 @@ public class ReviewServiceImpl implements IReviewService {
         Review review = reviewRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.REVIEW_NOT_FOUND));
         
-        Long productId = review.getProductId();
         reviewRepository.delete(review);
-        
-        // Cập nhật average rating cho product
-        try {
-            productService.updateProductAverageRating(productId);
-        } catch (Exception e) {
-            log.error("Error updating product average rating: {}", e.getMessage());
-        }
     }
 
     @Override
@@ -299,18 +274,44 @@ public class ReviewServiceImpl implements IReviewService {
     public Map<String, Object> getMultipleProductsReviewStatistics(List<Long> productIds) {
         Map<String, Object> result = new HashMap<>();
         
+        // Validate input
+        if (productIds == null || productIds.isEmpty()) {
+            log.warn("getMultipleProductsReviewStatistics called with empty productIds list");
+            return result;
+        }
+        
+        log.debug("Getting statistics for {} products", productIds.size());
+        
         for (Long productId : productIds) {
-            Map<String, Object> productStats = new HashMap<>();
+            // Skip null product IDs
+            if (productId == null) {
+                log.warn("Skipping null product ID in getMultipleProductsReviewStatistics");
+                continue;
+            }
             
-            // Lấy điểm trung bình
-            Double averageRating = reviewRepository.getAverageRatingByProductId(productId);
-            productStats.put("averageRating", averageRating != null ? averageRating : 0.0);
-            
-            // Lấy tổng số review (bao gồm cả ẩn) để hiển thị đúng count
-            Long totalReviews = reviewRepository.getTotalReviewCountByProductId(productId);
-            productStats.put("totalReviews", totalReviews != null ? totalReviews : 0L);
-            
-            result.put(productId.toString(), productStats);
+            try {
+                Map<String, Object> productStats = new HashMap<>();
+                
+                // Lấy điểm trung bình
+                Double averageRating = reviewRepository.getAverageRatingByProductId(productId);
+                productStats.put("averageRating", averageRating != null ? averageRating : 0.0);
+                
+                // Lấy tổng số review (bao gồm cả ẩn) để hiển thị đúng count
+                Long totalReviews = reviewRepository.getTotalReviewCountByProductId(productId);
+                productStats.put("totalReviews", totalReviews != null ? totalReviews : 0L);
+                
+                result.put(productId.toString(), productStats);
+                
+                log.debug("Got statistics for product {}: averageRating={}, totalReviews={}", 
+                          productId, averageRating, totalReviews);
+            } catch (Exception e) {
+                log.error("Error getting statistics for product {}: {}", productId, e.getMessage(), e);
+                // Continue processing other products even if one fails
+                Map<String, Object> errorStats = new HashMap<>();
+                errorStats.put("averageRating", 0.0);
+                errorStats.put("totalReviews", 0L);
+                result.put(productId.toString(), errorStats);
+            }
         }
         
         return result;

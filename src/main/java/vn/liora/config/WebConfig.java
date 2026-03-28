@@ -1,5 +1,6 @@
 package vn.liora.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.lang.NonNull;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
@@ -7,6 +8,9 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
+
+        @Value("${storage.location}")
+        private String storageLocation;
 
         @Override
         public void addResourceHandlers(@NonNull ResourceHandlerRegistry registry) {
@@ -57,13 +61,14 @@ public class WebConfig implements WebMvcConfigurer {
 
                 // Upload files (specific path) with fallback
                 registry.addResourceHandler("/uploads/**")
-                                .addResourceLocations("file:./uploads/")
+                                .addResourceLocations("file:" + storageLocation + "/")
                                 .setCachePeriod(3600)
                                 .resourceChain(true)
                                 .addResolver(new org.springframework.web.servlet.resource.PathResourceResolver() {
                                         @Override
-                                        protected org.springframework.core.io.Resource getResource(String resourcePath,
-                                                        org.springframework.core.io.Resource location)
+                                        protected org.springframework.core.io.Resource getResource(
+                                                        @NonNull String resourcePath,
+                                                        @NonNull org.springframework.core.io.Resource location)
                                                         throws java.io.IOException {
                                                 org.springframework.core.io.Resource resource = location
                                                                 .createRelative(resourcePath);

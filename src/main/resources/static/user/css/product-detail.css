@@ -1156,7 +1156,7 @@
 }
 
 .review-item {
-    padding: 20px 0;
+    padding: 12px 0;
     border-bottom: 1px solid #f0f0f0;
 }
 
@@ -1167,7 +1167,7 @@
 .review-header {
     display: flex;
     align-items: center;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
     gap: 12px;
 }
 
@@ -1240,7 +1240,8 @@
 .review-content {
     color: #333;
     line-height: 1.6;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
+    font-size: 0.95rem;
 }
 
 /* Hidden Review Styles */
@@ -1308,6 +1309,181 @@
     margin-bottom: 16px;
 }
 
+/* Review User Images Section */
+.review-user-images-section {
+    margin-top: 8px;
+}
+
+.review-show-images-btn {
+    color: #6c757d !important;
+    text-decoration: none !important;
+    font-size: 0.875rem;
+    font-weight: 400;
+    display: inline-flex;
+    align-items: center;
+    transition: all 0.2s ease;
+    border: none !important;
+    background: none !important;
+    padding: 0;
+    margin-bottom: 4px;
+}
+
+.review-show-images-btn:hover {
+    color: #ff6b9d !important;
+    text-decoration: none !important;
+}
+
+.review-show-images-btn i {
+    font-size: 0.75rem;
+    margin-right: 4px;
+}
+
+.review-show-images-btn .collapse-icon {
+    transition: transform 0.3s ease;
+    font-size: 0.75rem;
+}
+
+.review-show-images-btn[aria-expanded="true"] .collapse-icon {
+    transform: rotate(180deg);
+}
+
+.review-user-images-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 12px;
+    margin-top: 4px;
+}
+
+.review-user-image-item {
+    position: relative;
+    width: 100%;
+    padding-top: 100%; /* Square aspect ratio */
+    border-radius: 8px;
+    overflow: hidden;
+    border: 2px solid #e9ecef;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.review-user-image-item:hover {
+    border-color: #ff6b9d;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 107, 157, 0.2);
+}
+
+.review-user-image-item img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Lightbox for review images */
+.review-image-lightbox {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 9999;
+}
+
+.review-image-lightbox.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+
+.review-image-lightbox .lightbox-container {
+    position: relative;
+    max-width: 90%;
+    max-height: 90%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.review-image-lightbox img {
+    max-width: 100%;
+    max-height: 85vh;
+    object-fit: contain;
+    border-radius: 8px;
+}
+
+.review-image-lightbox .close-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    color: white;
+    font-size: 40px;
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    z-index: 10001;
+}
+
+.review-image-lightbox .close-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+}
+
+.review-image-lightbox .nav-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    color: white;
+    font-size: 30px;
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    z-index: 10001;
+    border: none;
+    outline: none;
+}
+
+.review-image-lightbox .nav-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-50%) scale(1.1);
+}
+
+.review-image-lightbox .nav-btn.prev {
+    left: 20px;
+}
+
+.review-image-lightbox .nav-btn.next {
+    right: 20px;
+}
+
+.review-image-lightbox .image-counter {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: white;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
 /* Reviews Responsive */
 @media (max-width: 768px) {
     .reviews-summary .row {
@@ -1345,5 +1521,10 @@
     
     .rating-bar .progress {
         width: 100%;
+    }
+    
+    .review-user-images-grid {
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+        gap: 8px;
     }
 }

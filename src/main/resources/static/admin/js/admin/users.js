@@ -99,10 +99,11 @@ class UsersManager {
             }
         }
 
-        // filter by date range
+        // filter by date range (inclusive, normalize to start/end of day)
         if (this.currentFilters.dateFrom) {
-            const fromDate = this.parseDateFilter(this.currentFilters.dateFrom);
-            if (fromDate) {
+            const fromDateRaw = this.parseDateFilter(this.currentFilters.dateFrom);
+            if (fromDateRaw) {
+                const fromDate = new Date(fromDateRaw.getFullYear(), fromDateRaw.getMonth(), fromDateRaw.getDate(), 0, 0, 0, 0);
                 filtered = filtered.filter(u => {
                     if (!u.createdAt) return false;
                     const userDate = new Date(u.createdAt);
@@ -112,8 +113,9 @@ class UsersManager {
         }
 
         if (this.currentFilters.dateTo) {
-            const toDate = this.parseDateFilter(this.currentFilters.dateTo);
-            if (toDate) {
+            const toDateRaw = this.parseDateFilter(this.currentFilters.dateTo);
+            if (toDateRaw) {
+                const toDate = new Date(toDateRaw.getFullYear(), toDateRaw.getMonth(), toDateRaw.getDate(), 23, 59, 59, 999);
                 filtered = filtered.filter(u => {
                     if (!u.createdAt) return false;
                     const userDate = new Date(u.createdAt);
@@ -339,10 +341,11 @@ class UsersManager {
     parseDateFilter(dateStr) {
         if (!dateStr) return null;
 
-        // Handle yyyy-mm-dd format (from date input)
-        const date = new Date(dateStr);
-        if (!isNaN(date.getTime())) {
-            return date;
+        // Handle yyyy-mm-dd format (from date input) safely in local time (avoid TZ shift)
+        if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+            const [y, m, d] = dateStr.split('-').map(Number);
+            const dt = new Date(y, m - 1, d);
+            if (!isNaN(dt.getTime())) return dt;
         }
 
         // Handle dd/mm/yyyy format (fallback)
@@ -355,9 +358,9 @@ class UsersManager {
 
                 // Validate date
                 if (day >= 1 && day <= 31 && month >= 0 && month <= 11 && year >= 1900) {
-                    const date = new Date(year, month, day);
-                    if (!isNaN(date.getTime())) {
-                        return date;
+                    const dt = new Date(year, month, day);
+                    if (!isNaN(dt.getTime())) {
+                        return dt;
                     }
                 }
             }

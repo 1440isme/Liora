@@ -27,7 +27,7 @@
                     </tr>
                     </thead>
 
-                    <tbody>
+                    <tbody id="recentOrdersBody">
                     <tr th:each="order : ${recentOrders}">
                         <td class="text-center" th:text="${order.id}">12345</td>
                         <td th:text="${order.customerName}">Nguyễn Văn A</td>

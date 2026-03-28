@@ -13,10 +13,10 @@ class OrderDetailManager {
         const toastElement = document.getElementById('toast');
         const toastMessage = document.getElementById('toast-message');
         const toastHeader = toastElement.querySelector('.toast-header i');
-        
+
         // Set message
         toastMessage.textContent = message;
-        
+
         // Set icon and color based on type - chỉ icon màu hồng
         toastHeader.className = 'fas me-2';
         switch (type) {
@@ -33,7 +33,7 @@ class OrderDetailManager {
                 toastHeader.classList.add('fa-info-circle');
                 toastHeader.style.color = 'var(--pink-primary)';
         }
-        
+
         // Show toast
         const toast = new bootstrap.Toast(toastElement);
         toast.show();
@@ -43,7 +43,7 @@ class OrderDetailManager {
         try {
             const token = localStorage.getItem('access_token');
             if (!token) {
-                this.showToast('Vui lòng đăng nhập để thực hiện thao tác này', 'error');
+                this.showToast('Bạn không thể thực hiện thao tác này', 'error');
                 return;
             }
 
@@ -69,11 +69,11 @@ class OrderDetailManager {
 
             // Lấy thông tin trạng thái sản phẩm hiện tại
             const enrichedItems = await this.enrichOrderItemsWithCurrentStatus(orderItems, token);
-            
+
             // Phân loại sản phẩm
             const validItems = [];
             const invalidItems = [];
-            
+
             enrichedItems.forEach(item => {
                 const productStatus = this.getProductStatus(item);
                 if (productStatus === 'available') {
@@ -82,22 +82,22 @@ class OrderDetailManager {
                     invalidItems.push(item);
                 }
             });
-            
+
             console.log('Valid items:', validItems.length, 'Invalid items:', invalidItems.length);
-            
+
             // Nếu tất cả sản phẩm đều hợp lệ
             if (validItems.length === enrichedItems.length && validItems.length > 0) {
                 // Thêm tất cả vào giỏ hàng và chuyển đến cart
                 await this.addItemsToCartDirectly(validItems);
                 return;
             }
-            
+
             // Nếu tất cả sản phẩm đều không hợp lệ
             if (invalidItems.length === enrichedItems.length) {
                 this.showToast('Tất cả sản phẩm trong đơn hàng đều không hợp lệ (hết hàng hoặc ngừng kinh doanh)', 'error');
                 return;
             }
-            
+
             // Nếu có cả sản phẩm hợp lệ và không hợp lệ, hiển thị modal
             console.log('About to show reorder modal with mixed items');
             this.showReorderModal(enrichedItems);
@@ -112,10 +112,10 @@ class OrderDetailManager {
         try {
             if (confirm('Bạn có chắc chắn muốn hủy đơn hàng này không?')) {
                 this.showToast('Đang hủy đơn hàng...', 'info');
-                
+
                 const token = localStorage.getItem('access_token');
                 if (!token) {
-                    this.showToast('Vui lòng đăng nhập để thực hiện thao tác này', 'error');
+                    this.showToast('Bạn không thể thực hiện thao tác này', 'error');
                     return;
                 }
 
@@ -153,7 +153,7 @@ class OrderDetailManager {
 
     async enrichOrderItemsWithCurrentStatus(orderItems, token) {
         const enrichedItems = [];
-        
+
         for (const item of orderItems) {
             try {
                 // Gọi API lấy thông tin sản phẩm hiện tại
@@ -168,7 +168,7 @@ class OrderDetailManager {
                 if (productResponse.ok) {
                     const productData = await productResponse.json();
                     const product = productData.result;
-                    
+
                     // Kết hợp thông tin từ order và thông tin sản phẩm hiện tại
                     enrichedItems.push({
                         ...item,
@@ -186,7 +186,7 @@ class OrderDetailManager {
                 enrichedItems.push(item);
             }
         }
-        
+
         return enrichedItems;
     }
 
@@ -285,10 +285,10 @@ class OrderDetailManager {
     showReorderModal(orderItems) {
         console.log('OrderDetailManager showReorderModal called with items:', orderItems);
         console.log('OrderDetailManager instance:', this);
-        
+
         // Lưu orderItems để sử dụng trong addAllValidItemsToCart
         this.lastOrderItems = orderItems;
-        
+
         // Tạo modal HTML
         const modalHTML = `
             <div class="modal fade" id="reorderModal" tabindex="-1" aria-labelledby="reorderModalLabel" aria-hidden="true">
@@ -305,11 +305,11 @@ class OrderDetailManager {
                             
                             <div class="reorder-items-list">
                                         ${orderItems.map((item, index) => {
-                                            // Sử dụng logic giống như trong cart.js
-                                            const productStatus = this.getProductStatus(item);
-                                            const isProductValid = productStatus === 'available';
-                                    
-                                    return `
+            // Sử dụng logic giống như trong cart.js
+            const productStatus = this.getProductStatus(item);
+            const isProductValid = productStatus === 'available';
+
+            return `
                                         <div class="card mb-3 ${!isProductValid ? 'opacity-50' : ''}" id="reorder-item-${index}">
                                             <div class="card-body">
                                                 <div class="row align-items-center">
@@ -336,7 +336,7 @@ class OrderDetailManager {
                                             </div>
                                         </div>
                                     `;
-                                }).join('')}
+        }).join('')}
                             </div>
                         </div>
                         <div class="modal-footer">
@@ -357,7 +357,7 @@ class OrderDetailManager {
         // Hiển thị modal
         const modalElement = document.getElementById('reorderModal');
         console.log('Modal element found:', modalElement);
-        
+
         if (modalElement) {
             // Kiểm tra Bootstrap có sẵn không
             if (typeof bootstrap !== 'undefined') {
@@ -372,7 +372,7 @@ class OrderDetailManager {
                 modalElement.classList.add('show');
                 modalElement.setAttribute('aria-modal', 'true');
                 modalElement.setAttribute('role', 'dialog');
-                
+
                 // Thêm backdrop
                 const backdrop = document.createElement('div');
                 backdrop.className = 'modal-backdrop fade show';
@@ -394,13 +394,13 @@ class OrderDetailManager {
 
         // Xử lý đóng modal
         modalElement.addEventListener('hidden.bs.modal', closeModal);
-        
+
         // Thêm event listener cho nút đóng
         const closeButtons = modalElement.querySelectorAll('[data-bs-dismiss="modal"], .btn-close');
         closeButtons.forEach(button => {
             button.addEventListener('click', closeModal);
         });
-        
+
         // Thêm event listener cho backdrop
         modalElement.addEventListener('click', (e) => {
             if (e.target === modalElement) {
@@ -412,12 +412,12 @@ class OrderDetailManager {
     async addAllValidItemsToCart() {
         console.log('OrderDetailManager addAllValidItemsToCart called');
         console.log('OrderDetailManager instance:', this);
-        
+
         // Lấy tất cả sản phẩm hợp lệ từ lastOrderItems
         const orderItems = this.lastOrderItems || [];
         console.log('Last order items:', orderItems);
         const validItems = [];
-        
+
         orderItems.forEach((item, index) => {
             const productStatus = this.getProductStatus(item);
             if (productStatus === 'available') {
@@ -443,7 +443,7 @@ class OrderDetailManager {
                 if (window.app && typeof window.app.addProductToCartBackend === 'function') {
                     await window.app.addProductToCartBackend(item.productId, item.quantity, true, false);
                     successCount++;
-                    
+
                     console.log(`Successfully added product ${item.productId} with quantity ${item.quantity}`);
                 }
             } catch (error) {
@@ -478,7 +478,7 @@ class OrderDetailManager {
 }
 
 // Initialize when DOM is loaded using jQuery
-$(document).ready(function() {
+$(document).ready(function () {
     try {
         console.log('DOM loaded, initializing OrderDetailManager...');
         window.orderDetailManager = new OrderDetailManager();
