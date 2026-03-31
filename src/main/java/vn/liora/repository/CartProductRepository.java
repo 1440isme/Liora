@@ -6,6 +6,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import vn.liora.entity.Cart;
 import vn.liora.entity.CartProduct;
+import vn.liora.entity.User;
 
 import java.util.List;
 import java.util.Optional;
@@ -30,4 +31,14 @@ public interface CartProductRepository extends JpaRepository<CartProduct,Long> {
     // Fallback methods for backward compatibility
     List<CartProduct> findByCartAndChooseTrue(Cart cart);
     List<CartProduct> findByCart(Cart cart);
+
+    @Query("""
+            SELECT DISTINCT c.user
+            FROM CartProduct cp
+            JOIN cp.cart c
+            WHERE cp.product.productId = :productId
+              AND c.user IS NOT NULL
+              AND c.user.email IS NOT NULL
+            """)
+    List<User> findDistinctSubscribedUsersByProductId(@Param("productId") Long productId);
 }

@@ -8,7 +8,10 @@ import org.springframework.context.annotation.Bean;
 import vn.liora.config.StorageProperties;
 import vn.liora.service.IStorageService;
 
+import org.springframework.scheduling.annotation.EnableAsync;
+
 @SpringBootApplication
+@EnableAsync
 @EnableConfigurationProperties({ StorageProperties.class })
 public class LioraApplication {
 
