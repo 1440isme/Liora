@@ -21,6 +21,7 @@ import vn.liora.repository.CategoryRepository;
 import vn.liora.repository.ProductRepository;
 import vn.liora.repository.ReviewRepository;
 import vn.liora.service.IProductService;
+import vn.liora.service.stock.ProductStockEventPublisher;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -35,17 +36,20 @@ public class ProductServiceImpl implements IProductService {
     private final BrandRepository brandRepository;
     private final ProductMapper productMapper;
     private final ReviewRepository reviewRepository;
+    private final ProductStockEventPublisher productStockEventPublisher;
 
     public ProductServiceImpl(ProductRepository productRepository,
                               CategoryRepository categoryRepository,
                               BrandRepository brandRepository,
                               ProductMapper productMapper,
-                              ReviewRepository reviewRepository) {
+                              ReviewRepository reviewRepository,
+                              ProductStockEventPublisher productStockEventPublisher) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.brandRepository = brandRepository;
         this.productMapper = productMapper;
         this.reviewRepository = reviewRepository;
+        this.productStockEventPublisher = productStockEventPublisher;
     }
 
     // ========== BASIC CRUD ==========
@@ -116,6 +120,7 @@ public class ProductServiceImpl implements IProductService {
             throw new AppException(ErrorCode.PRODUCT_EXISTED);
         }
 
+        Integer oldStock = product.getStock();
         productMapper.updateProduct(product, request);
         
         // Kiểm tra ràng buộc khi activate sản phẩm
@@ -136,6 +141,11 @@ public class ProductServiceImpl implements IProductService {
         
         product.setUpdatedDate(LocalDateTime.now());
         productRepository.save(product);
+
+        if (request.getStock() != null && !request.getStock().equals(oldStock)) {
+            productStockEventPublisher.publishIfNeeded(product, oldStock, request.getStock());
+        }
+
         return productMapper.toProductResponse(product);
 
     }
@@ -461,6 +471,7 @@ public class ProductServiceImpl implements IProductService {
         }
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
+        Integer previousStock = product.getStock();
         product.setStock(stock);
         // Tự động set available dựa vào stock
         if (stock == 0) {
@@ -470,6 +481,7 @@ public class ProductServiceImpl implements IProductService {
         }
         product.setUpdatedDate(LocalDateTime.now());
         productRepository.save(product);
+        productStockEventPublisher.publishIfNeeded(product, previousStock, stock);
     }
 
     @Transactional
