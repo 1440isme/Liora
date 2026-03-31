@@ -8,7 +8,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
-import vn.liora.dto.response.OrderProductResponse;
+import vn.liora.dto.response.OrderItemResponse;
 import vn.liora.service.IOrderService;
 
 import java.util.List;
@@ -33,9 +33,9 @@ public class OrderController {
     }
 
     @GetMapping("/api/orders/{orderId}/items")
-    public ResponseEntity<List<OrderProductResponse>> getOrderItems(@PathVariable Long orderId) {
+    public ResponseEntity<List<OrderItemResponse>> getOrderItems(@PathVariable Long orderId) {
         try {
-            List<OrderProductResponse> responses = orderService.getProductsByOrderId(orderId);
+            List<OrderItemResponse> responses = orderService.getProductsByOrderId(orderId);
             return ResponseEntity.ok(responses);
         } catch (Exception e) {
             log.error("Error loading order items: {}", e.getMessage());

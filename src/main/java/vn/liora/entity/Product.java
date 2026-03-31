@@ -2,7 +2,10 @@ package vn.liora.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -27,7 +30,7 @@ public class Product {
     @NotBlank(message = "PRODUCT_NAME_REQUIRED")
     private String name;
 
-    @Column(name = "Description", nullable = false, columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "Description", nullable = false, columnDefinition = "LONGTEXT")
     @NotBlank(message = "PRODUCT_DESCRIPTION_REQUIRED")
     private String description;
 
@@ -52,10 +55,9 @@ public class Product {
     @JsonIgnore
     private List<Image> images;
 
-    @Column(name = "Stock")
-    @NotNull(message = "PRODUCT_STOCK_INVALID")
-    @Min(value = 0, message = "PRODUCT_STOCK_INVALID")
-    private Integer stock = 0;
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
+    private List<ProductItem> productItems;
 
     @Column(name = "SoldCount")
     private Integer soldCount = 0;
@@ -77,10 +79,13 @@ public class Product {
     @Transient
     private Integer ratingCount;
 
+    @Transient
+    private Integer stock = 0;
+
     @Column(name = "IsActive")
     private Boolean isActive = true;
 
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnore
-    private List<CartProduct> cartProducts;
+    private List<CartItem> cartItems;
 }

@@ -27,6 +27,7 @@ public class ReviewResponse {
     private String userFirstname;
     private String userLastname;
     private String userAvatar;
+    @SuppressWarnings("unused")
     private String userDisplayName; // Computed field for display
     private String userEmail; // Thêm email
     private String userPhone; // Thêm số điện thoại
@@ -41,7 +42,7 @@ public class ReviewResponse {
     private String productCategoryName; // Thêm tên danh mục
 
     // Order info
-    private Long orderProductId;
+    private Long orderItemId;
     private Long orderId; // Thêm ID đơn hàng
     private String orderCode; // Thêm mã đơn hàng
     private LocalDateTime orderDate; // Thêm ngày đặt hàng

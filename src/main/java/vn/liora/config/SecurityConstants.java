@@ -73,7 +73,7 @@ public final class SecurityConstants {
 
         public static final String[] CART_API_ENDPOINTS = {
                         "/cart/api/**",
-                        "/CartProduct/**"
+                        "/cart-items/**"
         };
 
         // ===== JWT CONFIGURATION =====

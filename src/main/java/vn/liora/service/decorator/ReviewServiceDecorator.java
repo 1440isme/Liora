@@ -115,13 +115,13 @@ public abstract class ReviewServiceDecorator implements IReviewService {
     }
 
     @Override
-    public Optional<Review> findByOrderProductId(Long orderProductId) {
-        return delegate.findByOrderProductId(orderProductId);
+    public Optional<Review> findByOrderItemId(Long orderItemId) {
+        return delegate.findByOrderItemId(orderItemId);
     }
 
     @Override
-    public boolean existsByOrderProductId(Long orderProductId) {
-        return delegate.existsByOrderProductId(orderProductId);
+    public boolean existsByOrderItemId(Long orderItemId) {
+        return delegate.existsByOrderItemId(orderItemId);
     }
 
     @Override
@@ -246,12 +246,12 @@ public abstract class ReviewServiceDecorator implements IReviewService {
     }
 
     @Override
-    public boolean existsByOrderProductIdAndUserId(Long orderProductId, Long userId) {
-        return delegate.existsByOrderProductIdAndUserId(orderProductId, userId);
+    public boolean existsByOrderItemIdAndUserId(Long orderItemId, Long userId) {
+        return delegate.existsByOrderItemIdAndUserId(orderItemId, userId);
     }
 
     @Override
-    public ReviewResponse findByOrderProductIdAndUserId(Long orderProductId, Long userId) {
-        return delegate.findByOrderProductIdAndUserId(orderProductId, userId);
+    public ReviewResponse findByOrderItemIdAndUserId(Long orderItemId, Long userId) {
+        return delegate.findByOrderItemIdAndUserId(orderItemId, userId);
     }
 }

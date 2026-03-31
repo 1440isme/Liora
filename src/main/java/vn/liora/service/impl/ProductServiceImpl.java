@@ -13,11 +13,14 @@ import vn.liora.dto.response.TopProductResponse;
 import vn.liora.entity.Brand;
 import vn.liora.entity.Category;
 import vn.liora.entity.Product;
+import vn.liora.entity.ProductItem;
+import vn.liora.enums.ProductItemStatus;
 import vn.liora.exception.AppException;
 import vn.liora.exception.ErrorCode;
 import vn.liora.mapper.ProductMapper;
 import vn.liora.repository.BrandRepository;
 import vn.liora.repository.CategoryRepository;
+import vn.liora.repository.ProductItemRepository;
 import vn.liora.repository.ProductRepository;
 import vn.liora.repository.ReviewRepository;
 import vn.liora.service.IProductService;
@@ -29,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
 @Service
 public class ProductServiceImpl implements IProductService {
     private final ProductRepository productRepository;
@@ -37,19 +41,22 @@ public class ProductServiceImpl implements IProductService {
     private final ProductMapper productMapper;
     private final ReviewRepository reviewRepository;
     private final ProductStockEventPublisher productStockEventPublisher;
+    private final ProductItemRepository productItemRepository;
 
     public ProductServiceImpl(ProductRepository productRepository,
-                              CategoryRepository categoryRepository,
-                              BrandRepository brandRepository,
-                              ProductMapper productMapper,
-                              ReviewRepository reviewRepository,
-                              ProductStockEventPublisher productStockEventPublisher) {
+            CategoryRepository categoryRepository,
+            BrandRepository brandRepository,
+            ProductMapper productMapper,
+            ReviewRepository reviewRepository,
+            ProductStockEventPublisher productStockEventPublisher,
+            ProductItemRepository productItemRepository) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.brandRepository = brandRepository;
         this.productMapper = productMapper;
         this.reviewRepository = reviewRepository;
         this.productStockEventPublisher = productStockEventPublisher;
+        this.productItemRepository = productItemRepository;
     }
 
     // ========== BASIC CRUD ==========
@@ -75,13 +82,17 @@ public class ProductServiceImpl implements IProductService {
         product.setBrand(brand);
         product.setCategory(category);
         product.setCreatedDate(LocalDateTime.now());
-        
-        // Tự động set available dựa vào stock
-        if (request.getStock() != null) {
-            product.setAvailable(request.getStock() > 0);
-        }
 
         Product savedProduct = productRepository.save(product);
+        if (request.getStock() != null && request.getStock() > 0) {
+            addInStockItems(savedProduct, request.getStock());
+            savedProduct.setAvailable(true);
+            productRepository.save(savedProduct);
+        } else {
+            savedProduct.setAvailable(false);
+            productRepository.save(savedProduct);
+        }
+        hydrateStock(savedProduct);
         return savedProduct; // ← Trả về Product thay vì ProductResponse
     }
 
@@ -89,13 +100,14 @@ public class ProductServiceImpl implements IProductService {
     public ProductResponse findById(Long id) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
+        hydrateStock(product);
         return productMapper.toProductResponse(product);
     }
 
     @Transactional
     @Override
     public ProductResponse updateProduct(Long id, ProductUpdateRequest request) {
-        Product product =  productRepository.findById(id)
+        Product product = productRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
 
         // validate brand
@@ -113,16 +125,16 @@ public class ProductServiceImpl implements IProductService {
                     .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
             product.setCategory(category);
         }
-        
+
         // check name uniqueness if name is being updated
         if (request.getName() != null && !request.getName().equalsIgnoreCase(product.getName())
-            && productRepository.existsByName(request.getName())) {
+                && productRepository.existsByName(request.getName())) {
             throw new AppException(ErrorCode.PRODUCT_EXISTED);
         }
 
-        Integer oldStock = product.getStock();
+        Integer oldStock = getAvailableStock(product.getProductId());
         productMapper.updateProduct(product, request);
-        
+
         // Kiểm tra ràng buộc khi activate sản phẩm
         if (request.getIsActive() != null && request.getIsActive()) {
             // Nếu đang cố gắng activate sản phẩm, kiểm tra category và brand
@@ -133,19 +145,19 @@ public class ProductServiceImpl implements IProductService {
                 throw new AppException(ErrorCode.PRODUCT_BRAND_INACTIVE);
             }
         }
-        
-        // Tự động set available dựa vào stock
+
         if (request.getStock() != null) {
+            syncStockTo(request.getStock(), product);
             product.setAvailable(request.getStock() > 0);
         }
-        
+
         product.setUpdatedDate(LocalDateTime.now());
         productRepository.save(product);
 
         if (request.getStock() != null && !request.getStock().equals(oldStock)) {
             productStockEventPublisher.publishIfNeeded(product, oldStock, request.getStock());
         }
-
+        hydrateStock(product);
         return productMapper.toProductResponse(product);
 
     }
@@ -155,12 +167,12 @@ public class ProductServiceImpl implements IProductService {
     public void deleteById(Long id) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
-        
+
         // Kiểm tra xem sản phẩm đã được bán chưa
         if (product.getSoldCount() != null && product.getSoldCount() > 0) {
             throw new AppException(ErrorCode.PRODUCT_HAS_ORDERS);
         }
-        
+
         productRepository.deleteById(id);
     }
 
@@ -174,25 +186,34 @@ public class ProductServiceImpl implements IProductService {
     public long count() {
         return productRepository.count();
     }
+
     // ========== FIND ALL ==========
     @Override
     public List<Product> findAll() {
-        return productRepository.findAll();
+        return productRepository.findAll().stream()
+                .peek(this::hydrateStock)
+                .toList();
     }
 
     @Override
     public Page<Product> findAll(Pageable pageable) {
-        return productRepository.findAll(pageable);
+        Page<Product> page = productRepository.findAll(pageable);
+        page.getContent().forEach(this::hydrateStock);
+        return page;
     }
 
     @Override
     public List<Product> findAllById(Iterable<Long> ids) {
-        return productRepository.findAllById(ids);
+        return productRepository.findAllById(ids).stream()
+                .peek(this::hydrateStock)
+                .toList();
     }
 
     @Override
     public Optional<Product> findByIdOptional(Long id) {
-        return productRepository.findById(id);
+        Optional<Product> product = productRepository.findById(id);
+        product.ifPresent(this::hydrateStock);
+        return product;
     }
 
     // ========== SEARCH ==========
@@ -215,51 +236,55 @@ public class ProductServiceImpl implements IProductService {
     public boolean existsByName(String name) {
         return productRepository.existsByName(name);
     }
+
     // ========== STATUS FILTERS ==========
     @Override
     public List<Product> findActiveProducts() {
-        return productRepository.findByIsActiveTrue();
+        return productRepository.findByIsActiveTrue().stream().peek(this::hydrateStock).toList();
     }
 
     @Override
     public List<Product> findInactiveProducts() {
-        return productRepository.findByIsActiveFalse();
+        return productRepository.findByIsActiveFalse().stream().peek(this::hydrateStock).toList();
     }
 
     @Override
     public List<Product> findAvailableProducts() {
-        return productRepository.findByAvailableTrue();
+        return productRepository.findByAvailableTrue().stream().peek(this::hydrateStock).toList();
     }
 
     @Override
     public List<Product> findUnavailableProducts() {
-        return productRepository.findByAvailableFalse();
+        return productRepository.findByAvailableFalse().stream().peek(this::hydrateStock).toList();
     }
 
     @Override
     public List<Product> findActiveAvailableProducts() {
-        return productRepository.findByIsActiveTrueAndAvailableTrue();
+        return productRepository.findByIsActiveTrueAndAvailableTrue().stream().peek(this::hydrateStock).toList();
     }
+
     // ========== BRAND & CATEGORY FILTERS ==========
     @Override
     public List<Product> findByBrand(Long brandId) {
-        return productRepository.findByBrandBrandId(brandId);
+        return productRepository.findByBrandBrandId(brandId).stream().peek(this::hydrateStock).toList();
     }
 
     @Override
     public List<Product> findByCategory(Long categoryId) {
-        return productRepository.findByCategoryCategoryId(categoryId);
+        return productRepository.findByCategoryCategoryId(categoryId).stream().peek(this::hydrateStock).toList();
     }
 
     @Override
     public List<Product> findActiveByBrand(Long brandId) {
-        return productRepository.findByBrandBrandIdAndIsActiveTrue(brandId);
+        return productRepository.findByBrandBrandIdAndIsActiveTrue(brandId).stream().peek(this::hydrateStock).toList();
     }
 
     @Override
     public List<Product> findActiveByCategory(Long categoryId) {
-        return productRepository.findByCategoryCategoryIdAndIsActiveTrue(categoryId);
+        return productRepository.findByCategoryCategoryIdAndIsActiveTrue(categoryId).stream().peek(this::hydrateStock)
+                .toList();
     }
+
     // ========== PRICE FILTERS ==========
     @Override
     public List<Product> findByPriceRange(BigDecimal minPrice, BigDecimal maxPrice) {
@@ -280,31 +305,44 @@ public class ProductServiceImpl implements IProductService {
     public List<Product> findActiveAvailableByPriceRange(BigDecimal minPrice, BigDecimal maxPrice) {
         return productRepository.findActiveAvailableByPriceRange(minPrice, maxPrice);
     }
+
     // ========== STOCK FILTERS ==========
     @Override
     public List<Product> findByStockGreaterThan(Integer minStock) {
-        return productRepository.findByStockGreaterThan(minStock);
+        return productRepository.findAll().stream()
+                .peek(this::hydrateStock)
+                .filter(product -> product.getStock() != null && product.getStock() > minStock)
+                .toList();
     }
 
     @Override
     public List<Product> findByStockLessThanEqual(Integer maxStock) {
-        return productRepository.findByStockLessThanEqual(maxStock);
+        return productRepository.findAll().stream()
+                .peek(this::hydrateStock)
+                .filter(product -> product.getStock() != null && product.getStock() <= maxStock)
+                .toList();
     }
 
     @Override
     public List<Product> findByStockRange(Integer minStock, Integer maxStock) {
-        return productRepository.findByStockBetween(minStock, maxStock);
+        return productRepository.findAll().stream()
+                .peek(this::hydrateStock)
+                .filter(product -> product.getStock() != null
+                        && product.getStock() >= minStock
+                        && product.getStock() <= maxStock)
+                .toList();
     }
 
     @Override
     public List<Product> findInStockProducts() {
-        return productRepository.findByStockGreaterThan(0);
+        return findByStockGreaterThan(0);
     }
 
     @Override
     public List<Product> findOutOfStockProducts() {
-        return productRepository.findByStockLessThanEqual(0);
+        return findByStockLessThanEqual(0);
     }
+
     // ========== RATING FILTERS ==========
     @Override
     public List<Product> findByRatingGreaterThanEqual(BigDecimal minRating) {
@@ -320,6 +358,7 @@ public class ProductServiceImpl implements IProductService {
     public List<Product> findProductsByMinRating(BigDecimal minRating) {
         return productRepository.findByAverageRatingGreaterThanEqual(minRating);
     }
+
     // ========== COMBINED FILTERS ==========
     @Override
     public List<Product> findActiveAvailableByBrandAndCategory(Long brandId, Long categoryId) {
@@ -330,6 +369,7 @@ public class ProductServiceImpl implements IProductService {
     public Page<Product> searchActiveAvailableProducts(String keyword, Pageable pageable) {
         return productRepository.searchActiveAvailableProducts(keyword, pageable);
     }
+
     // ========== SORTING ==========
     @Override
     public List<Product> findActiveAvailableOrderByPriceAsc() {
@@ -350,6 +390,7 @@ public class ProductServiceImpl implements IProductService {
     public List<Product> findActiveAvailableOrderBySoldCountDesc() {
         return productRepository.findActiveAvailableOrderBySoldCountDesc();
     }
+
     // ========== BUSINESS QUERIES ==========
     @Override
     public List<Product> findTopSellingInStockProducts(Pageable pageable) {
@@ -373,28 +414,22 @@ public class ProductServiceImpl implements IProductService {
                         .categoryName(
                                 p.getCategory() != null
                                         ? p.getCategory().getName()
-                                        : "Không xác định"
-                        )
+                                        : "Không xác định")
                         .soldQuantity(
                                 p.getSoldCount() != null
                                         ? p.getSoldCount()
-                                        : 0L
-                        )
+                                        : 0L)
                         .revenue(
                                 p.getPrice() != null && p.getSoldCount() != null
                                         ? p.getPrice().multiply(BigDecimal.valueOf(p.getSoldCount()))
-                                        : BigDecimal.ZERO
-                        )
+                                        : BigDecimal.ZERO)
                         .rating(
                                 p.getAverageRating() != null
                                         ? p.getAverageRating()
-                                        : BigDecimal.ZERO
-                        )
+                                        : BigDecimal.ZERO)
                         .build())
                 .toList();
     }
-
-
 
     // ========== ADMIN QUERIES ==========
     @Override
@@ -411,24 +446,25 @@ public class ProductServiceImpl implements IProductService {
     public Page<Product> findInactiveProductsWithPagination(Pageable pageable) {
         return productRepository.findByIsActiveWithPagination(false, pageable);
     }
+
     // ========== STATUS MANAGEMENT (SOFT DELETE) ==========
     @Transactional
     @Override
     public void activateProduct(Long id) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
-        
+
         // Kiểm tra ràng buộc: Category và Brand phải cùng hoạt động
         Category category = product.getCategory();
         if (category == null || category.getIsActive() == null || !category.getIsActive()) {
             throw new AppException(ErrorCode.PRODUCT_CATEGORY_INACTIVE);
         }
-        
+
         Brand brand = product.getBrand();
         if (brand == null || brand.getIsActive() == null || !brand.getIsActive()) {
             throw new AppException(ErrorCode.PRODUCT_BRAND_INACTIVE);
         }
-        
+
         product.setIsActive(true);
         product.setUpdatedDate(LocalDateTime.now());
         productRepository.save(product);
@@ -449,12 +485,12 @@ public class ProductServiceImpl implements IProductService {
     public void setAvailable(Long id, Boolean available) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
-        
-        // Không cho phép set available = true nếu stock = 0
-        if (available && product.getStock() != null && product.getStock() == 0) {
+
+        // Không cho phép set available = true nếu không còn item IN_STOCK
+        if (available && getAvailableStock(product.getProductId()) == 0) {
             throw new AppException(ErrorCode.PRODUCT_OUT_OF_STOCK);
         }
-        
+
         product.setAvailable(available);
         product.setUpdatedDate(LocalDateTime.now());
         productRepository.save(product);
@@ -471,8 +507,8 @@ public class ProductServiceImpl implements IProductService {
         }
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
-        Integer previousStock = product.getStock();
-        product.setStock(stock);
+        Integer previousStock = getAvailableStock(id);
+        syncStockTo(stock, product);
         // Tự động set available dựa vào stock
         if (stock == 0) {
             product.setAvailable(false);
@@ -481,6 +517,7 @@ public class ProductServiceImpl implements IProductService {
         }
         product.setUpdatedDate(LocalDateTime.now());
         productRepository.save(product);
+        product.setStock(stock);
         productStockEventPublisher.publishIfNeeded(product, previousStock, stock);
     }
 
@@ -499,6 +536,7 @@ public class ProductServiceImpl implements IProductService {
         product.setUpdatedDate(LocalDateTime.now());
         productRepository.save(product);
     }
+
     // ========== STATISTICS ==========
     @Override
     public Long countActiveProducts() {
@@ -520,7 +558,6 @@ public class ProductServiceImpl implements IProductService {
         return productRepository.countByBrand(brandId);
     }
 
-
     @Override
     public Product save(Product product) {
         return productRepository.save(product);
@@ -530,87 +567,95 @@ public class ProductServiceImpl implements IProductService {
     public Long countByCategory(Long categoryId) {
         return productRepository.countByCategory(categoryId);
     }
-    
+
     // ========== RELATED PRODUCTS ==========
     @Override
     public List<Product> findByCategoryAndIdNot(Long categoryId, Long productId) {
         return productRepository.findByCategoryCategoryIdAndProductIdNotAndIsActiveTrue(categoryId, productId);
     }
-    
+
     // ========== OPTIMIZED FRONTEND QUERIES ==========
     @Override
     public List<Product> findBestSellingProducts(Pageable pageable) {
-        return productRepository.findBestSellingProducts(pageable);
+        return productRepository.findBestSellingProducts(pageable)
+                .stream()
+                .peek(this::hydrateStock)
+                .filter(p -> p.getStock() != null && p.getStock() > 0)
+                .toList();
     }
-    
+
     @Override
     public List<Product> findNewestProducts(Pageable pageable) {
         System.out.println("=== findNewestProducts called ===");
         System.out.println("Page: " + pageable.getPageNumber() + ", Size: " + pageable.getPageSize());
-        
-        List<Product> products = productRepository.findNewestProducts(pageable);
+
+        List<Product> products = productRepository.findNewestProducts(pageable)
+                .stream()
+                .peek(this::hydrateStock)
+                .filter(p -> p.getStock() != null && p.getStock() > 0)
+                .toList();
         System.out.println("Found " + products.size() + " newest products");
-        
+
         if (products.isEmpty()) {
             System.out.println("No newest products found - checking if any products exist...");
             // Check if there are any products at all
             List<Product> allProducts = productRepository.findAll();
             System.out.println("Total products in database: " + allProducts.size());
-            
+
             if (!allProducts.isEmpty()) {
-                System.out.println("Sample product: " + allProducts.get(0).getName() + 
-                    " - isActive: " + allProducts.get(0).getIsActive() + 
-                    " - available: " + allProducts.get(0).getAvailable());
+                System.out.println("Sample product: " + allProducts.get(0).getName() +
+                        " - isActive: " + allProducts.get(0).getIsActive() +
+                        " - available: " + allProducts.get(0).getAvailable());
             }
         }
-        
+
         return products;
     }
-    
+
     @Override
     public List<Product> findBestSellingByCategory(Long categoryId, Pageable pageable) {
         return productRepository.findBestSellingByCategory(categoryId, pageable);
     }
-    
+
     @Override
     public List<Product> findBestSellingByBrand(Long brandId, Pageable pageable) {
         return productRepository.findBestSellingByBrand(brandId, pageable);
     }
-    
+
     @Override
     public List<BrandResponse> getBestSellingBrands() {
         System.out.println("=== getBestSellingBrands called ===");
-        
+
         // Get all best selling products
         List<Product> bestSellingProducts = productRepository.findBestSellingProducts(PageRequest.of(0, 1000));
         System.out.println("Found " + bestSellingProducts.size() + " best selling products");
-        
+
         if (bestSellingProducts.isEmpty()) {
             System.out.println("No best selling products found, returning empty list");
             return List.of();
         }
-        
+
         // Group by brand and count
         Map<Brand, Long> brandCounts = bestSellingProducts.stream()
-            .collect(Collectors.groupingBy(Product::getBrand, Collectors.counting()));
-        
+                .collect(Collectors.groupingBy(Product::getBrand, Collectors.counting()));
+
         System.out.println("Brand counts: " + brandCounts.size() + " brands");
-        
+
         // Convert to BrandResponse and sort by count
         List<BrandResponse> result = brandCounts.entrySet().stream()
-            .sorted(Map.Entry.<Brand, Long>comparingByValue().reversed())
-            .map(entry -> {
-                Brand brand = entry.getKey();
-                BrandResponse brandResponse = new BrandResponse();
-                brandResponse.setBrandId(brand.getBrandId());
-                brandResponse.setName(brand.getName());
-                // BrandResponse doesn't have description field
-                brandResponse.setLogoUrl(brand.getLogoUrl());
-                System.out.println("Brand: " + brand.getName() + " (ID: " + brand.getBrandId() + ")");
-                return brandResponse;
-            })
-            .toList();
-            
+                .sorted(Map.Entry.<Brand, Long>comparingByValue().reversed())
+                .map(entry -> {
+                    Brand brand = entry.getKey();
+                    BrandResponse brandResponse = new BrandResponse();
+                    brandResponse.setBrandId(brand.getBrandId());
+                    brandResponse.setName(brand.getName());
+                    // BrandResponse doesn't have description field
+                    brandResponse.setLogoUrl(brand.getLogoUrl());
+                    System.out.println("Brand: " + brand.getName() + " (ID: " + brand.getBrandId() + ")");
+                    return brandResponse;
+                })
+                .toList();
+
         System.out.println("Returning " + result.size() + " brands");
         return result;
     }
@@ -618,43 +663,43 @@ public class ProductServiceImpl implements IProductService {
     @Override
     public List<BrandResponse> getNewestBrands() {
         System.out.println("=== getNewestBrands called ===");
-        
+
         // Get all newest products
         List<Product> newestProducts = productRepository.findNewestProducts(PageRequest.of(0, 1000));
         System.out.println("Found " + newestProducts.size() + " newest products");
-        
+
         if (newestProducts.isEmpty()) {
             System.out.println("No newest products found, returning empty list");
             return List.of();
         }
-        
+
         // Group by brand and count
         Map<Brand, Long> brandCounts = newestProducts.stream()
-            .collect(Collectors.groupingBy(Product::getBrand, Collectors.counting()));
-        
+                .collect(Collectors.groupingBy(Product::getBrand, Collectors.counting()));
+
         System.out.println("Brand counts: " + brandCounts.size() + " brands");
-        
+
         // Convert to BrandResponse and sort by count
         List<BrandResponse> result = brandCounts.entrySet().stream()
-            .sorted(Map.Entry.<Brand, Long>comparingByValue().reversed())
-            .map(entry -> {
-                Brand brand = entry.getKey();
-                BrandResponse brandResponse = new BrandResponse();
-                brandResponse.setBrandId(brand.getBrandId());
-                brandResponse.setName(brand.getName());
-                brandResponse.setLogoUrl(brand.getLogoUrl());
-                brandResponse.setIsActive(brand.getIsActive());
-                System.out.println("Newest Brand: " + brand.getName() + " (ID: " + brand.getBrandId() + ")");
-                return brandResponse;
-            })
-            .toList();
-            
+                .sorted(Map.Entry.<Brand, Long>comparingByValue().reversed())
+                .map(entry -> {
+                    Brand brand = entry.getKey();
+                    BrandResponse brandResponse = new BrandResponse();
+                    brandResponse.setBrandId(brand.getBrandId());
+                    brandResponse.setName(brand.getName());
+                    brandResponse.setLogoUrl(brand.getLogoUrl());
+                    brandResponse.setIsActive(brand.getIsActive());
+                    System.out.println("Newest Brand: " + brand.getName() + " (ID: " + brand.getBrandId() + ")");
+                    return brandResponse;
+                })
+                .toList();
+
         System.out.println("Returning " + result.size() + " newest brands");
         return result;
     }
 
     // ========== RATING MANAGEMENT ==========
-    
+
     @Override
     @Transactional
     public void updateProductAverageRating(Long productId) {
@@ -662,65 +707,103 @@ public class ProductServiceImpl implements IProductService {
             // Lấy product
             Product product = productRepository.findById(productId)
                     .orElseThrow(() -> new AppException(ErrorCode.PRODUCT_NOT_FOUND));
-            
+
             // Tính average rating từ reviews
             Double averageRating = reviewRepository.getAverageRatingByProductId(productId);
-            
+
             // Cập nhật average rating
             if (averageRating != null) {
                 product.setAverageRating(BigDecimal.valueOf(averageRating));
             } else {
                 product.setAverageRating(BigDecimal.ZERO);
             }
-            
+
             // Cập nhật updated date
             product.setUpdatedDate(LocalDateTime.now());
-            
+
             // Lưu product
             productRepository.save(product);
-            
+
             System.out.println("Updated average rating for product " + productId + ": " + product.getAverageRating());
-            
+
         } catch (Exception e) {
             System.err.println("Error updating average rating for product " + productId + ": " + e.getMessage());
             throw e;
         }
     }
-    
+
     @Override
     @Transactional
     public void updateAllProductsAverageRating() {
         try {
             // Lấy tất cả products
             List<Product> products = productRepository.findAll();
-            
+
             System.out.println("Updating average rating for " + products.size() + " products...");
-            
+
             for (Product product : products) {
                 // Tính average rating từ reviews
                 Double averageRating = reviewRepository.getAverageRatingByProductId(product.getProductId());
-                
+
                 // Cập nhật average rating
                 if (averageRating != null) {
                     product.setAverageRating(BigDecimal.valueOf(averageRating));
                 } else {
                     product.setAverageRating(BigDecimal.ZERO);
                 }
-                
+
                 // Cập nhật updated date
                 product.setUpdatedDate(LocalDateTime.now());
             }
-            
+
             // Lưu tất cả products
             productRepository.saveAll(products);
-            
+
             System.out.println("Successfully updated average rating for all products");
-            
+
         } catch (Exception e) {
             System.err.println("Error updating average rating for all products: " + e.getMessage());
             throw e;
         }
     }
 
+    private int getAvailableStock(Long productId) {
+        return (int) productItemRepository.countByProductProductIdAndStatus(productId, ProductItemStatus.IN_STOCK);
+    }
+
+    private void hydrateStock(Product product) {
+        product.setStock(getAvailableStock(product.getProductId()));
+    }
+
+    private void addInStockItems(Product product, int quantity) {
+        List<ProductItem> items = java.util.stream.IntStream.range(0, quantity)
+                .mapToObj(i -> ProductItem.builder()
+                        .product(product)
+                        .status(ProductItemStatus.IN_STOCK)
+                        .createdDate(LocalDateTime.now())
+                        .updatedDate(LocalDateTime.now())
+                        .build())
+                .toList();
+        productItemRepository.saveAll(items);
+    }
+
+    private void syncStockTo(int targetStock, Product product) {
+        int currentStock = getAvailableStock(product.getProductId());
+        if (currentStock == targetStock) {
+            return;
+        }
+
+        if (targetStock > currentStock) {
+            addInStockItems(product, targetStock - currentStock);
+            return;
+        }
+
+        int toRemove = currentStock - targetStock;
+        List<ProductItem> removableItems = productItemRepository.findByProductProductIdAndStatusOrderByProductItemIdAsc(
+                product.getProductId(),
+                ProductItemStatus.IN_STOCK,
+                PageRequest.of(0, toRemove));
+        productItemRepository.deleteAll(removableItems);
+    }
 
 }

@@ -3,22 +3,27 @@ package vn.liora.service.order;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import vn.liora.dto.response.OrderProductResponse;
+import vn.liora.dto.response.OrderItemResponse;
 import vn.liora.dto.response.OrderResponse;
 import vn.liora.entity.Discount;
 import vn.liora.entity.Order;
-import vn.liora.entity.OrderProduct;
+import vn.liora.entity.OrderItem;
 import vn.liora.entity.Product;
+import vn.liora.entity.ProductItem;
+import vn.liora.enums.ProductItemStatus;
 import vn.liora.mapper.OrderMapper;
-import vn.liora.mapper.OrderProductMapper;
+import vn.liora.mapper.OrderItemMapper;
 import vn.liora.repository.GhnShippingRepository;
-import vn.liora.repository.OrderProductRepository;
+import vn.liora.repository.OrderItemRepository;
+import vn.liora.repository.ProductItemRepository;
 import vn.liora.service.EmailService;
 import vn.liora.service.IGhnShippingService;
 import vn.liora.service.IProductService;
 import vn.liora.service.discount.DiscountUsageService;
 import vn.liora.service.order.state.OrderTransitionResult;
 
+import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -27,11 +32,12 @@ import java.util.stream.Collectors;
 @Slf4j
 public class DefaultOrderSideEffectService implements OrderSideEffectService {
 
-    private final OrderProductRepository orderProductRepository;
+    private final OrderItemRepository orderItemRepository;
+    private final ProductItemRepository productItemRepository;
     private final IProductService productService;
     private final EmailService emailService;
     private final OrderMapper orderMapper;
-    private final OrderProductMapper orderProductMapper;
+    private final OrderItemMapper orderItemMapper;
     private final DiscountUsageService discountUsageService;
     private final IGhnShippingService ghnShippingService;
     private final GhnShippingRepository ghnShippingRepository;
@@ -80,23 +86,14 @@ public class DefaultOrderSideEffectService implements OrderSideEffectService {
     @Override
     public void restoreStock(Order order) {
         try {
-            List<OrderProduct> orderProducts = orderProductRepository.findByOrder(order);
-            for (OrderProduct orderProduct : orderProducts) {
-                try {
-                    Product product = orderProduct.getProduct();
-                    Integer currentStock = product.getStock();
-                    Integer quantity = orderProduct.getQuantity();
-                    Integer newStock = currentStock + quantity;
-
-                    productService.updateStock(product.getProductId(), newStock);
-
-                    log.info("Restored stock for product {}: {} -> {} (quantity: {})",
-                            product.getProductId(), currentStock, newStock, quantity);
-                } catch (Exception e) {
-                    log.error("Error restoring stock for product {}: {}",
-                            orderProduct.getProduct().getProductId(), e.getMessage());
-                }
+            List<OrderItem> orderItems = orderItemRepository.findByOrder(order);
+            for (OrderItem orderItem : orderItems) {
+                ProductItem productItem = orderItem.getProductItem();
+                productItem.setStatus(ProductItemStatus.IN_STOCK);
+                productItem.setUpdatedDate(java.time.LocalDateTime.now());
             }
+            productItemRepository.saveAll(orderItems.stream().map(OrderItem::getProductItem).toList());
+            log.info("Restored {} product items for order {}", orderItems.size(), order.getIdOrder());
         } catch (Exception e) {
             log.error("Error restoring stock for order {}: {}", order.getIdOrder(), e.getMessage());
         }
@@ -136,8 +133,8 @@ public class DefaultOrderSideEffectService implements OrderSideEffectService {
     public void sendCancellationEmail(Order order) {
         try {
             OrderResponse orderResponse = orderMapper.toOrderResponse(order);
-            List<OrderProductResponse> orderProductResponses = orderProductRepository.findByOrder(order).stream()
-                    .map(orderProductMapper::toOrderProductResponse)
+            List<OrderItemResponse> orderProductResponses = orderItemRepository.findByOrder(order).stream()
+                    .map(orderItemMapper::toOrderItemResponse)
                     .collect(Collectors.toList());
 
             if (order.getUser() != null) {
@@ -159,27 +156,42 @@ public class DefaultOrderSideEffectService implements OrderSideEffectService {
 
     private void updateSoldCount(Order order, boolean increase) {
         try {
-            List<OrderProduct> orderProducts = orderProductRepository.findByOrder(order);
-            for (OrderProduct orderProduct : orderProducts) {
+            List<OrderItem> orderItems = orderItemRepository.findByOrder(order);
+            for (OrderItem orderItem : orderItems) {
+                ProductItem productItem = orderItem.getProductItem();
+                productItem.setStatus(increase ? ProductItemStatus.SOLD : ProductItemStatus.RESERVED);
+                productItem.setUpdatedDate(LocalDateTime.now());
+            }
+            if (!orderItems.isEmpty()) {
+                productItemRepository.saveAll(orderItems.stream().map(OrderItem::getProductItem).toList());
+            }
+            LinkedHashMap<Long, Integer> quantityByProduct = new LinkedHashMap<>();
+            for (OrderItem orderItem : orderItems) {
+                Product product = orderItem.getProductItem().getProduct();
+                quantityByProduct.merge(product.getProductId(), 1, Integer::sum);
+            }
+            for (var entry : quantityByProduct.entrySet()) {
+                Long productId = entry.getKey();
+                Integer quantity = entry.getValue();
                 try {
-                    Product product = orderProduct.getProduct();
-                    Integer currentSoldCount = product.getSoldCount();
-                    if (currentSoldCount == null) {
-                        currentSoldCount = 0;
+                    Product product = productService.findByIdOptional(productId).orElse(null);
+                    if (product == null) {
+                        continue;
                     }
-                    Integer quantity = orderProduct.getQuantity();
+                    Integer currentSoldCount = product.getSoldCount() != null ? product.getSoldCount() : 0;
                     Integer newSoldCount = increase
                             ? currentSoldCount + quantity
                             : Math.max(0, currentSoldCount - quantity);
-
-                    productService.updateSoldCount(product.getProductId(), newSoldCount);
-
+                    productService.updateSoldCount(productId, newSoldCount);
                     log.info("Updated sold count for product {}: {} -> {} (quantity: {}, increase: {})",
-                            product.getProductId(), currentSoldCount, newSoldCount, quantity, increase);
+                            productId, currentSoldCount, newSoldCount, quantity, increase);
                 } catch (Exception e) {
-                    log.error("Error updating sold count for product {}: {}",
-                            orderProduct.getProduct().getProductId(), e.getMessage());
+                    log.error("Error updating sold count for product {}: {}", productId, e.getMessage());
                 }
+            }
+            if (!orderItems.isEmpty()) {
+                log.info("Updated {} product item statuses for order {} (increase: {})",
+                        orderItems.size(), order.getIdOrder(), increase);
             }
         } catch (Exception e) {
             log.error("Error updating sold count for order {}: {}", order.getIdOrder(), e.getMessage());

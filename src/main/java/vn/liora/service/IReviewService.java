@@ -42,9 +42,9 @@ public interface IReviewService {
     List<ReviewResponse> findVisibleReviewsByUserId(Long userId);
     Page<ReviewResponse> findVisibleReviewsByUserId(Long userId, Pageable pageable);
     
-    // ========== BY ORDER PRODUCT ==========
-    Optional<Review> findByOrderProductId(Long orderProductId);
-    boolean existsByOrderProductId(Long orderProductId);
+    // ========== BY ORDER ITEM ==========
+    Optional<Review> findByOrderItemId(Long orderItemId);
+    boolean existsByOrderItemId(Long orderItemId);
     
     // ========== STATISTICS ==========
     Double getAverageRatingByProductId(Long productId);
@@ -88,6 +88,6 @@ public interface IReviewService {
     List<Map<String, Object>> getProductsForFilter(Long brandId, Long categoryId);
 
     void updateReviewVisibility(Long reviewId, Boolean isVisible);
-    boolean existsByOrderProductIdAndUserId(Long orderProductId, Long userId);
-    ReviewResponse findByOrderProductIdAndUserId(Long orderProductId, Long userId);
+    boolean existsByOrderItemIdAndUserId(Long orderItemId, Long userId);
+    ReviewResponse findByOrderItemIdAndUserId(Long orderItemId, Long userId);
 }

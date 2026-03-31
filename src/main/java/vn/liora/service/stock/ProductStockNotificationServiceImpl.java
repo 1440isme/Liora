@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import vn.liora.entity.User;
-import vn.liora.repository.CartProductRepository;
+import vn.liora.repository.CartItemRepository;
 import vn.liora.service.EmailService;
 
 import java.util.List;
@@ -14,12 +14,12 @@ import java.util.List;
 @Slf4j
 public class ProductStockNotificationServiceImpl implements ProductStockNotificationService {
 
-    private final CartProductRepository cartProductRepository;
+    private final CartItemRepository cartItemRepository;
     private final EmailService emailService;
 
     @Override
     public List<User> findSubscribedUsers(Long productId) {
-        return cartProductRepository.findDistinctSubscribedUsersByProductId(productId);
+        return cartItemRepository.findDistinctSubscribedUsersByProductId(productId);
     }
 
     @Override

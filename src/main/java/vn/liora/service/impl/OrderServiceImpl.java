@@ -4,7 +4,6 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 // removed unused imports
 
 import java.time.LocalDate;
@@ -17,18 +16,18 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.liora.dto.request.OrderCreationRequest;
 import vn.liora.dto.request.OrderUpdateRequest;
-import vn.liora.dto.response.OrderProductResponse;
+import vn.liora.dto.response.OrderItemResponse;
 import vn.liora.dto.response.OrderResponse;
 import vn.liora.dto.response.TopCustomerResponse;
 import vn.liora.entity.*;
+import vn.liora.enums.ProductItemStatus;
 import vn.liora.exception.AppException;
 import vn.liora.exception.ErrorCode;
 import vn.liora.mapper.OrderMapper;
-import vn.liora.mapper.OrderProductMapper;
+import vn.liora.mapper.OrderItemMapper;
 import vn.liora.repository.*;
 import vn.liora.service.IImageService;
 import vn.liora.service.IOrderService;
-import vn.liora.service.IProductService;
 import vn.liora.service.IGhnShippingService;
 import vn.liora.service.EmailService;
 import vn.liora.service.discount.DiscountApplicationResult;
@@ -42,6 +41,7 @@ import vn.liora.service.order.state.OrderTransitionResult;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -56,15 +56,14 @@ public class OrderServiceImpl implements IOrderService {
     CartRepository cartRepository;
     @SuppressWarnings("unused")
     AddressRepository addressRepository;
-    OrderProductRepository orderProductRepository;
-    OrderProductMapper orderProductMapper;
-    CartProductRepository cartProductRepository;
+    OrderItemMapper orderItemMapper;
+    CartItemRepository cartItemRepository;
     OrderMapper orderMapper;
+    OrderItemRepository orderItemRepository;
+    ProductItemRepository productItemRepository;
     IImageService imageService;
-    IProductService productService;
     IGhnShippingService ghnShippingService;
     EmailService emailService;
-    GhnShippingRepository ghnShippingRepository;
     DiscountRepository discountRepository;
     DiscountApplicationService discountApplicationService;
     DiscountUsageService discountUsageService;
@@ -78,19 +77,27 @@ public class OrderServiceImpl implements IOrderService {
             Cart cart = cartRepository.findById(idCart)
                     .orElseThrow(() -> new AppException(ErrorCode.CART_NOT_FOUND));
             User user = cart.getUser();
-            List<CartProduct> selected = cartProductRepository.findByCartAndChooseTrue(cart);
+            List<CartItem> selected = cartItemRepository.findByCartAndChooseTrue(cart);
             if (selected.isEmpty()) {
                 throw new AppException(ErrorCode.NO_SELECTED_PRODUCT);
             }
 
-            // ✅ Lọc chỉ lấy sản phẩm hợp lệ (available=true, isActive=true, stock đủ)
-            List<CartProduct> validProducts = selected.stream()
+            // ✅ Lọc chỉ lấy sản phẩm hợp lệ (available=true, isActive=true, stock đủ theo
+            // ProductItem)
+            List<CartItem> validProducts = selected.stream()
                     .filter(cp -> {
                         Product product = cp.getProduct();
-                        return product != null
-                                && Boolean.TRUE.equals(product.getAvailable())
+                        if (product == null) {
+                            return false;
+                        }
+                        long availableItems = productItemRepository.countByProductProductIdAndStatus(
+                                product.getProductId(),
+                                ProductItemStatus.IN_STOCK);
+                        return Boolean.TRUE.equals(product.getAvailable())
                                 && Boolean.TRUE.equals(product.getIsActive())
-                                && product.getStock() != null && cp.getQuantity() <= product.getStock();
+                                && cp.getQuantity() != null
+                                && cp.getQuantity() > 0
+                                && cp.getQuantity() <= availableItems;
                     })
                     .collect(Collectors.toList());
 
@@ -115,17 +122,9 @@ public class OrderServiceImpl implements IOrderService {
                 order.setProvinceId(request.getProvinceId());
             }
 
-            // ✅ Sử dụng validProducts thay vì selected
-            List<OrderProduct> orderProducts = validProducts.stream()
-                    .map(cp -> {
-                        OrderProduct op = orderProductMapper.toOrderProduct(cp);
-                        op.setOrder(order);
-                        return op;
-                    })
-                    .collect(Collectors.toList());
-
-            BigDecimal subtotal = orderProducts.stream()
-                    .map(OrderProduct::getTotalPrice)
+            BigDecimal subtotal = validProducts.stream()
+                    .map(CartItem::getTotalPrice)
+                    .filter(java.util.Objects::nonNull)
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
 
             BigDecimal totalDiscount = BigDecimal.ZERO;
@@ -155,10 +154,12 @@ public class OrderServiceImpl implements IOrderService {
                     if (discount != null) {
                         DiscountApplicationResult applicationResult = discountApplicationService.apply(
                                 discount,
-                                buildDiscountContext(user.getUserId(), subtotal, BigDecimal.ZERO, order.getPaymentMethod()));
+                                buildDiscountContext(user.getUserId(), subtotal, BigDecimal.ZERO,
+                                        order.getPaymentMethod()));
                         if (!applicationResult.isApplied()) {
                             log.warn("Cannot apply discount to order. User: {}, Subtotal: {}, Discount: {}, Reason: {}",
-                                    user.getUserId(), subtotal, discount.getDiscountId(), applicationResult.getFailureReason());
+                                    user.getUserId(), subtotal, discount.getDiscountId(),
+                                    applicationResult.getFailureReason());
                         } else {
                             totalDiscount = applicationResult.getFinalDiscountAmount();
                             total = subtotal.subtract(totalDiscount);
@@ -210,32 +211,10 @@ public class OrderServiceImpl implements IOrderService {
                 log.warn("Failed to increment discount usage after saving order {}: {}", savedOrder.getIdOrder(),
                         e.getMessage());
             }
-            orderProducts.forEach(op -> op.setOrder(savedOrder));
-            orderProductRepository.saveAll(orderProducts);
-
-            // Cập nhật stock cho từng sản phẩm trong đơn hàng (chỉ giảm stock, không tăng
-            // sold count)
-            for (OrderProduct orderProduct : orderProducts) {
-                try {
-                    Product product = orderProduct.getProduct();
-                    Integer currentStock = product.getStock();
-                    Integer orderedQuantity = orderProduct.getQuantity();
-                    Integer newStock = currentStock - orderedQuantity;
-                    // Chỉ cập nhật stock, sold count sẽ tăng khi đơn hàng hoàn tất
-                    productService.updateStock(product.getProductId(), newStock);
-
-                    log.info("Updated stock for product {}: {} -> {} (ordered: {})",
-                            product.getProductId(), currentStock, newStock, orderedQuantity);
-
-                } catch (Exception e) {
-                    log.error("Error updating stock for product {}: {}",
-                            orderProduct.getProduct().getProductId(), e.getMessage());
-                    // Không throw exception để không rollback toàn bộ đơn hàng
-                }
-            }
+            reserveOrderItems(savedOrder, validProducts);
 
             // ✅ Chỉ xóa các sản phẩm hợp lệ đã tạo order
-            cartProductRepository.deleteAll(validProducts);
+            cartItemRepository.deleteAll(validProducts);
 
             // GHN shipping order sẽ chỉ được tạo khi order status = CONFIRMED
             // để đồng bộ cho tất cả hình thức thanh toán (COD, VNPAY, MOMO)
@@ -247,9 +226,7 @@ public class OrderServiceImpl implements IOrderService {
             // Gửi email xác nhận đơn hàng
             try {
                 OrderResponse orderResponse = orderMapper.toOrderResponse(savedOrder);
-                List<OrderProductResponse> orderProductResponses = orderProducts.stream()
-                        .map(orderProductMapper::toOrderProductResponse)
-                        .collect(Collectors.toList());
+                List<OrderItemResponse> orderProductResponses = getProductsByOrderId(savedOrder.getIdOrder());
 
                 if (user != null) {
                     // User đã đăng nhập
@@ -320,9 +297,9 @@ public class OrderServiceImpl implements IOrderService {
     }
 
     private BigDecimal calculateOrderSubTotal(Order order) {
-        List<OrderProduct> orderProducts = orderProductRepository.findByOrder(order);
-        return orderProducts.stream()
-                .map(OrderProduct::getTotalPrice)
+        List<OrderItem> orderItems = orderItemRepository.findByOrder(order);
+        return orderItems.stream()
+                .map(oi -> oi.getProductItem().getProduct().getPrice())
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
@@ -386,9 +363,6 @@ public class OrderServiceImpl implements IOrderService {
         return orderMapper.toOrderResponseList(orders);
     }
 
-    @Autowired
-    private ReviewRepository reviewRepository;
-
     @Override
     public List<OrderResponse> getMyOrdersPaginated(Long userId, int page, int size) {
         User user = userRepository.findById(userId)
@@ -435,19 +409,28 @@ public class OrderServiceImpl implements IOrderService {
     }
 
     @Override
-    public List<OrderProductResponse> getProductsByOrderId(Long idOrder) {
+    public List<OrderItemResponse> getProductsByOrderId(Long idOrder) {
         Order order = orderRepository.findById(idOrder)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
-        List<OrderProduct> orderProducts = orderProductRepository.findByOrder(order);
-        List<OrderProductResponse> responses = orderProducts.stream().map(op -> {
-            OrderProductResponse resp = orderProductMapper.toOrderProductResponse(op);
-            String mainImageUrl = imageService.findMainImageByProductId(op.getProduct().getProductId())
-                    .map(Image::getImageUrl)
-                    .orElse(null);
-            resp.setMainImageUrl(mainImageUrl);
-            return resp;
-        }).collect(Collectors.toList());
-        return responses;
+        List<OrderItem> orderItems = orderItemRepository.findByOrder(order);
+        LinkedHashMap<Long, OrderItemResponse> grouped = new LinkedHashMap<>();
+        for (OrderItem orderItem : orderItems) {
+            OrderItemResponse one = orderItemMapper.toOrderItemResponse(orderItem);
+            Long productId = one.getIdProduct();
+            OrderItemResponse existing = grouped.get(productId);
+            if (existing == null) {
+                one.setMainImageUrl(imageService.findMainImageByProductId(productId)
+                        .map(Image::getImageUrl)
+                        .orElse(null));
+                grouped.put(productId, one);
+            } else {
+                existing.setQuantity(existing.getQuantity() + 1);
+                BigDecimal currentTotal = existing.getTotalPrice() != null ? existing.getTotalPrice() : BigDecimal.ZERO;
+                BigDecimal onePrice = one.getProductPrice() != null ? one.getProductPrice() : BigDecimal.ZERO;
+                existing.setTotalPrice(currentTotal.add(onePrice));
+            }
+        }
+        return grouped.values().stream().toList();
     }
 
     @Override
@@ -504,7 +487,39 @@ public class OrderServiceImpl implements IOrderService {
         log.info("Order {} cancelled by user {}", orderId, userId);
     }
 
-    private DiscountContext buildDiscountContext(Long userId, BigDecimal subtotal, BigDecimal shippingFee, String paymentMethod) {
+    private void reserveOrderItems(Order order, List<CartItem> cartProducts) {
+        for (CartItem cartProduct : cartProducts) {
+            Product product = cartProduct.getProduct();
+            int quantity = cartProduct.getQuantity();
+            List<ProductItem> selectedItems = productItemRepository
+                    .findByProductProductIdAndStatusOrderByProductItemIdAsc(
+                            product.getProductId(),
+                            ProductItemStatus.IN_STOCK,
+                            PageRequest.of(0, quantity));
+
+            if (selectedItems.size() < quantity) {
+                throw new AppException(ErrorCode.PRODUCT_OUT_OF_STOCK);
+            }
+
+            for (ProductItem productItem : selectedItems) {
+                productItem.setStatus(ProductItemStatus.RESERVED);
+                productItem.setUpdatedDate(LocalDateTime.now());
+            }
+            productItemRepository.saveAll(selectedItems);
+
+            List<OrderItem> orderItems = selectedItems.stream()
+                    .map(item -> OrderItem.builder()
+                            .order(order)
+                            .productItem(item)
+                            .createdDate(LocalDateTime.now())
+                            .build())
+                    .toList();
+            orderItemRepository.saveAll(orderItems);
+        }
+    }
+
+    private DiscountContext buildDiscountContext(Long userId, BigDecimal subtotal, BigDecimal shippingFee,
+            String paymentMethod) {
         return DiscountContext.builder()
                 .userId(userId)
                 .orderSubtotal(subtotal)

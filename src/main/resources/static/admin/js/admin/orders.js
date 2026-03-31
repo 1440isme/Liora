@@ -26,10 +26,24 @@ class OrderManager {
             headers['Authorization'] = `Bearer ${token}`;
         }
 
-        return fetch(url, {
+        const response = await fetch(url, {
             ...options,
-            headers
+            headers,
+            credentials: 'same-origin'
         });
+
+        // If localStorage token is stale, fallback to session cookie auth.
+        if (response.status === 401 && token) {
+            const retryHeaders = { ...headers };
+            delete retryHeaders['Authorization'];
+            return fetch(url, {
+                ...options,
+                headers: retryHeaders,
+                credentials: 'same-origin'
+            });
+        }
+
+        return response;
     }
 
     init() {
@@ -39,26 +53,9 @@ class OrderManager {
     }
 
     setDefaultDateRange() {
-        const today = new Date();
-        const currentYear = today.getFullYear();
-        const currentMonth = today.getMonth(); // 0-based (0 = January)
-
-        // Đầu tháng hiện tại
-        const startOfMonth = new Date(currentYear, currentMonth, 1);
-        // Cuối tháng hiện tại
-        const endOfMonth = new Date(currentYear, currentMonth + 1, 0);
-
-        // Format thành YYYY-MM-DD cho input date
-        const formatDate = (date) => {
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        };
-
-        // Set giá trị mặc định
-        $('#filterDateFrom').val(formatDate(startOfMonth));
-        $('#filterDateTo').val(formatDate(endOfMonth));
+        // Mặc định không lọc theo tháng hiện tại để luôn thấy toàn bộ đơn.
+        $('#filterDateFrom').val('');
+        $('#filterDateTo').val('');
     }
 
     bindEvents() {
@@ -123,7 +120,7 @@ class OrderManager {
 
             this.renderOrderTable();
             // Không gọi updatePagination() ở đây vì filterOrders() đã gọi rồi
-            
+
             // Thêm delay nhỏ để đảm bảo DOM đã sẵn sàng
             setTimeout(() => {
                 this.updatePagination();
@@ -226,13 +223,18 @@ class OrderManager {
     }
 
     updateStatistics(stats) {
-        $('#totalOrders').text(stats.total.toLocaleString());
-        $('#paidOrders').text((stats.cancelled || 0).toLocaleString());
-        $('#pendingOrders').text(stats.pending.toLocaleString());
+        const totalOrders = (stats.total ?? stats.totalOrders ?? 0);
+        const cancelledOrders = (stats.cancelled ?? stats.cancelledOrders ?? 0);
+        const pendingOrders = (stats.pending ?? stats.pendingOrders ?? 0);
+        const totalRevenue = (stats.revenue ?? stats.totalRevenue ?? 0);
+
+        $('#totalOrders').text(totalOrders.toLocaleString());
+        $('#paidOrders').text(cancelledOrders.toLocaleString());
+        $('#pendingOrders').text(pendingOrders.toLocaleString());
         $('#totalRevenue').text(new Intl.NumberFormat('vi-VN', {
             style: 'currency',
             currency: 'VND'
-        }).format(stats.revenue));
+        }).format(totalRevenue));
     }
 
     renderOrderTable() {
@@ -422,13 +424,13 @@ class OrderManager {
             $('#updateOrderId').val(orderId);
             $('#updateOrderStatus').val(order.orderStatus || 'PENDING'); // Set string value
             $('#updatePaymentStatus').val(order.paymentStatus || 'PENDING'); // Set payment status
-            
+
             // Bind event để tự động cập nhật trạng thái thanh toán khi thay đổi trạng thái đơn hàng
-            $('#updateOrderStatus').off('change').on('change', function() {
+            $('#updateOrderStatus').off('change').on('change', function () {
                 const selectedOrderStatus = $(this).val();
                 const currentPaymentStatus = $('#updatePaymentStatus').val();
                 const currentOrderStatus = order.orderStatus;
-                
+
                 if (selectedOrderStatus === 'COMPLETED' && currentPaymentStatus === 'PENDING') {
                     $('#updatePaymentStatus').val('PAID');
                 } else if (selectedOrderStatus === 'CANCELLED' && currentPaymentStatus === 'PAID') {
@@ -437,7 +439,7 @@ class OrderManager {
                     $('#updatePaymentStatus').val('PAID');
                 }
             });
-            
+
             $('#updateStatusModal').modal('show');
 
         } catch (error) {
@@ -456,7 +458,7 @@ class OrderManager {
             let finalPaymentStatus = paymentStatus;
             const order = this.orders.find(o => o.idOrder == orderId);
             const currentOrderStatus = order ? order.orderStatus : '';
-            
+
             if (orderStatus === 'COMPLETED') {
                 // Nếu đơn hàng hoàn tất, tự động đặt thanh toán thành "Đã thanh toán" nếu đang "Chờ thanh toán"
                 if (paymentStatus === 'PENDING') {
@@ -616,7 +618,7 @@ class OrderManager {
 
     updatePaginationInfo() {
         const paginationInfoElement = $('#paginationInfo');
-        
+
         if (this.filteredOrders.length === 0) {
             paginationInfoElement.html('Hiển thị 0-0 trong tổng số 0 đơn hàng');
         } else {
@@ -653,7 +655,7 @@ class OrderManager {
         try {
             // Lấy danh sách đơn hàng hiện tại
             const orders = this.filteredOrders.length > 0 ? this.filteredOrders : this.orders;
-            
+
             if (!orders || orders.length === 0) {
                 this.showAlert('warning', 'Cảnh báo', 'Không có dữ liệu để xuất Excel');
                 return;
@@ -679,13 +681,13 @@ class OrderManager {
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
             const url = URL.createObjectURL(blob);
-            
+
             const now = new Date();
             const dateStr = now.toISOString().split('T')[0];
             link.setAttribute('href', url);
             link.setAttribute('download', `danh_sach_don_hang_${dateStr}.csv`);
             link.style.visibility = 'hidden';
-            
+
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -711,7 +713,7 @@ class OrderManager {
 
             // Tạo cửa sổ in
             const printWindow = window.open('', '_blank');
-            
+
             // Lấy thông tin thống kê
             // Chỉ tính các đơn đã hoàn tất để phù hợp với thống kê trên trang
             const completedOrders = orders.filter(order => order.orderStatus === 'COMPLETED');
@@ -777,10 +779,10 @@ class OrderManager {
                 </body>
                 </html>
             `);
-            
+
             printWindow.document.close();
             printWindow.focus();
-            
+
             // Đợi nội dung load xong rồi mới in
             setTimeout(() => {
                 printWindow.print();
@@ -920,7 +922,9 @@ class OrderManager {
 
 // Initialize when document is ready
 $(document).ready(function () {
-    window.orderManager = new OrderManager();
+    if (!window.orderManager) {
+        window.orderManager = new OrderManager();
+    }
 });
 
 // Save order status function for modal
