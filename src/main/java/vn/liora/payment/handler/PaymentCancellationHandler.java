@@ -13,7 +13,7 @@ import vn.liora.mapper.OrderProductMapper;
 import vn.liora.repository.OrderProductRepository;
 import vn.liora.service.EmailService;
 import vn.liora.service.IProductService;
-import vn.liora.service.discount.DiscountUsageService;
+import vn.liora.service.discount.DiscountApplicationService;
 
 import java.util.List;
 
@@ -26,7 +26,7 @@ public class PaymentCancellationHandler {
     private final EmailService emailService;
     private final OrderMapper orderMapper;
     private final OrderProductMapper orderProductMapper;
-    private final DiscountUsageService discountUsageService;
+    private final DiscountApplicationService discountApplicationService;
 
     public void handleCancellation(Order order) {
         rollbackDiscountIfAny(order);
@@ -39,7 +39,7 @@ public class PaymentCancellationHandler {
             return;
         }
         try {
-            discountUsageService.rollbackUsage(order.getDiscount());
+            discountApplicationService.rollbackUsage(order.getDiscount());
             log.info("Rolled back discount usage for order {} (payment cancelled)", order.getIdOrder());
         } catch (Exception e) {
             log.warn("Failed to rollback discount for cancelled payment: {}", e.getMessage());

@@ -34,7 +34,6 @@ import vn.liora.service.EmailService;
 import vn.liora.service.discount.DiscountApplicationResult;
 import vn.liora.service.discount.DiscountApplicationService;
 import vn.liora.service.discount.DiscountContext;
-import vn.liora.service.discount.DiscountUsageService;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -61,9 +60,7 @@ public class OrderServiceImpl implements IOrderService {
     IGhnShippingService ghnShippingService;
     EmailService emailService;
     GhnShippingRepository ghnShippingRepository;
-    DiscountRepository discountRepository;
     DiscountApplicationService discountApplicationService;
-    DiscountUsageService discountUsageService;
 
     @Override
     @Transactional
@@ -131,7 +128,7 @@ public class OrderServiceImpl implements IOrderService {
 
                     // ✅ Xử lý discount theo discountCode (ưu tiên)
                     if (request.getDiscountCode() != null && !request.getDiscountCode().trim().isEmpty()) {
-                        discount = discountRepository.findAvailableDiscountByName(
+                        discount = discountApplicationService.findAvailableByCode(
                                 request.getDiscountCode(),
                                 LocalDateTime.now())
                                 .orElse(null);
@@ -141,12 +138,25 @@ public class OrderServiceImpl implements IOrderService {
                     }
                     // ✅ Fallback: xử lý theo discountId
                     else if (request.getDiscountId() != null) {
-                        discount = discountRepository.findById(request.getDiscountId())
-                                .orElseThrow(() -> new AppException(ErrorCode.DISCOUNT_NOT_FOUND));
+                        DiscountApplicationResult applicationResult = discountApplicationService.apply(
+                                request.getDiscountId(),
+                                buildDiscountContext(user.getUserId(), subtotal, BigDecimal.ZERO, order.getPaymentMethod()));
+                        if (!applicationResult.isApplied()) {
+                            log.warn("Cannot apply discount to order. User: {}, Subtotal: {}, Discount: {}, Reason: {}",
+                                    user.getUserId(), subtotal, request.getDiscountId(), applicationResult.getFailureReason());
+                        } else {
+                            totalDiscount = applicationResult.getFinalDiscountAmount();
+                            total = subtotal.subtract(totalDiscount);
+                            order.setDiscount(applicationResult.getDiscount());
+                            log.info("Applied discount {} (code: {}) to order. Discount amount: {}",
+                                    applicationResult.getDiscount().getDiscountId(),
+                                    applicationResult.getDiscount().getName(),
+                                    totalDiscount);
+                        }
                     }
 
                     // ✅ Áp dụng discount nếu tìm thấy
-                    if (discount != null) {
+                    if (discount != null && request.getDiscountId() == null) {
                         DiscountApplicationResult applicationResult = discountApplicationService.apply(
                                 discount,
                                 buildDiscountContext(user.getUserId(), subtotal, BigDecimal.ZERO, order.getPaymentMethod()));
@@ -198,7 +208,7 @@ public class OrderServiceImpl implements IOrderService {
             // After order persisted, increment discount usage (if a discount was applied)
             try {
                 if (savedOrder.getDiscount() != null) {
-                    discountUsageService.confirmUsage(savedOrder.getDiscount().getDiscountId());
+                    discountApplicationService.confirmUsage(savedOrder.getDiscount().getDiscountId());
                 }
             } catch (Exception e) {
                 log.warn("Failed to increment discount usage after saving order {}: {}", savedOrder.getIdOrder(),
@@ -279,9 +289,6 @@ public class OrderServiceImpl implements IOrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
 
-        Discount discount = discountRepository.findById(discountId)
-                .orElseThrow(() -> new AppException(ErrorCode.DISCOUNT_NOT_FOUND));
-
         // Tính subtotal từ OrderProducts
         BigDecimal subTotal = calculateOrderSubTotal(order);
 
@@ -303,14 +310,14 @@ public class OrderServiceImpl implements IOrderService {
         BigDecimal discountAmount = applicationResult.getFinalDiscountAmount();
 
         // Cập nhật order
-        order.setDiscount(discount);
+        order.setDiscount(applicationResult.getDiscount());
         order.setTotalDiscount(discountAmount);
         order.setTotal(subTotal.subtract(discountAmount));
 
         orderRepository.save(order);
 
         // Tăng usage count
-        discountUsageService.confirmUsage(discountId);
+        discountApplicationService.confirmUsage(discountId);
     }
 
     private BigDecimal calculateOrderSubTotal(Order order) {
@@ -324,9 +331,6 @@ public class OrderServiceImpl implements IOrderService {
     public void removeDiscountFromOrder(Long orderId, Long discountId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
-
-        Discount discount = discountRepository.findById(discountId)
-                .orElseThrow(() -> new AppException(ErrorCode.DISCOUNT_NOT_FOUND));
 
         // Kiểm tra order có discount này không
         if (order.getDiscount() == null || !order.getDiscount().getDiscountId().equals(discountId)) {
@@ -344,7 +348,7 @@ public class OrderServiceImpl implements IOrderService {
         orderRepository.save(order);
 
         // Decrement usage count
-        discountUsageService.rollbackUsage(discount);
+        discountApplicationService.rollbackUsage(discountId);
     }
 
     @Override
@@ -731,7 +735,7 @@ public class OrderServiceImpl implements IOrderService {
     }
 
     private void rollbackDiscountUsage(Discount discount, String reason) {
-        discountUsageService.rollbackUsage(discount);
+        discountApplicationService.rollbackUsage(discount);
         log.info("Rolled back discount usage for discount {} ({})", discount.getDiscountId(), reason);
     }
 

@@ -21,7 +21,6 @@ import vn.liora.service.IDiscountService;
 import vn.liora.service.discount.DiscountApplicationResult;
 import vn.liora.service.discount.DiscountApplicationService;
 import vn.liora.service.discount.DiscountContext;
-import vn.liora.service.discount.DiscountUsageService;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -36,7 +35,6 @@ public class DiscountServiceImpl implements IDiscountService {
     private final OrderRepository orderRepository;
     private final DiscountMapper discountMapper;
     private final DiscountApplicationService discountApplicationService;
-    private final DiscountUsageService discountUsageService;
 
     @Override
     public Discount createDiscount(DiscountCreationRequest request) {
@@ -214,9 +212,7 @@ public class DiscountServiceImpl implements IDiscountService {
     @Override
     public List<Discount> findAvailableDiscountsForOrder(BigDecimal orderTotal) {
         DiscountContext context = baseContext(null, orderTotal);
-        return findAvailableDiscounts().stream()
-                .filter(discount -> discountApplicationService.apply(discount, context).isApplied())
-                .toList();
+        return discountApplicationService.findAvailableForContext(context);
     }
 
     @Override
@@ -232,7 +228,7 @@ public class DiscountServiceImpl implements IDiscountService {
 
     @Override
     public Discount findAvailableDiscountByCode(String discountCode) {
-        return discountRepository.findAvailableDiscountByName(discountCode, LocalDateTime.now())
+        return discountApplicationService.findAvailableByCode(discountCode, LocalDateTime.now())
                 .orElse(null);
     }
 
@@ -299,7 +295,7 @@ public class DiscountServiceImpl implements IDiscountService {
 
     @Override
     public void incrementUsageCount(Long discountId) {
-        discountUsageService.confirmUsage(discountId);
+        discountApplicationService.confirmUsage(discountId);
     }
 
     private DiscountContext baseContext(Long userId, BigDecimal orderTotal) {

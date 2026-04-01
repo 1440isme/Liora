@@ -1,15 +1,10 @@
 package vn.liora.controller.user;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import vn.liora.dto.request.ApiResponse;
 import vn.liora.dto.request.ApplyDiscountRequest;
-import vn.liora.dto.request.DiscountCreationRequest;
-import vn.liora.dto.request.DiscountUpdateRequest;
 import vn.liora.dto.response.DiscountResponse;
 import vn.liora.entity.Discount;
 import vn.liora.exception.AppException;
@@ -22,7 +17,6 @@ import vn.liora.service.discount.DiscountContext;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -197,15 +191,6 @@ public class UserDiscountController {
         }
         ApiResponse<Map<String, Object>> response = new ApiResponse<>();
         try {
-            Discount discount = discountService.findByName(request.getDiscountCode())
-                    .orElse(null);
-
-            if (discount == null) {
-                response.setCode(400);
-                response.setMessage("Mã giảm giá không hợp lệ");
-                return ResponseEntity.badRequest().body(response);
-            }
-
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             Long userId = null;
             if (authentication != null && authentication.isAuthenticated() && !"anonymousUser".equals(authentication.getName())) {
@@ -214,13 +199,12 @@ public class UserDiscountController {
                         .orElse(null);
             }
 
-            DiscountApplicationResult applicationResult = discountApplicationService.apply(
-                    discount,
+            DiscountApplicationResult applicationResult = discountApplicationService.applyByCode(
+                    request.getDiscountCode(),
                     DiscountContext.builder()
                             .userId(userId)
                             .orderSubtotal(request.getOrderTotal())
                             .shippingFee(BigDecimal.ZERO)
-                            .appliedAt(LocalDateTime.now())
                             .build());
 
             if (!applicationResult.isApplied()) {
@@ -229,6 +213,7 @@ public class UserDiscountController {
                 return ResponseEntity.badRequest().body(response);
             }
 
+            Discount discount = applicationResult.getDiscount();
             BigDecimal discountAmount = applicationResult.getFinalDiscountAmount();
 
             Map<String, Object> result = new HashMap<>();
