@@ -12,9 +12,9 @@ import lombok.NoArgsConstructor;
 @Builder
 public class ReviewCreationRequest {
 
-    // Chỉ cần orderProductId, các thông tin khác sẽ được lấy từ OrderProduct
-    @NotNull(message = "OrderProduct ID is required")
-    private Long orderProductId;
+    // Chỉ cần orderItemId, các thông tin khác sẽ được lấy từ OrderItem
+    @NotNull(message = "OrderItem ID is required")
+    private Long orderItemId;
 
     @Size(max = 1000, message = "Content must not exceed 1000 characters")
     private String content;

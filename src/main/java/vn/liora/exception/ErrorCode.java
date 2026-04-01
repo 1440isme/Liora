@@ -89,7 +89,7 @@ public enum ErrorCode {
         CART_NOT_FOUND(3003, "Không tìm thấy giỏ hàng", HttpStatus.NOT_FOUND),
         CART_PRODUCT_NOT_FOUND(3004, "Không tìm thấy sản phẩm trong giỏ hàng", HttpStatus.NOT_FOUND),
         ORDER_NOT_FOUND(3005, "Không tìm thấy đơn hàng", HttpStatus.NOT_FOUND),
-        ORDER_PRODUCT_NOT_FOUND(3006, "Không tìm thấy sản phẩm trong đơn hàng", HttpStatus.NOT_FOUND),
+        ORDER_ITEM_NOT_FOUND(3006, "Không tìm thấy item trong đơn hàng", HttpStatus.NOT_FOUND),
         CART_ALREADY_EXISTS(3007, "Giỏ hàng đã tồn tại cho người dùng này", HttpStatus.BAD_REQUEST),
         INVALID_CART_QUANTITY(3008, "Số lượng giỏ hàng không hợp lệ", HttpStatus.BAD_REQUEST),
         INVALID_ORDER_STATUS(3009, "Trạng thái đơn hàng không hợp lệ", HttpStatus.BAD_REQUEST),

@@ -18,7 +18,7 @@ import vn.liora.exception.AppException;
 import vn.liora.exception.ErrorCode;
 import vn.liora.mapper.CartMapper;
 import vn.liora.repository.CartRepository;
-import vn.liora.repository.CartProductRepository;
+import vn.liora.repository.CartItemRepository;
 import vn.liora.repository.UserRepository;
 import vn.liora.service.ICartService;
 
@@ -30,7 +30,7 @@ public class CartServiceImpl implements ICartService {
 
     CartRepository cartRepository;
     UserRepository userRepository;
-    CartProductRepository cartProductRepository;
+    CartItemRepository cartItemRepository;
     CartMapper cartMapper;
 
     @Override
@@ -77,28 +77,28 @@ public class CartServiceImpl implements ICartService {
         }
 
         // Lấy danh sách item của guest kèm product
-        List<CartProduct> guestItems = cartProductRepository.findByCartWithProduct(guestCart);
+        List<CartItem> guestItems = cartItemRepository.findByCartWithProduct(guestCart);
 
-        for (CartProduct guestItem : guestItems) {
+        for (CartItem guestItem : guestItems) {
             Long productId = guestItem.getProduct().getProductId();
-            Optional<CartProduct> existingOpt = cartProductRepository
+            Optional<CartItem> existingOpt = cartItemRepository
                     .findByCart_IdCartAndProduct_ProductId(userCart.getIdCart(), productId);
 
             if (existingOpt.isPresent()) {
-                CartProduct existing = existingOpt.get();
+                CartItem existing = existingOpt.get();
                 int newQty = existing.getQuantity() + guestItem.getQuantity();
                 existing.setQuantity(newQty);
                 existing.setTotalPrice(guestItem.getProduct().getPrice()
                         .multiply(BigDecimal.valueOf(newQty)));
-                cartProductRepository.save(existing);
+                cartItemRepository.save(existing);
                 // Xóa item guest sau khi đã cộng dồn
-                cartProductRepository.delete(guestItem);
+                cartItemRepository.delete(guestItem);
             } else {
                 // Chuyển item sang cart user
                 guestItem.setCart(userCart);
                 guestItem.setTotalPrice(guestItem.getProduct().getPrice()
                         .multiply(BigDecimal.valueOf(guestItem.getQuantity())));
-                cartProductRepository.save(guestItem);
+                cartItemRepository.save(guestItem);
             }
         }
 

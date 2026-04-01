@@ -2535,7 +2535,7 @@ class UserInfoManager {
 
                 // Kiểm tra trạng thái review của tất cả sản phẩm
                 for (let product of products) {
-                    const reviewCheckResponse = await fetch(`/api/reviews/check/${product.idOrderProduct}`, {
+                    const reviewCheckResponse = await fetch(`/api/reviews/check/${product.idOrderItem}`, {
                         headers: { 'Authorization': `Bearer ${token}` }
                     });
                     if (reviewCheckResponse.ok) {

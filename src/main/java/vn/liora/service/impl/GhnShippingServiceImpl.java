@@ -13,7 +13,7 @@ import vn.liora.dto.response.GhnShopInfoResponse;
 import vn.liora.entity.GhnShipping;
 import vn.liora.entity.Order;
 import vn.liora.repository.GhnShippingRepository;
-import vn.liora.repository.OrderProductRepository;
+import vn.liora.repository.OrderItemRepository;
 import vn.liora.service.IGhnShippingService;
 import vn.liora.service.IGhnLocationService;
 import vn.liora.dto.response.GhnProvinceResponse;
@@ -30,7 +30,7 @@ public class GhnShippingServiceImpl implements IGhnShippingService {
 
     private final RestTemplate restTemplate;
     private final GhnShippingRepository ghnShippingRepository;
-    private final OrderProductRepository orderProductRepository;
+    private final OrderItemRepository orderItemRepository;
     private final IGhnLocationService ghnLocationService;
 
     @Value("${ghn.api.base-url}")
@@ -341,11 +341,8 @@ public class GhnShippingServiceImpl implements IGhnShippingService {
             int defaultItemWeight = 300; // gram mỗi sản phẩm (ước lượng)
             int totalWeight = 0;
             try {
-                var orderProducts = orderProductRepository.findByOrder(order);
-                for (var op : orderProducts) {
-                    Integer qty = op.getQuantity() != null ? op.getQuantity() : 1;
-                    totalWeight += Math.max(1, qty) * defaultItemWeight;
-                }
+                int itemCount = orderItemRepository.findByOrder(order).size();
+                totalWeight += Math.max(1, itemCount) * defaultItemWeight;
             } catch (Exception e) {
                 log.warn("Failed to compute order weight, using default: {}g. Cause: {}", 1000, e.getMessage());
                 totalWeight = 1000;

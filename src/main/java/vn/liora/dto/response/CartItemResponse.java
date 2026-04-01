@@ -1,6 +1,10 @@
 package vn.liora.dto.response;
 
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
 import java.math.BigDecimal;
@@ -10,17 +14,21 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class OrderProductResponse {
-    Long idOrderProduct;
+public class CartItemResponse {
+    Long idCart;
     Long idProduct;
-    Long idOrder;
+    Long idCartItem;
     Integer quantity;
+    Boolean choose;
     BigDecimal totalPrice;
+
     String productName;
-    String productDescription;
     BigDecimal productPrice;
     String mainImageUrl;
-    String categoryName;
     String brandName;
     Long brandId;
+
+    Boolean available;
+    Boolean isActive;
+    Integer stock;
 }

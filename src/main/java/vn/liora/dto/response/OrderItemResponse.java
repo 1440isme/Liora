@@ -1,7 +1,11 @@
 package vn.liora.dto.response;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.AccessLevel;
 
 import java.math.BigDecimal;
 
@@ -10,23 +14,17 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class CartProductResponse {
-    Long idCart;
+public class OrderItemResponse {
+    Long idOrderItem;
     Long idProduct;
-    Long idCartProduct;
+    Long idOrder;
     Integer quantity;
-    Boolean choose;
     BigDecimal totalPrice;
-    
-    // Thông tin sản phẩm
     String productName;
+    String productDescription;
     BigDecimal productPrice;
     String mainImageUrl;
+    String categoryName;
     String brandName;
     Long brandId;
-    
-    // Thông tin trạng thái sản phẩm
-    Boolean available;
-    Boolean isActive;
-    Integer stock;
 }

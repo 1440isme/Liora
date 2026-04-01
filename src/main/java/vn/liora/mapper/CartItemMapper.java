@@ -3,22 +3,22 @@ package vn.liora.mapper;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
-import vn.liora.dto.request.CartProductCreationRequest;
-import vn.liora.dto.request.CartProductUpdateRequest;
-import vn.liora.dto.response.CartProductResponse;
-import vn.liora.entity.CartProduct;
+import vn.liora.dto.request.CartItemCreationRequest;
+import vn.liora.dto.request.CartItemUpdateRequest;
+import vn.liora.dto.response.CartItemResponse;
+import vn.liora.entity.CartItem;
 
 import java.util.List;
 
 @Mapper(componentModel = "spring")
-public interface CartProductMapper {
+public interface CartItemMapper {
 
-    @Mapping(target = "idCartProduct", ignore = true)
+    @Mapping(target = "idCartItem", ignore = true)
     @Mapping(target = "cart", ignore = true)
     @Mapping(target = "product", ignore = true)
     @Mapping(target = "totalPrice", ignore = true)
     @Mapping(target = "choose", ignore = true)
-    CartProduct toCartProduct(CartProductCreationRequest request);
+    CartItem toCartItem(CartItemCreationRequest request);
 
     @Mapping(target = "idCart", source = "cart.idCart")
     @Mapping(target = "idProduct", source = "product.productId")
@@ -29,14 +29,15 @@ public interface CartProductMapper {
     @Mapping(target = "available", source = "product.available")
     @Mapping(target = "isActive", source = "product.isActive")
     @Mapping(target = "stock", source = "product.stock")
-    @Mapping(target = "mainImageUrl", ignore = true) // Sẽ set thủ công trong service
-    CartProductResponse toCartProductResponse(CartProduct cartProduct);
-    List<CartProductResponse> toCartProductResponseList(List<CartProduct> cartProducts);
+    @Mapping(target = "mainImageUrl", ignore = true)
+    CartItemResponse toCartItemResponse(CartItem cartItem);
 
-    @Mapping(target = "idCartProduct", ignore = true)
+    List<CartItemResponse> toCartItemResponseList(List<CartItem> cartItems);
+
+    @Mapping(target = "idCartItem", ignore = true)
     @Mapping(target = "cart", ignore = true)
     @Mapping(target = "product", ignore = true)
     @Mapping(target = "totalPrice", ignore = true)
     @Mapping(target = "choose", ignore = true)
-    void updateCartProduct(@MappingTarget CartProduct cartProduct, CartProductUpdateRequest request);
+    void updateCartItem(@MappingTarget CartItem cartItem, CartItemUpdateRequest request);
 }

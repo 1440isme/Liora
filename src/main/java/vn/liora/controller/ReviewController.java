@@ -224,23 +224,23 @@ public class ReviewController {
     }
 
         /**
-         * Kiểm tra xem orderProduct đã có review chưa
+         * Kiểm tra xem orderItem đã có review chưa
          */
-        @GetMapping("/check/{orderProductId}")
+        @GetMapping("/check/{orderItemId}")
         @PreAuthorize("hasRole('USER')")
         public ResponseEntity<Map<String, Object>> checkReviewExists(
-                @PathVariable Long orderProductId,
+                @PathVariable Long orderItemId,
                 Authentication authentication) {
             
             Long userId = getUserIdFromAuthentication(authentication);
             
             try {
-                boolean exists = reviewService.existsByOrderProductIdAndUserId(orderProductId, userId);
+                boolean exists = reviewService.existsByOrderItemIdAndUserId(orderItemId, userId);
                 Map<String, Object> response = new HashMap<>();
                 response.put("exists", exists);
                 
                 if (exists) {
-                    ReviewResponse review = reviewService.findByOrderProductIdAndUserId(orderProductId, userId);
+                    ReviewResponse review = reviewService.findByOrderItemIdAndUserId(orderItemId, userId);
                     response.put("review", review);
                 }
                 

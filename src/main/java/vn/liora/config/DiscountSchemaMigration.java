@@ -28,8 +28,7 @@ public class DiscountSchemaMigration implements CommandLineRunner {
         log.info("DiscountType column is missing in Discounts. Applying compatibility migration.");
         jdbcTemplate.execute("""
                 ALTER TABLE Discounts
-                ADD DiscountType NVARCHAR(50) NOT NULL
-                CONSTRAINT DF_Discounts_DiscountType DEFAULT 'PERCENTAGE'
+                ADD COLUMN DiscountType VARCHAR(50) NOT NULL DEFAULT 'PERCENTAGE'
                 """);
 
         jdbcTemplate.update("""

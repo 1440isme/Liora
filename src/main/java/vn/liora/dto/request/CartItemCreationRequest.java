@@ -2,7 +2,11 @@ package vn.liora.dto.request;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.experimental.FieldDefaults;
 
 @Data
@@ -10,11 +14,10 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
-
-public class OrderProductCreationRequest {
+public class CartItemCreationRequest {
     @NotNull(message = "VALIDATION_REQUIRED_FIELD")
     Long idProduct;
-    @NotNull(message = "VALIDATION_REQUIRED_FIELD")
+
     @Min(value = 1, message = "VALIDATION_QUANTITY_MIN_ONE")
     Integer quantity;
 }
