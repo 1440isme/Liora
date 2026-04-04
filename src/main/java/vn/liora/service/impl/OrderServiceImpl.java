@@ -35,6 +35,10 @@ import vn.liora.service.discount.DiscountApplicationResult;
 import vn.liora.service.discount.DiscountApplicationService;
 import vn.liora.service.discount.DiscountContext;
 import vn.liora.service.discount.DiscountUsageService;
+import vn.liora.service.order.OrderSideEffectService;
+import vn.liora.service.order.state.OrderStateMachine;
+import vn.liora.service.order.state.OrderTransitionRequest;
+import vn.liora.service.order.state.OrderTransitionResult;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -64,6 +68,8 @@ public class OrderServiceImpl implements IOrderService {
     DiscountRepository discountRepository;
     DiscountApplicationService discountApplicationService;
     DiscountUsageService discountUsageService;
+    OrderStateMachine orderStateMachine;
+    OrderSideEffectService orderSideEffectService;
 
     @Override
     @Transactional
@@ -353,194 +359,14 @@ public class OrderServiceImpl implements IOrderService {
         Order order = orderRepository.findById(idOrder)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
 
-        // ✅ HOÀN LẠI DISCOUNT VÀ STOCK NẾU CHUYỂN THÀNH CANCELLED
-        if ("CANCELLED".equals(request.getOrderStatus())) {
-            // Hoàn lại discount nếu có
-            if (order.getDiscount() != null) {
-                try {
-                    rollbackDiscountUsage(order.getDiscount(), "order " + idOrder + " cancelled by admin");
-                } catch (Exception e) {
-                    log.warn("Failed to rollback discount usage for order {}: {}", idOrder, e.getMessage());
-                    // Không throw exception để không ảnh hưởng đến việc cập nhật trạng thái đơn
-                    // hàng
-                }
-            }
-
-            // Hoàn lại stock cho các sản phẩm trong đơn hàng bị hủy
-            restoreStockForOrder(order);
-        }
-
-        // Lưu trạng thái hiện tại
-        String currentPaymentStatus = order.getPaymentStatus();
-        String currentOrderStatus = order.getOrderStatus();
-
-        // Cập nhật trạng thái đơn hàng
-        orderMapper.updateOrder(order, request);
-
-        // ✅ TỰ ĐỘNG CẬP NHẬT TRẠNG THÁI ĐƠN HÀNG KHI THANH TOÁN BỊ HỦY
-        if (request.getPaymentStatus() != null && "CANCELLED".equals(request.getPaymentStatus())) {
-            order.setOrderStatus("CANCELLED");
-            log.info("Auto-updated order {} status to CANCELLED due to payment cancellation", idOrder);
-
-            // Hoàn lại stock cho các sản phẩm trong đơn hàng bị hủy
-            restoreStockForOrder(order);
-        }
-
-        // Tự động cập nhật trạng thái thanh toán và sold count dựa trên trạng thái đơn
-        // hàng
-        String newOrderStatus = request.getOrderStatus();
-        if ("COMPLETED".equals(newOrderStatus)) {
-            // Nếu đơn hàng hoàn tất và đã thanh toán, giữ nguyên trạng thái thanh toán
-            // Nếu chưa thanh toán, tự động đặt thành "Đã thanh toán"
-            if ("PENDING".equals(currentPaymentStatus)) {
-                order.setPaymentStatus("PAID");
-            }
-
-            // Cập nhật sold count = số lượng sản phẩm trong đơn hàng khi hoàn tất
-            updateSoldCountForOrder(order, true);
-        } else {
-            // Cập nhật trạng thái thanh toán cho các trường hợp khác
-            if ("CANCELLED".equals(newOrderStatus)) {
-                // Nếu đơn hàng bị hủy và đã thanh toán, chuyển thành "Đã hoàn tiền"
-                if ("PAID".equals(currentPaymentStatus)) {
-                    order.setPaymentStatus("REFUNDED");
-                }
-
-                // Nếu chuyển từ COMPLETED về CANCELLED, cần giảm sold count
-                if ("COMPLETED".equals(currentOrderStatus)) {
-                    updateSoldCountForOrder(order, false);
-                }
-            } else if ("PENDING".equals(newOrderStatus) || "CONFIRMED".equals(newOrderStatus)) {
-                // Nếu đơn hàng từ COMPLETED chuyển về PENDING/CONFIRMED và đã hoàn tiền, chuyển
-                // về "Đã thanh toán"
-                if ("REFUNDED".equals(currentPaymentStatus) && "COMPLETED".equals(currentOrderStatus)) {
-                    order.setPaymentStatus("PAID");
-                }
-
-                // Nếu chuyển từ COMPLETED về PENDING/CONFIRMED, cần giảm sold count
-                if ("COMPLETED".equals(currentOrderStatus)) {
-                    updateSoldCountForOrder(order, false);
-                }
-            }
-        }
+        OrderTransitionResult transitionResult = orderStateMachine.transition(
+                order,
+                OrderTransitionRequest.forAdmin(request.getOrderStatus(), request.getPaymentStatus()));
 
         order = orderRepository.save(order);
-
-        // ✅ TỰ ĐỘNG TẠO GHN SHIPPING ORDER KHI TRẠNG THÁI = CONFIRMED
-        // Chỉ tạo khi chuyển sang CONFIRMED để đồng bộ tất cả hình thức thanh toán
-        if ("CONFIRMED".equals(newOrderStatus) && !"CONFIRMED".equals(currentOrderStatus)) {
-            try {
-                // Kiểm tra xem đã có GHN shipping order chưa để tránh tạo trùng
-                if (ghnShippingRepository.findByIdOrder(order.getIdOrder()).isEmpty()) {
-                    // Đảm bảo Order đã có đủ thông tin địa chỉ (district/ward)
-                    if (order.getDistrictId() != null && order.getWardCode() != null) {
-                        ghnShippingService.createShippingOrder(order);
-                        log.info("Created GHN shipping order for Order {} when status changed to CONFIRMED",
-                                order.getIdOrder());
-                    } else {
-                        log.warn("Skip GHN create for Order {}: missing district/ward.", order.getIdOrder());
-                    }
-                } else {
-                    log.info("GHN shipping order already exists for Order {}", order.getIdOrder());
-                }
-            } catch (Exception ex) {
-                log.error("Failed to auto create GHN order for Order {}: {}",
-                        order.getIdOrder(), ex.getMessage());
-                // Không throw exception để không rollback việc cập nhật trạng thái đơn hàng
-            }
-        }
-
-        // ✅ GỬI EMAIL THÔNG BÁO HỦY ĐƠN HÀNG KHI ADMIN HỦY
-        // Chỉ gửi khi chuyển từ trạng thái khác sang CANCELLED
-        if ("CANCELLED".equals(newOrderStatus) && !"CANCELLED".equals(currentOrderStatus)) {
-            try {
-                OrderResponse orderResponse = orderMapper.toOrderResponse(order);
-                List<OrderProduct> orderProducts = orderProductRepository.findByOrder(order);
-                List<OrderProductResponse> orderProductResponses = orderProducts.stream()
-                        .map(orderProductMapper::toOrderProductResponse)
-                        .collect(Collectors.toList());
-
-                if (order.getUser() != null) {
-                    emailService.sendOrderCancellationEmail(
-                            order.getUser().getEmail(),
-                            order.getUser().getFirstname() + " " + order.getUser().getLastname(),
-                            orderResponse,
-                            orderProductResponses);
-                } else {
-                    emailService.sendGuestOrderCancellationEmail(
-                            order.getEmail(),
-                            orderResponse,
-                            orderProductResponses);
-                }
-            } catch (Exception e) {
-                log.error("Failed to send cancellation email: {}", e.getMessage());
-            }
-        }
+        orderSideEffectService.handleTransitionEffects(order, transitionResult);
 
         return orderMapper.toOrderResponse(order);
-    }
-
-    /**
-     * Cập nhật sold count cho các sản phẩm trong đơn hàng
-     * 
-     * @param order       đơn hàng
-     * @param isCompleted true nếu đơn hàng hoàn tất (+ số lượng), false nếu không
-     *                    hoàn tất (- số lượng)
-     */
-    private void updateSoldCountForOrder(Order order, boolean isCompleted) {
-        try {
-            List<OrderProduct> orderProducts = orderProductRepository.findByOrder(order);
-            for (OrderProduct orderProduct : orderProducts) {
-                try {
-                    Product product = orderProduct.getProduct();
-                    Integer currentSoldCount = product.getSoldCount();
-                    Integer quantity = orderProduct.getQuantity();
-                    Integer newSoldCount = isCompleted ? currentSoldCount + quantity
-                            : Math.max(0, currentSoldCount - quantity); // Đảm bảo không âm
-
-                    productService.updateSoldCount(product.getProductId(), newSoldCount);
-
-                    log.info("Updated sold count for product {}: {} -> {} (quantity: {}, isCompleted: {})",
-                            product.getProductId(), currentSoldCount, newSoldCount, quantity, isCompleted);
-
-                } catch (Exception e) {
-                    log.error("Error updating sold count for product {}: {}",
-                            orderProduct.getProduct().getProductId(), e.getMessage());
-                }
-            }
-        } catch (Exception e) {
-            log.error("Error updating sold count for order {}: {}", order.getIdOrder(), e.getMessage());
-        }
-    }
-
-    /**
-     * Hoàn lại stock cho các sản phẩm trong đơn hàng bị hủy
-     * 
-     * @param order đơn hàng bị hủy
-     */
-    private void restoreStockForOrder(Order order) {
-        try {
-            List<OrderProduct> orderProducts = orderProductRepository.findByOrder(order);
-            for (OrderProduct orderProduct : orderProducts) {
-                try {
-                    Product product = orderProduct.getProduct();
-                    Integer currentStock = product.getStock();
-                    Integer quantity = orderProduct.getQuantity();
-                    Integer newStock = currentStock + quantity;
-
-                    productService.updateStock(product.getProductId(), newStock);
-
-                    log.info("Restored stock for product {}: {} -> {} (quantity: {})",
-                            product.getProductId(), currentStock, newStock, quantity);
-
-                } catch (Exception e) {
-                    log.error("Error restoring stock for product {}: {}",
-                            orderProduct.getProduct().getProductId(), e.getMessage());
-                }
-            }
-        } catch (Exception e) {
-            log.error("Error restoring stock for order {}: {}", order.getIdOrder(), e.getMessage());
-        }
     }
 
     @Override
@@ -668,54 +494,12 @@ public class OrderServiceImpl implements IOrderService {
             throw new AppException(ErrorCode.ORDER_CANNOT_BE_CANCELLED);
         }
 
-        // ✅ HOÀN LẠI DISCOUNT NẾU CÓ
-        if (order.getDiscount() != null) {
-            try {
-                rollbackDiscountUsage(order.getDiscount(), "order " + orderId);
-            } catch (Exception e) {
-                log.warn("Failed to rollback discount usage for order {}: {}", orderId, e.getMessage());
-                // Không throw exception để không ảnh hưởng đến việc hủy đơn hàng
-            }
-        }
-
-        // ✅ CẬP NHẬT TRẠNG THÁI THANH TOÁN NẾU ĐÃ THANH TOÁN
-        String currentPaymentStatus = order.getPaymentStatus();
-        if ("PAID".equals(currentPaymentStatus)) {
-            order.setPaymentStatus("REFUNDED");
-            log.info("Updated payment status to REFUNDED for cancelled order {}", orderId);
-        }
-
-        // Cập nhật trạng thái đơn hàng thành CANCELLED
-        order.setOrderStatus("CANCELLED");
+        OrderTransitionResult transitionResult = orderStateMachine.transition(
+                order,
+                OrderTransitionRequest.forUserCancellation());
 
         orderRepository.save(order);
-
-        // ✅ HOÀN LẠI STOCK CHO CÁC SẢN PHẨM TRONG ĐƠN HÀNG BỊ HỦY
-        restoreStockForOrder(order);
-
-        // ✅ GỬI EMAIL THÔNG BÁO HỦY ĐƠN HÀNG
-        try {
-            OrderResponse orderResponse = orderMapper.toOrderResponse(order);
-            List<OrderProduct> orderProducts = orderProductRepository.findByOrder(order);
-            List<OrderProductResponse> orderProductResponses = orderProducts.stream()
-                    .map(orderProductMapper::toOrderProductResponse)
-                    .collect(Collectors.toList());
-
-            if (order.getUser() != null) {
-                emailService.sendOrderCancellationEmail(
-                        order.getUser().getEmail(),
-                        order.getUser().getFirstname() + " " + order.getUser().getLastname(),
-                        orderResponse,
-                        orderProductResponses);
-            } else {
-                emailService.sendGuestOrderCancellationEmail(
-                        order.getEmail(),
-                        orderResponse,
-                        orderProductResponses);
-            }
-        } catch (Exception e) {
-            log.error("Failed to send cancellation email: {}", e.getMessage());
-        }
+        orderSideEffectService.handleTransitionEffects(order, transitionResult);
 
         log.info("Order {} cancelled by user {}", orderId, userId);
     }
@@ -728,11 +512,6 @@ public class OrderServiceImpl implements IOrderService {
                 .paymentMethod(paymentMethod)
                 .appliedAt(LocalDateTime.now())
                 .build();
-    }
-
-    private void rollbackDiscountUsage(Discount discount, String reason) {
-        discountUsageService.rollbackUsage(discount);
-        log.info("Rolled back discount usage for discount {} ({})", discount.getDiscountId(), reason);
     }
 
     @Override
