@@ -184,7 +184,7 @@ class CartPage {
         const isDisabled = productStatus !== 'available';
 
         return `
-            <div class="cart-item ${isDisabled ? 'disabled' : ''}" data-cart-product-id="${item.idCartProduct}" data-unit-price="${item.productPrice || 0}">
+            <div class="cart-item ${isDisabled ? 'disabled' : ''}" data-cart-item-id="${item.idCartItem}" data-unit-price="${item.productPrice || 0}">
                 <div class="row align-items-center">
                     <div class="col-auto">
                         <div class="form-check">
@@ -273,11 +273,11 @@ class CartPage {
         const statusClass = productStatus === 'out_of_stock' ? 'status-out-of-stock' : 'status-deactivated';
 
         return `
-            <div class="unavailable-item" data-cart-product-id="${item.idCartProduct}">
+            <div class="unavailable-item" data-cart-item-id="${item.idCartItem}">
                 <div class="row align-items-center">
                     <div class="col-auto">
                         <div class="unavailable-item-checkbox" style="display: none;">
-                            <input type="checkbox" class="unavailable-checkbox" data-cart-product-id="${item.idCartProduct}">
+                            <input type="checkbox" class="unavailable-checkbox" data-cart-item-id="${item.idCartItem}">
                         </div>
                     </div>
                     <div class="col-auto">
@@ -321,7 +321,7 @@ class CartPage {
     async handleQuantityChange(e) {
         await CartUtils.handleQuantityChange(
             e,
-            this.updateCartProductQuantity.bind(this),
+            this.updateCartItemQuantity.bind(this),
             CartUtils.showToast.bind(this),
             this.updateCartSummary.bind(this) // Callback để cập nhật tổng tiền sau khi thay đổi
         );
@@ -330,7 +330,7 @@ class CartPage {
     async handleQuantityInputChange(e) {
         await CartUtils.handleQuantityInputChange(
             e, 
-            this.updateCartProductQuantity.bind(this), 
+            this.updateCartItemQuantity.bind(this), 
             CartUtils.showToast.bind(this),
             this.updateCartSummary.bind(this) // Callback để cập nhật tổng tiền sau khi thay đổi
         );
@@ -343,8 +343,8 @@ class CartPage {
         // Cập nhật tất cả sản phẩm trong giỏ hàng
         const promises = [];
         $('.cart-item').each((index, item) => {
-            const cartProductId = $(item).data('cart-product-id');
-            promises.push(this.updateCartProductSelection(cartProductId, isChecked));
+            const cartItemId = $(item).data('cart-item-id');
+            promises.push(this.updateCartItemSelection(cartItemId, isChecked));
         });
 
         await Promise.all(promises);
@@ -355,11 +355,11 @@ class CartPage {
     async handleItemSelect(e) {
         const checkbox = $(e.target);
         const cartItem = checkbox.closest('.cart-item');
-        const cartProductId = cartItem.data('cart-product-id');
+        const cartItemId = cartItem.data('cart-item-id');
         const isChecked = checkbox.is(':checked');
 
         cartItem.toggleClass('selected', isChecked);
-        await this.updateCartProductSelection(cartProductId, isChecked);
+        await this.updateCartItemSelection(cartItemId, isChecked);
         this.updateSelectAllState();
         this.updateDeleteButton();
         this.updateCartSummary();
@@ -394,14 +394,14 @@ class CartPage {
 
     handleRemoveItem(e) {
         const cartItem = $(e.target).closest('.cart-item');
-        const cartProductId = cartItem.data('cart-product-id');
+        const cartItemId = cartItem.data('cart-item-id');
         const productName = cartItem.find('.cart-product-title').text();
 
         CartUtils.showConfirmDialog(
             'Xóa sản phẩm',
             `Bạn có chắc chắn muốn xóa "${productName}" khỏi giỏ hàng?`,
             async () => {
-                await this.removeCartProduct(cartProductId, cartItem);
+                await this.removeCartItem(cartItemId, cartItem);
             }
         );
     }
@@ -418,7 +418,7 @@ class CartPage {
                 try {
                     // Gọi API để xóa tất cả sản phẩm đã chọn
                     const response = await this.apiCall(
-                        `/CartProduct/${this.cartId}/selected`,
+                        `/cart-items/${this.cartId}/selected`,
                         'DELETE'
                     );
 
@@ -426,12 +426,12 @@ class CartPage {
                     const selectedIds = [];
                     $('.cart-item-checkbox:checked').each((index, checkbox) => {
                         const cartItem = $(checkbox).closest('.cart-item');
-                        const cartProductId = cartItem.data('cart-product-id');
-                        selectedIds.push(cartProductId);
+                        const cartItemId = cartItem.data('cart-item-id');
+                        selectedIds.push(cartItemId);
                     });
 
                     // Xóa khỏi dữ liệu local
-                    this.cartItems = this.cartItems.filter(item => !selectedIds.includes(item.idCartProduct));
+                    this.cartItems = this.cartItems.filter(item => !selectedIds.includes(item.idCartItem));
 
                     // Xóa tất cả sản phẩm đã chọn khỏi DOM
                     $('.cart-item-checkbox:checked').closest('.cart-item').each((index, item) => {
@@ -546,20 +546,20 @@ class CartPage {
                 try {
                     const selectedIds = [];
                     selectedCheckboxes.each((index, checkbox) => {
-                        const cartProductId = $(checkbox).data('cart-product-id');
-                        selectedIds.push(cartProductId);
+                        const cartItemId = $(checkbox).data('cart-item-id');
+                        selectedIds.push(cartItemId);
                     });
 
                     console.log('Deleting unavailable items:', selectedIds);
 
                     // Xóa từng sản phẩm không tồn tại
-                    for (const cartProductId of selectedIds) {
-                        console.log('Deleting unavailable cart product:', cartProductId);
-                        await this.apiCall(`/CartProduct/${this.cartId}/unavailable/${cartProductId}`, 'DELETE');
+                    for (const cartItemId of selectedIds) {
+                        console.log('Deleting unavailable cart item:', cartItemId);
+                        await this.apiCall(`/cart-items/${this.cartId}/unavailable/${cartItemId}`, 'DELETE');
                     }
 
                     // Xóa khỏi dữ liệu local
-                    this.cartItems = this.cartItems.filter(item => !selectedIds.includes(item.idCartProduct));
+                    this.cartItems = this.cartItems.filter(item => !selectedIds.includes(item.idCartItem));
 
                     // Xóa khỏi DOM
                     selectedCheckboxes.closest('.unavailable-item').each((index, item) => {
@@ -625,15 +625,15 @@ class CartPage {
         }, 200);
     }
 
-    async removeUnavailableItem(cartProductId, cartItemElement) {
+    async removeUnavailableItem(cartItemId, cartItemElement) {
         try {
             await this.apiCall(
-                `/CartProduct/${this.cartId}/unavailable/${cartProductId}`,
+                `/cart-items/${this.cartId}/unavailable/${cartItemId}`,
                 'DELETE'
             );
 
             // Xóa khỏi dữ liệu local
-            this.cartItems = this.cartItems.filter(item => item.idCartProduct !== cartProductId);
+            this.cartItems = this.cartItems.filter(item => item.idCartItem !== cartItemId);
 
             // Animation xóa
             this.removeItemWithAnimation(cartItemElement);
@@ -683,8 +683,8 @@ class CartPage {
                 const checkbox = $item.find('.cart-item-checkbox');
                 if (!checkbox.is(':checked')) return;
 
-                const cartProductId = $item.data('cart-product-id');
-                const cartItem = this.cartItems.find(item => item.idCartProduct === cartProductId);
+                const cartItemId = $item.data('cart-item-id');
+                const cartItem = this.cartItems.find(item => item.idCartItem === cartItemId);
                 
                 if (!cartItem) return;
                 
@@ -870,23 +870,23 @@ class CartPage {
         return CartUtils.apiCall(url, method, data);
     }
 
-    async updateCartProductQuantity(cartProductId, quantity) {
+    async updateCartItemQuantity(cartItemId, quantity) {
         try {
             const response = await this.apiCall(
-                `/CartProduct/${this.cartId}/${cartProductId}`,
+                `/cart-items/${this.cartId}/${cartItemId}`,
                 'PUT',
                 { quantity: quantity }
             );
 
             // Cập nhật dữ liệu local
-            const cartItem = this.cartItems.find(item => item.idCartProduct === cartProductId);
+            const cartItem = this.cartItems.find(item => item.idCartItem === cartItemId);
             if (cartItem) {
                 cartItem.quantity = quantity;
                 cartItem.totalPrice = response.totalPrice;
             }
 
             // Cập nhật giá trong DOM
-            const cartItemElement = $(`.cart-item[data-cart-product-id="${cartProductId}"]`);
+            const cartItemElement = $(`.cart-item[data-cart-item-id="${cartItemId}"]`);
             const priceElement = cartItemElement.find('.cart-price');
             if (priceElement.length > 0) {
                 priceElement.text(CartUtils.formatCurrency(response.totalPrice));
@@ -903,15 +903,15 @@ class CartPage {
         }
     }
 
-    async updateCartProductSelection(cartProductId, isSelected) {
+    async updateCartItemSelection(cartItemId, isSelected) {
         try {
             // Lấy quantity hiện tại từ DOM
-            const cartItem = $(`.cart-item[data-cart-product-id="${cartProductId}"]`);
+            const cartItem = $(`.cart-item[data-cart-item-id="${cartItemId}"]`);
             const currentQuantity = parseInt(cartItem.find('.quantity-input').val()) || 1;
 
 
             const response = await this.apiCall(
-                `/CartProduct/${this.cartId}/${cartProductId}`,
+                `/cart-items/${this.cartId}/${cartItemId}`,
                 'PUT',
                 {
                     choose: isSelected,
@@ -920,7 +920,7 @@ class CartPage {
             );
 
             // Cập nhật dữ liệu local
-            const localCartItem = this.cartItems.find(item => item.idCartProduct === cartProductId);
+            const localCartItem = this.cartItems.find(item => item.idCartItem === cartItemId);
             if (localCartItem) {
                 localCartItem.choose = isSelected;
             }
@@ -929,15 +929,15 @@ class CartPage {
         }
     }
 
-    async removeCartProduct(cartProductId, cartItemElement) {
+    async removeCartItem(cartItemId, cartItemElement) {
         try {
             await this.apiCall(
-                `/CartProduct/${this.cartId}/${cartProductId}`,
+                `/cart-items/${this.cartId}/${cartItemId}`,
                 'DELETE'
             );
 
             // Xóa khỏi dữ liệu local
-            this.cartItems = this.cartItems.filter(item => item.idCartProduct !== cartProductId);
+            this.cartItems = this.cartItems.filter(item => item.idCartItem !== cartItemId);
 
             // Animation xóa
             this.removeItemWithAnimation(cartItemElement);

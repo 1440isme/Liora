@@ -13,12 +13,12 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import vn.liora.config.GuestCartInterceptor;
-import vn.liora.dto.response.CartProductResponse;
+import vn.liora.dto.response.CartItemResponse;
 import vn.liora.entity.User;
 import vn.liora.exception.AppException;
 import vn.liora.exception.ErrorCode;
 import vn.liora.repository.UserRepository;
-import vn.liora.service.ICartProductService;
+import vn.liora.service.ICartItemService;
 import vn.liora.service.ICartService;
 
 import java.util.List;
@@ -30,7 +30,7 @@ import java.util.List;
 public class CartController {
 
     final ICartService cartService;
-    final ICartProductService cartProductService;
+    final ICartItemService cartItemService;
     final UserRepository userRepository;
 
     @GetMapping("/cart")
@@ -46,11 +46,10 @@ public class CartController {
     public ResponseEntity<?> testAuth() {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            return ResponseEntity.ok().body(new Object() {
-                public final String auth = authentication != null ? authentication.toString() : "null";
-                public final boolean isAuthenticated = authentication != null && authentication.isAuthenticated();
-                public final String name = authentication != null ? authentication.getName() : "null";
-            });
+            return ResponseEntity.ok().body(java.util.Map.of(
+                    "auth", authentication != null ? authentication.toString() : "null",
+                    "isAuthenticated", authentication != null && authentication.isAuthenticated(),
+                    "name", authentication != null ? authentication.getName() : "null"));
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error: " + e.getMessage());
         }
@@ -129,9 +128,9 @@ public class CartController {
      */
     @GetMapping("/cart/api/{cartId}/items")
     @ResponseBody
-    public ResponseEntity<List<CartProductResponse>> getCartItems(@PathVariable Long cartId) {
+    public ResponseEntity<List<CartItemResponse>> getCartItems(@PathVariable Long cartId) {
         try {
-            List<CartProductResponse> cartItems = cartProductService.getAllProductsInCart(cartId);
+            List<CartItemResponse> cartItems = cartItemService.getAllItemsInCart(cartId);
             return ResponseEntity.ok(cartItems);
         } catch (Exception e) {
             log.error("Error getting cart items: ", e);
@@ -146,7 +145,7 @@ public class CartController {
     @ResponseBody
     public ResponseEntity<Integer> getCartItemCount(@PathVariable Long cartId) {
         try {
-            int count = cartProductService.getCartItemCount(cartId);
+            int count = cartItemService.getCartItemCount(cartId);
             return ResponseEntity.ok(count);
         } catch (Exception e) {
             log.error("Error getting cart item count: ", e);
@@ -161,7 +160,7 @@ public class CartController {
     @ResponseBody
     public ResponseEntity<Double> getCartTotal(@PathVariable Long cartId) {
         try {
-            double total = cartProductService.getCartTotal(cartId);
+            double total = cartItemService.getCartTotal(cartId);
             return ResponseEntity.ok(total);
         } catch (Exception e) {
             log.error("Error getting cart total: ", e);

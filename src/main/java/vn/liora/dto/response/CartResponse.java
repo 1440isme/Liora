@@ -12,7 +12,7 @@ import java.util.List;
 public class CartResponse {
     Long idCart;
     Long userId;
-    List<CartProductResponse> cartProducts;
+    List<CartItemResponse> cartItems;
     Integer totalItems;
 
 }

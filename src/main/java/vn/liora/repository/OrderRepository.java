@@ -53,10 +53,12 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     // Doanh thu theo sản phẩm
     @Query("""
-    SELECT COALESCE(SUM(op.totalPrice), 0)
-    FROM OrderProduct op
-    JOIN op.order o
-    WHERE op.product.productId = :productId
+    SELECT COALESCE(SUM(p.price), 0)
+    FROM OrderItem oi
+    JOIN oi.order o
+    JOIN oi.productItem pi
+    JOIN pi.product p
+    WHERE p.productId = :productId
       AND o.orderStatus = 'COMPLETED'
 """)
     BigDecimal getRevenueByProductId(@Param("productId") Long productId);

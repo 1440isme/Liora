@@ -55,7 +55,7 @@
                                             <td id="productStatus">Đang tải...</td>
                                         </tr>
                                         <tr>
-                                            <td><strong>Tồn kho:</strong></td>
+                                            <td><strong>Tồn kho (IN_STOCK):</strong></td>
                                             <td id="productStock">Đang tải...</td>
                                         </tr>
                                         <tr>
@@ -136,9 +136,11 @@
                         </div>
 
                         <div class="mb-3">
-                            <label for="quickEditStock" class="form-label">Số lượng tồn kho</label>
+                            <p id="quickEditCurrentStockDisplay" class="form-text text-muted mb-2 fw-medium"></p>
+                            <label for="quickEditStock" class="form-label">Số lượng nhập thêm</label>
                             <input type="number" class="form-control" id="quickEditStock" name="stock" min="0"
-                                required>
+                                placeholder="Nhập số lượng muốn thêm vào kho">
+                            <div class="form-text">Cộng thêm vào tồn hiện tại; để trống nếu không nhập thêm hàng.</div>
                         </div>
 
                         <div class="mb-3">

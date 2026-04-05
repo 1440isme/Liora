@@ -7,7 +7,7 @@ import vn.liora.entity.Cart;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring", uses = {CartProductMapper.class})
+@Mapper(componentModel = "spring", uses = {CartItemMapper.class})
 public interface CartMapper {
 
     @Mapping(target = "userId", source = "user.userId")

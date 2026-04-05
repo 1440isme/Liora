@@ -20,10 +20,10 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     List<Review> findByUserId(Long userId);
     Page<Review> findByUserId(Long userId, Pageable pageable);
     
-    // ====== BY ORDER PRODUCT (1-1) ======
-    Optional<Review> findByOrderProduct_IdOrderProduct(Long idOrderProduct);
-    boolean existsByOrderProduct_IdOrderProduct(Long idOrderProduct);
-    @Query("SELECT COUNT(r) > 0 FROM Review r WHERE r.orderProduct.order.idOrder = :orderId")
+    // ====== BY ORDER ITEM (1-1) ======
+    Optional<Review> findByOrderItem_IdOrderItem(Long idOrderItem);
+    boolean existsByOrderItem_IdOrderItem(Long idOrderItem);
+    @Query("SELECT COUNT(r) > 0 FROM Review r WHERE r.orderItem.order.idOrder = :orderId")
     boolean existsByOrderId(@Param("orderId") Long orderId);
     
     // ====== VISIBILITY FILTERS ======
@@ -40,8 +40,8 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     List<Review> findByUserIdAndIsVisibleTrue(Long userId);
     Page<Review> findByUserIdAndIsVisibleTrue(Long userId, Pageable pageable);
 
-    boolean existsByOrderProductIdOrderProductAndUserId(Long orderProductId, Long userId);
-    Optional<Review> findByOrderProductIdOrderProductAndUserId(Long orderProductId, Long userId);
+    boolean existsByOrderItemIdOrderItemAndUserId(Long orderItemId, Long userId);
+    Optional<Review> findByOrderItemIdOrderItemAndUserId(Long orderItemId, Long userId);
     
     // ====== CUSTOM QUERIES ======
     @Query("SELECT AVG(r.rating) FROM Review r WHERE r.productId = :productId")
@@ -75,8 +75,9 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
 
     // ====== ADMIN FILTER QUERIES ======
     @Query("SELECT r FROM Review r " +
-            "JOIN r.orderProduct op " +
-            "JOIN op.product p " +
+            "JOIN r.orderItem oi " +
+            "JOIN oi.productItem pi " +
+            "JOIN pi.product p " +
             "WHERE (:search IS NULL OR LOWER(r.content) LIKE LOWER(CONCAT('%', :search, '%'))) " +
             "AND (:rating IS NULL OR r.rating = :rating) " +
             "AND (:brandId IS NULL OR p.brand.brandId = :brandId) " +
@@ -93,8 +94,9 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
             Pageable pageable);
 
     @Query("SELECT AVG(r.rating) FROM Review r " +
-            "JOIN r.orderProduct op " +
-            "JOIN op.product p " +
+            "JOIN r.orderItem oi " +
+            "JOIN oi.productItem pi " +
+            "JOIN pi.product p " +
             "WHERE (:rating IS NULL OR r.rating = :rating) " +
             "AND (:brandId IS NULL OR p.brand.brandId = :brandId) " +
             "AND (:categoryId IS NULL OR p.category.categoryId = :categoryId) " +
@@ -106,8 +108,9 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
             @Param("productId") Long productId);
 
     @Query("SELECT COUNT(r) FROM Review r " +
-            "JOIN r.orderProduct op " +
-            "JOIN op.product p " +
+            "JOIN r.orderItem oi " +
+            "JOIN oi.productItem pi " +
+            "JOIN pi.product p " +
             "WHERE (:rating IS NULL OR r.rating = :rating) " +
             "AND (:brandId IS NULL OR p.brand.brandId = :brandId) " +
             "AND (:categoryId IS NULL OR p.category.categoryId = :categoryId) " +
@@ -119,8 +122,9 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
             @Param("productId") Long productId);
 
     @Query("SELECT COUNT(r) FROM Review r " +
-            "JOIN r.orderProduct op " +
-            "JOIN op.product p " +
+            "JOIN r.orderItem oi " +
+            "JOIN oi.productItem pi " +
+            "JOIN pi.product p " +
             "WHERE r.rating = 5 " +
             "AND (:rating IS NULL OR r.rating = :rating) " +
             "AND (:brandId IS NULL OR p.brand.brandId = :brandId) " +

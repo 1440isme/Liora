@@ -839,7 +839,7 @@ async function loadOrderProductsForReview(orderId) {
 
             // Kiểm tra review đã tồn tại cho từng sản phẩm
             for (let product of products) {
-                const reviewCheckResponse = await fetch(`/api/reviews/check/${product.idOrderProduct}`, {
+                const reviewCheckResponse = await fetch(`/api/reviews/check/${product.idOrderItem}`, {
                     method: 'GET',
                     headers: {
                         'Authorization': `Bearer ${token}`,
@@ -895,7 +895,7 @@ function renderReviewProducts(products) {
         const existingReview = product.existingReview;
 
         const productHtml = `
-            <div class="card mb-4 ${isReviewed ? 'border-success' : ''}" data-order-product-id="${product.idOrderProduct}">
+            <div class="card mb-4 ${isReviewed ? 'border-success' : ''}" data-order-item-id="${product.idOrderItem}">
                 <div class="card-body">
                     <!-- Hình ảnh và tên sản phẩm -->
                     <div class="row align-items-center mb-3">
@@ -945,7 +945,7 @@ function renderReviewProducts(products) {
                             </div>
                             
                             <div class="d-flex gap-2">
-                                <button class="btn btn-outline-primary btn-sm edit-btn" data-order-product-id="${product.idOrderProduct}">
+                                <button class="btn btn-outline-primary btn-sm edit-btn" data-order-item-id="${product.idOrderItem}">
                                     <i class="fas fa-edit"></i> Sửa
                                 </button>
                             </div>
@@ -986,25 +986,25 @@ function renderReviewProducts(products) {
                         <div class="mb-3">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <label class="form-label fw-medium mb-0">Nhận xét:</label>
-                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="uploadVideoToEditor('review-editor-${product.idOrderProduct}')" title="Upload video">
+                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="uploadVideoToEditor('review-editor-${product.idOrderItem}')" title="Upload video">
                                     <i class="fas fa-video"></i> Upload video
                                 </button>
                             </div>
-                            <div class="review-editor-container" data-order-product-id="${product.idOrderProduct}">
+                            <div class="review-editor-container" data-order-item-id="${product.idOrderItem}">
                                 <textarea class="review-editor form-control"
-                                          id="review-editor-${product.idOrderProduct}"
+                                          id="review-editor-${product.idOrderItem}"
                                           rows="3"
                                           placeholder="Nhập nhận xét của bạn..."
-                                          data-order-product-id="${product.idOrderProduct}"></textarea>
+                                          data-order-item-id="${product.idOrderItem}"></textarea>
                             </div>
                         </div>
                         
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" 
-                                   id="anonymous_${product.idOrderProduct}" 
-                                   data-order-product-id="${product.idOrderProduct}">
+                                   id="anonymous_${product.idOrderItem}" 
+                                   data-order-item-id="${product.idOrderItem}">
                             <label class="form-check-label text-muted small" 
-                                   for="anonymous_${product.idOrderProduct}">
+                                   for="anonymous_${product.idOrderItem}">
                                 Ẩn danh khi đánh giá
                             </label>
                         </div>
@@ -1016,7 +1016,7 @@ function renderReviewProducts(products) {
         
         // ✅ FIX: Lưu existing review data vào data attribute của card
         if (isReviewed && existingReview) {
-            const card = $(`.card[data-order-product-id="${product.idOrderProduct}"]`);
+            const card = $(`.card[data-order-item-id="${product.idOrderItem}"]`);
             card.data('existing-review', existingReview);
         }
     });
@@ -1046,9 +1046,9 @@ function renderReviewProducts(products) {
     
     // ✅ FIX: Add click handler for "Sửa" button using event delegation
     $(document).off('click', '.edit-btn').on('click', '.edit-btn', function () {
-        const orderProductId = $(this).data('order-product-id');
-        if (orderProductId) {
-            editReview(orderProductId);
+        const orderItemId = $(this).data('order-item-id');
+        if (orderItemId) {
+            editReview(orderItemId);
         }
     });
 
@@ -1090,7 +1090,7 @@ async function checkReviewStatusAndOpen(orderId) {
 
             // Kiểm tra từng sản phẩm
             for (let product of products) {
-                const reviewCheckResponse = await fetch(`/api/reviews/check/${product.idOrderProduct}`, {
+                const reviewCheckResponse = await fetch(`/api/reviews/check/${product.idOrderItem}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (reviewCheckResponse.ok) {
@@ -1137,7 +1137,7 @@ async function openViewReviewModal(orderId) {
 
             // Load existing reviews
             for (let product of products) {
-                const reviewCheckResponse = await fetch(`/api/reviews/check/${product.idOrderProduct}`, {
+                const reviewCheckResponse = await fetch(`/api/reviews/check/${product.idOrderItem}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (reviewCheckResponse.ok) {
@@ -1179,7 +1179,7 @@ function renderViewReviewProducts(products) {
         const hasReview = product.hasReview;
 
         const productHtml = `
-            <div class="card mb-4 ${hasReview ? 'border-success' : 'border-warning'}" data-order-product-id="${product.idOrderProduct}">
+            <div class="card mb-4 ${hasReview ? 'border-success' : 'border-warning'}" data-order-item-id="${product.idOrderItem}">
                 <div class="card-body">
                     <div class="row align-items-center mb-3">
                         <div class="col-auto">
@@ -1231,7 +1231,7 @@ function renderViewReviewProducts(products) {
                         </div>
                         
                         <div class="d-flex gap-2">
-                            <button class="btn btn-outline-primary btn-sm edit-btn" data-order-product-id="${product.idOrderProduct}">
+                            <button class="btn btn-outline-primary btn-sm edit-btn" data-order-item-id="${product.idOrderItem}">
                                 <i class="fas fa-edit"></i> Sửa
                             </button>
                         </div>
@@ -1273,25 +1273,25 @@ function renderViewReviewProducts(products) {
                         <div class="mb-3">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <label class="form-label fw-medium mb-0">Nhận xét:</label>
-                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="uploadVideoToEditor('review-editor-view-${product.idOrderProduct}')" title="Upload video">
+                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="uploadVideoToEditor('review-editor-view-${product.idOrderItem}')" title="Upload video">
                                     <i class="fas fa-video"></i> Upload video
                                 </button>
                             </div>
-                            <div class="review-editor-container" data-order-product-id="${product.idOrderProduct}">
+                            <div class="review-editor-container" data-order-item-id="${product.idOrderItem}">
                                 <textarea class="review-editor form-control"
-                                          id="review-editor-view-${product.idOrderProduct}"
+                                          id="review-editor-view-${product.idOrderItem}"
                                           rows="3"
                                           placeholder="Nhập nhận xét của bạn..."
-                                          data-order-product-id="${product.idOrderProduct}"></textarea>
+                                          data-order-item-id="${product.idOrderItem}"></textarea>
                             </div>
                         </div>
 
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox"
-                                   id="anonymous_${product.idOrderProduct}"
-                                   data-order-product-id="${product.idOrderProduct}">
+                                   id="anonymous_${product.idOrderItem}"
+                                   data-order-item-id="${product.idOrderItem}">
                             <label class="form-check-label text-muted small"
-                                   for="anonymous_${product.idOrderProduct}">
+                                   for="anonymous_${product.idOrderItem}">
                                 Ẩn danh khi đánh giá
                             </label>
                         </div>
@@ -1304,7 +1304,7 @@ function renderViewReviewProducts(products) {
 
         // ✅ FIX: Lưu existing review data vào data attribute của card
         if (hasReview && existingReview) {
-            const card = $(`.card[data-order-product-id="${product.idOrderProduct}"]`);
+            const card = $(`.card[data-order-item-id="${product.idOrderItem}"]`);
             card.data('existing-review', existingReview);
         }
     });
@@ -1334,9 +1334,9 @@ function renderViewReviewProducts(products) {
     
     // ✅ FIX: Add click handler for "Sửa" button using event delegation
     $(document).off('click', '.edit-btn').on('click', '.edit-btn', function () {
-        const orderProductId = $(this).data('order-product-id');
-        if (orderProductId) {
-            editReview(orderProductId);
+        const orderItemId = $(this).data('order-item-id');
+        if (orderItemId) {
+            editReview(orderItemId);
         }
     });
 
@@ -1360,8 +1360,8 @@ function renderViewReviewProducts(products) {
 }
 
 // Thêm function edit review
-function editReview(orderProductId) {
-    const card = $(`.card[data-order-product-id="${orderProductId}"]`);
+function editReview(orderItemId) {
+    const card = $(`.card[data-order-item-id="${orderItemId}"]`);
     const existingReview = card.data('existing-review');
 
     // Chuyển sang edit mode
@@ -1401,13 +1401,13 @@ function editReview(orderProductId) {
             <div class="mb-3">
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <label class="form-label fw-medium mb-0">Nhận xét:</label>
-                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="uploadVideoToEditor('review-editor-edit-${orderProductId}')" title="Upload video">
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="uploadVideoToEditor('review-editor-edit-${orderItemId}')" title="Upload video">
                         <i class="fas fa-video"></i> Upload video
                     </button>
                 </div>
-                <div class="review-editor-container" data-order-product-id="${orderProductId}">
+                <div class="review-editor-container" data-order-item-id="${orderItemId}">
                     <textarea class="review-editor form-control"
-                              id="review-editor-edit-${orderProductId}"
+                              id="review-editor-edit-${orderItemId}"
                               rows="3"
                               placeholder="Nhập nhận xét của bạn...">${existingReview.content || ''}</textarea>
                 </div>
@@ -1423,7 +1423,7 @@ function editReview(orderProductId) {
             </div>
             
             <div class="d-flex gap-2">
-                <button class="btn btn-secondary btn-sm" onclick="cancelEdit(${orderProductId})">
+                <button class="btn btn-secondary btn-sm" onclick="cancelEdit(${orderItemId})">
                     <i class="fas fa-times"></i> Hủy
                 </button>
             </div>
@@ -1462,16 +1462,16 @@ function editReview(orderProductId) {
         console.log('Rating stored in edit mode:', card.data('rating'));
 
         // Lưu thay đổi rating
-        saveReviewChanges(orderProductId);
+        saveReviewChanges(orderItemId);
     });
 
     // Add change handlers để lưu thay đổi vào pending-changes
     card.find('textarea').on('input', function () {
-        saveReviewChanges(orderProductId);
+        saveReviewChanges(orderItemId);
     });
 
     card.find('input[type="checkbox"]').on('change', function () {
-        saveReviewChanges(orderProductId);
+        saveReviewChanges(orderItemId);
     });
 
     // Ẩn nút "Sửa" khi đang edit
@@ -1482,20 +1482,20 @@ function editReview(orderProductId) {
         initReviewEditors();
         // Lưu thay đổi ban đầu sau khi CKEditor khởi tạo
         setTimeout(() => {
-            saveReviewChanges(orderProductId);
+            saveReviewChanges(orderItemId);
         }, 200);
     }, 100);
 }
 
 // Function để lưu thay đổi review (chỉ lưu vào data, không gửi API)
-function saveReviewChanges(orderProductId) {
-    const card = $(`.card[data-order-product-id="${orderProductId}"]`);
+function saveReviewChanges(orderItemId) {
+    const card = $(`.card[data-order-item-id="${orderItemId}"]`);
     const rating = card.data('rating');
     const existingReview = card.data('existing-review');
     
     // Try to get content from CKEditor first
     let content = '';
-    const editorId = `review-editor-edit-${orderProductId}`;
+    const editorId = `review-editor-edit-${orderItemId}`;
     
     try {
         if (window.reviewEditors && window.reviewEditors[editorId]) {
@@ -1523,7 +1523,7 @@ function saveReviewChanges(orderProductId) {
     // Nếu rating không được set (user không chọn lại star), dùng rating cũ
     const finalRating = rating || existingReview?.rating || 0;
     
-    console.log('Saving review changes for product:', orderProductId);
+    console.log('Saving review changes for item:', orderItemId);
     console.log('- Rating:', finalRating);
     console.log('- Content length:', content ? content.length : 0);
     console.log('- Anonymous:', anonymous);
@@ -1539,8 +1539,8 @@ function saveReviewChanges(orderProductId) {
 }
 
 // Thêm function cancel edit review
-function cancelEdit(orderProductId) {
-    const card = $(`.card[data-order-product-id="${orderProductId}"]`);
+function cancelEdit(orderItemId) {
+    const card = $(`.card[data-order-item-id="${orderItemId}"]`);
 
     // Xóa pending changes
     card.removeData('pending-changes');
@@ -1605,7 +1605,7 @@ async function updateReviewButtonStatus(orderId) {
 
             // Kiểm tra trạng thái review của tất cả sản phẩm
             for (let product of products) {
-                const reviewCheckResponse = await fetch(`/api/reviews/check/${product.idOrderProduct}`, {
+                const reviewCheckResponse = await fetch(`/api/reviews/check/${product.idOrderItem}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (reviewCheckResponse.ok) {
@@ -1694,8 +1694,8 @@ async function submitAllReviews() {
     let hasValidReview = false;
     let hasInvalidReview = false;
 
-    $('.card[data-order-product-id]').each(function () {
-        const orderProductId = $(this).data('order-product-id');
+    $('.card[data-order-item-id]').each(function () {
+        const orderItemId = $(this).data('order-item-id');
         let rating = $(this).data('rating');
         const existingReview = $(this).data('existing-review');
         const pendingChanges = $(this).data('pending-changes');
@@ -1714,13 +1714,13 @@ async function submitAllReviews() {
              
              // Nếu vẫn không có rating hợp lệ, báo lỗi
              if (!finalRating || finalRating < 1) {
-                 console.log('No valid rating found for product:', orderProductId);
+                 console.log('No valid rating found for item:', orderItemId);
                  hasInvalidReview = true;
                  return;
              }
              
                            // DEBUG: Kiểm tra content từ CKEditor trước khi submit
-              const editorId = `review-editor-edit-${orderProductId}`;
+              const editorId = `review-editor-edit-${orderItemId}`;
               let finalContent = pendingChanges.content || '';
               
               // Lấy content mới nhất từ CKEditor nếu có
@@ -1788,7 +1788,7 @@ async function submitAllReviews() {
         const anonymous = card.find('input[type="checkbox"]').is(':checked');
 
         // Debug: Log để kiểm tra
-        console.log('Product:', orderProductId, 'Rating:', rating, 'Content:', content);
+        console.log('Item:', orderItemId, 'Rating:', rating, 'Content:', content);
         console.log('Card data rating:', card.data('rating'));
         console.log('Card has rating data:', card.data('rating') !== undefined);
 
@@ -1807,9 +1807,9 @@ async function submitAllReviews() {
 
         // Chỉ submit nếu có rating (nội dung có thể để trống)
         if (rating && rating >= 1 && rating <= 5) {
-            console.log('Valid review:', { orderProductId, rating, content, anonymous });
+            console.log('Valid review:', { orderItemId, rating, content, anonymous });
             newReviews.push({
-                orderProductId: orderProductId,
+                orderItemId: orderItemId,
                 rating: rating,
                 content: content || '',
                 anonymous: anonymous
@@ -1832,7 +1832,7 @@ async function submitAllReviews() {
     if (!hasValidReview) {
         // Kiểm tra nếu có reviews đang được edit (có pendingChanges)
         let hasAnyPendingChanges = false;
-        $('.card[data-order-product-id]').each(function () {
+        $('.card[data-order-item-id]').each(function () {
             if ($(this).data('pending-changes')) {
                 hasAnyPendingChanges = true;
                 return false; // break loop

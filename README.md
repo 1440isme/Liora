@@ -5,7 +5,7 @@
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.6-brightgreen.svg)](https://spring.io/projects/spring-boot)
 [![Java](https://img.shields.io/badge/Java-21-orange.svg)](https://www.oracle.com/java/)
 [![Maven](https://img.shields.io/badge/Maven-3.6+-blue.svg)](https://maven.apache.org/)
-[![SQL Server](https://img.shields.io/badge/SQL%20Server-2019+-red.svg)](https://www.microsoft.com/sql-server)
+[![MySQL](https://img.shields.io/badge/MySQL-8.0+-blue.svg)](https://www.mysql.com/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 **An e-commerce platform specializing in beauty and skincare products built with Spring Boot**
@@ -72,7 +72,7 @@
 - **Custom CSS** - Themed Styling
 
 ### Database
-- **Microsoft SQL Server 2019+** - Production Database
+- **MySQL 8.0+** - Production Database
 - **H2 Database** - Development & Testing
 
 ### Third-party Integrations
@@ -87,7 +87,7 @@
 ### System Requirements
 - ☕ **Java** 21 or higher
 - 🛠️ **Maven** 3.6+
-- 🗄️ **SQL Server** 2019+ or SQL Server Express
+- 🗄️ **MySQL** 8.0+ (hoặc bản tương đương)
 - 💻 **IDE** (IntelliJ IDEA / Eclipse / VS Code)
 
 ### Installation Guide
@@ -99,14 +99,14 @@ cd Liora
 ```
 
 #### 2. Database Configuration
-Create a new database in SQL Server:
+Create a new database in MySQL:
 ```sql
 CREATE DATABASE LioraDB;
 ```
 
 Update connection information in `src/main/resources/application.properties`:
 ```properties
-spring.datasource.url=jdbc:sqlserver://localhost:1433;databaseName=LioraDB
+spring.datasource.url=jdbc:mysql://localhost:3306/LioraDB?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=utf8
 spring.datasource.username=your_username
 spring.datasource.password=your_password
 ```
@@ -218,7 +218,7 @@ src/main/java/vn/liora/
                    │
 ┌──────────────────▼──────────────────────────┐
 │             Database Layer                  │
-│         (Microsoft SQL Server)              │
+│             (MySQL)                        │
 └─────────────────────────────────────────────┘
 ```
 
@@ -229,12 +229,12 @@ File `src/main/resources/application.properties` contains all project configurat
 
 ```properties
 # ==================== Database ====================
-spring.datasource.url=jdbc:sqlserver://localhost:1433;databaseName=LioraDB
+spring.datasource.url=jdbc:mysql://localhost:3306/LioraDB?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=utf8
 spring.datasource.username=sa
 spring.datasource.password=your_password
 
 # ==================== JPA Configuration ====================
-spring.jpa.hibernate.ddl-auto=update
+spring.jpa.hibernate.ddl-auto=none
 spring.jpa.show-sql=false
 spring.jpa.properties.hibernate.format_sql=true
 

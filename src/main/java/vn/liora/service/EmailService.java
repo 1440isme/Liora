@@ -5,8 +5,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
+import vn.liora.dto.response.OrderItemResponse;
 import vn.liora.dto.response.OrderResponse;
-import vn.liora.dto.response.OrderProductResponse;
 import vn.liora.service.stock.StockEventType;
 
 import java.util.List;
@@ -25,7 +25,7 @@ public class EmailService {
      * Gửi email xác nhận đơn hàng cho user đã đăng nhập
      */
     public void sendOrderConfirmationEmail(String userEmail, String userName, OrderResponse order,
-            List<OrderProductResponse> orderProducts) {
+            List<OrderItemResponse> orderProducts) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setTo(userEmail);
@@ -46,7 +46,7 @@ public class EmailService {
      * Gửi email xác nhận đơn hàng cho guest
      */
     public void sendGuestOrderConfirmationEmail(String guestEmail, OrderResponse order,
-            List<OrderProductResponse> orderProducts) {
+            List<OrderItemResponse> orderProducts) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setTo(guestEmail);
@@ -67,7 +67,7 @@ public class EmailService {
      * Xây dựng nội dung email
      */
     private String buildOrderConfirmationContent(String customerName, OrderResponse order,
-            List<OrderProductResponse> orderProducts, boolean isRegisteredUser) {
+            List<OrderItemResponse> orderProducts, boolean isRegisteredUser) {
         StringBuilder content = new StringBuilder();
 
         content.append("Xin chào ").append(customerName).append(",\n\n");
@@ -80,7 +80,7 @@ public class EmailService {
         content.append("Tổng tiền: ").append(String.format("%,.0f VNĐ", order.getTotal())).append("\n\n");
 
         content.append("SẢN PHẨM ĐÃ ĐẶT:\n");
-        for (OrderProductResponse product : orderProducts) {
+        for (OrderItemResponse product : orderProducts) {
             content.append("- ").append(product.getProductName())
                     .append(" x").append(product.getQuantity())
                     .append(" = ").append(String.format("%,.0f VNĐ", product.getTotalPrice())).append("\n");
@@ -254,7 +254,7 @@ public class EmailService {
      * Gửi email thông báo hủy đơn hàng cho user đã đăng nhập
      */
     public void sendOrderCancellationEmail(String userEmail, String userName, OrderResponse order,
-            List<OrderProductResponse> orderProducts) {
+            List<OrderItemResponse> orderProducts) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setTo(userEmail);
@@ -275,7 +275,7 @@ public class EmailService {
      * Gửi email thông báo hủy đơn hàng cho guest
      */
     public void sendGuestOrderCancellationEmail(String guestEmail, OrderResponse order,
-            List<OrderProductResponse> orderProducts) {
+            List<OrderItemResponse> orderProducts) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setTo(guestEmail);
@@ -296,7 +296,7 @@ public class EmailService {
      * Xây dựng nội dung email thông báo hủy đơn hàng
      */
     private String buildOrderCancellationContent(String customerName, OrderResponse order,
-            List<OrderProductResponse> orderProducts, boolean isRegisteredUser) {
+            List<OrderItemResponse> orderProducts, boolean isRegisteredUser) {
         StringBuilder content = new StringBuilder();
 
         content.append("Xin chào ").append(customerName).append(",\n\n");
@@ -309,7 +309,7 @@ public class EmailService {
         content.append("Tổng tiền: ").append(String.format("%,.0f VNĐ", order.getTotal())).append("\n\n");
 
         content.append("SẢN PHẨM ĐÃ HỦY:\n");
-        for (OrderProductResponse product : orderProducts) {
+        for (OrderItemResponse product : orderProducts) {
             content.append("- ").append(product.getProductName())
                     .append(" x").append(product.getQuantity())
                     .append(" = ").append(String.format("%,.0f VNĐ", product.getTotalPrice())).append("\n");

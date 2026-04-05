@@ -137,19 +137,34 @@ class ProductFormManager {
             ? window.productDescriptionEditor.getData()
             : (descriptionEl ? descriptionEl.value : '');
 
-        return {
+        const payload = {
             name: document.getElementById('name').value,
             description: editorHtml,
             price: parseFloat(document.getElementById('price').value),
             brandId: parseInt(document.getElementById('brandId').value),
             categoryId: parseInt(document.getElementById('categoryId').value),
-            stock: parseInt(document.getElementById('stock').value),
             isActive: document.getElementById('isActive').checked
         };
+
+        const stockEl = document.getElementById('stock');
+        if (this.isEditMode) {
+            const raw = (stockEl && stockEl.value != null) ? String(stockEl.value).trim() : '';
+            if (raw !== '') {
+                const n = parseInt(raw, 10);
+                payload.stock = Number.isNaN(n) ? null : n;
+            }
+            // để trống: không gửi stock → backend giữ nguyên tồn kho
+        } else {
+            payload.stock = stockEl ? parseInt(stockEl.value, 10) : NaN;
+        }
+
+        return payload;
     }
 
     validateForm() {
-        const requiredFields = ['name', 'price', 'brandId', 'categoryId', 'stock'];
+        const requiredFields = this.isEditMode
+            ? ['name', 'price', 'brandId', 'categoryId']
+            : ['name', 'price', 'brandId', 'categoryId', 'stock'];
         let isValid = true;
 
         requiredFields.forEach(fieldId => {
@@ -163,6 +178,23 @@ class ProductFormManager {
                 field.classList.remove('is-invalid');
             }
         });
+
+        const stockField = document.getElementById('stock');
+        if (this.isEditMode && stockField && stockField.value.trim() !== '') {
+            const n = parseInt(stockField.value.trim(), 10);
+            const fb = stockField.parentNode && stockField.parentNode.querySelector('.invalid-feedback');
+            if (Number.isNaN(n)) {
+                stockField.classList.add('is-invalid');
+                if (fb) fb.textContent = 'Vui lòng nhập số lượng muốn thêm (số nguyên không âm).';
+                isValid = false;
+            } else if (n < 0) {
+                stockField.classList.add('is-invalid');
+                if (fb) fb.textContent = 'Số lượng nhập thêm không được âm.';
+                isValid = false;
+            } else {
+                stockField.classList.remove('is-invalid');
+            }
+        }
 
         // Special validation for description (CKEditor)
         const descriptionEl = document.getElementById('description');

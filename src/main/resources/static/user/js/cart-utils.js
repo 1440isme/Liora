@@ -45,7 +45,7 @@ class CartUtils {
         const action = button.data('action');
         const input = button.siblings('.quantity-input');
         const cartItem = button.closest('.cart-item');
-        const cartProductId = cartItem.data('cart-product-id');
+        const cartItemId = cartItem.data('cart-item-id');
         let value = parseInt(input.val());
 
         // Get max stock from input attribute (already calculated min with 99)
@@ -74,7 +74,7 @@ class CartUtils {
         input.val(value);
         
         // Update quantity in background (don't wait for it to update price)
-        updateQuantityFn(cartProductId, value).catch(err => {
+        updateQuantityFn(cartItemId, value).catch(err => {
             console.error('Error updating quantity:', err);
         });
         
@@ -91,7 +91,7 @@ class CartUtils {
     static async handleQuantityInputChange(event, updateQuantityFn, showToastFn, afterUpdateFn = null) {
         const input = $(event.target);
         const cartItem = input.closest('.cart-item');
-        const cartProductId = cartItem.data('cart-product-id');
+        const cartItemId = cartItem.data('cart-item-id');
         let value = parseInt(input.val());
 
         // Get max stock from input attribute (already calculated min with 99)
@@ -101,7 +101,7 @@ class CartUtils {
         const actualStock = parseInt(cartItem.data('stock')) || maxStock;
         const finalMaxStock = Math.min(actualStock, maxStock);
 
-        console.log('Input validation:', { value, maxStock, inputVal: input.val(), cartProductId });
+        console.log('Input validation:', { value, maxStock, inputVal: input.val(), cartItemId });
 
         // Force validation immediately
         if (isNaN(value) || value < 1) {
@@ -111,7 +111,7 @@ class CartUtils {
             console.log('Set to minimum: 1');
             
             // Update quantity in background
-            updateQuantityFn(cartProductId, value).catch(err => {
+            updateQuantityFn(cartItemId, value).catch(err => {
                 console.error('Error updating quantity:', err);
             });
         } else if (value > finalMaxStock) {
@@ -122,7 +122,7 @@ class CartUtils {
             console.log('Set to maximum:', finalMaxStock);
             
             // Update quantity in background
-            updateQuantityFn(cartProductId, value).catch(err => {
+            updateQuantityFn(cartItemId, value).catch(err => {
                 console.error('Error updating quantity:', err);
             });
         } else {
@@ -130,7 +130,7 @@ class CartUtils {
             console.log('Valid quantity, updating cart:', value);
             
             // Update quantity in background
-            updateQuantityFn(cartProductId, value).catch(err => {
+            updateQuantityFn(cartItemId, value).catch(err => {
                 console.error('Error updating quantity:', err);
                 showToastFn('Có lỗi xảy ra khi cập nhật số lượng', 'error');
             });
@@ -321,7 +321,7 @@ class CartUtils {
     static async validateSelectedProducts(cartId, showToastFn, updateItemsFn = null, onSuccessFn = null) {
         try {
             // Gọi API để lấy sản phẩm đã chọn
-            const selectedItemsResponse = await this.apiCall(`/CartProduct/${cartId}/selected-products`, 'GET');
+            const selectedItemsResponse = await this.apiCall(`/cart-items/${cartId}/selected-items`, 'GET');
             
             // Tạo bản sao danh sách
             const clonedList = [...selectedItemsResponse];

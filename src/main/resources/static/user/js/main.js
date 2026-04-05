@@ -59,17 +59,17 @@ class LioraApp {
             }
 
             // 2) Gọi API thêm sản phẩm vào giỏ
-            const addRaw = await this.apiCall(`/CartProduct/${cartId}`, 'POST', {
+            const addRaw = await this.apiCall(`/cart-items/${cartId}`, 'POST', {
                 idProduct: Number(productId),
                 quantity: Number(quantity)
             });
             const addData = (addRaw && (addRaw.result || addRaw.data?.result)) ? (addRaw.result || addRaw.data.result) : addRaw;
 
             // 3) Nếu choose = true, tick chọn sản phẩm này
-            if (choose && addData && addData.idCartProduct) {
+            if (choose && addData && addData.idCartItem) {
                 try {
                     // Gửi đầy đủ thông tin để tránh lỗi NULL constraint
-                    const chooseResponse = await this.apiCall(`/CartProduct/${cartId}/${addData.idCartProduct}`, 'PUT', {
+                    const chooseResponse = await this.apiCall(`/cart-items/${cartId}/${addData.idCartItem}`, 'PUT', {
                         quantity: addData.quantity, // Gửi quantity hiện tại
                         choose: true
                     });
@@ -77,7 +77,7 @@ class LioraApp {
                     console.error('Failed to mark product as chosen:', chooseErr);
                     console.error('Choose error details:', {
                         cartId,
-                        cartProductId: addData.idCartProduct,
+                        cartItemId: addData.idCartItem,
                         error: chooseErr.message,
                         response: chooseErr.response
                     });
@@ -87,7 +87,7 @@ class LioraApp {
 
             // 4) Cập nhật badge header bằng số lượng thực tế từ server
             try {
-                // Cập nhật số LOẠI sản phẩm: dùng endpoint count (đếm số dòng CartProduct)
+                // Cập nhật số LOẠI sản phẩm: dùng endpoint count (đếm số dòng CartItem)
                 await this.refreshCartBadge();
             } catch (_) {
                 // Fallback local
@@ -117,41 +117,41 @@ class LioraApp {
             if (!cartId) throw new Error('Missing cartId');
 
             // 2) Thêm sản phẩm
-            const addData = await this.apiCall(`/CartProduct/${cartId}`, 'POST', {
+            const addData = await this.apiCall(`/cart-items/${cartId}`, 'POST', {
                 idProduct: Number(productId),
                 quantity: Number(quantity)
             });
 
             // 3) Đánh dấu chọn (choose=true) để checkout hiển thị ngay item này
-            let idCartProduct = addData && addData.idCartProduct ? addData.idCartProduct : null;
-            if (!idCartProduct) {
-                // Fallback: lấy danh sách items trong giỏ để tìm idCartProduct theo idProduct
+            let idCartItem = addData && addData.idCartItem ? addData.idCartItem : null;
+            if (!idCartItem) {
+                // Fallback: lấy danh sách items trong giỏ để tìm idCartItem theo idProduct
                 try {
                     const items = await this.apiCall(`/cart/api/${cartId}/items`, 'GET');
                     const matches = Array.isArray(items) ? items.filter(it => Number(it.idProduct) === Number(productId)) : [];
                     // Ưu tiên item mới nhất nếu có
                     const matched = matches.length > 0 ? matches[matches.length - 1] : null;
-                    if (matched && matched.idCartProduct) {
-                        idCartProduct = matched.idCartProduct;
+                    if (matched && matched.idCartItem) {
+                        idCartItem = matched.idCartItem;
                     } else if (matches.length > 0) {
                         // Nếu vẫn không lấy được id, chọn tất cả matches (an toàn hơn cho UI checkout)
                         for (const it of matches) {
                             try {
-                                await this.apiCall(`/CartProduct/${cartId}/${it.idCartProduct}`, 'PUT', { choose: true });
+                                await this.apiCall(`/cart-items/${cartId}/${it.idCartItem}`, 'PUT', { choose: true });
                             } catch (_) { /* ignore */ }
                         }
                     }
                 } catch (_) { /* ignore */ }
             }
 
-            if (idCartProduct) {
+            if (idCartItem) {
                 try {
                     const parsedQty = Number(addData?.quantity ?? quantity);
                     const validQty = Number.isFinite(parsedQty) && parsedQty >= 1 ? parsedQty : undefined;
                     const body = { choose: true };
                     if (validQty !== undefined) body.quantity = validQty;
 
-                    await this.apiCall(`/CartProduct/${cartId}/${idCartProduct}`, 'PUT', body);
+                    await this.apiCall(`/cart-items/${cartId}/${idCartItem}`, 'PUT', body);
                 } catch (_) { /* ignore */ }
             }
 
@@ -897,7 +897,7 @@ class LioraApp {
         });
     }
 
-    // Đếm theo số loại sản phẩm (server-side): số dòng CartProduct
+    // Đếm theo số loại sản phẩm (server-side): số dòng CartItem
     async refreshCartBadge() {
         try {
             const cartData = await this.apiCall('/cart/api/current', 'GET');

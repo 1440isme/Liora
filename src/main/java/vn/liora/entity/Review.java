@@ -23,7 +23,7 @@ public class Review {
     @Column(name = "IdReview")
     private Long reviewId;
 
-    @Column(name = "Content", columnDefinition = "NVARCHAR(MAX)", nullable = true)
+    @Column(name = "Content", columnDefinition = "LONGTEXT", nullable = true)
     private String content;
 
     @Column(name = "Rating", nullable = false)
@@ -32,6 +32,7 @@ public class Review {
     private Integer rating;
 
     @Column(name = "Anonymous", nullable = false)
+    @Builder.Default
     private Boolean anonymous = false;
 
     // Thêm field để admin ẩn/hiện review
@@ -53,7 +54,7 @@ public class Review {
 
     // ========== RELATIONSHIPS ==========
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "IdOrderProduct", nullable = false)
+    @JoinColumn(name = "IdOrderItem", nullable = false)
     @JsonIgnore
-    private OrderProduct orderProduct;
+    private OrderItem orderItem;
 }

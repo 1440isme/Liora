@@ -43,10 +43,10 @@ public class Discount {
     @Column(name = "MaxDiscountAmount", precision = 10, scale = 2)
     private BigDecimal maxDiscountAmount;
 
-    @Column(name = "StartDate", nullable = false, columnDefinition = "DATETIME2")
+    @Column(name = "StartDate", nullable = false, columnDefinition = "DATETIME")
     private LocalDateTime startDate;
 
-    @Column(name = "EndDate", nullable = false, columnDefinition = "DATETIME2")
+    @Column(name = "EndDate", nullable = false, columnDefinition = "DATETIME")
     private LocalDateTime endDate;
 
     @Column(name = "UsageLimit")
@@ -58,10 +58,10 @@ public class Discount {
     @Column(name = "IsActive", nullable = false)
     private Boolean isActive = true;
 
-    @Column(name = "CreatedAt", nullable = false, columnDefinition = "DATETIME2")
+    @Column(name = "CreatedAt", nullable = false, columnDefinition = "DATETIME")
     private LocalDateTime createdAt;
 
-    @Column(name = "UpdatedAt", columnDefinition = "DATETIME2")
+    @Column(name = "UpdatedAt", columnDefinition = "DATETIME")
     private LocalDateTime updatedAt;
 
     @Column(name = "UsedCount")
