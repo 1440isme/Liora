@@ -357,6 +357,9 @@ public class AdminProductController {
         }
     }
 
+    /**
+     * Cập nhật sản phẩm. Trường {@code stock} trong body là số lượng nhập thêm (delta IN_STOCK), không phải tổng tồn kho.
+     */
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('product.update')")
     public ResponseEntity<ApiResponse<ProductResponse>> updateProduct(

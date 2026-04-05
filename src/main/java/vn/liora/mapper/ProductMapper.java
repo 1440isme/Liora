@@ -69,6 +69,7 @@ public interface ProductMapper {
     @Mapping(target = "updatedDate", ignore = true)
     @Mapping(target = "averageRating", ignore = true)
     @Mapping(target = "ratingCount", ignore = true)
+    @Mapping(target = "stock", ignore = true)
     void updateProduct(@MappingTarget Product product, ProductUpdateRequest request);
 
 }

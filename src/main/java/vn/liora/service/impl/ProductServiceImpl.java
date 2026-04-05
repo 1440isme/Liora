@@ -146,16 +146,23 @@ public class ProductServiceImpl implements IProductService {
             }
         }
 
+        Integer newStockForEvent = null;
         if (request.getStock() != null) {
-            syncStockTo(request.getStock(), product);
-            product.setAvailable(request.getStock() > 0);
+            int quantityToAdd = request.getStock();
+            if (quantityToAdd > 0) {
+                addInStockItems(product, quantityToAdd);
+                hydrateStock(product);
+                product.setAvailable(getAvailableStock(product.getProductId()) > 0);
+                newStockForEvent = getAvailableStock(product.getProductId());
+            }
+            // quantityToAdd == 0: không thêm/xóa item; không đổi available theo field này
         }
 
         product.setUpdatedDate(LocalDateTime.now());
         productRepository.save(product);
 
-        if (request.getStock() != null && !request.getStock().equals(oldStock)) {
-            productStockEventPublisher.publishIfNeeded(product, oldStock, request.getStock());
+        if (newStockForEvent != null && !newStockForEvent.equals(oldStock)) {
+            productStockEventPublisher.publishIfNeeded(product, oldStock, newStockForEvent);
         }
         hydrateStock(product);
         return productMapper.toProductResponse(product);

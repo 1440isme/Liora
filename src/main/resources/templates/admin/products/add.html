@@ -30,7 +30,7 @@
                             <div class="card card-rounded">
                                 <div class="card-body">
                                     <h4 class="card-title card-title-dash">Thông tin sản phẩm</h4>
-                                    <div th:replace="admin/products/components/product-form"></div>
+                                    <div th:replace="~{admin/products/components/product-form :: product-form('create')}"></div>
                                 </div>
                             </div>
                         </div>

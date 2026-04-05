@@ -137,7 +137,13 @@ class ProductEditManager {
         if (priceEl) priceEl.value = product.price || '';
 
         const stockEl = document.getElementById('stock');
-        if (stockEl) stockEl.value = product.stock || 0;
+        if (stockEl) stockEl.value = '';
+
+        const currentStockEl = document.getElementById('currentStockDisplay');
+        if (currentStockEl) {
+            const n = product.stock != null ? product.stock : 0;
+            currentStockEl.textContent = `Tồn kho hiện tại: ${n} sản phẩm`;
+        }
 
         const soldCountEl = document.getElementById('soldCount');
         if (soldCountEl) soldCountEl.value = product.soldCount || 0;
@@ -411,9 +417,11 @@ class ProductEditManager {
     // Load product info
     loadProductInfo(product) {
         const container = document.getElementById('productInfo');
+        const inStock = product.stock != null ? product.stock : 0;
         container.innerHTML = `
             <p><strong>Ngày tạo:</strong> ${this.formatDate(product.createdDate)}</p>
             <p><strong>Cập nhật lần cuối:</strong> ${this.formatDate(product.updatedDate)}</p>
+            <p><strong>Tồn kho hiện tại:</strong> ${inStock} sản phẩm</p>
             <p><strong>Đã bán:</strong> ${product.soldCount || 0}</p>
             <p><strong>Đánh giá:</strong> ${product.averageRating || 0}/5</p>
         `;
