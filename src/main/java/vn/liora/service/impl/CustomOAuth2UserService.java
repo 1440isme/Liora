@@ -9,25 +9,24 @@ import org.springframework.stereotype.Service;
 
 import vn.liora.dto.CustomOAuth2User;
 import vn.liora.entity.User;
-import vn.liora.service.Authen.AuthenticationStrategyFactory;
-import vn.liora.service.Authen.LoginStrategy;
+import vn.liora.Authen.OAuth2AuthenticationService;
 
 @Service
 @RequiredArgsConstructor
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
-    private final AuthenticationStrategyFactory factory;
+    private final OAuth2AuthenticationService oAuth2AuthenticationService;
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
         OAuth2User oauth2User = super.loadUser(userRequest);
 
         // Lấy provider tương ứng (VD: GOOGLE)
-        String provider = userRequest.getClientRegistration().getRegistrationId().toUpperCase();
+        String providerStr = userRequest.getClientRegistration().getRegistrationId().toUpperCase();
+        vn.liora.enums.AuthProvider provider = vn.liora.enums.AuthProvider.valueOf(providerStr);
 
-        // Sử dụng Strategy tương ứng để lấy hoặc tạo User
-        LoginStrategy strategy = factory.getStrategy(provider);
-        User user = strategy.login(oauth2User.getAttributes());
+        // Sử dụng Core Context Service theo đúng chuẩn bản thiết kế
+        User user = oAuth2AuthenticationService.login(provider, oauth2User.getAttributes());
 
         return new CustomOAuth2User(oauth2User, user);
     }

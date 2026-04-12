@@ -1,0 +1,322 @@
+---
+config:
+  layout: elk
+---
+classDiagram
+direction TB
+
+class ShippingInfo {
+  -Long idAddress
+  -String name
+  -String phone
+  -String addressDetail
+  -Integer provinceId
+  -Integer districtId
+  +updateContact(name: String, phone: String): void
+  +updateAddress(addressDetail: String, provinceId: Integer, districtId: Integer): void
+  +isValidPhone(): boolean
+}
+
+class Banner {
+  -Long id
+  -String title
+  -String imageUrl
+  -String targetLink
+  -LocalDateTime startDate
+  -LocalDateTime endDate
+  +isActive(now: LocalDateTime): boolean
+  +validateSchedule(): void
+}
+
+class Brand {
+  -Long brandId
+  -String name
+  -String logoUrl
+  +updateProfile(name: String, logoUrl: String): void
+  +hasLogo(): boolean
+}
+
+class Cart {
+  -Long idCart
+  -List~CartItem~ items
+  +addItem(product: Product, quantity: Integer): void
+  +updateQuantity(productId: Long, quantity: Integer): void
+  +removeItem(productId: Long): void
+  +clear(): void
+  +getTotalItems(): Integer
+  +getSubtotal(): BigDecimal
+}
+
+class CartItem {
+  -Product product
+  -Integer quantity
+  +increase(delta: Integer): void
+  +decrease(delta: Integer): void
+  +lineTotal(): BigDecimal
+}
+
+class Category {
+  -Long categoryId
+  -String name
+  +rename(name: String): void
+  +isRoot(): boolean
+  +toString(): String
+}
+
+class Discount {
+  -Long discountId
+  -String name
+  -String description
+  -String discountType
+  -BigDecimal discountValue
+  -LocalDateTime startDate
+  -LocalDateTime endDate
+  +ensureDefaults(): void
+  +isValidAt(time: LocalDateTime): boolean
+  +calculateDiscount(amount: BigDecimal): BigDecimal
+}
+
+class Footer {
+  -Long id
+  -String brandName
+  -String brandDescription
+  +addColumn(column: FooterColumn): void
+  +addSocialLink(link: FooterSocialLink): void
+  +removeColumn(columnId: Long): void
+}
+
+class FooterColumn {
+  -Long id
+  -String title
+  -Integer columnOrder
+  +addItem(item: FooterItem): void
+  +removeItem(itemId: Long): void
+  +reorder(newOrder: Integer): void
+}
+
+class FooterItem {
+  -Long id
+  -String title
+  -String url
+  -LinkType linkType
+  +updateLink(title: String, url: String): void
+  +isInternal(): boolean
+}
+
+class FooterSocialLink {
+  -Long id
+  -String platform
+  -String url
+  +updateUrl(url: String): void
+}
+
+class GhnShipping {
+  -Long ghnShippingId
+  -String ghnOrderCode
+  -Integer ghnServiceId
+  -String toName
+  -String toPhone
+  -String toAddress
+  -String toWardCode
+  -Integer toDistrictId
+  -BigDecimal shippingFee
+  +requestShipping(): void
+  +syncStatus(): void
+  +estimateFee(): BigDecimal
+}
+
+class HeaderNavigationItem {
+  -Long id
+  -String title
+  -String url
+  -LinkType linkType
+  +HeaderNavigationItem(title: String, url: String, linkType: FooterLinkType, itemOrder: Integer)
+  +HeaderNavigationItem(title: String, url: String, linkType: FooterLinkType, itemOrder: Integer, parentItemId: Long)
+  +update(title: String, url: String): void
+  +moveTo(parentItemId: Long, itemOrder: Integer): void
+  +toString(): String
+}
+
+class Image {
+  -Long imageId
+  -String imageUrl
+  +isMain(): boolean
+  +markAsMain(): void
+}
+
+class InvalidatedToken {
+  -String id
+  -Date expiryTime
+  +isExpired(now: Date): boolean
+}
+
+class Order {
+  -Long orderId
+  -Long userId
+  -LocalDateTime orderDate
+  -OrderStatus orderStatus
+  -PaymentStatus paymentStatus
+  -String shippingInfo
+  -String note
+  -List~OrderItem~ items
+  +ensureNonNullMonetaryFields(): void
+  +addItem(item: OrderItem): void
+  +calculateSubtotal(): BigDecimal
+  +calculateFinalAmount(): BigDecimal
+  +markPaid(): void
+  +cancel(reason: String): void
+}
+
+class OrderItem {
+  -ProductItem producItem
+  +lineTotal(): BigDecimal
+}
+
+class Permission {
+  -String name
+  -String description
+  +rename(description: String): void
+}
+
+class Product {
+  -Long productId
+  -String name
+  -String description
+  -BigDecimal price
+  -List~Image~ image
+  +updateBasicInfo(name: String, description: String): void
+  +changePrice(price: BigDecimal): void
+  +isInStock(): boolean
+  +decreaseStock(quantity: Integer): void
+  +increaseStock(quantity: Integer): void
+}
+
+class ProductItem {
+  -Long producItemtId
+  -Product product
+  +snapshotPrice(): BigDecimal
+}
+
+class RecentlyViewed {
+  -Long idRecentlyViewed
+  -Product product
+  -LocalDateTime viewedAt
+  +touch(): void
+  #onCreate(): void
+}
+
+class Review {
+  -Long reviewId
+  -String content
+  -Integer rating
+  -LocalDateTime createdAt
+  +updateContent(content: String): void
+  +updateRating(rating: Integer): void
+  +isValidRating(): boolean
+}
+
+class Role {
+  -String name
+  -String description
+  +addPermission(permission: Permission): void
+  +removePermission(permission: Permission): void
+  +hasPermission(permissionName: String): boolean
+}
+
+class StaticPage {
+  -Long id
+  -String title
+  -String slug
+  -String content
+  -String sectionSlug
+  -LocalDateTime createdAt
+  +StaticPage(title: String, slug: String, content: String)
+  +generateSlugFromTitle(): void
+  +publish(): void
+  +updateContent(content: String): void
+}
+
+class User {
+  -Long userId
+  -String username
+  -String password
+  -String email
+  -String phone
+  -String firstname
+  -String lastname
+  -LocalDate dob
+  -Boolean gender
+  -String avatar
+  +getFullName(): String
+  +updateProfile(firstname: String, lastname: String, phone: String): void
+  +changePassword(rawPassword: String): void
+  +isAdult(): boolean
+}
+
+class Payment {
+  <<interface>>
+  +provider(): PaymentProvider
+  +urlCreator(): PaymentUrlCreator
+  +ipnProcessor(): PaymentIpnProcessor
+  +createPaymentUrl(order: Order): String
+  +verifyCallback(payload: Map): boolean
+}
+
+class VnpayPayment {
+  -Long idVnpayPayment
+  -String vnpTxnRef
+  -String vnpTransactionNo
+  -BigDecimal vnpAmount
+  -String vnpResponseCode
+  +preUpdate(): void
+  +isSuccess(): boolean
+}
+
+class MomoPayment {
+  -Long idMomoPayment
+  -String requestId
+  -String transId
+  -BigDecimal amount
+  -Integer resultCode
+  +preUpdate(): void
+  +isSuccess(): boolean
+}
+
+class Shipping {
+  <<interface>>
+  +calculateFee(order: Order): BigDecimal
+  +createShipment(order: Order): String
+  +cancelShipment(orderCode: String): boolean
+}
+
+Brand "1" -- "0..n" Product
+Cart "1" *-- "0..n" CartItem : has
+Category "1" -- "n" Category : parent
+HeaderNavigationItem "1" -- "n" HeaderNavigationItem : parent
+Category "1" -- "0..n" Product : has
+Discount "0..1" -- "0..n" Order : appliedTo
+Footer "1" -- "0..n" FooterColumn : has
+Footer "1" -- "0..n" FooterSocialLink : has
+FooterColumn "1" -- "0..n" FooterItem : has
+FooterItem "0..1" -- "0..1" StaticPage
+HeaderNavigationItem "0..1" -- "0..1" StaticPage
+Order "1" -- "1" Payment : paidBy
+Order "1" -- "1" Shipping
+Shipping <|-- GhnShipping
+Payment <|-- MomoPayment
+Payment <|-- VnpayPayment
+User "0..1" -- "0..n" Order : has
+Order *-- "1..n" OrderItem : has
+ProductItem "1" --o OrderItem
+Product "1" -- "0..n" Review
+Product "1" --o CartItem
+Product *-- "1..n" Image : has
+Role "0..n" -- "0..n" Permission
+User "1" -- "1" Cart : has
+User "1" -- "0..n" ShippingInfo : has
+User "0..n" -- "1" Role : has
+User "1" -- "0..n" RecentlyViewed : has
+RecentlyViewed o-- "1" Product
+Review "0..n" -- "1" User
+ProductItem o-- "1" Product
+

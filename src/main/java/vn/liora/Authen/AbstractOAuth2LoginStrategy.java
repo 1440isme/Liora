@@ -1,7 +1,6 @@
-package vn.liora.service.Authen;
+package vn.liora.Authen;
 
 import lombok.RequiredArgsConstructor;
-import vn.liora.entity.Role;
 import vn.liora.entity.User;
 import vn.liora.repository.RoleRepository;
 import vn.liora.repository.UserRepository;
@@ -16,7 +15,18 @@ public abstract class AbstractOAuth2LoginStrategy implements LoginStrategy {
     protected final UserRepository userRepository;
     protected final RoleRepository roleRepository;
 
-    protected User createNewUser(String email, String name, String avatarUrl) {
+    protected User createOrGetUser(String email, String name, String avatarUrl) {
+        // Tìm nhanh theo Email đầu tiên để tránh duplicate
+        return userRepository.findByEmail(email).orElseGet(() -> {
+            var duplicates = userRepository.findAllByEmail(email);
+            if (duplicates != null && !duplicates.isEmpty()) {
+                return duplicates.get(0);
+            }
+            return createNewUser(email, name, avatarUrl);
+        });
+    }
+
+    private User createNewUser(String email, String name, String avatarUrl) {
         // Sinh username an toàn (để tránh lỗi trùng db)
         String username = email != null && email.contains("@") ? email.split("@")[0] : "user";
         String originalUsername = username;
@@ -34,7 +44,7 @@ public abstract class AbstractOAuth2LoginStrategy implements LoginStrategy {
                 : "";
 
         // Gán Role USER mặc định do Liora định nghĩa
-        Role userRole = roleRepository.findById(vn.liora.enums.Role.USER.name())
+        vn.liora.entity.Role userRole = roleRepository.findById(vn.liora.enums.Role.USER.name())
                 .orElseThrow(() -> new RuntimeException("Role USER not found"));
 
         // Tạo Entity User và lưu vào Database
