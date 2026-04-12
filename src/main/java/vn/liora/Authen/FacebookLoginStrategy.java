@@ -1,7 +1,5 @@
-package vn.liora.service.Authen;
-// package vn.liora.service.strategy;
+// package vn.liora.Authen;
 
-// import lombok.RequiredArgsConstructor;
 // import org.springframework.stereotype.Component;
 // import vn.liora.entity.User;
 // import vn.liora.repository.RoleRepository;
@@ -10,11 +8,16 @@ package vn.liora.service.Authen;
 // import java.util.Map;
 
 // @Component("FACEBOOK")
-// public class FacebookLoginStrategy extends AbstractOAuth2LoginStrategy {
+// public class xFacebookLoginStrategy extends AbstractOAuth2LoginStrategy {
 
 // public FacebookLoginStrategy(UserRepository userRepository, RoleRepository
 // roleRepository) {
 // super(userRepository, roleRepository);
+// }
+
+// @Override
+// public vn.liora.enums.AuthProvider getProvider() {
+// return vn.liora.enums.AuthProvider.FACEBOOK;
 // }
 
 // @Override
@@ -29,21 +32,11 @@ package vn.liora.service.Authen;
 // email = "facebook_" + facebookId + "@facebook.liora.vn";
 // }
 
-// final String finalEmail = email; // Cần thiết để dùng bên trong Lambda
-
-// // Tìm User hoặc tạo mới
-// return userRepository.findByEmail(finalEmail).orElseGet(() -> {
-// var duplicates = userRepository.findAllByEmail(finalEmail);
-// if (duplicates != null && !duplicates.isEmpty()) {
-// return duplicates.get(0);
-// }
-
 // // Gán Avatar do Graph API của FB cung cấp
 // String avatarUrl = facebookId != null ? "https://graph.facebook.com/" +
 // facebookId + "/picture?type=large" : "";
 
 // // Gọi hàm đã dùng chung ở Class cha (AbstractOAuth2LoginStrategy)
-// return createNewUser(finalEmail, name, avatarUrl);
-// });
+// return createOrGetUser(email, name, avatarUrl);
 // }
 // }
