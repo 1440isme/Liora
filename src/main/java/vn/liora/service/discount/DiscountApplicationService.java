@@ -44,7 +44,7 @@ public class DiscountApplicationService {
             return DiscountApplicationResult.rejected(discount, eligibility.getReason());
         }
 
-        DiscountCalculator calculator = calculatorFactory.getCalculator(discount.getDiscountType());
+        DiscountCalculator calculator = calculatorFactory.getCalculator(discount.getDiscountType()); // lấy calculator từ factory
         BigDecimal amount = calculator.calculate(discount, context);
 
         return DiscountApplicationResult.builder()
