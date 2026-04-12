@@ -1,6 +1,6 @@
 package vn.liora.service.stock;
 
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -11,15 +11,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Component
-@RequiredArgsConstructor
 public class ProductStockEventPublisher implements ProductStockSubject {
 
     private final StockThresholdPolicy stockThresholdPolicy;
-    private final List<ProductStockObserver> observers = new ArrayList<>();
+    private final List<ProductStockObserver> observers;
 
+    @Autowired
     public ProductStockEventPublisher(StockThresholdPolicy stockThresholdPolicy,
             List<ProductStockObserver> initialObservers) {
         this.stockThresholdPolicy = stockThresholdPolicy;
+        this.observers = new ArrayList<>();
         if (initialObservers != null) {
             this.observers.addAll(initialObservers);
         }

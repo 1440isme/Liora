@@ -11,22 +11,22 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Component
-public class OrderStateMachine {
+public class OrderStateContextFactory {
 
     private final Map<String, OrderStateHandler> handlers;
 
-    public OrderStateMachine(List<OrderStateHandler> handlers) {
+    public OrderStateContextFactory(List<OrderStateHandler> handlers) {
         this.handlers = handlers.stream()
                 .collect(Collectors.toMap(OrderStateHandler::status, Function.identity()));
     }
 
-    public OrderTransitionResult transition(Order order, OrderTransitionRequest request) {
+    public OrderStateContext create(Order order) {
         String currentStatus = normalize(order.getOrderStatus());
         OrderStateHandler handler = handlers.get(currentStatus);
         if (handler == null) {
             throw new AppException(ErrorCode.INVALID_ORDER_STATUS);
         }
-        return handler.transition(order, request);
+        return new OrderStateContext(order, handlers, handler);
     }
 
     private String normalize(String value) {

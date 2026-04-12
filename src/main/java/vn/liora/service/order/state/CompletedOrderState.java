@@ -16,14 +16,15 @@ public class CompletedOrderState extends AbstractOrderStateHandler {
     }
 
     @Override
-    public OrderTransitionResult transition(Order order, OrderTransitionRequest request) {
+    public OrderTransitionResult transition(OrderStateContext context, OrderTransitionRequest request) {
+        Order order = context.getOrder();
         validateAllowedTargets(request, ADMIN_TARGETS);
         applyRequestedPaymentStatus(order, request);
 
         String targetStatus = resolveTargetStatus(request);
         String previousPaymentStatus = normalize(order.getPaymentStatus());
 
-        order.setOrderStatus(targetStatus);
+        transitionTo(context, targetStatus);
 
         OrderTransitionResult.OrderTransitionResultBuilder result = OrderTransitionResult.builder();
 

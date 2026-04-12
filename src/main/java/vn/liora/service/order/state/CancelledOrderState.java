@@ -12,14 +12,15 @@ public class CancelledOrderState extends AbstractOrderStateHandler {
     }
 
     @Override
-    public OrderTransitionResult transition(Order order, OrderTransitionRequest request) {
+    public OrderTransitionResult transition(OrderStateContext context, OrderTransitionRequest request) {
+        Order order = context.getOrder();
         String targetStatus = resolveTargetStatus(request);
         if (!"CANCELLED".equals(targetStatus)) {
             throw invalidTransition(request.actor());
         }
 
         applyRequestedPaymentStatus(order, request);
-        order.setOrderStatus("CANCELLED");
+        transitionTo(context, "CANCELLED");
         return OrderTransitionResult.none();
     }
 }

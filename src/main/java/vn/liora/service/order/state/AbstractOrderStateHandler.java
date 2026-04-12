@@ -9,6 +9,10 @@ import java.util.Set;
 
 public abstract class AbstractOrderStateHandler implements OrderStateHandler {
 
+    protected void transitionTo(OrderStateContext context, String targetStatus) {
+        context.setState(targetStatus);
+    }
+
     protected void validateAllowedTargets(OrderTransitionRequest request, Set<String> allowedTargets) {
         String targetStatus = resolveTargetStatus(request);
         if (targetStatus == null || !allowedTargets.contains(targetStatus)) {
