@@ -1,10 +1,12 @@
 package vn.liora.service.discount.eligibility;
 
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import vn.liora.entity.Discount;
 import vn.liora.service.discount.DiscountContext;
 
 @Component
+@Order(3)
 public class GlobalUsageLimitRule implements DiscountEligibilityRule {
     @Override
     public DiscountEligibilityResult check(Discount discount, DiscountContext context) {

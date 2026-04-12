@@ -7,6 +7,10 @@ import vn.liora.service.discount.DiscountContext;
 
 import java.util.List;
 
+/**
+ * Runs {@link DiscountEligibilityRule} beans in ascending {@link org.springframework.core.annotation.Order}
+ * (Spring sorts the injected list).
+ */
 @Component
 @RequiredArgsConstructor
 public class DiscountEligibilityChecker {

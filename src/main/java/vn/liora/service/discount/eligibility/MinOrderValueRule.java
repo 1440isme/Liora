@@ -1,5 +1,6 @@
 package vn.liora.service.discount.eligibility;
 
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import vn.liora.entity.Discount;
 import vn.liora.service.discount.DiscountContext;
@@ -7,6 +8,7 @@ import vn.liora.service.discount.DiscountContext;
 import java.math.BigDecimal;
 
 @Component
+@Order(2)
 public class MinOrderValueRule implements DiscountEligibilityRule {
     @Override
     public DiscountEligibilityResult check(Discount discount, DiscountContext context) {
