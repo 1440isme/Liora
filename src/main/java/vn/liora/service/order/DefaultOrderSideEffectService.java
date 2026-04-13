@@ -21,6 +21,7 @@ import vn.liora.service.IGhnShippingService;
 import vn.liora.service.IProductService;
 import vn.liora.service.discount.DiscountUsageService;
 import vn.liora.service.order.state.OrderTransitionResult;
+import vn.liora.service.stock.ProductStockEventPublisher;
 
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
@@ -41,6 +42,7 @@ public class DefaultOrderSideEffectService implements OrderSideEffectService {
     private final DiscountUsageService discountUsageService;
     private final IGhnShippingService ghnShippingService;
     private final GhnShippingRepository ghnShippingRepository;
+    private final ProductStockEventPublisher productStockEventPublisher;
 
     @Override
     public void handleTransitionEffects(Order order, OrderTransitionResult result) {
@@ -87,12 +89,30 @@ public class DefaultOrderSideEffectService implements OrderSideEffectService {
     public void restoreStock(Order order) {
         try {
             List<OrderItem> orderItems = orderItemRepository.findByOrder(order);
+            LinkedHashMap<Long, Integer> restoredQuantityByProduct = new LinkedHashMap<>();
             for (OrderItem orderItem : orderItems) {
                 ProductItem productItem = orderItem.getProductItem();
                 productItem.setStatus(ProductItemStatus.IN_STOCK);
                 productItem.setUpdatedDate(java.time.LocalDateTime.now());
+                Product product = productItem.getProduct();
+                if (product != null) {
+                    restoredQuantityByProduct.merge(product.getProductId(), 1, Integer::sum);
+                }
             }
             productItemRepository.saveAll(orderItems.stream().map(OrderItem::getProductItem).toList());
+            for (var entry : restoredQuantityByProduct.entrySet()) {
+                Long productId = entry.getKey();
+                Integer restoredQuantity = entry.getValue();
+                Product product = productService.findByIdOptional(productId).orElse(null);
+                if (product == null) {
+                    continue;
+                }
+                int newStock = getAvailableStock(productId);
+                int previousStock = Math.max(0, newStock - restoredQuantity);
+                product.setStock(newStock);
+                product.setAvailable(newStock > 0);
+                productStockEventPublisher.publishIfNeeded(product, previousStock, newStock);
+            }
             log.info("Restored {} product items for order {}", orderItems.size(), order.getIdOrder());
         } catch (Exception e) {
             log.error("Error restoring stock for order {}: {}", order.getIdOrder(), e.getMessage());
@@ -196,5 +216,9 @@ public class DefaultOrderSideEffectService implements OrderSideEffectService {
         } catch (Exception e) {
             log.error("Error updating sold count for order {}: {}", order.getIdOrder(), e.getMessage());
         }
+    }
+
+    private int getAvailableStock(Long productId) {
+        return (int) productItemRepository.countByProductProductIdAndStatus(productId, ProductItemStatus.IN_STOCK);
     }
 }

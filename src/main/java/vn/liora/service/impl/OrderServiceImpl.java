@@ -35,9 +35,11 @@ import vn.liora.service.discount.DiscountApplicationService;
 import vn.liora.service.discount.DiscountContext;
 import vn.liora.service.discount.DiscountUsageService;
 import vn.liora.service.order.OrderSideEffectService;
-import vn.liora.service.order.state.OrderStateMachine;
+import vn.liora.service.order.state.OrderStateContext;
+import vn.liora.service.order.state.OrderStateContextFactory;
 import vn.liora.service.order.state.OrderTransitionRequest;
 import vn.liora.service.order.state.OrderTransitionResult;
+import vn.liora.service.stock.ProductStockEventPublisher;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -67,8 +69,9 @@ public class OrderServiceImpl implements IOrderService {
     DiscountRepository discountRepository;
     DiscountApplicationService discountApplicationService;
     DiscountUsageService discountUsageService;
-    OrderStateMachine orderStateMachine;
+    OrderStateContextFactory orderStateContextFactory;
     OrderSideEffectService orderSideEffectService;
+    ProductStockEventPublisher productStockEventPublisher;
 
     @Override
     @Transactional
@@ -343,8 +346,8 @@ public class OrderServiceImpl implements IOrderService {
         Order order = orderRepository.findById(idOrder)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
 
-        OrderTransitionResult transitionResult = orderStateMachine.transition(
-                order,
+        OrderStateContext stateContext = orderStateContextFactory.create(order);
+        OrderTransitionResult transitionResult = stateContext.transition(
                 OrderTransitionRequest.forAdmin(request.getOrderStatus(), request.getPaymentStatus()));
 
         order = orderRepository.save(order);
@@ -484,8 +487,8 @@ public class OrderServiceImpl implements IOrderService {
             throw new AppException(ErrorCode.ORDER_CANNOT_BE_CANCELLED);
         }
 
-        OrderTransitionResult transitionResult = orderStateMachine.transition(
-                order,
+        OrderStateContext stateContext = orderStateContextFactory.create(order);
+        OrderTransitionResult transitionResult = stateContext.transition(
                 OrderTransitionRequest.forUserCancellation());
 
         orderRepository.save(order);
@@ -498,6 +501,7 @@ public class OrderServiceImpl implements IOrderService {
         for (CartItem cartProduct : cartProducts) {
             Product product = cartProduct.getProduct();
             int quantity = cartProduct.getQuantity();
+            int previousStock = getAvailableStock(product.getProductId());
             List<ProductItem> selectedItems = productItemRepository
                     .findByProductProductIdAndStatusOrderByProductItemIdAsc(
                             product.getProductId(),
@@ -522,7 +526,16 @@ public class OrderServiceImpl implements IOrderService {
                             .build())
                     .toList();
             orderItemRepository.saveAll(orderItems);
+
+            int newStock = Math.max(0, previousStock - quantity);
+            product.setStock(newStock);
+            product.setAvailable(newStock > 0);
+            productStockEventPublisher.publishIfNeeded(product, previousStock, newStock);
         }
+    }
+
+    private int getAvailableStock(Long productId) {
+        return (int) productItemRepository.countByProductProductIdAndStatus(productId, ProductItemStatus.IN_STOCK);
     }
 
     private DiscountContext buildDiscountContext(Long userId, BigDecimal subtotal, BigDecimal shippingFee,
