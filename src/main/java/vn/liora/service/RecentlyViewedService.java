@@ -45,7 +45,7 @@ public class RecentlyViewedService {
                 return null;
             }
             
-        // Tìm existing record - giống CartProduct
+        // Tìm existing record - giống CartItem
         Optional<RecentlyViewed> existing;
             if (userId != null) {
             existing = recentlyViewedRepository.findByUser_UserIdAndProduct_ProductId(userId, productId);
@@ -57,12 +57,12 @@ public class RecentlyViewedService {
             
             RecentlyViewed recentlyViewed;
         if (existing.isPresent()) {
-            // Update existing - giống CartProduct
+            // Update existing - giống CartItem
             recentlyViewed = existing.get();
                 recentlyViewed.setViewedAt(LocalDateTime.now());
             log.debug("Updating existing record: id={}", recentlyViewed.getIdRecentlyViewed());
             } else {
-            // Create new - giống CartProduct
+            // Create new - giống CartItem
                 User user = null;
                 if (userId != null) {
                     user = userRepository.findById(userId).orElse(null);
@@ -81,7 +81,7 @@ public class RecentlyViewedService {
         }
         
         try {
-            // Save - giống CartProduct
+            // Save - giống CartItem
             recentlyViewed = recentlyViewedRepository.save(recentlyViewed);
             log.debug("Saved successfully: id={}", recentlyViewed.getIdRecentlyViewed());
             

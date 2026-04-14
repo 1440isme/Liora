@@ -2,7 +2,7 @@ package vn.liora.service;
 
 import vn.liora.dto.request.OrderCreationRequest;
 import vn.liora.dto.request.OrderUpdateRequest;
-import vn.liora.dto.response.OrderProductResponse;
+import vn.liora.dto.response.OrderItemResponse;
 import vn.liora.dto.response.OrderResponse;
 import vn.liora.dto.response.TopCustomerResponse;
 import vn.liora.entity.Order;
@@ -23,7 +23,7 @@ public interface IOrderService {
     List<OrderResponse> getAllOrders();
     List<OrderResponse> getOrdersByOrderStatus(String orderStatus);
     List<OrderResponse> getOrdersByDateRange(LocalDateTime start, LocalDateTime end);
-    List<OrderProductResponse> getProductsByOrderId(Long idOrder);
+    List<OrderItemResponse> getProductsByOrderId(Long idOrder);
     Long countByUser(User user);
     Long count();
     BigDecimal getTotalRevenue();

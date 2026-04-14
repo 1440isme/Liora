@@ -90,7 +90,12 @@ class ProductModalManager {
         document.getElementById('quickEditProductId').value = product.productId;
         document.getElementById('quickEditName').value = product.name;
         document.getElementById('quickEditPrice').value = product.price;
-        document.getElementById('quickEditStock').value = product.stock;
+        document.getElementById('quickEditStock').value = '';
+        const cur = document.getElementById('quickEditCurrentStockDisplay');
+        if (cur) {
+            const n = product.stock != null ? product.stock : 0;
+            cur.textContent = `Tồn kho hiện tại: ${n} sản phẩm`;
+        }
         document.getElementById('quickEditAvailable').checked = product.available;
         document.getElementById('quickEditIsActive').checked = product.isActive;
     }
@@ -101,10 +106,19 @@ class ProductModalManager {
         const formData = {
             name: document.getElementById('quickEditName').value,
             price: parseFloat(document.getElementById('quickEditPrice').value),
-            stock: parseInt(document.getElementById('quickEditStock').value),
             available: document.getElementById('quickEditAvailable').checked,
             isActive: document.getElementById('quickEditIsActive').checked
         };
+
+        const stockRaw = document.getElementById('quickEditStock').value.trim();
+        if (stockRaw !== '') {
+            const n = parseInt(stockRaw, 10);
+            if (Number.isNaN(n) || n < 0) {
+                this.showError('Số lượng nhập thêm không được âm');
+                return;
+            }
+            formData.stock = n;
+        }
 
         try {
             const response = await fetch(`/admin/api/products/${productId}`, {

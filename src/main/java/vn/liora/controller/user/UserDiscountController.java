@@ -1,23 +1,19 @@
 package vn.liora.controller.user;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import vn.liora.dto.request.ApiResponse;
 import vn.liora.dto.request.ApplyDiscountRequest;
-import vn.liora.dto.request.DiscountCreationRequest;
-import vn.liora.dto.request.DiscountUpdateRequest;
 import vn.liora.dto.response.DiscountResponse;
 import vn.liora.entity.Discount;
 import vn.liora.exception.AppException;
 import vn.liora.mapper.DiscountMapper;
 import vn.liora.service.IDiscountService;
 import vn.liora.service.IOrderService;
-import vn.liora.service.impl.DiscountServiceImpl;
-import vn.liora.service.impl.OrderServiceImpl;
+import vn.liora.service.discount.DiscountApplicationResult;
+import vn.liora.service.discount.DiscountApplicationService;
+import vn.liora.service.discount.DiscountContext;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import java.math.BigDecimal;
@@ -34,6 +30,7 @@ public class UserDiscountController {
     private final IDiscountService discountService;
     private final DiscountMapper discountMapper;
     private final vn.liora.repository.UserRepository userRepository;
+    private final DiscountApplicationService discountApplicationService;
 
     // ========== PUBLIC DISCOUNT ACCESS ==========
     @GetMapping
@@ -194,24 +191,6 @@ public class UserDiscountController {
         }
         ApiResponse<Map<String, Object>> response = new ApiResponse<>();
         try {
-            // Tìm discount theo code (name)
-            Discount discount = discountService.findAvailableDiscountByCode(request.getDiscountCode());
-
-            if (discount == null) {
-                response.setCode(400);
-                response.setMessage("Mã giảm giá không hợp lệ hoặc đã hết hạn");
-                return ResponseEntity.badRequest().body(response);
-            }
-
-            // ✅ THÊM: Kiểm tra điều kiện áp dụng
-            if (request.getOrderTotal() == null || request.getOrderTotal().compareTo(discount.getMinOrderValue()) < 0) {
-                response.setCode(400);
-                response.setMessage(String.format("Đơn hàng phải có giá trị tối thiểu %s để áp dụng mã này",
-                        discount.getMinOrderValue()));
-                return ResponseEntity.badRequest().body(response);
-            }
-
-            // ✅ Kiểm tra per-user và các điều kiện có thể áp dụng
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             Long userId = null;
             if (authentication != null && authentication.isAuthenticated() && !"anonymousUser".equals(authentication.getName())) {
@@ -220,32 +199,22 @@ public class UserDiscountController {
                         .orElse(null);
             }
 
-            // Kiểm tra điều kiện áp dụng mã giảm giá
-            if (userId != null) {
-                // Kiểm tra mã còn hiệu lực không
-                if (!discountService.isDiscountActive(discount.getDiscountId())) {
-                    response.setCode(400);
-                    response.setMessage("Mã giảm giá này đã hết hạn hoặc chưa đến thời gian sử dụng.");
-                    return ResponseEntity.badRequest().body(response);
-                }
-                
-                // Kiểm tra tổng lượt sử dụng của mã
-                if (discountService.hasReachedUsageLimit(discount.getDiscountId())) {
-                    response.setCode(400);
-                    response.setMessage("Mã giảm giá này đã hết lượt sử dụng.");
-                    return ResponseEntity.badRequest().body(response);
-                }
+            DiscountApplicationResult applicationResult = discountApplicationService.applyByCode(
+                    request.getDiscountCode(),
+                    DiscountContext.builder()
+                            .userId(userId)
+                            .orderSubtotal(request.getOrderTotal())
+                            .shippingFee(BigDecimal.ZERO)
+                            .build());
 
-                // Kiểm tra lượt sử dụng của user
-                if (discountService.hasReachedUserUsageLimit(discount.getDiscountId(), userId)) {
-                    response.setCode(400);
-                    response.setMessage("Bạn đã hết lượt dùng mã giảm giá này.");
-                    return ResponseEntity.badRequest().body(response);
-                }
+            if (!applicationResult.isApplied()) {
+                response.setCode(400);
+                response.setMessage(applicationResult.getFailureReason());
+                return ResponseEntity.badRequest().body(response);
             }
 
-            // Tính số tiền giảm giá
-            BigDecimal discountAmount = discountService.calculateDiscountAmount(discount.getDiscountId(), request.getOrderTotal());
+            Discount discount = applicationResult.getDiscount();
+            BigDecimal discountAmount = applicationResult.getFinalDiscountAmount();
 
             Map<String, Object> result = new HashMap<>();
             result.put("discountId", discount.getDiscountId());

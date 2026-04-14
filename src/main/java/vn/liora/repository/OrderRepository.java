@@ -53,10 +53,12 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     // Doanh thu theo sản phẩm
     @Query("""
-    SELECT COALESCE(SUM(op.totalPrice), 0)
-    FROM OrderProduct op
-    JOIN op.order o
-    WHERE op.product.productId = :productId
+    SELECT COALESCE(SUM(p.price), 0)
+    FROM OrderItem oi
+    JOIN oi.order o
+    JOIN oi.productItem pi
+    JOIN pi.product p
+    WHERE p.productId = :productId
       AND o.orderStatus = 'COMPLETED'
 """)
     BigDecimal getRevenueByProductId(@Param("productId") Long productId);
@@ -142,4 +144,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     // Đếm tất cả orders trừ CANCELLED (PENDING được đếm để user không thể đặt 2 đơn PENDING cùng mã)
     @Query("SELECT COUNT(o) FROM Order o WHERE o.user.userId = :userId AND o.discount.discountId = :discountId AND o.orderStatus != 'CANCELLED'")
     Long countOrdersByUserAndDiscount(@Param("userId") Long userId, @Param("discountId") Long discountId);
+
+    long countByDiscount_DiscountId(Long discountId);
 }

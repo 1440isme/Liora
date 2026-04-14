@@ -3,10 +3,10 @@ package vn.liora.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import vn.liora.enums.DiscountType;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -33,16 +33,20 @@ public class Discount {
     @DecimalMin(value = "0.0", message = "Discount value must be positive")
     private BigDecimal discountValue;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "DiscountType", nullable = false, length = 50)
+    private DiscountType discountType = DiscountType.PERCENTAGE;
+
     @Column(name = "MinOrderValue", precision = 10, scale = 2)
     private BigDecimal minOrderValue;
 
     @Column(name = "MaxDiscountAmount", precision = 10, scale = 2)
     private BigDecimal maxDiscountAmount;
 
-    @Column(name = "StartDate", nullable = false, columnDefinition = "DATETIME2")
+    @Column(name = "StartDate", nullable = false, columnDefinition = "DATETIME")
     private LocalDateTime startDate;
 
-    @Column(name = "EndDate", nullable = false, columnDefinition = "DATETIME2")
+    @Column(name = "EndDate", nullable = false, columnDefinition = "DATETIME")
     private LocalDateTime endDate;
 
     @Column(name = "UsageLimit")
@@ -54,10 +58,10 @@ public class Discount {
     @Column(name = "IsActive", nullable = false)
     private Boolean isActive = true;
 
-    @Column(name = "CreatedAt", nullable = false, columnDefinition = "DATETIME2")
+    @Column(name = "CreatedAt", nullable = false, columnDefinition = "DATETIME")
     private LocalDateTime createdAt;
 
-    @Column(name = "UpdatedAt", columnDefinition = "DATETIME2")
+    @Column(name = "UpdatedAt", columnDefinition = "DATETIME")
     private LocalDateTime updatedAt;
 
     @Column(name = "UsedCount")
@@ -67,4 +71,15 @@ public class Discount {
     @OneToMany(mappedBy = "discount", fetch = FetchType.LAZY)
     @JsonIgnore
     private List<Order> orders;
+
+    @PrePersist
+    @PreUpdate
+    private void ensureDefaults() {
+        if (discountType == null) {
+            discountType = DiscountType.PERCENTAGE;
+        }
+        if (usedCount == null) {
+            usedCount = 0;
+        }
+    }
 }

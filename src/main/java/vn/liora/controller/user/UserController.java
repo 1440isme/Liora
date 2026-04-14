@@ -18,8 +18,8 @@ import vn.liora.dto.request.VerifyOtpRequest;
 import vn.liora.dto.request.RegistrationWithOtpRequest;
 import vn.liora.dto.request.ResetPasswordWithOtpRequest;
 import vn.liora.dto.response.UserResponse;
+import vn.liora.dto.response.OrderItemResponse;
 import vn.liora.dto.response.OrderResponse;
-import vn.liora.dto.response.OrderProductResponse;
 import vn.liora.dto.response.PaginatedResponse;
 import vn.liora.entity.User;
 import vn.liora.exception.AppException;
@@ -186,18 +186,18 @@ public class UserController {
             // Tạo response với thông tin sản phẩm đầu tiên
             List<Object> ordersWithProducts = orders.stream().map(order -> {
                 try {
-                    List<OrderProductResponse> products = orderService.getProductsByOrderId(order.getIdOrder());
-                    OrderProductResponse firstProduct = products.isEmpty() ? null : products.get(0);
+                    List<OrderItemResponse> products = orderService.getProductsByOrderId(order.getIdOrder());
+                    OrderItemResponse firstProduct = products.isEmpty() ? null : products.get(0);
 
                     class OrderWithProduct {
                         @SuppressWarnings("unused")
                         public final OrderResponse order;
                         @SuppressWarnings("unused")
-                        public final OrderProductResponse firstProduct;
+                        public final OrderItemResponse firstProduct;
                         @SuppressWarnings("unused")
                         public final Integer totalProducts;
 
-                        public OrderWithProduct(OrderResponse order, OrderProductResponse firstProduct,
+                        public OrderWithProduct(OrderResponse order, OrderItemResponse firstProduct,
                                 Integer totalProducts) {
                             this.order = order;
                             this.firstProduct = firstProduct;
@@ -212,11 +212,11 @@ public class UserController {
                         @SuppressWarnings("unused")
                         public final OrderResponse order;
                         @SuppressWarnings("unused")
-                        public final OrderProductResponse firstProduct = null;
+                        public final OrderItemResponse firstProduct = null;
                         @SuppressWarnings("unused")
                         public final Integer totalProducts = 0;
 
-                        public OrderWithProduct(OrderResponse order, OrderProductResponse firstProduct,
+                        public OrderWithProduct(OrderResponse order, OrderItemResponse firstProduct,
                                 Integer totalProducts) {
                             this.order = order;
                         }

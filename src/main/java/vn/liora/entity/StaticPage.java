@@ -26,7 +26,7 @@ public class StaticPage {
     @Column(name = "slug", nullable = false, unique = true, columnDefinition = "NVARCHAR(255)")
     private String slug;
 
-    @Column(name = "content", columnDefinition = "NVARCHAR(MAX)")
+    @Column(name = "content", columnDefinition = "LONGTEXT")
     private String content;
 
     @Column(name = "section_slug", columnDefinition = "NVARCHAR(255)")

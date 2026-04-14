@@ -31,7 +31,7 @@
                                     <h4 class="card-title card-title-dash">Thông tin sản phẩm</h4>
                                     
                                     <!-- Include the dynamic product form -->
-                                    <div th:replace="admin/products/components/product-form"></div>
+                                    <div th:replace="~{admin/products/components/product-form :: product-form('edit')}"></div>
                                 </div>
                             </div>
                         </div>

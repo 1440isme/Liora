@@ -5,8 +5,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
+import vn.liora.dto.response.OrderItemResponse;
 import vn.liora.dto.response.OrderResponse;
-import vn.liora.dto.response.OrderProductResponse;
+import vn.liora.service.stock.StockEventType;
 
 import java.util.List;
 import java.util.Random;
@@ -24,7 +25,7 @@ public class EmailService {
      * Gửi email xác nhận đơn hàng cho user đã đăng nhập
      */
     public void sendOrderConfirmationEmail(String userEmail, String userName, OrderResponse order,
-            List<OrderProductResponse> orderProducts) {
+            List<OrderItemResponse> orderProducts) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setTo(userEmail);
@@ -45,7 +46,7 @@ public class EmailService {
      * Gửi email xác nhận đơn hàng cho guest
      */
     public void sendGuestOrderConfirmationEmail(String guestEmail, OrderResponse order,
-            List<OrderProductResponse> orderProducts) {
+            List<OrderItemResponse> orderProducts) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setTo(guestEmail);
@@ -66,7 +67,7 @@ public class EmailService {
      * Xây dựng nội dung email
      */
     private String buildOrderConfirmationContent(String customerName, OrderResponse order,
-            List<OrderProductResponse> orderProducts, boolean isRegisteredUser) {
+            List<OrderItemResponse> orderProducts, boolean isRegisteredUser) {
         StringBuilder content = new StringBuilder();
 
         content.append("Xin chào ").append(customerName).append(",\n\n");
@@ -79,7 +80,7 @@ public class EmailService {
         content.append("Tổng tiền: ").append(String.format("%,.0f VNĐ", order.getTotal())).append("\n\n");
 
         content.append("SẢN PHẨM ĐÃ ĐẶT:\n");
-        for (OrderProductResponse product : orderProducts) {
+        for (OrderItemResponse product : orderProducts) {
             content.append("- ").append(product.getProductName())
                     .append(" x").append(product.getQuantity())
                     .append(" = ").append(String.format("%,.0f VNĐ", product.getTotalPrice())).append("\n");
@@ -253,7 +254,7 @@ public class EmailService {
      * Gửi email thông báo hủy đơn hàng cho user đã đăng nhập
      */
     public void sendOrderCancellationEmail(String userEmail, String userName, OrderResponse order,
-            List<OrderProductResponse> orderProducts) {
+            List<OrderItemResponse> orderProducts) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setTo(userEmail);
@@ -274,7 +275,7 @@ public class EmailService {
      * Gửi email thông báo hủy đơn hàng cho guest
      */
     public void sendGuestOrderCancellationEmail(String guestEmail, OrderResponse order,
-            List<OrderProductResponse> orderProducts) {
+            List<OrderItemResponse> orderProducts) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setTo(guestEmail);
@@ -295,7 +296,7 @@ public class EmailService {
      * Xây dựng nội dung email thông báo hủy đơn hàng
      */
     private String buildOrderCancellationContent(String customerName, OrderResponse order,
-            List<OrderProductResponse> orderProducts, boolean isRegisteredUser) {
+            List<OrderItemResponse> orderProducts, boolean isRegisteredUser) {
         StringBuilder content = new StringBuilder();
 
         content.append("Xin chào ").append(customerName).append(",\n\n");
@@ -308,7 +309,7 @@ public class EmailService {
         content.append("Tổng tiền: ").append(String.format("%,.0f VNĐ", order.getTotal())).append("\n\n");
 
         content.append("SẢN PHẨM ĐÃ HỦY:\n");
-        for (OrderProductResponse product : orderProducts) {
+        for (OrderItemResponse product : orderProducts) {
             content.append("- ").append(product.getProductName())
                     .append(" x").append(product.getQuantity())
                     .append(" = ").append(String.format("%,.0f VNĐ", product.getTotalPrice())).append("\n");
@@ -328,6 +329,64 @@ public class EmailService {
         }
 
         content.append("Nếu bạn cần hỗ trợ hoặc có câu hỏi về việc hủy đơn hàng, vui lòng liên hệ với chúng tôi.\n\n");
+        content.append("Trân trọng,\n");
+        content.append("Đội ngũ Liora");
+
+        return content.toString();
+    }
+
+    public void sendProductStockNotificationEmail(String userEmail, String userName, String productName,
+            StockEventType eventType, Integer currentStock) {
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(userEmail);
+            message.setSubject(buildProductStockNotificationSubject(productName, eventType));
+            message.setText(buildProductStockNotificationContent(userName, productName, eventType, currentStock));
+
+            mailSender.send(message);
+            System.out.println("Product stock notification email sent to: " + userEmail);
+        } catch (Exception e) {
+            System.err.println("Error sending product stock notification email: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    private String buildProductStockNotificationSubject(String productName, StockEventType eventType) {
+        return switch (eventType) {
+            case LOW_STOCK -> "Sản phẩm trong giỏ của bạn sắp hết hàng - " + productName;
+            case OUT_OF_STOCK -> "Sản phẩm trong giỏ của bạn đã hết hàng - " + productName;
+            case RESTOCKED -> "Sản phẩm trong giỏ của bạn đã có hàng trở lại - " + productName;
+        };
+    }
+
+    private String buildProductStockNotificationContent(String userName, String productName, StockEventType eventType,
+            Integer currentStock) {
+        StringBuilder content = new StringBuilder();
+
+        content.append("Xin chào ").append(userName).append(",\n\n");
+
+        switch (eventType) {
+            case LOW_STOCK -> {
+                content.append("Sản phẩm bạn đang quan tâm trong giỏ hàng hiện sắp hết hàng.\n\n");
+                content.append("Sản phẩm: ").append(productName).append("\n");
+                content.append("Số lượng còn lại: ").append(currentStock).append("\n\n");
+                content.append("Hãy hoàn tất đơn hàng sớm nếu bạn không muốn bỏ lỡ sản phẩm này.\n\n");
+            }
+            case OUT_OF_STOCK -> {
+                content.append("Sản phẩm bạn đang quan tâm trong giỏ hàng hiện đã hết hàng.\n\n");
+                content.append("Sản phẩm: ").append(productName).append("\n");
+                content.append("Số lượng còn lại: 0\n\n");
+                content.append("Chúng tôi sẽ tiếp tục cập nhật nếu sản phẩm có hàng trở lại.\n\n");
+            }
+            case RESTOCKED -> {
+                content.append("Sản phẩm bạn đang quan tâm trong giỏ hàng đã có hàng trở lại.\n\n");
+                content.append("Sản phẩm: ").append(productName).append("\n");
+                content.append("Số lượng hiện có: ").append(currentStock).append("\n\n");
+                content.append("Bạn có thể quay lại giỏ hàng để tiếp tục mua sắm.\n\n");
+            }
+        }
+
+        content.append("Bạn có thể truy cập hệ thống tại: ").append(appUrl).append("\n\n");
         content.append("Trân trọng,\n");
         content.append("Đội ngũ Liora");
 

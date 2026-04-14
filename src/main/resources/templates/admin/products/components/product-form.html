@@ -1,5 +1,5 @@
-<!-- Product Form -->
-<form id="productForm" novalidate>
+<!-- Product Form: formMode = 'create' | 'edit' -->
+<form id="productForm" novalidate th:fragment="product-form(formMode)" th:attr="data-form-mode=${formMode}">
     <!-- Tên sản phẩm -->
     <div class="mb-3">
         <label for="name" class="form-label">Tên sản phẩm <span class="text-danger">*</span></label>
@@ -34,10 +34,20 @@
         </div>
     </div>
 
-    <!-- Số lượng tồn kho -->
-    <div class="mb-3">
-        <label for="stock" class="form-label">Số lượng tồn kho <span class="text-danger">*</span></label>
-        <input type="number" class="form-control" id="stock" name="stock" min="0" required>
+    <!-- Tồn kho: tạo mới = số lượng khởi tạo; chỉnh sửa = số lượng nhập thêm -->
+    <div class="mb-3" th:if="${formMode == 'create'}">
+        <label for="stock" class="form-label">Số lượng khởi tạo ban đầu <span class="text-danger">*</span></label>
+        <input type="number" class="form-control" id="stock" name="stock" min="0" required
+            placeholder="Số đơn vị hàng khi tạo sản phẩm">
+        <div class="form-text">Tổng số đơn vị (IN_STOCK) sinh ra khi tạo sản phẩm mới.</div>
+    </div>
+    <div class="mb-3" th:if="${formMode == 'edit'}">
+        <p id="currentStockDisplay" class="form-text text-muted mb-2 fw-medium"></p>
+        <label for="stock" class="form-label">Số lượng nhập thêm</label>
+        <input type="number" class="form-control" id="stock" name="stock" min="0"
+            placeholder="Nhập số lượng muốn thêm vào kho">
+        <div class="form-text">Số lượng này sẽ được cộng thêm vào tồn kho hiện tại, không ghi đè số lượng cũ. Để trống hoặc 0 nếu chỉ sửa thông tin khác.</div>
+        <div class="invalid-feedback">Số lượng nhập thêm không được âm.</div>
     </div>
 
     <!-- Mô tả -->
@@ -59,8 +69,8 @@
                     <input class="form-check-input" type="checkbox" id="isActive" name="isActive" checked>
                     <label class="form-check-label" for="isActive">Kích hoạt sản phẩm</label>
                 </div>
-                <small class="text-muted">Sản phẩm sẽ được kích hoạt mặc định. Trạng thái tồn kho sẽ được tự động cập
-                    nhật dựa vào số lượng nhập.</small>
+                <small class="text-muted" th:if="${formMode == 'create'}">Sản phẩm sẽ được kích hoạt mặc định. Tồn kho ban đầu theo «Số lượng khởi tạo ban đầu».</small>
+                <small class="text-muted" th:if="${formMode == 'edit'}">Sản phẩm sẽ được kích hoạt mặc định. Bổ sung hàng bằng «Số lượng nhập thêm» (cộng dồn, không ghi đè tồn hiện có).</small>
             </div>
         </div>
     </div>

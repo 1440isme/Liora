@@ -19,31 +19,31 @@ public interface ReviewMapper {
     @Mapping(target = "lastUpdate", ignore = true) // Sẽ set trong service
     @Mapping(target = "userId", ignore = true) // Sẽ set trong service
     @Mapping(target = "productId", ignore = true) // Sẽ set trong service
-    @Mapping(target = "orderProduct", ignore = true) // Sẽ set trong service
+    @Mapping(target = "orderItem", ignore = true) // Sẽ set trong service
     Review toReview(ReviewCreationRequest request);
 
     // ========== RESPONSE MAPPING ==========
     @Mapping(target = "content", source = "content") // Không áp dụng mask cho content
-    @Mapping(target = "username", source = "orderProduct.order.user.username")
-    @Mapping(target = "userFirstname", source = "orderProduct.order.user.firstname")
-    @Mapping(target = "userLastname", source = "orderProduct.order.user.lastname")
-    @Mapping(target = "userAvatar", source = "orderProduct.order.user.avatar")
-    @Mapping(target = "userEmail", source = "orderProduct.order.user.email")
-    @Mapping(target = "userPhone", source = "orderProduct.order.user.phone")
-    @Mapping(target = "orderCustomerName", source = "orderProduct.order.name")
-    @Mapping(target = "orderCustomerPhone", source = "orderProduct.order.phone")
-    @Mapping(target = "orderCustomerEmail", source = "orderProduct.order.email")
-    @Mapping(target = "orderCustomerAddress", source = "orderProduct.order.addressDetail")
-    @Mapping(target = "productName", source = "orderProduct.product.name")
+    @Mapping(target = "username", source = "orderItem.order.user.username")
+    @Mapping(target = "userFirstname", source = "orderItem.order.user.firstname")
+    @Mapping(target = "userLastname", source = "orderItem.order.user.lastname")
+    @Mapping(target = "userAvatar", source = "orderItem.order.user.avatar")
+    @Mapping(target = "userEmail", source = "orderItem.order.user.email")
+    @Mapping(target = "userPhone", source = "orderItem.order.user.phone")
+    @Mapping(target = "orderCustomerName", source = "orderItem.order.name")
+    @Mapping(target = "orderCustomerPhone", source = "orderItem.order.phone")
+    @Mapping(target = "orderCustomerEmail", source = "orderItem.order.email")
+    @Mapping(target = "orderCustomerAddress", source = "orderItem.order.addressDetail")
+    @Mapping(target = "productName", source = "orderItem.productItem.product.name")
     @Mapping(target = "productImage", ignore = true)
-    @Mapping(target = "productThumbnail", source = "orderProduct.product.images", qualifiedByName = "getFirstImage")
-    @Mapping(target = "productPrice", source = "orderProduct.product.price")
-    @Mapping(target = "productBrandName", source = "orderProduct.product.brand.name")
-    @Mapping(target = "productCategoryName", source = "orderProduct.product.category.name")
-    @Mapping(target = "orderProductId", source = "orderProduct.idOrderProduct")
-    @Mapping(target = "orderId", source = "orderProduct.order.idOrder")
-    @Mapping(target = "orderCode", source = "orderProduct.order.idOrder", qualifiedByName = "mapOrderCode")
-    @Mapping(target = "orderDate", source = "orderProduct.order.orderDate")
+    @Mapping(target = "productThumbnail", source = "orderItem.productItem.product.images", qualifiedByName = "getFirstImage")
+    @Mapping(target = "productPrice", source = "orderItem.productItem.product.price")
+    @Mapping(target = "productBrandName", source = "orderItem.productItem.product.brand.name")
+    @Mapping(target = "productCategoryName", source = "orderItem.productItem.product.category.name")
+    @Mapping(target = "orderItemId", source = "orderItem.idOrderItem")
+    @Mapping(target = "orderId", source = "orderItem.order.idOrder")
+    @Mapping(target = "orderCode", source = "orderItem.order.idOrder", qualifiedByName = "mapOrderCode")
+    @Mapping(target = "orderDate", source = "orderItem.order.orderDate")
     @Mapping(target = "userDisplayName", expression = "java(calculateUserDisplayName(review))")
     ReviewResponse toReviewResponse(Review review);
 
@@ -60,7 +60,7 @@ public interface ReviewMapper {
     @Mapping(target = "isVisible", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "lastUpdate", ignore = true)
-    @Mapping(target = "orderProduct", ignore = true)
+    @Mapping(target = "orderItem", ignore = true)
     void updateReview(@MappingTarget Review review, ReviewUpdateRequest request);
 
     @Named("mapOrderCode")
@@ -76,7 +76,7 @@ public interface ReviewMapper {
     default String calculateUserDisplayName(Review review) {
         if (Boolean.TRUE.equals(review.getAnonymous())) {
             // User chọn ẩn danh - áp dụng mask cho username
-            String username = review.getOrderProduct().getOrder().getUser().getUsername();
+            String username = review.getOrderItem().getOrder().getUser().getUsername();
             if (username != null && !username.trim().isEmpty()) {
                 return maskUsername(username);
             }
@@ -84,14 +84,14 @@ public interface ReviewMapper {
         }
 
         // User không chọn ẩn danh - hiển thị full username
-        String username = review.getOrderProduct().getOrder().getUser().getUsername();
+        String username = review.getOrderItem().getOrder().getUser().getUsername();
         if (username != null && !username.trim().isEmpty()) {
             return username;
         }
 
         // Fallback to firstname + lastname
-        String firstname = review.getOrderProduct().getOrder().getUser().getFirstname();
-        String lastname = review.getOrderProduct().getOrder().getUser().getLastname();
+        String firstname = review.getOrderItem().getOrder().getUser().getFirstname();
+        String lastname = review.getOrderItem().getOrder().getUser().getLastname();
         if (firstname != null && lastname != null) {
             return firstname + " " + lastname;
         }

@@ -38,12 +38,6 @@ public interface ProductRepository extends JpaRepository<Product,Long> {
     List<Product> findByPriceLessThanEqual(BigDecimal maxPrice);
     List<Product> findByPriceGreaterThanEqual(BigDecimal minPrice);
 
-    // ====== Lọc theo số lượng tồn ======
-    List<Product> findByStockGreaterThan(Integer minStock);
-    List<Product> findByStockLessThanEqual(Integer maxStock);
-    List<Product> findByStockBetween(Integer minStock, Integer maxStock);
-    List<Product> findByStockGreaterThanAndAvailableTrue(Integer minStock);
-
     // ====== Lọc theo đánh giá ======
     List<Product> findByAverageRatingGreaterThanEqual(BigDecimal minRating);
     List<Product> findByAverageRatingBetween(BigDecimal minRating, BigDecimal maxRating);
@@ -84,7 +78,7 @@ public interface ProductRepository extends JpaRepository<Product,Long> {
 
     // ====== Các query hỗ trợ business ======
     @Query("SELECT p FROM Product p WHERE p.isActive = true AND p.available = true " +
-            "AND p.stock > 0 ORDER BY p.soldCount DESC")
+            "ORDER BY p.soldCount DESC")
     List<Product> findTopSellingInStockProducts(Pageable pageable);
 
     @Query("SELECT p FROM Product p WHERE p.isActive = true AND p.available = true " +
@@ -105,7 +99,7 @@ public interface ProductRepository extends JpaRepository<Product,Long> {
     @Query("SELECT COUNT(p) FROM Product p WHERE p.isActive = true AND p.available = true")
     Long countActiveAvailableProducts();
 
-    @Query("SELECT COUNT(p) FROM Product p WHERE p.isActive = true AND p.stock = 0")
+    @Query("SELECT COUNT(p) FROM Product p WHERE p.isActive = true AND p.available = false")
     Long countOutOfStockProducts();
 
     @Query("SELECT COUNT(p) FROM Product p WHERE p.brand.brandId = :brandId")

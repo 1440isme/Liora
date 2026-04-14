@@ -31,7 +31,7 @@ public class DashboardServiceImpl implements IDashboardService {
     @Autowired
     private IUserService userService;
     @Autowired
-    private IOrderProductService orderProductService;
+    private IOrderItemService orderItemService;
 
     @Override
     public BigDecimal getTotalRevenue() {
@@ -152,7 +152,7 @@ public class DashboardServiceImpl implements IDashboardService {
 
     @Override
     public List<TopProductResponse> getTopProductsByDateRange(int limit, LocalDateTime startDate, LocalDateTime endDate) {
-        List<Object[]> results = orderProductService.getTopSellingProductsByDateRange(startDate, endDate);
+        List<Object[]> results = orderItemService.getTopSellingProductsByDateRange(startDate, endDate);
         
         return results.stream()
                 .limit(limit)
@@ -252,7 +252,7 @@ public class DashboardServiceImpl implements IDashboardService {
     @Override
     public Map<String, Double> getRevenueByCategory(LocalDateTime startDate, LocalDateTime endDate) {
         Map<String, Double> data = new LinkedHashMap<>();
-        List<Object[]> results = orderProductService.getRevenueByCategory(startDate, endDate);
+        List<Object[]> results = orderItemService.getRevenueByCategory(startDate, endDate);
         for (Object[] row : results)
             data.put((String) row[0], ((Number) row[1]).doubleValue());
         return data;
@@ -261,7 +261,7 @@ public class DashboardServiceImpl implements IDashboardService {
     @Override
     public Map<String, Double> getRevenueByBrand(LocalDateTime startDate, LocalDateTime endDate) {
         Map<String, Double> data = new LinkedHashMap<>();
-        List<Object[]> results = orderProductService.getRevenueByBrand(startDate, endDate);
+        List<Object[]> results = orderItemService.getRevenueByBrand(startDate, endDate);
         for (Object[] row : results)
             data.put((String) row[0], ((Number) row[1]).doubleValue());
         return data;
@@ -399,12 +399,12 @@ public class DashboardServiceImpl implements IDashboardService {
     
     @Override
     public long countSoldProductsByDateRange(LocalDateTime startDate, LocalDateTime endDate) {
-        return orderProductService.countSoldProductsByDateRange(startDate, endDate);
+        return orderItemService.countSoldProductsByDateRange(startDate, endDate);
     }
     
     @Override
     public long countSoldBrandsByDateRange(LocalDateTime startDate, LocalDateTime endDate) {
-        return orderProductService.countSoldBrandsByDateRange(startDate, endDate);
+        return orderItemService.countSoldBrandsByDateRange(startDate, endDate);
     }
 }
 

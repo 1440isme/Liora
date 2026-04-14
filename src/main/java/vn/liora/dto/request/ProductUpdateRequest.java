@@ -26,6 +26,10 @@ public class ProductUpdateRequest {
     private Long brandId;
     private Long categoryId;
 
+    /**
+     * Số lượng muốn nhập thêm (delta), không phải tổng tồn kho mục tiêu.
+     * null: giữ nguyên tồn kho; 0: không thêm item; số dương: thêm đúng bấy nhiêu {@code ProductItem} IN_STOCK.
+     */
     @Min(value = 0, message = "VALIDATION_STOCK_NON_NEGATIVE")
     private Integer stock;
 

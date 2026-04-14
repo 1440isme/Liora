@@ -4,6 +4,7 @@ import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import vn.liora.enums.DiscountType;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -23,6 +24,8 @@ public class DiscountCreationRequest {
     @NotNull(message = "VALIDATION_REQUIRED_FIELD")
     @DecimalMin(value = "0.0", message = "VALIDATION_DISCOUNT_VALUE_POSITIVE")
     private BigDecimal discountValue;
+
+    private DiscountType discountType = DiscountType.PERCENTAGE;
     
     @DecimalMin(value = "0.0", message = "VALIDATION_MIN_ORDER_VALUE_POSITIVE")
     private BigDecimal minOrderValue;

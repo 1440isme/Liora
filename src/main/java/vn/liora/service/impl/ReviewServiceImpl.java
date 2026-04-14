@@ -11,7 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import vn.liora.dto.request.ReviewCreationRequest;
 import vn.liora.dto.request.ReviewUpdateRequest;
 import vn.liora.dto.response.ReviewResponse;
-import vn.liora.entity.OrderProduct;
+import vn.liora.entity.OrderItem;
 import vn.liora.entity.Product;
 import vn.liora.entity.Review;
 import vn.liora.exception.AppException;
@@ -19,7 +19,6 @@ import vn.liora.exception.ErrorCode;
 import vn.liora.mapper.ReviewMapper;
 import vn.liora.repository.*;
 import vn.liora.service.IReviewService;
-import vn.liora.service.IProductService;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -28,64 +27,55 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-@Service
+@Service("reviewCoreService")
 @RequiredArgsConstructor
 @Slf4j
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class ReviewServiceImpl implements IReviewService {
 
     ReviewRepository reviewRepository;
-    OrderProductRepository orderProductRepository;
+    OrderItemRepository orderItemRepository;
     ReviewMapper reviewMapper;
     BrandRepository brandRepository; // Thêm vào constructor
     CategoryRepository categoryRepository; // Thêm vào constructor
     ProductRepository productRepository; // Thêm vào constructor
-    IProductService productService; // Thêm vào constructor
 
     // ========== BASIC CRUD ==========
     
     @Override
     @Transactional
     public ReviewResponse createReview(ReviewCreationRequest request, Long userId) {
-        // Kiểm tra OrderProduct có tồn tại không
-        OrderProduct orderProduct = orderProductRepository.findById(request.getOrderProductId())
-                .orElseThrow(() -> new AppException(ErrorCode.ORDER_PRODUCT_NOT_FOUND));
+        // Kiểm tra OrderItem có tồn tại không
+        OrderItem orderItem = orderItemRepository.findById(request.getOrderItemId())
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_ITEM_NOT_FOUND));
 
         // Kiểm tra user có phải là chủ sở hữu của order không
-        if (!orderProduct.getOrder().getUser().getUserId().equals(userId)) {
+        if (!orderItem.getOrder().getUser().getUserId().equals(userId)) {
             throw new AppException(ErrorCode.REVIEW_ACCESS_DENIED);
         }
 
         // THÊM: Kiểm tra đơn hàng đã được giao chưa
-        String orderStatus = orderProduct.getOrder().getOrderStatus();
+        String orderStatus = orderItem.getOrder().getOrderStatus();
         if (!"DELIVERED".equals(orderStatus) && !"COMPLETED".equals(orderStatus)) {
             throw new AppException(ErrorCode.ORDER_NOT_DELIVERED);
         }
 
         // Kiểm tra đã review chưa
-        if (reviewRepository.existsByOrderProduct_IdOrderProduct(request.getOrderProductId())) {
+        if (reviewRepository.existsByOrderItem_IdOrderItem(request.getOrderItemId())) {
             throw new AppException(ErrorCode.REVIEW_ALREADY_EXISTS);
         }
 
         // Tạo review entity
         Review review = reviewMapper.toReview(request);
-        review.setOrderProduct(orderProduct);
+        review.setOrderItem(orderItem);
         review.setUserId(userId);
-        review.setProductId(orderProduct.getProduct().getProductId());
+        review.setProductId(orderItem.getProductItem().getProduct().getProductId());
         review.setCreatedAt(LocalDateTime.now());
         review.setLastUpdate(LocalDateTime.now());
         review.setIsVisible(true);
 
         // Lưu review
         Review savedReview = reviewRepository.save(review);
-
-        // Cập nhật average rating cho product
-        try {
-            productService.updateProductAverageRating(orderProduct.getProduct().getProductId());
-        } catch (Exception e) {
-            log.error("Error updating product average rating: {}", e.getMessage());
-            // Không throw exception để không ảnh hưởng đến việc tạo review
-        }
 
         return reviewMapper.toReviewResponse(savedReview);
     }
@@ -108,13 +98,6 @@ public class ReviewServiceImpl implements IReviewService {
 
         Review savedReview = reviewRepository.save(review);
 
-        // Cập nhật average rating cho product
-        try {
-            productService.updateProductAverageRating(review.getProductId());
-        } catch (Exception e) {
-            log.error("Error updating product average rating: {}", e.getMessage());
-        }
-
         return reviewMapper.toReviewResponse(savedReview);
     }
 
@@ -124,15 +107,7 @@ public class ReviewServiceImpl implements IReviewService {
         Review review = reviewRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.REVIEW_NOT_FOUND));
         
-        Long productId = review.getProductId();
         reviewRepository.delete(review);
-        
-        // Cập nhật average rating cho product
-        try {
-            productService.updateProductAverageRating(productId);
-        } catch (Exception e) {
-            log.error("Error updating product average rating: {}", e.getMessage());
-        }
     }
 
     @Override
@@ -228,16 +203,16 @@ public class ReviewServiceImpl implements IReviewService {
         return reviews.map(reviewMapper::toReviewResponse);
     }
 
-    // ========== BY ORDER PRODUCT ==========
+    // ========== BY ORDER ITEM ==========
     
     @Override
-    public Optional<Review> findByOrderProductId(Long orderProductId) {
-        return reviewRepository.findByOrderProduct_IdOrderProduct(orderProductId);
+    public Optional<Review> findByOrderItemId(Long orderItemId) {
+        return reviewRepository.findByOrderItem_IdOrderItem(orderItemId);
     }
 
     @Override
-    public boolean existsByOrderProductId(Long orderProductId) {
-        return reviewRepository.existsByOrderProduct_IdOrderProduct(orderProductId);
+    public boolean existsByOrderItemId(Long orderItemId) {
+        return reviewRepository.existsByOrderItem_IdOrderItem(orderItemId);
     }
 
     // ========== STATISTICS ==========
@@ -545,13 +520,13 @@ public class ReviewServiceImpl implements IReviewService {
     }
 
     @Override
-    public boolean existsByOrderProductIdAndUserId(Long orderProductId, Long userId) {
-        return reviewRepository.existsByOrderProductIdOrderProductAndUserId(orderProductId, userId);
+    public boolean existsByOrderItemIdAndUserId(Long orderItemId, Long userId) {
+        return reviewRepository.existsByOrderItemIdOrderItemAndUserId(orderItemId, userId);
     }
 
     @Override
-    public ReviewResponse findByOrderProductIdAndUserId(Long orderProductId, Long userId) {
-        Review review = reviewRepository.findByOrderProductIdOrderProductAndUserId(orderProductId, userId)
+    public ReviewResponse findByOrderItemIdAndUserId(Long orderItemId, Long userId) {
+        Review review = reviewRepository.findByOrderItemIdOrderItemAndUserId(orderItemId, userId)
                 .orElseThrow(() -> new AppException(ErrorCode.REVIEW_NOT_FOUND));
         return reviewMapper.toReviewResponse(review);
     }

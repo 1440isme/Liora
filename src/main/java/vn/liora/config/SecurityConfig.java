@@ -83,7 +83,7 @@ public class SecurityConfig {
                                 "/users/register-with-otp", "/users/send-password-reset-otp",
                                 "/users/verify-password-reset-otp", "/users/reset-password-with-otp",
                                 // Cart API endpoints (for guests and users)
-                                "/cart/api/**", "/CartProduct/**",
+                                "/cart/api/**", "/cart-items/**",
                                 // Recently Viewed API endpoints (for guests and users)
                                 "/api/recently-viewed/**",
                                 // Order API endpoints (for guests and users)
