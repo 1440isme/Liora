@@ -6,8 +6,10 @@ import vn.liora.service.discount.DiscountContext;
 
 import java.math.BigDecimal;
 
-public interface DiscountCalculator {
-    DiscountType supports();
+// Đóng vai trò là Strategy interface
 
-    BigDecimal calculate(Discount discount, DiscountContext context);
+public interface DiscountCalculator {
+    DiscountType supports(); // cho biết strategy này xử lý loại discount nào
+
+    BigDecimal calculate(Discount discount, DiscountContext context); // chứa thuật toán tính giảm giá tương ứng
 }

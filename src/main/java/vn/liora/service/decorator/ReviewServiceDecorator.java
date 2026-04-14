@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.Optional;
 
 public abstract class ReviewServiceDecorator implements IReviewService {
-    protected final IReviewService delegate;
+    protected final IReviewService delegate; // đối tượng review service thật mà decorator sẽ "ủy quyền" gọi xuống.
 
     protected ReviewServiceDecorator(IReviewService delegate) {
         this.delegate = delegate;
