@@ -27,7 +27,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-@Service("reviewCoreService")
+@Service("reviewCoreService") // đặt tên bean là reviewCoreService vì decorator sẽ bọc đúng bean này
 @RequiredArgsConstructor
 @Slf4j
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)

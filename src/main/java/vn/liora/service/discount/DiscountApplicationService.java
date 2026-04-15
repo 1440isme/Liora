@@ -18,6 +18,8 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+
+// Nơi thật sự lấy strategy từ factory và chạy thuật toán
 public class DiscountApplicationService {
     private final DiscountRepository discountRepository;
     private final DiscountEligibilityChecker eligibilityChecker;

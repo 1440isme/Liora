@@ -1,17 +1,21 @@
 package vn.liora.service.discount;
 
-import lombok.Builder;
-import lombok.Value;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import lombok.Builder;
+import lombok.Value;
+
 @Value
 @Builder
+
+// DiscountContext chỉ là một context object hay parameter object,
+// dùng để gom dữ liệu đầu vào chung cho việc tính discount như:
+// orderSubtotal, shippingFee, userId, appliedAt.
 public class DiscountContext {
     Long userId;
-    BigDecimal orderSubtotal;
-    BigDecimal shippingFee;
+    BigDecimal orderSubtotal; // tổng tiền hàng trc khi áp dụng discount
+    BigDecimal shippingFee; // phí vận chuyển
     String paymentMethod;
     LocalDateTime appliedAt;
 
